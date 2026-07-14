@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>#5 구글 시트 API 연동 — 작업 플랜</title>
+<style>
+  :root {
+    --bg: #f7f7f8; --card: #ffffff; --ink: #1c1c1e; --muted: #6e6e73;
+    --line: #e3e3e6; --accent: #3b6ef5; --accent-soft: #e8eefe;
+    --ok: #2e8b57; --warn: #b25e09; --code-bg: #f0f0f2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161618; --card: #202024; --ink: #ececf0; --muted: #98989f;
+      --line: #333338; --accent: #7a9bff; --accent-soft: #26304a;
+      --ok: #58c088; --warn: #e0a35c; --code-bg: #2a2a2f;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 40px 20px 80px; background: var(--bg); color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+                 "Segoe UI", "Noto Sans KR", sans-serif;
+    line-height: 1.65;
+  }
+  main { max-width: 860px; margin: 0 auto; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code {
+    font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 0.86em;
+    background: var(--code-bg); border-radius: 5px; padding: 2px 6px;
+  }
+  header { margin-bottom: 28px; }
+  .issue-chip {
+    display: inline-block; font-weight: 700; color: var(--accent);
+    background: var(--accent-soft); border-radius: 999px;
+    padding: 3px 14px; font-size: 0.95rem; margin-bottom: 10px;
+  }
+  .type-chip {
+    display: inline-block; font-weight: 600; color: var(--muted);
+    border: 1px solid var(--line); border-radius: 999px;
+    padding: 3px 12px; font-size: 0.8rem; margin-left: 8px; vertical-align: 2px;
+  }
+  h1 { font-size: 1.7rem; margin: 0 0 14px; letter-spacing: -0.02em; }
+  .meta {
+    display: flex; flex-wrap: wrap; gap: 6px 22px;
+    color: var(--muted); font-size: 0.87rem;
+  }
+  .meta b { color: var(--ink); font-weight: 600; }
+  section.card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 24px 28px; margin-top: 18px;
+  }
+  h2 {
+    font-size: 1.05rem; margin: 0 0 14px; letter-spacing: -0.01em;
+    display: flex; align-items: center; gap: 8px;
+  }
+  h2 .no {
+    color: var(--accent); font-size: 0.8rem; font-weight: 700;
+    border: 1.5px solid var(--accent); border-radius: 6px; padding: 0 6px;
+  }
+  ul, ol { margin: 0; padding-left: 22px; }
+  li { margin: 6px 0; }
+  .steps { list-style: none; padding: 0; counter-reset: step; }
+  .steps li {
+    counter-increment: step; position: relative; padding: 10px 0 10px 44px;
+    border-bottom: 1px dashed var(--line);
+  }
+  .steps li:last-child { border-bottom: none; }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 10px;
+    width: 28px; height: 28px; border-radius: 8px; background: var(--accent-soft);
+    color: var(--accent); font-weight: 700; font-size: 0.85rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .steps .files { display: block; margin-top: 4px; font-size: 0.85rem; color: var(--muted); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 0.82rem; }
+  .done-list { list-style: none; padding: 0; }
+  .done-list li { padding-left: 30px; position: relative; }
+  .done-list li::before {
+    content: ""; position: absolute; left: 2px; top: 7px; width: 15px; height: 15px;
+    border: 2px solid var(--ok); border-radius: 5px;
+  }
+  .scroll-x { overflow-x: auto; }
+  footer { margin-top: 30px; color: var(--muted); font-size: 0.8rem; text-align: center; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <span class="issue-chip"><a href="https://github.com/damdam6/vocabulary-study/issues/5">#5</a></span><span class="type-chip">기능 개선</span>
+    <h1>구글 시트 API 연동 — 서비스 계정 인증 + read/write 유틸</h1>
+    <div class="meta">
+      <span><b>damdam6/vocabulary-study</b></span>
+      <span>브랜치 <b><code>feat/5-google-sheets-api-client</code></b> ← <code>main</code></span>
+      <span>라벨 <b>enhancement</b></span>
+      <span>2026-07-15</span>
+    </div>
+  </header>
+
+  <section class="card">
+    <h2><span class="no">1</span>요약</h2>
+    <p>Cloudflare Worker에서 구글 서비스 계정 키로 JWT(RS256)를 서명해 access token을 교환하는 인증 유틸과, Sheets API v4의 <code>values.get / update / append</code>를 감싸는 read/write 래퍼를 만든다. Node <code>crypto</code> 대신 Web Crypto API(<code>crypto.subtle</code>)로 서명하고, 토큰은 isolate 메모리에 캐시해 만료 전까지 재사용한다. 이후 모든 API 이슈(단어 목록 read, 학습 결과 write 등)가 이 유틸 위에 올라간다. <b>단, 이 브랜치는 main에서 분기됐는데 Worker 스캐폴딩은 아직 미머지 PR #2에만 있어, 시작 전 베이스 정리가 선행되어야 한다.</b></p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">2</span>현황 분석</h2>
+    <p><b>⚠️ 선행 의존성: PR #2가 아직 머지되지 않았다.</b> 현재 브랜치는 <code>origin/main</code>(커밋 <code>1900de8</code>, <code>docs/PRD.md</code>뿐)에서 분기됐지만, 이슈가 전제하는 Worker 스캐폴딩(<code>worker/index.ts</code>, <code>wrangler.jsonc</code>, Vite+React 셋업)은 전부 미머지 상태인 PR #2 브랜치 <code>feat/1-project-stack-setup</code>에만 존재한다. 이 워크트리에는 현재 <code>docs/</code> 외에 아무 코드도 없다.</p>
+    <ul>
+      <li>PR #2 스캐폴딩의 Worker 엔트리는 <code>worker/index.ts</code> — <code>/api/health</code>만 응답하고 나머지는 404를 반환하는 최소 fetch 핸들러.</li>
+      <li><code>wrangler.jsonc</code>: <code>main: "worker/index.ts"</code>, <code>nodejs_compat</code> 플래그 켜짐, <code>run_worker_first: ["/api/*"]</code>. <code>vars</code>는 전부 주석 처리 상태(= <code>SHEET_ID</code> 미정의).</li>
+      <li>시크릿: <code>GOOGLE_SERVICE_ACCOUNT_KEY</code>는 프로덕션에 등록돼 있으나 참조하는 코드가 0곳. 로컬 키 파일은 메인 체크아웃의 <code>.secret/voca-502322-99c84e265c69.json</code>에 있고, <code>.gitignore</code>가 <code>.secret/</code>·<code>.dev.vars*</code>를 이미 커버한다.</li>
+      <li>시트 준비 상태: 스프레드시트 ID <code>1WEo1b15RRq2NfrJqzsLA1_-6Rs3nIZl2q5sn7doBvw8</code>, 서비스 계정 <code>voca-dam@voca-502322.iam.gserviceaccount.com</code>이 편집자로 공유됨. 탭 <code>HSK6급</code>에 PRD §4.2 계약(A~G열: 한자·병음·뜻·모드1/2 정답수·복습일|간격·타임스탬프, <code>docs/PRD.md:57-67</code>)의 헤더 행만 있고 데이터는 0행.</li>
+      <li>타입 생성: <code>package.json</code>의 <code>cf-typegen</code> 스크립트(<code>wrangler types</code>)가 <code>worker-configuration.d.ts</code>의 <code>Env</code>를 재생성하는 구조 — 새 var/secret 추가 시 재실행 필요.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">3</span>설계</h2>
+    <p><b>모듈 2개 + 설정 3곳.</b> 인증과 시트 호출을 분리해 이후 이슈들이 <code>sheets.ts</code>만 import하면 되게 한다.</p>
+    <ul>
+      <li><b><code>worker/lib/google-auth.ts</code> — 토큰 발급 + 캐시.</b>
+        <ul>
+          <li><code>GOOGLE_SERVICE_ACCOUNT_KEY</code>(JSON 문자열)를 파싱해 <code>client_email</code>·<code>private_key</code> 추출. PEM(PKCS#8) 헤더/푸터 제거 → base64 디코드 → <code>crypto.subtle.importKey("pkcs8", …, { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" })</code>.</li>
+          <li>JWT 조립: header <code>{alg:"RS256", typ:"JWT"}</code>, claims <code>{iss: client_email, scope: "https://www.googleapis.com/auth/spreadsheets", aud: "https://oauth2.googleapis.com/token", iat, exp: iat+3600}</code>. base64url 인코딩 헬퍼 포함.</li>
+          <li><code>https://oauth2.googleapis.com/token</code>에 <code>grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer</code>로 POST → <code>access_token</code> 수신.</li>
+          <li>캐시: 모듈 스코프 변수 <code>{ token, expiresAt }</code>. 만료 60초 전이면 재발급. 발급/캐시히트 시 <code>console.log</code> 한 줄씩 남겨 완료 조건 3을 검증 가능하게 함. 동시 요청 중복 발급 방지를 위해 in-flight Promise도 같이 캐시.</li>
+        </ul>
+      </li>
+      <li><b><code>worker/lib/sheets.ts</code> — Sheets API v4 래퍼.</b>
+        <ul>
+          <li><code>getValues(env, range)</code> → GET <code>…/values/{range}</code>, <code>updateValues(env, range, values)</code> → PUT (<code>valueInputOption=RAW</code>), <code>appendValues(env, range, values)</code> → POST <code>:append</code> (<code>insertDataOption=INSERT_ROWS</code>).</li>
+          <li>범위 표기는 <code>'HSK6급'!A1:G1</code>처럼 탭명을 작은따옴표로 감싸고 전체를 <code>encodeURIComponent</code> — 한글 탭명이므로 인코딩 누락 시 400.</li>
+          <li>비 2xx 응답은 status + 응답 body를 담은 에러로 throw — 이후 이슈들이 공통으로 쓸 에러 계약.</li>
+        </ul>
+      </li>
+      <li><b>설정:</b> <code>wrangler.jsonc</code>의 <code>vars</code>에 <code>SHEET_ID</code> 추가(비밀 아님, 시트 ID는 URL에 노출되는 값) · 로컬용 <code>.dev.vars</code>에 <code>GOOGLE_SERVICE_ACCOUNT_KEY</code> 주입(gitignore 기커버) · <code>npm run cf-typegen</code>으로 <code>Env</code> 타입 재생성.</li>
+      <li><b>기각한 대안:</b> ① <code>googleapis</code> npm SDK — Node 전용 의존성이 많고 번들이 커서 Workers에 부적합, REST 직접 호출로 충분. ② <code>nodejs_compat</code>의 <code>node:crypto</code> 사용 — 동작은 하지만 이슈가 Web Crypto를 명시했고, 표준 API가 런타임 호환성 면에서 안전. ③ KV/캐시 API에 토큰 저장 — isolate 메모리 캐시로 충분하며 시크릿 파생물을 외부 저장소에 두지 않는 편이 낫다.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">4</span>작업 단계</h2>
+    <ol class="steps">
+      <li><b>베이스 정리 (선행).</b> PR #2 머지 후 <code>origin/main</code> 리베이스가 정석. 머지를 기다리지 않으려면 <code>feat/1-project-stack-setup</code> 위로 리베이스하고 PR을 스택으로 연결 — 어느 쪽이든 사용자 결정 필요.
+        <span class="files"><code>git rebase</code> (파일 변경 없음)</span>
+      </li>
+      <li>인증 유틸 작성: 키 JSON 파싱, PEM→<code>CryptoKey</code> import, base64url 헬퍼, JWT 서명, 토큰 교환, 만료 60초 버퍼를 둔 모듈 스코프 캐시(+in-flight Promise 공유), 발급/캐시히트 로그.
+        <span class="files"><code>worker/lib/google-auth.ts</code> (신규)</span>
+      </li>
+      <li>시트 래퍼 작성: <code>getValues</code>/<code>updateValues</code>/<code>appendValues</code> + 범위 인코딩 헬퍼 + 비 2xx throw. 시그니처는 이후 이슈(단어 read, 학습 결과 write)가 그대로 쓸 수 있게 탭+범위를 인자로 받는다.
+        <span class="files"><code>worker/lib/sheets.ts</code> (신규)</span>
+      </li>
+      <li>설정 반영: <code>wrangler.jsonc</code>에 <code>vars.SHEET_ID</code> 추가, <code>.dev.vars</code> 생성(로컬 전용, <code>.secret/voca-502322-99c84e265c69.json</code> 내용을 한 줄 JSON으로), <code>npm run cf-typegen</code>으로 <code>Env</code>에 <code>SHEET_ID</code>·<code>GOOGLE_SERVICE_ACCOUNT_KEY</code> 반영.
+        <span class="files"><code>wrangler.jsonc</code>, <code>.dev.vars</code> (미커밋), <code>worker-configuration.d.ts</code> (재생성)</span>
+      </li>
+      <li>검증용 임시 라우트 추가: <code>/api/dev/sheets-check</code> — 헤더 행(<code>'HSK6급'!A1:G1</code>) read → 테스트 셀(예: <code>'HSK6급'!A100</code>) write → 즉시 재-read 후 결과 JSON 반환. 완료 조건 검증 후 <b>커밋 전 제거</b>(검증 증거는 PR 본문에 기록).
+        <span class="files"><code>worker/index.ts</code> (임시 수정 후 원복)</span>
+      </li>
+      <li>검증 실행: <code>wrangler dev</code>에서 임시 라우트 연속 호출 — read 성공, write 후 시트 육안 확인 + 테스트 셀 원상복구, 로그에서 최초 1회만 토큰 발급이고 이후 캐시히트인지 확인.
+        <span class="files">(코드 변경 없음 — 완료 조건 1·2·3 검증)</span>
+      </li>
+      <li>마무리: 임시 라우트 제거, <code>npm run lint</code>·<code>npm run build</code>(tsc 포함) 통과 확인, 커밋 및 PR 생성(검증 로그/스크린샷 첨부).
+        <span class="files"><code>worker/index.ts</code>, <code>worker/lib/*</code></span>
+      </li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">5</span>리스크</h2>
+    <div class="scroll-x">
+    <table>
+      <thead><tr><th>리스크</th><th>영향</th><th>완화책</th></tr></thead>
+      <tbody>
+        <tr><td>PR #2 미머지 상태에서 브랜치 베이스가 main</td><td>Worker 코드가 없어 이 이슈 자체를 시작할 수 없음. PR #2 위로 쌓으면 머지 순서 의존성 발생</td><td>작업 단계 1에서 사용자 결정 후 진행 — 기본 권장은 PR #2 먼저 머지 → main 리베이스</td></tr>
+        <tr><td>서비스 계정 키가 <code>.dev.vars</code>·로그 등으로 유출</td><td>시트 편집 권한 탈취</td><td><code>.gitignore</code>가 <code>.dev.vars*</code>·<code>.secret/</code> 기커버, 키 내용은 절대 로그 출력 금지, 커밋 전 <code>git status</code>로 확인</td></tr>
+        <tr><td>PEM 파싱 실수 (JSON 이스케이프 <code>\n</code>, 헤더/푸터 변형)</td><td><code>importKey</code> 실패 또는 서명 오류로 <code>invalid_grant</code></td><td><code>JSON.parse</code>가 <code>\n</code>을 실개행으로 복원함을 전제로 헤더/푸터·공백 제거를 방어적으로 구현, 실패 시 원인 구분 가능한 에러 메시지</td></tr>
+        <tr><td>한글 탭명 <code>HSK6급</code> URL 인코딩 누락</td><td>Sheets API 400 에러</td><td>범위 인코딩을 <code>sheets.ts</code> 내부 헬퍼로 강제 — 호출자가 인코딩을 신경 쓸 수 없는 구조로</td></tr>
+        <tr><td>동시 요청 시 토큰 중복 발급 (thundering herd)</td><td>불필요한 OAuth 왕복, 완료 조건 3 위반처럼 보일 수 있음</td><td>in-flight Promise를 캐시에 함께 저장해 동시 호출이 같은 발급을 기다리게 함</td></tr>
+        <tr><td>isolate 교체 시 토큰 캐시 소실</td><td>콜드 스타트마다 재발급 (기능상 문제 없음, 레이턴시 +1 왕복)</td><td>정상 동작으로 수용 — 문서화만. KV 저장은 보안상 비권장 (설계 §3 대안 ③)</td></tr>
+        <tr><td>테스트 write가 실제 데이터 영역을 오염</td><td>이후 단어 데이터와 충돌</td><td>테스트 셀은 데이터 영역에서 먼 <code>A100</code> 사용, 검증 후 빈 값으로 원상복구</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">6</span>테스트 계획</h2>
+    <ul>
+      <li><b>read:</b> <code>wrangler dev</code> + <code>curl localhost:8787/api/dev/sheets-check</code> → 응답에 헤더 행 7개 값(한자/병음/뜻/…)이 그대로 옴 → 완료 조건 1.</li>
+      <li><b>write:</b> 같은 라우트가 <code>A100</code>에 테스트 문자열 write → 브라우저에서 시트 열어 육안 확인 → 빈 문자열로 재-write해 원복 → 완료 조건 2.</li>
+      <li><b>토큰 캐시:</b> 라우트를 3회 연속 호출 → <code>wrangler dev</code> 로그에 "token issued"가 최초 1회, 이후 "token cache hit"만 찍히는지 확인 → 완료 조건 3.</li>
+      <li><b>에러 경로:</b> 존재하지 않는 탭명으로 read 시도 → 래퍼가 status·body 포함한 에러를 throw하는지 확인 (이후 이슈들의 에러 계약 검증).</li>
+      <li><b>기존 동작 회귀:</b> <code>/api/health</code>가 여전히 200 JSON을 반환하고, 임시 라우트 제거 후 <code>npm run build</code>(tsc -b 포함)·<code>npm run lint</code>가 깨끗한지 확인.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">7</span>완료 조건</h2>
+    <ul class="done-list">
+      <li><code>wrangler dev</code>에서 <code>HSK6급</code> 탭 헤더 행(A1:G1) read 성공 (이슈 조건 1)</li>
+      <li>테스트 셀 write 성공 → 시트에서 육안 확인 → 원상복구까지 완료 (이슈 조건 2)</li>
+      <li>연속 호출 시 토큰 재발급 없이 캐시 사용을 로그로 확인 (이슈 조건 3)</li>
+      <li><code>worker/lib/google-auth.ts</code>·<code>worker/lib/sheets.ts</code>가 시크릿·시트 ID를 <code>Env</code>에서만 읽고, 이후 API 이슈가 import만으로 재사용 가능한 형태</li>
+      <li>임시 검증 라우트 제거, 시크릿 미커밋(<code>git status</code> 확인), lint·build 통과</li>
+    </ul>
+  </section>
+
+  <footer>issue-plan · <a href="https://github.com/damdam6/vocabulary-study/issues/5">#5</a> · 2026-07-15</footer>
+</main>
+</body>
+</html>
