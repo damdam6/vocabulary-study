@@ -20,6 +20,8 @@ interface TokenResponse {
 
 // isolate 수명 동안 유지되는 모듈 스코프 캐시. isolate 교체 시 재발급되는 건 정상.
 let cached: { token: string; expiresAt: number } | null = null;
+// 키 재료는 불변이므로 importKey(비교적 비쌈)는 isolate당 1회만 수행
+let cachedPrivateKey: CryptoKey | null = null;
 // 동시 요청이 각자 토큰을 발급받지 않도록 진행 중인 발급을 공유
 let inFlight: Promise<string> | null = null;
 
@@ -89,6 +91,9 @@ async function issueToken(env: Env): Promise<{ token: string; expiresAt: number 
 }
 
 async function importPrivateKey(pem: string): Promise<CryptoKey> {
+  if (cachedPrivateKey) {
+    return cachedPrivateKey;
+  }
   const base64 = pem
     .replace("-----BEGIN PRIVATE KEY-----", "")
     .replace("-----END PRIVATE KEY-----", "")
@@ -99,13 +104,14 @@ async function importPrivateKey(pem: string): Promise<CryptoKey> {
   } catch {
     throw new Error("private_key is not a valid PKCS#8 PEM");
   }
-  return crypto.subtle.importKey(
+  cachedPrivateKey = await crypto.subtle.importKey(
     "pkcs8",
     der,
     { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
     false,
     ["sign"],
   );
+  return cachedPrivateKey;
 }
 
 function base64UrlEncode(text: string): string {
