@@ -3,39 +3,38 @@
 # - provider는 등록된 GitHub Secrets(KIMI_API_KEY, DEEPSEEK_API_KEY) 기준 kimi + deepseek 조합.
 # - prompt_file 경로는 액션 번들(GITHUB_ACTION_PATH/prompts/*.md) 기준이므로 그대로 둘 것.
 #   이 리포에 prompts/를 만들어도 v1에서는 읽히지 않는다.
-# kimi-k2.5는 temperature=1만 허용(400) + 추론 모델이라 max_tokens 여유 필요(4096이면 reasoning이
-# 토큰을 소진해 빈 응답). kimi-k2-thinking은 이 계정에서 404라 k2.5로 통일.
+# kimi 계열은 temperature=1 강제 + 추론 토큰 소진 방지용 max_tokens 상향 (k2.5 실측 제약 승계).
 agents:
   quality:
     provider: kimi
-    model: kimi-k2.5
+    model: kimi-k2.7-code
     prompt_file: prompts/quality.md
     temperature: 1
     max_tokens: 16384
   performance:
     provider: kimi
-    model: kimi-k2.5
+    model: kimi-k2.7-code
     prompt_file: prompts/performance.md
     temperature: 1
     max_tokens: 16384
   security:
     provider: deepseek
-    model: deepseek-reasoner
+    model: deepseek-v4-pro
     prompt_file: prompts/security.md
     max_tokens: 8192
   orchestrator:
     provider: deepseek
-    model: deepseek-chat
+    model: deepseek-v4-flash
     prompt_file: prompts/orchestrator.md
     max_tokens: 8192
   resolver:
     provider: deepseek
-    model: deepseek-chat
+    model: deepseek-v4-flash
     prompt_file: prompts/resolver.md
     confidence_threshold: 0.8
   responder:
     provider: kimi
-    model: kimi-k2.5
+    model: kimi-k2.7-code
     prompt_file: prompts/responder.md
     temperature: 1
     max_tokens: 16384
