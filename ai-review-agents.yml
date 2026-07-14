@@ -3,14 +3,17 @@
 # - provider는 등록된 GitHub Secrets(KIMI_API_KEY, DEEPSEEK_API_KEY) 기준 kimi + deepseek 조합.
 # - prompt_file 경로는 액션 번들(GITHUB_ACTION_PATH/prompts/*.md) 기준이므로 그대로 둘 것.
 #   이 리포에 prompts/를 만들어도 v1에서는 읽히지 않는다.
+# kimi-k2.5는 temperature=1만 허용 (기본값 0.3 전송 시 400) — kimi 에이전트 전부 명시.
+# kimi-k2-thinking은 이 계정에서 404(미제공/권한 없음)라 k2.5로 통일.
 agents:
   quality:
     provider: kimi
     model: kimi-k2.5
     prompt_file: prompts/quality.md
+    temperature: 1
   performance:
     provider: kimi
-    model: kimi-k2-thinking
+    model: kimi-k2.5
     prompt_file: prompts/performance.md
     temperature: 1
   security:
@@ -32,6 +35,7 @@ agents:
     provider: kimi
     model: kimi-k2.5
     prompt_file: prompts/responder.md
+    temperature: 1
 
 triggers:
   review_on: [opened, reopened]
