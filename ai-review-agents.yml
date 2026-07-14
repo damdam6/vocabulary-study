@@ -1,0 +1,53 @@
+# AI 코드리뷰 에이전트 설정 — damdam6/ai-code-review-action@v1
+#
+# - provider는 등록된 GitHub Secrets(KIMI_API_KEY, DEEPSEEK_API_KEY) 기준 kimi + deepseek 조합.
+# - prompt_file 경로는 액션 번들(GITHUB_ACTION_PATH/prompts/*.md) 기준이므로 그대로 둘 것.
+#   이 리포에 prompts/를 만들어도 v1에서는 읽히지 않는다.
+agents:
+  quality:
+    provider: kimi
+    model: kimi-k2.5
+    prompt_file: prompts/quality.md
+  performance:
+    provider: kimi
+    model: kimi-k2-thinking
+    prompt_file: prompts/performance.md
+    temperature: 1
+  security:
+    provider: deepseek
+    model: deepseek-reasoner
+    prompt_file: prompts/security.md
+    max_tokens: 8192
+  orchestrator:
+    provider: deepseek
+    model: deepseek-chat
+    prompt_file: prompts/orchestrator.md
+    max_tokens: 8192
+  resolver:
+    provider: deepseek
+    model: deepseek-chat
+    prompt_file: prompts/resolver.md
+    confidence_threshold: 0.8
+  responder:
+    provider: kimi
+    model: kimi-k2.5
+    prompt_file: prompts/responder.md
+
+triggers:
+  review_on: [opened, reopened]
+  resolve_on: [synchronize]
+  respond_to: "@review-bot"
+
+options:
+  language: ko
+  max_comments_per_review: 20
+  review_draft_pr: false
+  skip_bot_prs: true
+  exclude_files:
+    - "*.lock"
+    - "**/package-lock.json" # minimatch: "*.lock"은 package-lock.json과 매칭되지 않음
+    - "**/pnpm-lock.yaml"
+    - "*.generated.*"
+    - "dist/**"
+    - "node_modules/**"
+    - "docs/plans/**" # 작업 플랜 HTML은 리뷰 대상 아님
