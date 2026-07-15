@@ -37,6 +37,15 @@ export async function getValues(env: Env, tab: string, range: string): Promise<s
   return body.values ?? [];
 }
 
+/** 스프레드시트의 모든 탭 제목을 순서대로 반환한다. */
+export async function getSheetTitles(env: Env): Promise<string[]> {
+  const res = await sheetsFetch(env, "GET", "?fields=sheets.properties.title");
+  const body = (await res.json()) as { sheets?: { properties?: { title?: string } }[] };
+  return (body.sheets ?? [])
+    .map((sheet) => sheet.properties?.title)
+    .filter((title): title is string => !!title);
+}
+
 /** 지정 범위에 값을 덮어쓴다. RAW: 문자열을 그대로 저장 (PRD의 `날짜|간격` 같은 텍스트 계약 보호). */
 export async function updateValues(
   env: Env,
