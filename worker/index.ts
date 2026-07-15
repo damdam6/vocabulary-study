@@ -6,7 +6,7 @@ export default {
     const url = new URL(request.url);
 
     if (url.pathname.startsWith("/api/") && !isAuthorized(request, env)) {
-      return new Response(null, { status: 401 });
+      return new Response(null, { status: 401, headers: { "WWW-Authenticate": "Bearer" } });
     }
 
     if (url.pathname === "/api/health") {

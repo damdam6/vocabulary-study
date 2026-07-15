@@ -3,10 +3,13 @@
  */
 
 export function isAuthorized(request: Request, env: Env): boolean {
-  const header = request.headers.get("Authorization");
-  if (!header) {
+  if (!env.APP_PASSWORD) {
     return false;
   }
-  const [scheme, token] = header.split(" ");
-  return scheme === "Bearer" && token === env.APP_PASSWORD;
+  const header = request.headers.get("Authorization");
+  if (!header || !header.startsWith("Bearer ")) {
+    return false;
+  }
+  const token = header.substring("Bearer ".length);
+  return token === env.APP_PASSWORD;
 }
