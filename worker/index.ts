@@ -1,8 +1,13 @@
 import { handleGetWords } from "./routes/words.ts";
+import { isAuthorized } from "./lib/auth.ts";
 
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
+
+    if (url.pathname.startsWith("/api/") && !isAuthorized(request, env)) {
+      return new Response(null, { status: 401 });
+    }
 
     if (url.pathname === "/api/health") {
       return Response.json({ ok: true, time: new Date().toISOString() });
