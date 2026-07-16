@@ -3,6 +3,8 @@
  * POST /api/answer(#8)도 "GET과 같은 형태"로 응답해야 하므로 여기 정규화 로직을 재사용한다.
  */
 
+import { getValues } from "./sheets.ts";
+
 export const WORD_ROW_RANGE = "A2:F";
 
 export interface WordEntry {
@@ -30,6 +32,16 @@ export function parseWordRow(tab: string, row: string[]): WordEntry {
     nextReview,
     interval,
   };
+}
+
+/**
+ * 탭 이름 + A열 한자로 행 번호를 캐시 없이 재탐색한다 (PRD 4.2 — 사용자가 시트를
+ * 정렬·삽입할 수 있어 행 번호를 저장해두면 안 된다). 없으면 null.
+ */
+export async function findRowNumber(env: Env, tab: string, hanzi: string): Promise<number | null> {
+  const column = await getValues(env, tab, "A2:A");
+  const index = column.findIndex((row) => row[0] === hanzi);
+  return index === -1 ? null : index + 2;
 }
 
 // F열 형식: `YYYY-MM-DD|일수`. 수동 편집 등으로 형식이 깨지면 throw 대신 빈 상태로 취급한다.
