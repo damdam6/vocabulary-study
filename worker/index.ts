@@ -1,4 +1,5 @@
 import { handleGetWords } from "./routes/words.ts";
+import { handleReviewFail } from "./routes/review-fail.ts";
 import { isAuthorized } from "./lib/auth.ts";
 
 export default {
@@ -19,6 +20,15 @@ export default {
       } catch (err) {
         console.error("[GET /api/words]", err);
         return Response.json({ error: "failed to load words" }, { status: 500 });
+      }
+    }
+
+    if (url.pathname === "/api/review-fail" && request.method === "POST") {
+      try {
+        return await handleReviewFail(env, request);
+      } catch (err) {
+        console.error("[POST /api/review-fail]", err);
+        return Response.json({ error: "failed to update review interval" }, { status: 500 });
       }
     }
 

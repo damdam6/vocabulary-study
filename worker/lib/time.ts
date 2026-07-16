@@ -19,3 +19,22 @@ export function formatSeoulDateTime(date: Date): string {
   const parts = Object.fromEntries(formatter.formatToParts(date).map((p) => [p.type, p.value]));
   return `${parts.year}-${parts.month}-${parts.day} ${parts.hour}:${parts.minute}`;
 }
+
+/** `date`를 Asia/Seoul 기준 `YYYY-MM-DD` 문자열로 변환한다. */
+export function formatSeoulDate(date: Date): string {
+  const parts = Object.fromEntries(formatter.formatToParts(date).map((p) => [p.type, p.value]));
+  return `${parts.year}-${parts.month}-${parts.day}`;
+}
+
+// Asia/Seoul은 DST가 없는 고정 UTC+9라, 추출한 서울 달력 날짜를 그대로 UTC 앵커로 다뤄도
+// 일 단위 가감산이 타임존 경계 없이 정확하다.
+/** `YYYY-MM-DD` 문자열에 `days`일을 더한 `YYYY-MM-DD` 문자열을 반환한다. */
+export function addDays(dateStr: string, days: number): string {
+  const [year, month, day] = dateStr.split("-").map(Number);
+  const anchor = new Date(Date.UTC(year, month - 1, day));
+  anchor.setUTCDate(anchor.getUTCDate() + days);
+  const y = anchor.getUTCFullYear();
+  const m = String(anchor.getUTCMonth() + 1).padStart(2, "0");
+  const d = String(anchor.getUTCDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}

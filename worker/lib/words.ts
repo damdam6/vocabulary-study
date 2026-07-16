@@ -1,7 +1,10 @@
 /**
  * 시트 행(A2:F) ↔ 단어 객체 변환. PRD 4.2(컬럼 계약)·7.3(GET /api/words 응답)을 따른다.
- * POST /api/answer(#8)도 "GET과 같은 형태"로 응답해야 하므로 여기 정규화 로직을 재사용한다.
+ * POST /api/answer(#8)·POST /api/review-fail(#9)도 "GET과 같은 형태"로 응답해야 하므로
+ * 여기 정규화 로직과, 탭+A열 한자로 행을 재탐색하는 findWordRow를 함께 재사용한다.
  */
+
+import { getValues } from "./sheets.ts";
 
 export const WORD_ROW_RANGE = "A2:F";
 
@@ -30,6 +33,22 @@ export function parseWordRow(tab: string, row: string[]): WordEntry {
     nextReview,
     interval,
   };
+}
+
+export interface FoundWordRow {
+  rowNumber: number;
+  entry: WordEntry;
+}
+
+// 행 번호를 캐시하지 않고 쓰기 시점마다 재탐색한다(PRD 4.2 — 사용자가 시트를 정렬/삽입할 수 있음).
+/** 탭+A열 한자로 행을 찾아 시트 행 번호(헤더 오프셋 +2)와 정규화된 단어를 함께 반환한다. 없으면 null. */
+export async function findWordRow(env: Env, tab: string, hanzi: string): Promise<FoundWordRow | null> {
+  const rows = await getValues(env, tab, WORD_ROW_RANGE);
+  const index = rows.findIndex((row) => row[0] === hanzi);
+  if (index === -1) {
+    return null;
+  }
+  return { rowNumber: index + 2, entry: parseWordRow(tab, rows[index]) };
 }
 
 // F열 형식: `YYYY-MM-DD|일수`. 수동 편집 등으로 형식이 깨지면 throw 대신 빈 상태로 취급한다.
