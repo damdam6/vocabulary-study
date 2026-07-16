@@ -5,7 +5,7 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
-    if (url.pathname.startsWith("/api/") && !isAuthorized(request, env)) {
+    if (url.pathname.startsWith("/api/") && !(await isAuthorized(request, env))) {
       return new Response(null, { status: 401, headers: { "WWW-Authenticate": "Bearer" } });
     }
 
