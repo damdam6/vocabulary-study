@@ -9,13 +9,30 @@ import { findWordRow } from "../lib/words.ts";
 import { stepBack } from "../lib/interval.ts";
 
 interface ReviewFailBody {
-  tab?: unknown;
-  hanzi?: unknown;
+  tab: string;
+  hanzi: string;
+}
+
+function parseReviewFailBody(value: unknown): ReviewFailBody | null {
+  if (typeof value !== "object" || value === null) {
+    return null;
+  }
+  const { tab, hanzi } = value as Record<string, unknown>;
+  if (typeof tab !== "string" || typeof hanzi !== "string") {
+    return null;
+  }
+  return { tab, hanzi };
 }
 
 export async function handleReviewFail(env: Env, request: Request): Promise<Response> {
-  const body = (await request.json()) as ReviewFailBody;
-  if (typeof body.tab !== "string" || typeof body.hanzi !== "string") {
+  let json: unknown;
+  try {
+    json = await request.json();
+  } catch {
+    return Response.json({ error: "invalid JSON body" }, { status: 400 });
+  }
+  const body = parseReviewFailBody(json);
+  if (!body) {
     return Response.json({ error: "tab, hanzi(문자열) 필요" }, { status: 400 });
   }
 
