@@ -40,6 +40,10 @@ export function getWordState(word: WordProgress, today: string): WordState {
   // 졸업(m1≥3 && m2≥3)했는데 nextReview가 없는 경우는 PRD에 정의되지 않은 데이터
   // 이상 상태다(정상 흐름에서는 졸업 시 F열이 항상 채워진다). 알 수 없는 미래로
   // 영원히 숨기기보다 복습 대기로 취급해 눈에 띄게 한다.
+  //
+  // nextReview·today는 항상 YYYY-MM-DD(zero-padded) 문자열이라는 전제로 사전식
+  // 비교를 쓴다 — nextReview는 parseNextReview(worker/lib/words.ts)가, today는
+  // getSeoulToday가 각각 이 형식을 보장하는 경계이므로 여기서 다시 파싱/검증하지 않는다.
   if (word.nextReview === null || word.nextReview <= today) {
     return "reviewDue";
   }
