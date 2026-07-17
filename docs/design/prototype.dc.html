@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&amp;family=Noto+Sans+SC:wght@400;500;700&amp;family=Noto+Serif+SC:wght@500;600&amp;display=swap">
+<style>
+body{margin:0;background:#0b0d12;color:#e8ebf2;font-family:'Noto Sans KR',-apple-system,'Apple SD Gothic Neo',sans-serif;-webkit-font-smoothing:antialiased}
+a{color:#7ea4f7}a:hover{color:#a9c2fa}
+input{font-family:inherit;outline:none}
+input::placeholder{color:#4a5163}
+button{font-family:inherit;cursor:pointer}
+@keyframes popfb{0%{opacity:0;transform:scale(.5)}30%{opacity:1;transform:scale(1.1)}75%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1)}}
+@keyframes fadeup{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-7px)}40%,80%{transform:translateX(7px)}}
+</style>
+</helmet>
+<div style="min-height:100dvh;display:flex;justify-content:center;background:#0b0d12">
+<div style="width:100%;max-width:430px;min-height:100dvh;display:flex;flex-direction:column;position:relative;background:#10131a;border-left:1px solid rgba(255,255,255,0.04);border-right:1px solid rgba(255,255,255,0.04)">
+
+<sc-if value="{{ isAuth }}" hint-placeholder-val="{{ true }}">
+<div style="flex:1;display:flex;flex-direction:column;justify-content:center;padding:36px 30px 60px">
+  <div lang="zh-Hans" style="width:58px;height:58px;border-radius:17px;background:linear-gradient(135deg,#2f63e6,#5b8bf5);display:flex;align-items:center;justify-content:center;font-size:30px;color:#ffffff;font-weight:700">词</div>
+  <h1 style="margin:22px 0 0;font-size:26px;font-weight:700;letter-spacing:-0.02em">단어 암기</h1>
+  <p style="margin:8px 0 0;font-size:14px;line-height:1.6;color:#8b93a5">구글 시트의 단어로 오늘의 퀴즈를 만듭니다.<br>비밀번호를 입력하세요.</p>
+  <form onSubmit="{{ submitAuth }}" style="display:flex;flex-direction:column;gap:12px;margin-top:30px">
+    <input ref="{{ authRef }}" type="password" placeholder="비밀번호" autoComplete="off" style="height:54px;border-radius:14px;border:1px solid rgba(255,255,255,0.1);background:#181c26;color:#e8ebf2;font-size:16px;padding:0 18px"></input>
+    <button type="submit" style="height:54px;border-radius:14px;border:none;background:#2f63e6;color:#ffffff;font-size:16px;font-weight:700" style-active="transform:scale(0.98)">들어가기</button>
+  </form>
+  <p style="margin:14px 0 0;font-size:12px;color:#4a5163">프로토타입 — 아무 값이나 입력하면 됩니다</p>
+</div>
+</sc-if>
+
+<sc-if value="{{ isHome }}" hint-placeholder-val="{{ false }}">
+<div style="flex:1;display:flex;flex-direction:column;padding:30px 24px 26px">
+  <p style="margin:0;font-size:13px;font-weight:500;color:#8b93a5">{{ dateLabel }}</p>
+  <h1 style="margin:6px 0 0;font-size:27px;font-weight:700;letter-spacing:-0.02em">오늘의 학습</h1>
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:26px">
+    <div style="background:#181c26;border:1px solid rgba(255,255,255,0.06);border-radius:15px;padding:18px 6px;display:flex;flex-direction:column;align-items:center;gap:5px">
+      <span style="font-size:27px;font-weight:700;color:#7ea4f7;font-variant-numeric:tabular-nums">{{ dueN }}</span>
+      <span style="font-size:12px;color:#8b93a5">복습 대기</span>
+    </div>
+    <div style="background:#181c26;border:1px solid rgba(255,255,255,0.06);border-radius:15px;padding:18px 6px;display:flex;flex-direction:column;align-items:center;gap:5px">
+      <span style="font-size:27px;font-weight:700;color:#e8ebf2;font-variant-numeric:tabular-nums">{{ learnN }}</span>
+      <span style="font-size:12px;color:#8b93a5">학습 중</span>
+    </div>
+    <div style="background:#181c26;border:1px solid rgba(255,255,255,0.06);border-radius:15px;padding:18px 6px;display:flex;flex-direction:column;align-items:center;gap:5px">
+      <span style="font-size:27px;font-weight:700;color:#3fce8f;font-variant-numeric:tabular-nums">{{ gradN }}</span>
+      <span style="font-size:12px;color:#8b93a5">졸업</span>
+    </div>
+  </div>
+  <div style="flex:1"></div>
+  <p style="margin:0 0 12px;text-align:center;font-size:13px;color:#8b93a5">오늘 세션 · {{ queueN }}문제</p>
+  <button onClick="{{ start }}" disabled="{{ startDisabled }}" style="height:58px;border-radius:16px;border:none;background:{{ startBg }};color:{{ startColor }};font-size:17px;font-weight:700;letter-spacing:-0.01em" style-active="transform:scale(0.98)">{{ startLabel }}</button>
+</div>
+</sc-if>
+
+<sc-if value="{{ isStudy }}" hint-placeholder-val="{{ false }}">
+<div style="flex:1;display:flex;flex-direction:column;padding:16px 20px 22px;min-height:0">
+  <div style="display:flex;align-items:center;justify-content:space-between">
+    <button onClick="{{ goHome }}" style="height:34px;padding:0 14px;border-radius:10px;border:1px solid rgba(255,255,255,0.1);background:transparent;color:#8b93a5;font-size:13px;font-weight:500;white-space:nowrap">종료</button>
+    <div style="font-size:16px;font-variant-numeric:tabular-nums"><span style="font-weight:700;color:#e8ebf2">{{ posN }}</span><span style="color:#5a6172"> / {{ totalN }}</span></div>
+    <div style="width:62px"></div>
+  </div>
+  <div style="display:flex;gap:8px;justify-content:center;margin-top:16px">
+    <sc-if value="{{ isReview }}" hint-placeholder-val="{{ false }}">
+      <span style="padding:5px 12px;border-radius:999px;font-size:12px;font-weight:500;background:rgba(91,139,245,0.14);color:#7ea4f7">복습</span>
+    </sc-if>
+    <span style="padding:5px 12px;border-radius:999px;font-size:12px;font-weight:500;background:#181c26;border:1px solid rgba(255,255,255,0.07);color:#8b93a5">{{ modeLabel }}</span>
+  </div>
+
+  <sc-if value="{{ isM1 }}" hint-placeholder-val="{{ false }}">
+    <div style="flex:1;margin-top:16px;position:relative;perspective:1200px;min-height:0">
+      <div onClick="{{ reveal }}" style="position:absolute;inset:0;transform-style:preserve-3d;transition:transform 0.55s cubic-bezier(0.3,0.7,0.2,1);transform:{{ flipT }}">
+        <div style="position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;background:#171b24;border:1px solid rgba(255,255,255,0.07);border-radius:22px;box-shadow:0 20px 40px rgba(0,0,0,0.35);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px">
+          <span lang="zh-Hans" style="font-size:{{ hanziSize }};font-weight:500;letter-spacing:0.04em;font-family:{{ hanziFF }}">{{ qHanzi }}</span>
+          <span style="position:absolute;bottom:22px;font-size:13px;color:#5a6172">탭해서 뜻 보기</span>
+        </div>
+        <div style="position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;transform:rotateX(180deg);background:#171b24;border:1px solid rgba(255,255,255,0.07);border-radius:22px;box-shadow:0 20px 40px rgba(0,0,0,0.35);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px">
+          <span lang="zh-Hans" style="font-size:44px;font-weight:500;font-family:{{ hanziFF }}">{{ qHanzi }}</span>
+          <span style="font-size:20px;color:#7ea4f7;font-weight:500">{{ qPinyin }}</span>
+          <span style="font-size:23px;font-weight:500;color:#e8ebf2;text-align:center;text-wrap:pretty">{{ qMeaning }}</span>
+        </div>
+      </div>
+    </div>
+    <div style="min-height:132px;display:flex;align-items:flex-end;justify-content:center;padding-top:18px">
+      <sc-if value="{{ revealed }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;gap:20px;animation:fadeup 0.3s ease">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+            <button onClick="{{ judgeX }}" style="width:82px;height:82px;border-radius:50%;border:2px solid #f0655a;background:rgba(240,101,90,0.1);color:#f0655a;font-size:32px;font-weight:800" style-active="transform:scale(0.94)">X</button>
+            <span style="font-size:12px;color:#8b93a5">몰랐음</span>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+            <button onClick="{{ judgeO }}" style="width:82px;height:82px;border-radius:50%;border:2px solid #3fce8f;background:rgba(63,206,143,0.1);color:#3fce8f;font-size:32px;font-weight:800" style-active="transform:scale(0.94)">O</button>
+            <span style="font-size:12px;color:#8b93a5">알고 있었음</span>
+          </div>
+        </div>
+      </sc-if>
+      <sc-if value="{{ notRevealed }}" hint-placeholder-val="{{ false }}">
+        <p style="margin:0 0 34px;font-size:13px;color:#3c4252">카드를 탭하면 뜻이 보입니다</p>
+      </sc-if>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isM2 }}" hint-placeholder-val="{{ false }}">
+    <sc-if value="{{ isM2Answer }}" hint-placeholder-val="{{ false }}">
+      <div style="flex:1;margin-top:16px;background:#171b24;border:1px solid rgba(255,255,255,0.07);border-radius:22px;box-shadow:0 20px 40px rgba(0,0,0,0.35);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;min-height:0">
+        <span style="font-size:27px;font-weight:600;text-align:center;line-height:1.4;text-wrap:pretty">{{ qMeaning }}</span>
+        <span style="margin-top:14px;font-size:13px;color:#5a6172">이 뜻의 한자를 입력하세요</span>
+      </div>
+      <form onSubmit="{{ submitM2 }}" style="display:flex;flex-direction:column;gap:12px;padding-top:18px">
+        <input ref="{{ m2Ref }}" type="text" lang="zh-Hans" placeholder="汉字" autoComplete="off" autoCorrect="off" autoCapitalize="off" spellCheck="{{ false }}" enterKeyHint="done" style="height:60px;border-radius:14px;border:1px solid rgba(255,255,255,0.1);background:#181c26;color:#e8ebf2;font-size:28px;text-align:center;font-family:{{ hanziFF }}"></input>
+        <button type="submit" style="height:54px;border-radius:14px;border:none;background:#2f63e6;color:#ffffff;font-size:16px;font-weight:700" style-active="transform:scale(0.98)">제출</button>
+      </form>
+    </sc-if>
+    <sc-if value="{{ isM2Result }}" hint-placeholder-val="{{ false }}">
+      <div style="flex:1;margin-top:16px;background:#171b24;border:1px solid rgba(255,255,255,0.07);border-radius:22px;box-shadow:0 20px 40px rgba(0,0,0,0.35);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:11px;padding:24px;min-height:0;animation:fadeup 0.3s ease">
+        <span style="font-size:19px;font-weight:700;color:{{ m2Color }};animation:{{ m2Anim }}">{{ m2Title }}</span>
+        <span lang="zh-Hans" style="font-size:50px;font-weight:500;margin-top:4px;font-family:{{ hanziFF }}">{{ qHanzi }}</span>
+        <span style="font-size:19px;color:#7ea4f7;font-weight:500">{{ qPinyin }}</span>
+        <span style="font-size:21px;font-weight:500;color:#e8ebf2;text-align:center;text-wrap:pretty">{{ qMeaning }}</span>
+        <sc-if value="{{ m2Wrong }}" hint-placeholder-val="{{ false }}">
+          <span lang="zh-Hans" style="font-size:14px;color:#8b93a5">내 답: <span style="color:#f0655a;text-decoration:line-through">{{ m2Val }}</span></span>
+        </sc-if>
+      </div>
+      <div style="padding-top:18px">
+        <button onClick="{{ nextM2 }}" style="width:100%;height:54px;border-radius:14px;border:none;background:#2f63e6;color:#ffffff;font-size:16px;font-weight:700" style-active="transform:scale(0.98)">다음</button>
+      </div>
+    </sc-if>
+  </sc-if>
+</div>
+<sc-if value="{{ fbShow }}" hint-placeholder-val="{{ false }}">
+  <div style="position:absolute;inset:0;z-index:10;pointer-events:none;display:flex;align-items:center;justify-content:center;background:{{ fbBg }}">
+    <span style="font-size:130px;font-weight:800;color:{{ fbColor }};animation:popfb 0.68s ease forwards">{{ fbGlyph }}</span>
+  </div>
+</sc-if>
+</sc-if>
+
+<sc-if value="{{ isDone }}" hint-placeholder-val="{{ false }}">
+<div style="flex:1;display:flex;flex-direction:column;padding:30px 24px 26px">
+  <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px">
+    <div style="width:76px;height:76px;border-radius:50%;background:rgba(63,206,143,0.12);display:flex;align-items:center;justify-content:center;font-size:34px;color:#3fce8f;font-weight:700">✓</div>
+    <h2 style="margin:0;font-size:24px;font-weight:700">세션 완료</h2>
+    <p style="margin:-6px 0 0;font-size:13px;color:#8b93a5">기록은 문제 단위로 이미 저장되었습니다</p>
+    <div style="display:flex;gap:44px;margin-top:18px">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+        <span style="font-size:40px;font-weight:700;color:#3fce8f;font-variant-numeric:tabular-nums">{{ sCorrect }}</span>
+        <span style="font-size:13px;color:#8b93a5">정답</span>
+      </div>
+      <div style="width:1px;background:rgba(255,255,255,0.08)"></div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+        <span style="font-size:40px;font-weight:700;color:#f0655a;font-variant-numeric:tabular-nums">{{ sWrong }}</span>
+        <span style="font-size:13px;color:#8b93a5">오답</span>
+      </div>
+    </div>
+  </div>
+  <button onClick="{{ goHome }}" style="height:58px;border-radius:16px;border:none;background:#2f63e6;color:#ffffff;font-size:17px;font-weight:700" style-active="transform:scale(0.98)">홈으로</button>
+</div>
+</sc-if>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:390,&quot;height&quot;:844},&quot;hanziFont&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;sans&quot;,&quot;serif&quot;],&quot;default&quot;:&quot;sans&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;타이포&quot;},&quot;m1AutoMs&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;min&quot;:300,&quot;max&quot;:1500,&quot;step&quot;:50,&quot;unit&quot;:&quot;ms&quot;,&quot;default&quot;:700,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;동작&quot;}}">
+class Component extends DCLogic {
+  state = { screen: 'auth', words: this.makeWords(), queue: [], pos: 0, revealed: false, phase: 'answer', fb: null, m2Correct: false, m2Val: '', sCorrect: 0, sWrong: 0 };
+  ladder = [1, 3, 7, 14, 30];
+
+  pad(n) { return (n < 10 ? '0' : '') + n }
+  dstr(d) { return d.getFullYear() + '-' + this.pad(d.getMonth() + 1) + '-' + this.pad(d.getDate()) }
+  addDays(n) { const d = new Date(); d.setDate(d.getDate() + n); return this.dstr(d) }
+  today() { return this.addDays(0) }
+
+  makeWords() {
+    const A = (h, p, m, m1, m2, off, iv) => ({ h, p, m, m1, m2, next: off === null ? null : this.addDays(off), interval: iv || null });
+    return [
+      A('经济', 'jīngjì', '경제', 3, 3, -2, 7), A('严重', 'yánzhòng', '심각하다', 3, 3, -1, 3),
+      A('环境', 'huánjìng', '환경', 3, 4, 0, 1), A('态度', 'tàidù', '태도', 4, 3, 0, 14),
+      A('打折', 'dǎzhé', '할인하다', 2, 2, null), A('相信', 'xiāngxìn', '믿다', 2, 1, null),
+      A('而且', 'érqiě', '게다가', 1, 2, null), A('收拾', 'shōushi', '정리하다, 치우다', 2, 0, null),
+      A('骄傲', 'jiāo\'ào', '거만하다, 자랑스럽다', 0, 1, null), A('顺便', 'shùnbiàn', '~하는 김에', 1, 0, null),
+      A('复杂', 'fùzá', '복잡하다', 0, 0, null), A('讨厌', 'tǎoyàn', '싫어하다', 0, 0, null),
+      A('关于', 'guānyú', '~에 관하여', 3, 3, 3, 7), A('感觉', 'gǎnjué', '느낌, 감각', 3, 3, 5, 14),
+      A('迟到', 'chídào', '지각하다', 4, 4, 10, 30), A('平时', 'píngshí', '평소', 3, 3, 2, 3),
+      A('好像', 'hǎoxiàng', '마치 ~같다', 3, 3, 8, 30)
+    ];
+  }
+
+  isGrad(w) { return w.m1 >= 3 && w.m2 >= 3 }
+  stats() {
+    const t = this.today(); let due = 0, learn = 0, grad = 0;
+    for (const w of this.state.words) { if (this.isGrad(w)) { grad++; if (w.next && w.next <= t) due++ } else learn++ }
+    return { due, learn, grad };
+  }
+  countQueue() {
+    const t = this.today(); let due = 0, cand = 0;
+    for (const w of this.state.words) {
+      if (this.isGrad(w)) { if (w.next && w.next <= t) due++ }
+      else { if (w.m1 < 3) cand++; if (w.m2 < 3) cand++ }
+    }
+    return Math.min(60, Math.min(due, 60) + cand);
+  }
+  buildQueue() {
+    const t = this.today(), due = [], learn = [];
+    this.state.words.forEach((w, i) => {
+      if (this.isGrad(w)) { if (w.next && w.next <= t) due.push({ w, i }) } else learn.push({ w, i });
+    });
+    due.sort((a, b) => a.w.next < b.w.next ? -1 : a.w.next > b.w.next ? 1 : 0);
+    const q = due.slice(0, 60).map(x => ({ i: x.i, mode: Math.random() < 0.5 ? 'm1' : 'm2', review: true }));
+    learn.sort((a, b) => (b.w.m1 + b.w.m2) - (a.w.m1 + a.w.m2));
+    for (const x of learn) {
+      if (x.w.m1 < 3 && q.length < 60) q.push({ i: x.i, mode: 'm1', review: false });
+      if (x.w.m2 < 3 && q.length < 60) q.push({ i: x.i, mode: 'm2', review: false });
+    }
+    for (let k = q.length - 1; k > 0; k--) { const j = Math.floor(Math.random() * (k + 1)); [q[k], q[j]] = [q[j], q[k]] }
+    for (let k = 1; k < q.length; k++) {
+      if (q[k].i === q[k - 1].i) { const j = q.findIndex((it, idx) => idx > k && it.i !== q[k - 1].i); if (j > 0) { [q[k], q[j]] = [q[j], q[k]] } }
+    }
+    return q;
+  }
+
+  cur() { return this.state.queue[this.state.pos] }
+  applyCorrect(i, mode, review) {
+    const words = this.state.words.slice(); const w = { ...words[i] };
+    w[mode] += 1;
+    if (review) { const idx = Math.max(0, this.ladder.indexOf(w.interval)); const ni = Math.min(idx + 1, 4); w.interval = this.ladder[ni]; w.next = this.addDays(w.interval) }
+    else if (w.m1 >= 3 && w.m2 >= 3 && !w.next) { w.interval = 1; w.next = this.addDays(1) }
+    words[i] = w; this.setState({ words });
+  }
+  reviewFail(i) {
+    const words = this.state.words.slice(); const w = { ...words[i] };
+    const idx = Math.max(0, this.ladder.indexOf(w.interval)); const ni = Math.max(0, idx - 1);
+    w.interval = this.ladder[ni]; w.next = this.addDays(w.interval);
+    words[i] = w; this.setState({ words });
+  }
+
+  authRef = (el) => { this._auth = el; if (el) setTimeout(() => el.focus(), 60) };
+  m2Ref = (el) => { this._m2 = el };
+  focusM2 = () => {
+    const q = this.cur();
+    if (this.state.screen === 'study' && q && q.mode === 'm2' && this.state.phase === 'answer' && this._m2) {
+      this._m2.value = ''; setTimeout(() => this._m2 && this._m2.focus(), 80);
+    }
+  };
+
+  submitAuth = (e) => { e.preventDefault(); const v = this._auth ? this._auth.value.trim() : ''; if (!v) return; this.setState({ screen: 'home' }) };
+  start = () => {
+    const q = this.buildQueue(); if (!q.length) return;
+    this.setState({ screen: 'study', queue: q, pos: 0, revealed: false, phase: 'answer', fb: null, sCorrect: 0, sWrong: 0 }, this.focusM2);
+  };
+  goHome = () => { clearTimeout(this._t); this.setState({ screen: 'home', fb: null }) };
+  reveal = () => { if (!this.state.revealed && !this.state.fb) this.setState({ revealed: true }) };
+
+  judge(ok) {
+    if (this.state.fb) return;
+    const q = this.cur();
+    if (ok) this.applyCorrect(q.i, q.mode, q.review); else if (q.review) this.reviewFail(q.i);
+    this.setState({ fb: ok ? 'o' : 'x' });
+    this._t = setTimeout(() => this.advance(ok), this.props.m1AutoMs ?? 700);
+  }
+  judgeO = () => this.judge(true);
+  judgeX = () => this.judge(false);
+
+  advance(ok) {
+    const s = this.state; const q = s.queue[s.pos];
+    let queue = s.queue;
+    if (!ok && !q.review && !q.re && queue.length < 60) queue = queue.concat([{ ...q, re: true }]);
+    const pos = s.pos + 1;
+    const upd = { fb: null, revealed: false, phase: 'answer', queue, sCorrect: s.sCorrect + (ok ? 1 : 0), sWrong: s.sWrong + (ok ? 0 : 1) };
+    if (pos >= queue.length) upd.screen = 'done'; else upd.pos = pos;
+    this.setState(upd, this.focusM2);
+  }
+  submitM2 = (e) => {
+    e.preventDefault();
+    if (this.state.phase !== 'answer' || this.state.fb) return;
+    const q = this.cur(); const w = this.state.words[q.i];
+    const v = (this._m2 ? this._m2.value : '').trim();
+    const ok = v === w.h;
+    if (ok) this.applyCorrect(q.i, 'm2', q.review); else if (q.review) this.reviewFail(q.i);
+    this.setState({ phase: 'result', m2Correct: ok, m2Val: v });
+  };
+  nextM2 = () => { this.advance(this.state.m2Correct) };
+
+  componentWillUnmount() { clearTimeout(this._t) }
+
+  renderVals() {
+    const s = this.state, st = this.stats(), q = s.queue[s.pos], w = q ? s.words[q.i] : null;
+    const hanziFF = (this.props.hanziFont ?? 'sans') === 'serif' ? "'Noto Serif SC', serif" : "'Noto Sans SC', 'Noto Sans KR', sans-serif";
+    const d = new Date();
+    const dateLabel = d.getFullYear() + '년 ' + (d.getMonth() + 1) + '월 ' + d.getDate() + '일 ' + ['일', '월', '화', '수', '목', '금', '토'][d.getDay()] + '요일';
+    const queueN = this.countQueue();
+    const hl = w ? w.h.length : 2;
+    return {
+      isAuth: s.screen === 'auth', isHome: s.screen === 'home', isStudy: s.screen === 'study', isDone: s.screen === 'done',
+      dateLabel, dueN: st.due, learnN: st.learn, gradN: st.grad,
+      queueN, startDisabled: queueN === 0,
+      startLabel: queueN === 0 ? '오늘 할 것 없음' : '학습 시작',
+      startBg: queueN === 0 ? '#20242e' : '#2f63e6', startColor: queueN === 0 ? '#5a6172' : '#ffffff',
+      posN: Math.min(s.pos + 1, s.queue.length), totalN: s.queue.length,
+      isM1: !!q && q.mode === 'm1', isM2: !!q && q.mode === 'm2',
+      isReview: !!q && q.review, modeLabel: q ? (q.mode === 'm1' ? '한자 → 뜻' : '뜻 → 한자') : '',
+      qHanzi: w ? w.h : '', qPinyin: w ? w.p : '', qMeaning: w ? w.m : '',
+      hanziSize: hl <= 2 ? '84px' : hl === 3 ? '64px' : '52px',
+      flipT: s.revealed ? 'rotateX(-180deg)' : 'rotateX(0deg)',
+      revealed: s.revealed, notRevealed: !s.revealed,
+      isM2Answer: s.phase === 'answer', isM2Result: s.phase === 'result',
+      m2Title: s.m2Correct ? '정답' : '오답', m2Color: s.m2Correct ? '#3fce8f' : '#f0655a',
+      m2Anim: s.m2Correct ? 'fadeup 0.3s ease' : 'shake 0.4s ease',
+      m2Wrong: s.phase === 'result' && !s.m2Correct && !!s.m2Val, m2Val: s.m2Val,
+      fbShow: !!s.fb, fbGlyph: s.fb === 'o' ? 'O' : 'X',
+      fbColor: s.fb === 'o' ? '#3fce8f' : '#f0655a',
+      fbBg: s.fb === 'o' ? 'rgba(63,206,143,0.08)' : 'rgba(240,101,90,0.08)',
+      sCorrect: s.sCorrect, sWrong: s.sWrong,
+      hanziFF, authRef: this.authRef, m2Ref: this.m2Ref,
+      submitAuth: this.submitAuth, start: this.start, goHome: this.goHome, reveal: this.reveal,
+      judgeO: this.judgeO, judgeX: this.judgeX, submitM2: this.submitM2, nextM2: this.nextM2
+    };
+  }
+}
+</script>
+</body>
+</html>
