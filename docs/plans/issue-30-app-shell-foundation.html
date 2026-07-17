@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>#30 앱 셸 구축 — 데모 페이지 제거, 디자인 토큰·웹폰트·화면 전환 기반 마련 — 작업 플랜</title>
+<style>
+  :root {
+    --bg: #f7f7f8; --card: #ffffff; --ink: #1c1c1e; --muted: #6e6e73;
+    --line: #e3e3e6; --accent: #3b6ef5; --accent-soft: #e8eefe;
+    --ok: #2e8b57; --warn: #b25e09; --code-bg: #f0f0f2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161618; --card: #202024; --ink: #ececf0; --muted: #98989f;
+      --line: #333338; --accent: #7a9bff; --accent-soft: #26304a;
+      --ok: #58c088; --warn: #e0a35c; --code-bg: #2a2a2f;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 40px 20px 80px; background: var(--bg); color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+                 "Segoe UI", "Noto Sans KR", sans-serif;
+    line-height: 1.65;
+  }
+  main { max-width: 860px; margin: 0 auto; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code {
+    font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 0.86em;
+    background: var(--code-bg); border-radius: 5px; padding: 2px 6px;
+  }
+  header { margin-bottom: 28px; }
+  .issue-chip {
+    display: inline-block; font-weight: 700; color: var(--accent);
+    background: var(--accent-soft); border-radius: 999px;
+    padding: 3px 14px; font-size: 0.95rem; margin-bottom: 10px;
+  }
+  .type-chip {
+    display: inline-block; font-weight: 600; color: var(--muted);
+    border: 1px solid var(--line); border-radius: 999px;
+    padding: 3px 12px; font-size: 0.8rem; margin-left: 8px; vertical-align: 2px;
+  }
+  h1 { font-size: 1.7rem; margin: 0 0 14px; letter-spacing: -0.02em; }
+  .meta {
+    display: flex; flex-wrap: wrap; gap: 6px 22px;
+    color: var(--muted); font-size: 0.87rem;
+  }
+  .meta b { color: var(--ink); font-weight: 600; }
+  section.card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 24px 28px; margin-top: 18px;
+  }
+  h2 {
+    font-size: 1.05rem; margin: 0 0 14px; letter-spacing: -0.01em;
+    display: flex; align-items: center; gap: 8px;
+  }
+  h2 .no {
+    color: var(--accent); font-size: 0.8rem; font-weight: 700;
+    border: 1.5px solid var(--accent); border-radius: 6px; padding: 0 6px;
+  }
+  ul, ol { margin: 0; padding-left: 22px; }
+  li { margin: 6px 0; }
+  .steps { list-style: none; padding: 0; counter-reset: step; }
+  .steps li {
+    counter-increment: step; position: relative; padding: 10px 0 10px 44px;
+    border-bottom: 1px dashed var(--line);
+  }
+  .steps li:last-child { border-bottom: none; }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 10px;
+    width: 28px; height: 28px; border-radius: 8px; background: var(--accent-soft);
+    color: var(--accent); font-weight: 700; font-size: 0.85rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .steps .files { display: block; margin-top: 4px; font-size: 0.85rem; color: var(--muted); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 0.82rem; }
+  .done-list { list-style: none; padding: 0; }
+  .done-list li { padding-left: 30px; position: relative; }
+  .done-list li::before {
+    content: ""; position: absolute; left: 2px; top: 7px; width: 15px; height: 15px;
+    border: 2px solid var(--ok); border-radius: 5px;
+  }
+  .scroll-x { overflow-x: auto; }
+  footer { margin-top: 30px; color: var(--muted); font-size: 0.8rem; text-align: center; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <span class="issue-chip"><a href="https://github.com/damdam6/vocabulary-study/issues/30">#30</a></span><span class="type-chip">기능 개선</span>
+    <h1>앱 셸 구축 — 데모 페이지 제거, 디자인 토큰·웹폰트·화면 전환 기반 마련</h1>
+    <div class="meta">
+      <span><b>damdam6/vocabulary-study</b></span>
+      <span>브랜치 <b><code>feat/30-app-shell-foundation</code></b> ← <code>main</code></span>
+      <span>라벨 <b>enhancement</b></span>
+      <span>2026-07-17</span>
+    </div>
+  </header>
+
+  <section class="card">
+    <h2><span class="no">1</span>요약</h2>
+    <p>Cloudflare 스캐폴딩 데모 페이지·자산·CSS를 전부 제거하고, <code>docs/design-prd.md</code> §1이 정의한 공통 기반 — 다크 테마 색 토큰(CSS 변수), Noto Sans KR/SC 웹폰트, 430px 중앙 컬럼 레이아웃, 공통 애니메이션(<code>popfb</code>/<code>fadeup</code>/<code>shake</code>) — 을 글로벌 스타일로 구축한다. 그 위에 상태 기반 4화면(로그인/홈/학습/완료) 전환 셸을 플레이스홀더 컴포넌트로 세워, 후속 프론트 이슈 #11(로그인)·#13(홈)·#14(세션 큐)·#15(학습 셸)가 병렬로 착수할 수 있게 한다.</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">2</span>현황 분석</h2>
+    <ul>
+      <li><b>데모 페이지</b>: <code>src/App.tsx:1-148</code>이 Cloudflare 스캐폴딩 그대로다 — 로고 3종 + <code>hero.png</code> import(<code>src/App.tsx:2-5</code>), 카운터 버튼, <code>/api/health</code> 체크 버튼(<code>src/App.tsx:39</code>), Vite 문서/소셜 링크 섹션. 전용 스타일 <code>src/App.css</code>(184줄)도 데모 전용.</li>
+      <li><b>데모 자산</b>: <code>src/assets/</code>의 <code>react.svg</code>·<code>vite.svg</code>·<code>cloudflare.svg</code>·<code>hero.png</code> 4개. <code>public/icons.svg</code>는 데모 페이지만 쓰는 아이콘 스프라이트(<code>src/App.tsx:58</code> 등 <code>/icons.svg#…</code> 참조). <code>public/favicon.svg</code>는 Vite 보라색 로고로 역시 데모 자산이며 <code>index.html:5</code>가 참조 중.</li>
+      <li><b>글로벌 스타일</b>: <code>src/index.css:1-51</code>이 스캐폴딩의 라이트/다크 자동 전환 토큰과 1126px 컬럼(<code>src/index.css:53-63</code>)을 정의 — design-prd(다크 고정, 430px 컬럼)와 전면 배치된다. 웹폰트·공통 애니메이션·화면 전환 구조 없음.</li>
+      <li><b><code>index.html</code></b>: <code>lang="en"</code>(<code>index.html:2</code>), title <code>vocabulary-study</code>(<code>index.html:7</code>), theme-color·폰트 링크 없음.</li>
+      <li><b>디자인 기준</b>: <code>docs/design-prd.md</code> §1.1(색 토큰 17종) · §1.2(폰트 스택, 웹폰트 로딩 방식) · §1.3(애니메이션 3종 — <code>popfb</code>는 목업 0.68s에서 <b>0.4s로 단축</b> 확정) · §1.4(레이아웃). 목업 원본 <code>docs/design/prototype.dc.html:16-27</code>에 글로벌 스타일·keyframes·컬럼 구조의 참조 구현이 있다. 단 목업 폰트 링크(<code>prototype.dc.html:14</code>)에 포함된 <code>Noto Serif SC</code>는 §8에서 기각된 옵션이므로 제외해야 한다.</li>
+      <li><b>백엔드는 완비</b>: <code>worker/index.ts</code>에 <code>/api/health</code>·<code>/api/words</code>·<code>/api/answer</code>·<code>/api/review-fail</code>이 이미 구현돼 있다. 이 이슈는 프론트 셸만 다루며 worker는 건드리지 않는다.</li>
+      <li><b>빌드 체인</b>: <code>tsconfig.app.json</code>에 <code>noUnusedLocals</code>/<code>noUnusedParameters</code>가 켜져 있고(<code>tsconfig.app.json:22-23</code>), lint는 oxlint(react 플러그인), 테스트는 vitest(<code>src/lib/wordState.test.ts</code> 기존 테스트 존재). CI는 main 푸시 시 배포만 하므로(<code>.github/workflows/deploy.yml</code>) 검증은 로컬 <code>build/lint/test</code>가 기준.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">3</span>설계</h2>
+    <ul>
+      <li><b>글로벌 스타일 = <code>src/index.css</code> 전면 재작성</b> (파일 추가 없이 단일 파일 유지):
+        <ul>
+          <li><code>:root</code>에 §1.1 토큰 17종을 CSS 변수로 정의 — <code>--bg-page: #0b0d12</code>, <code>--bg-app: #10131a</code>, <code>--bg-card</code>, <code>--bg-panel</code>, <code>--bg-disabled</code>, <code>--border-faint</code>, <code>--border-card</code>, <code>--border-input</code>, <code>--text</code>, <code>--text-muted</code>, <code>--text-faint</code>, <code>--text-placeholder</code>, <code>--text-hint-dim</code>, <code>--accent</code>, <code>--accent-light</code>, <code>--green</code>, <code>--red</code>. <code>color-scheme: dark</code>로 다크 고정(라이트 모드 없음 — §1.1).</li>
+          <li>body 기본: margin 0, <code>var(--bg-page)</code> 배경, <code>var(--text)</code>, UI 폰트 스택 <code>'Noto Sans KR', -apple-system, 'Apple SD Gothic Neo', sans-serif</code>, 안티앨리어싱 (<code>prototype.dc.html:16</code> 이식).</li>
+          <li><b><code>:lang(zh-Hans)</code> 셀렉터</b>로 한자 폰트 <code>'Noto Sans SC', 'Noto Sans KR', sans-serif</code> 자동 적용 — 후속 이슈들이 <code>lang="zh-Hans"</code> 속성만 붙이면 폰트가 따라오게 해서 §1.2 규칙("한자 표시 요소는 항상 lang=zh-Hans")을 CSS 한 곳으로 수렴.</li>
+          <li>공용 리셋: <code>input</code>/<code>button</code> font-family 상속, input <code>outline:none</code> + placeholder 색 <code>var(--text-placeholder)</code>, button <code>cursor:pointer</code> (<code>prototype.dc.html:18-20</code>).</li>
+          <li>keyframes 3종 <code>popfb</code>/<code>fadeup</code>/<code>shake</code> — 목업 <code>prototype.dc.html:21-23</code> 곡선 그대로. duration은 사용처에서 지정하는 값이므로 keyframes만 정의(§5.1의 popfb 0.4s 단축은 #15가 사용 시점에 적용).</li>
+          <li>레이아웃 클래스 <code>.app-frame</code>(min-height 100dvh, flex 중앙, <code>--bg-page</code>) + <code>.app-column</code>(width 100%, max-width 430px, min-height 100dvh, flex column, <code>--bg-app</code>, 좌우 1px <code>--border-faint</code>, position relative — 피드백 오버레이 #15의 앵커) — <code>prototype.dc.html:26-27</code> 구조 이식.</li>
+        </ul>
+      </li>
+      <li><b>화면 전환 = <code>useState</code> 기반</b>: <code>src/App.tsx</code>가 <code>type Screen = 'login' | 'home' | 'study' | 'done'</code> 상태를 보유하고 전환 콜백을 플레이스홀더에 내려준다. 전환 그래프: login→home(로그인 성공) · home→study(학습 시작) · study→home(종료) · study→done(세션 완료) · done→home(홈으로). <i>기각</i>: react-router(4화면 SPA에 과함, 이슈가 "상태 기반" 명시), Context/전역 스토어(콜백 5개는 props로 충분 — 필요해지면 후속 이슈에서 도입).</li>
+      <li><b>플레이스홀더 4개 = <code>src/screens/</code></b>: <code>LoginScreen</code>/<code>HomeScreen</code>/<code>StudyScreen</code>/<code>DoneScreen</code>. 각각 화면명 텍스트 + 전환 버튼만 가진 최소 구현으로, 파일 경로와 props 시그니처(<code>onLogin</code>/<code>onStart</code>/<code>onExit</code>·<code>onComplete</code>/<code>onGoHome</code>)를 이 이슈에서 확정하고 내부는 #11/#13/#15가 채운다. StudyScreen 플레이스홀더에 <code>lang="zh-Hans"</code> 한자 샘플 한 줄을 넣어 완료 조건의 폰트 적용 확인이 셸 단계에서 가능하게 한다.</li>
+      <li><b>웹폰트 = <code>index.html</code></b>: <code>preconnect</code> 2건(googleapis/gstatic) + <code>css2?family=Noto+Sans+KR:wght@400;500;700&amp;family=Noto+Sans+SC:wght@400;500;700&amp;display=swap</code>. 목업 링크에서 Serif SC만 제거한 형태. CDN 실패 시 폴백 스택으로 동작(§1.2). <i>기각</i>: 셀프 호스팅 서브셋(§8 — 시트에 단어가 계속 추가돼 정적 서브셋 위험).</li>
+      <li><b>favicon 교체</b>: <code>public/favicon.svg</code>(Vite 로고)를 design-prd §1.1 로고 사양 축소판 — 둥근 사각형 <code>linear-gradient(135deg,#2f63e6,#5b8bf5)</code> + 흰색 "词" — 의 미니 SVG로 교체. 단순 삭제하면 <code>index.html:5</code> 참조가 404가 되고, 유지하면 "빌드 결과에 데모 자산 없음" 완료 조건에 걸리므로 교체가 맞다. (이슈 본문에 없는 결정 — PR에서 명시할 것.)</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">4</span>작업 단계</h2>
+    <ol class="steps">
+      <li>데모 파일 삭제 — 데모 페이지 전용 CSS·자산·아이콘 스프라이트를 <code>git rm</code>
+        <span class="files"><code>src/App.css</code>, <code>src/assets/react.svg</code>, <code>src/assets/vite.svg</code>, <code>src/assets/cloudflare.svg</code>, <code>src/assets/hero.png</code>, <code>public/icons.svg</code></span>
+      </li>
+      <li>favicon 교체 — Vite 로고를 "词" 그라데이션 로고 SVG로 교체 (§1.1 로고 사양 축소판)
+        <span class="files"><code>public/favicon.svg</code></span>
+      </li>
+      <li><code>index.html</code> 재작성 — <code>lang="ko"</code>, <code>&lt;title&gt;단어 암기&lt;/title&gt;</code>, <code>&lt;meta name="theme-color" content="#0b0d12"&gt;</code>, preconnect 2건 + Noto Sans KR/SC 400·500·700 <code>display=swap</code> 폰트 링크
+        <span class="files"><code>index.html</code></span>
+      </li>
+      <li>글로벌 스타일 재작성 — §1.1 토큰 CSS 변수, <code>color-scheme: dark</code>, body 기본·폰트 스택, <code>:lang(zh-Hans)</code> 한자 폰트, input/button 리셋, <code>popfb</code>/<code>fadeup</code>/<code>shake</code> keyframes, <code>.app-frame</code>/<code>.app-column</code> 레이아웃 클래스
+        <span class="files"><code>src/index.css</code></span>
+      </li>
+      <li>화면 플레이스홀더 4개 생성 — 화면명 + 전환 버튼 최소 구현, props 시그니처 확정. StudyScreen에 <code>lang="zh-Hans"</code> 한자 샘플 포함
+        <span class="files"><code>src/screens/LoginScreen.tsx</code>, <code>src/screens/HomeScreen.tsx</code>, <code>src/screens/StudyScreen.tsx</code>, <code>src/screens/DoneScreen.tsx</code></span>
+      </li>
+      <li><code>App.tsx</code> 재작성 — <code>Screen</code> 상태 + 전환 콜백, <code>.app-frame</code>/<code>.app-column</code> 래핑, 데모 import 전부 제거 (<code>src/main.tsx</code>는 변경 없음)
+        <span class="files"><code>src/App.tsx</code></span>
+      </li>
+      <li>검증 — <code>npm run build</code>·<code>lint</code>·<code>test</code> + dist 데모 자산 부재 확인 + dev 서버 수동 확인(테스트 계획 참조)
+        <span class="files"><code>dist/client/</code> (검사 대상)</span>
+      </li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">5</span>리스크</h2>
+    <div class="scroll-x">
+    <table>
+      <thead><tr><th>리스크</th><th>영향</th><th>완화책</th></tr></thead>
+      <tbody>
+        <tr><td><code>noUnusedLocals</code>/<code>noUnusedParameters</code>(<code>tsconfig.app.json:22-23</code>)에 플레이스홀더의 미사용 props가 걸림</td><td><code>tsc -b</code> 빌드 실패</td><td>모든 전환 콜백 props를 실제 버튼 onClick에 연결 — 전환 동작 확인(완료 조건 4)과도 일치</td></tr>
+        <tr><td>후속 이슈 #11/#13/#15가 같은 <code>src/screens/*</code> 파일을 병렬로 채움</td><td>머지 충돌·시그니처 불일치</td><td>플레이스홀더를 최소로 유지하고 props 시그니처를 이 PR에서 확정, 이슈 코멘트로 파일 경로·시그니처 공지</td></tr>
+        <tr><td>SVG favicon의 <code>&lt;text&gt;</code> "词" 렌더링이 브라우저의 시스템 CJK 폰트에 의존</td><td>일부 환경에서 글자 누락</td><td>글자가 빠져도 그라데이션 사각형은 표시됨 — 식별성 유지. 문제 시 path 아웃라인으로 후속 교체 가능</td></tr>
+        <tr><td>Google Fonts CDN 차단/실패</td><td>웹폰트 미적용</td><td>§1.2 설계 그대로 — <code>display=swap</code> + 시스템 폴백 스택이라 기능 지장 없음. 폴백 동작을 테스트 계획에 포함</td></tr>
+        <tr><td>목업의 <code>Noto Serif SC</code>·<code>m1AutoMs</code> 등 기각된 사양을 그대로 이식할 위험</td><td>확정 사양과 불일치</td><td>design-prd §6 "목업 대비 변경점" 표를 구현 중 체크리스트로 사용 (이 이슈 범위에선 Serif 제거만 해당)</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">6</span>테스트 계획</h2>
+    <ul>
+      <li><code>npm run build</code> 성공 후 <code>dist/client</code>에 <code>hero</code>·<code>react</code>·<code>vite</code>·<code>cloudflare</code>·<code>icons.svg</code> 자산이 없는지 확인 (<code>ls dist/client/assets</code> + 파일명 grep) — 완료 조건 1.</li>
+      <li><code>npm run lint</code>, <code>npm test</code> — 기존 <code>src/lib/wordState.test.ts</code> 회귀 없음.</li>
+      <li><code>npm run dev</code> 수동 확인:
+        <ul>
+          <li>4화면 전환 왕복: login→home→study→done→home, study 중 "종료"→home — 완료 조건 4.</li>
+          <li>뷰포트 390px(모바일 에뮬레이션)과 데스크톱 전폭 모두에서 430px 다크 컬럼 + 좌우 1px 경계선 — 완료 조건 2.</li>
+          <li>StudyScreen 한자 샘플의 computed font가 <code>Noto Sans SC</code>인지 DevTools로 확인; Network 탭에서 <code>fonts.googleapis.com</code> 차단 후 새로고침 → 시스템 폰트로 폴백되고 화면 동작 정상 — 완료 조건 3.</li>
+          <li>브라우저 탭 제목 "단어 암기", <code>&lt;meta name="theme-color"&gt;</code> DOM 존재(모바일 크롬 주소창 색은 배포 후 확인) — 완료 조건 5.</li>
+        </ul>
+      </li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">7</span>완료 조건</h2>
+    <ul class="done-list">
+      <li>빌드 결과(<code>dist/client</code>)에 데모 페이지·데모 자산(로고 SVG·hero.png·icons.svg·Vite favicon)이 남아 있지 않음</li>
+      <li>모바일 뷰포트(~390px)와 데스크톱 모두에서 <code>max-width:430px</code> 다크 컬럼(<code>#10131a</code>, 좌우 1px 경계, <code>min-height:100dvh</code>) 레이아웃 확인</li>
+      <li>한자 텍스트(<code>lang="zh-Hans"</code>)에 Noto Sans SC 적용 확인, CDN 차단 시 시스템 폰트 폴백으로 정상 동작 확인</li>
+      <li>로그인/홈/학습/완료 4화면 플레이스홀더 간 상태 전환(5개 경로) 동작 확인</li>
+      <li>브라우저 탭 제목 "단어 암기"·theme-color <code>#0b0d12</code>·<code>lang="ko"</code> 반영 확인</li>
+      <li><code>npm run build</code>·<code>lint</code>·<code>test</code> 모두 통과</li>
+    </ul>
+  </section>
+
+  <footer>issue-plan · <a href="https://github.com/damdam6/vocabulary-study/issues/30">#30</a> · 2026-07-17</footer>
+</main>
+</body>
+</html>
