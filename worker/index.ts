@@ -1,3 +1,4 @@
+import { handleAnswerPost } from "./routes/answer.ts";
 import { handleGetWords } from "./routes/words.ts";
 import { isAuthorized } from "./lib/auth.ts";
 
@@ -19,6 +20,15 @@ export default {
       } catch (err) {
         console.error("[GET /api/words]", err);
         return Response.json({ error: "failed to load words" }, { status: 500 });
+      }
+    }
+
+    if (url.pathname === "/api/answer" && request.method === "POST") {
+      try {
+        return await handleAnswerPost(request, env);
+      } catch (err) {
+        console.error("[POST /api/answer]", err);
+        return Response.json({ error: "failed to record answer" }, { status: 500 });
       }
     }
 
