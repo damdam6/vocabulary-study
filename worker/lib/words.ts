@@ -60,6 +60,25 @@ export async function findWordRow(env: Env, tab: string, hanzi: string): Promise
   return { rowNumber: index + 2, entry: parseWordRow(tab, rows[index]) };
 }
 
+/**
+ * 탭 이름 + A열 한자로 행 번호를 캐시 없이 재탐색한다 (PRD 4.2 — 사용자가 시트를
+ * 정렬·삽입할 수 있어 행 번호를 저장해두면 안 된다). 없으면 null.
+ */
+export async function findRowNumber(env: Env, tab: string, hanzi: string): Promise<number | null> {
+  let column: string[][];
+  try {
+    column = await getValues(env, tab, "A2:A");
+  } catch (err) {
+    // 존재하지 않는 탭을 조회하면 Sheets API가 400(Unable to parse range)을 던진다 — "찾지 못함"으로 취급한다.
+    if (err instanceof SheetsApiError && err.status === 400) {
+      return null;
+    }
+    throw err;
+  }
+  const index = column.findIndex((row) => row[0] === hanzi);
+  return index === -1 ? null : index + 2;
+}
+
 // F열 형식: `YYYY-MM-DD|일수`. 수동 편집 등으로 형식이 깨지면 throw 대신 빈 상태로 취급한다.
 function parseNextReview(raw: string | undefined): { nextReview: string | null; interval: number | null } {
   if (!raw) {

@@ -30,6 +30,11 @@ export interface AppendResult {
   updates: UpdateResult;
 }
 
+export interface BatchUpdateResult {
+  totalUpdatedCells?: number;
+  responses?: UpdateResult[];
+}
+
 /** 지정 범위의 값을 읽는다. 빈 범위는 빈 배열. 뒤쪽 빈 셀은 API가 생략하므로 행 길이가 다를 수 있다. */
 export async function getValues(env: Env, tab: string, range: string): Promise<string[][]> {
   const res = await sheetsFetch(env, "GET", `/values/${encodeRange(tab, range)}`);
@@ -62,6 +67,22 @@ export async function updateValues(
   return (await res.json()) as UpdateResult;
 }
 
+/**
+ * 여러 범위를 한 번의 API 호출로 덮어쓴다. 정답 기록처럼 셀 여러 개가 한 단위인 쓰기에서
+ * 부분 실패(카운트만 반영되고 타임스탬프 누락 등)를 막기 위해 개별 update 대신 이걸 쓴다.
+ */
+export async function batchUpdateValues(
+  env: Env,
+  tab: string,
+  updates: { range: string; values: (string | number)[][] }[],
+): Promise<BatchUpdateResult> {
+  const res = await sheetsFetch(env, "POST", "/values:batchUpdate", {
+    valueInputOption: "RAW",
+    data: updates.map(({ range, values }) => ({ range: fullRange(tab, range), values })),
+  });
+  return (await res.json()) as BatchUpdateResult;
+}
+
 /** 지정 범위가 속한 표의 마지막 행 뒤에 새 행(들)을 추가한다. */
 export async function appendValues(
   env: Env,
@@ -78,10 +99,15 @@ export async function appendValues(
   return (await res.json()) as AppendResult;
 }
 
-// 탭 이름은 한글('HSK6급')일 수 있어 작은따옴표로 감싸고 전체를 URL 인코딩한다.
+// 탭 이름은 한글('HSK6급')일 수 있어 작은따옴표로 감싼다.
+function fullRange(tab: string, range: string): string {
+  return `'${tab.replaceAll("'", "''")}'!${range}`;
+}
+
+// URL 경로에 들어가는 범위는 전체를 URL 인코딩한다.
 // 인코딩을 호출자에게 맡기면 누락 시 400이므로 여기서 강제한다.
 function encodeRange(tab: string, range: string): string {
-  return encodeURIComponent(`'${tab.replaceAll("'", "''")}'!${range}`);
+  return encodeURIComponent(fullRange(tab, range));
 }
 
 async function sheetsFetch(

@@ -3,7 +3,7 @@
  * 학습 중 단어의 오답은 이 API를 호출하지 않으므로(§7.3), 여기서는 항상 이미 졸업한 단어로 가정한다.
  */
 
-import { addDays, formatSeoulDate } from "../lib/time.ts";
+import { addSeoulDays } from "../lib/time.ts";
 import { updateValues } from "../lib/sheets.ts";
 import { findWordRow } from "../lib/words.ts";
 import { stepBack } from "../lib/interval.ts";
@@ -44,7 +44,7 @@ export async function handleReviewFail(env: Env, request: Request): Promise<Resp
   const { rowNumber, entry } = found;
   // F열이 비어 있거나 형식이 깨진 상태(정상 흐름에서는 발생하지 않음)는 최소 간격으로 취급한다.
   const newInterval = stepBack(entry.interval ?? 1);
-  const newDate = addDays(formatSeoulDate(new Date()), newInterval);
+  const newDate = addSeoulDays(new Date(), newInterval);
 
   await updateValues(env, body.tab, `F${rowNumber}:F${rowNumber}`, [[`${newDate}|${newInterval}`]]);
 

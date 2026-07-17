@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>#12 단어 상태머신 판정 유틸 구현 — 작업 플랜</title>
+<style>
+  :root {
+    --bg: #f7f7f8; --card: #ffffff; --ink: #1c1c1e; --muted: #6e6e73;
+    --line: #e3e3e6; --accent: #3b6ef5; --accent-soft: #e8eefe;
+    --ok: #2e8b57; --warn: #b25e09; --code-bg: #f0f0f2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161618; --card: #202024; --ink: #ececf0; --muted: #98989f;
+      --line: #333338; --accent: #7a9bff; --accent-soft: #26304a;
+      --ok: #58c088; --warn: #e0a35c; --code-bg: #2a2a2f;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 40px 20px 80px; background: var(--bg); color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+                 "Segoe UI", "Noto Sans KR", sans-serif;
+    line-height: 1.65;
+  }
+  main { max-width: 860px; margin: 0 auto; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code {
+    font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 0.86em;
+    background: var(--code-bg); border-radius: 5px; padding: 2px 6px;
+  }
+  header { margin-bottom: 28px; }
+  .issue-chip {
+    display: inline-block; font-weight: 700; color: var(--accent);
+    background: var(--accent-soft); border-radius: 999px;
+    padding: 3px 14px; font-size: 0.95rem; margin-bottom: 10px;
+  }
+  .type-chip {
+    display: inline-block; font-weight: 600; color: var(--muted);
+    border: 1px solid var(--line); border-radius: 999px;
+    padding: 3px 12px; font-size: 0.8rem; margin-left: 8px; vertical-align: 2px;
+  }
+  h1 { font-size: 1.7rem; margin: 0 0 14px; letter-spacing: -0.02em; }
+  .meta {
+    display: flex; flex-wrap: wrap; gap: 6px 22px;
+    color: var(--muted); font-size: 0.87rem;
+  }
+  .meta b { color: var(--ink); font-weight: 600; }
+  section.card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 24px 28px; margin-top: 18px;
+  }
+  h2 {
+    font-size: 1.05rem; margin: 0 0 14px; letter-spacing: -0.01em;
+    display: flex; align-items: center; gap: 8px;
+  }
+  h2 .no {
+    color: var(--accent); font-size: 0.8rem; font-weight: 700;
+    border: 1.5px solid var(--accent); border-radius: 6px; padding: 0 6px;
+  }
+  ul, ol { margin: 0; padding-left: 22px; }
+  li { margin: 6px 0; }
+  .steps { list-style: none; padding: 0; counter-reset: step; }
+  .steps li {
+    counter-increment: step; position: relative; padding: 10px 0 10px 44px;
+    border-bottom: 1px dashed var(--line);
+  }
+  .steps li:last-child { border-bottom: none; }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 10px;
+    width: 28px; height: 28px; border-radius: 8px; background: var(--accent-soft);
+    color: var(--accent); font-weight: 700; font-size: 0.85rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .steps .files { display: block; margin-top: 4px; font-size: 0.85rem; color: var(--muted); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 0.82rem; }
+  .done-list { list-style: none; padding: 0; }
+  .done-list li { padding-left: 30px; position: relative; }
+  .done-list li::before {
+    content: ""; position: absolute; left: 2px; top: 7px; width: 15px; height: 15px;
+    border: 2px solid var(--ok); border-radius: 5px;
+  }
+  .scroll-x { overflow-x: auto; }
+  footer { margin-top: 30px; color: var(--muted); font-size: 0.8rem; text-align: center; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <span class="issue-chip"><a href="https://github.com/damdam6/vocabulary-study/issues/12">#12</a></span><span class="type-chip">신규 기능</span>
+    <h1>단어 상태머신 판정 유틸 구현</h1>
+    <div class="meta">
+      <span><b>damdam6/vocabulary-study</b></span>
+      <span>브랜치 <b><code>feat/12-word-state-machine-util</code></b> ← <code>main</code></span>
+      <span>라벨 <b>enhancement</b></span>
+      <span>2026-07-17</span>
+    </div>
+  </header>
+
+  <section class="card">
+    <h2><span class="no">1</span>요약</h2>
+    <p>PRD §5.1이 정의하는 단어 상태(학습 중/복습 대기/복습 예약) 판정을 순수 함수로 분리한다. <code>GET /api/words</code>(#7)가 이미 정규화해 내려주는 <code>m1</code>·<code>m2</code>·<code>nextReview</code> 세 필드만으로 판정하며, Asia/Seoul 자정 기준 "오늘" 계산도 별도 함수로 함께 제공한다. PRD §7.3에 따라 이 판정은 클라이언트 책임이므로 <code>src/lib/</code>에 신설하고, 레포 최초의 테스트 프레임워크로 vitest를 도입해 경계값 케이스를 검증한다. 홈 화면 집계(#13)와 세션 큐 구성(#14)은 이후 이 유틸을 그대로 소비할 예정이며, 이번 이슈 범위는 판정 함수와 테스트로 한정한다.</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">2</span>현황 분석</h2>
+    <ul>
+      <li>PRD §5.1(<code>docs/PRD.md:85-96</code>)이 세 상태의 판정 조건을 정의한다 — 학습 중: <code>D&lt;3 또는 E&lt;3</code>, 복습 대기: <code>D≥3 && E≥3 && F날짜≤오늘</code>, 복습 예약: <code>D≥3 && E≥3 && F날짜&gt;오늘</code>. §5.4(<code>docs/PRD.md:125-128</code>)는 "오늘"의 경계를 Asia/Seoul 자정으로 못박는다.</li>
+      <li><code>GET /api/words</code>(#7, 완료)는 <code>worker/routes/words.ts:10-26</code>에서 전 탭을 통합해 <code>WordEntry</code>(<code>worker/lib/words.ts:8-17</code>) 배열로 응답한다. D·E열 빈칸은 <code>parseWordRow</code>(<code>worker/lib/words.ts:20-33</code>)가 이미 0으로, F열 빈칸은 <code>parseNextReview</code>(<code>worker/lib/words.ts:36-46</code>)가 이미 <code>nextReview: null</code>로 정규화한다 — 이 유틸은 문자열 파싱을 다시 할 필요 없이 <code>m1</code>·<code>m2</code>·<code>nextReview</code> 세 필드만 보면 된다.</li>
+      <li>PRD §7.3(<code>docs/PRD.md:195</code>): "큐 구성(§6.1)과 상태 판정(§5.1)은 클라이언트가 수행한다. Worker는 데이터 중계만." — 즉 이 유틸은 <code>worker/</code>가 아니라 <code>src/</code> 코드다.</li>
+      <li>현재 <code>src/</code>에는 <code>App.tsx</code>·<code>main.tsx</code>·<code>assets</code>뿐이고 <code>lib/</code> 디렉터리도, 상태 판정 로직도 존재하지 않는다.</li>
+      <li>이 유틸의 실제 소비처인 #13(홈 화면 UI)·#14(세션 큐 구성)는 아직 미착수 — 지금은 순수 함수와 그 테스트만 만든다.</li>
+      <li>레포에 테스트 관련 devDependency·스크립트가 전혀 없다(<code>package.json:14-28</code>) — 이슈가 "vitest 도입(레포 첫 테스트 프레임워크)"을 완료 조건으로 명시.</li>
+      <li><code>worker/lib/time.ts:7-21</code>에 Asia/Seoul <code>Intl.DateTimeFormat</code> + <code>formatToParts</code> 조합으로 날짜·시간을 문자열화하는 패턴이 이미 검증된 형태로 존재 — "오늘" 계산에 동일 기법을 재사용할 선례.</li>
+      <li><code>tsconfig.app.json:25</code>(<code>include: ["src"]</code>)와 <code>tsconfig.worker.json:7</code>(<code>include: ["worker"]</code>)는 서로 다른 TS 프로젝트다. <code>src</code>에서 <code>worker/lib/words.ts</code>의 <code>WordEntry</code>를 직접 import하면 소속 tsconfig 프로젝트의 <code>include</code> 범위를 벗어난 파일을 참조하게 된다.</li>
+      <li><code>vite.config.ts:7-9</code>는 <code>@cloudflare/vite-plugin</code>을 포함한다 — vitest가 이 파일을 그대로 읽으면 순수 함수 테스트에도 Workers 관련 플러그인이 로드될 수 있다.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">3</span>설계</h2>
+    <ul>
+      <li><b>위치</b>: <code>src/lib/wordState.ts</code> 신설. PRD §7.3에 따라 클라이언트 코드이며, <code>worker/</code>는 별도 tsconfig 프로젝트라 애초에 선택지가 아니다.</li>
+      <li><b>입력 타입</b>: <code>WordEntry</code> 전체를 import하지 않고, 이 함수가 실제로 쓰는 3개 필드만 담은 로컬 인터페이스 <code>WordProgress { m1: number; m2: number; nextReview: string | null }</code>를 새로 선언한다. 구조적 타이핑 덕분에 <code>/api/words</code> 응답 객체(<code>WordEntry</code>)를 그대로 넘겨도 자연히 호환된다. <i>(대안: worker에서 타입 import — tsconfig 프로젝트 경계상 불가.)</i></li>
+      <li><b>상태 값</b>: <code>WordState = "learning" | "reviewDue" | "reviewScheduled"</code>. 기존 API의 <code>mode: "m1"|"m2"</code>와 같은 영문 판별 유니언 관례를 따른다. 한국어 라벨 매핑은 이 유틸을 소비하는 UI(#13 등) 책임으로 남긴다.</li>
+      <li><b><code>today</code>를 문자열로 명시적으로 받기</b>: <code>getWordState(word: WordProgress, today: string): WordState</code>. 내부에서 <code>new Date()</code>를 매번 계산하지 않고 호출자가 전달한다. 실사용처(#13 홈 집계, #14 세션 큐)는 모두 "여러 단어를 한 번에" 분류하므로, 오늘 날짜를 단어마다 새로 계산하면 비효율일뿐더러 배치 도중 자정을 넘길 경우 같은 배치 안에서 기준일이 흔들리는 미묘한 버그 여지가 생긴다. 한 번 계산해 모든 단어에 동일하게 적용하는 편이 맞다.</li>
+      <li><b><code>getSeoulToday(now: Date = new Date()): string</code></b>: "오늘"(Asia/Seoul, <code>YYYY-MM-DD</code>) 계산을 별도 함수로 분리해 <code>getWordState</code>와 나란히 export한다. <code>worker/lib/time.ts:7-21</code>과 동일한 <code>Intl.DateTimeFormat</code>+<code>formatToParts</code> 기법을 재사용한다(코드는 tsconfig 경계 때문에 직접 import 불가하므로 기법만 재사용, 코드는 새로 작성). <code>now</code> 기본 인자 덕분에 실사용은 <code>getSeoulToday()</code> 한 줄로 충분하고, 테스트는 특정 시각을 주입해 자정 경계를 검증할 수 있다. PRD §9.1(홈 화면 상단 "오늘 날짜" 표시)에서도 재사용 가능하도록 export해 둔다.</li>
+      <li><b>판정 순서</b>: PRD 문구 그대로 "학습 중" 조건(<code>m1&lt;3 || m2&lt;3</code>)을 가장 먼저 검사하고, <code>nextReview</code>가 무엇이든(심지어 <code>null</code>이어도) 그 시점엔 절대 들여다보지 않는다. 완료 조건이 요구하는 "<code>nextReview: null</code>(미졸업) 단어가 학습 중으로 분류"를 설계상 자동으로 만족시킨다.</li>
+      <li><b>데이터 이상 상태(문서화된 결정)</b>: PRD상 F열은 졸업 시점에 항상 채워지므로 "<code>m1≥3 && m2≥3</code>인데 <code>nextReview===null</code>"은 정상 흐름에서 나오지 않는다. 다만 시트 수동 편집 등으로 이런 상태가 생기면, <code>nextReview===null</code>을 "복습 예약"(미래)이 아니라 "복습 대기"로 처리한다 — 알 수 없는 미래로 영원히 숨기는 것보다 사용자 눈에 띄게 노출하는 편이 안전하다. 코드 주석으로 근거를 남기고 전용 테스트를 추가한다.</li>
+      <li><b>vitest 설정 분리</b>: <code>vite.config.ts</code>에 <code>test</code> 필드를 얹지 않고 별도 <code>vitest.config.ts</code>를 루트에 새로 만든다. Vitest는 <code>vitest.config.ts</code>가 있으면 <code>vite.config.ts</code>보다 그것을 우선 사용한다 — <code>@cloudflare/vite-plugin</code>이 순수 함수 단위 테스트 실행에 끼어들 여지를 원천 차단한다. <i>(대안: <code>vite.config.ts</code>에 <code>test</code> 블록 병합 — cloudflare 플러그인의 dev/build 훅이 테스트 실행 시에도 함께 로드되어 불필요하게 무거워지고, 향후 워커 전용 테스트(#8, #9 등)와 프론트 테스트가 같은 설정을 억지로 공유하게 된다.)</i></li>
+      <li><b>테스트 파일 위치</b>: <code>src/lib/wordState.test.ts</code>(코로케이션). vitest 기본 include 글롭이 <code>*.test.ts</code>를 자동으로 잡으므로 <code>vitest.config.ts</code>에 별도 <code>include</code> 설정이 필요 없다. 테스트는 <code>import { describe, it, expect } from "vitest"</code>로 명시적 import만 쓰고 글로벌 타입에 의존하지 않아, <code>tsconfig.app.json</code> 수정도 필요 없다.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">4</span>작업 단계</h2>
+    <ol class="steps">
+      <li><code>npm install -D vitest</code>로 개발 의존성 추가 (peer dependency상 현재 <code>vite ^8.1.1</code>과 호환).
+        <span class="files"><code>package.json</code>, <code>package-lock.json</code></span>
+      </li>
+      <li>루트에 <code>vitest.config.ts</code> 신규 작성 — <code>vite.config.ts</code>와 분리된 최소 설정. <code>vitest/config</code>의 <code>defineConfig</code>만 사용하고 cloudflare 플러그인은 포함하지 않는다.
+        <span class="files"><code>vitest.config.ts</code></span>
+      </li>
+      <li><code>package.json</code>의 <code>scripts</code>에 <code>"test": "vitest run"</code> 추가.
+        <span class="files"><code>package.json</code></span>
+      </li>
+      <li><code>src/lib/wordState.ts</code> 작성 — <code>WordState</code> 유니언, <code>WordProgress</code> 인터페이스, <code>getSeoulToday(now?)</code>, <code>getWordState(word, today)</code> 구현. 설계 섹션의 판정 순서·null 처리 결정을 그대로 반영.
+        <span class="files"><code>src/lib/wordState.ts</code></span>
+      </li>
+      <li><code>src/lib/wordState.test.ts</code> 작성 — 학습 중/복습 대기/복습 예약 각 상태, <code>nextReview===today</code> 경계값, <code>nextReview:null</code>+미졸업, <code>nextReview:null</code>+졸업(이상 상태) 케이스, <code>getSeoulToday</code>의 UTC↔Asia/Seoul 자정 경계 2건을 포함한다 (테스트 계획 섹션에 구체 값 명시).
+        <span class="files"><code>src/lib/wordState.test.ts</code></span>
+      </li>
+      <li><code>npm run test</code>, <code>npm run lint</code>, <code>npm run build</code>를 실행해 전부 통과하는지 확인.
+        <span class="files">검증 단계 — 파일 변경 없음</span>
+      </li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">5</span>리스크</h2>
+    <div class="scroll-x">
+    <table>
+      <thead><tr><th>리스크</th><th>영향</th><th>완화책</th></tr></thead>
+      <tbody>
+        <tr><td><code>vite.config.ts</code>에 <code>test</code> 설정을 합치면 cloudflare 플러그인이 테스트 실행에도 로드됨</td><td>테스트가 느려지거나 Workers 런타임 관련 초기화가 불필요하게 얽힐 수 있음</td><td>별도 <code>vitest.config.ts</code>로 분리 (설계 섹션 참고)</td></tr>
+        <tr><td><code>WordEntry</code>를 재사용하지 않고 <code>WordProgress</code>로 로컬 재정의</td><td>두 타입이 시간이 지나며 구조적으로 어긋날 잠재 여지(예: worker 쪽 필드 타입 변경을 프론트가 못 알아챔)</td><td>필드 3개뿐이라 어긋날 표면적이 작고, 어긋나면 <code>/api/words</code> 응답을 그대로 소비하는 다른 프론트 코드에서도 먼저 드러남</td></tr>
+        <tr><td>졸업(<code>m1≥3 && m2≥3</code>)인데 <code>nextReview===null</code>인 데이터 이상 상태는 PRD에 명시 안 됨</td><td>이 구현의 처리 방식(복습 대기로 간주)을 다른 개발자가 놓칠 수 있음</td><td>코드 주석 + 이 플랜에 근거 명시, 전용 테스트 케이스로 동작 고정</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">6</span>테스트 계획</h2>
+    <ul>
+      <li><code>npm run test</code> — <code>getWordState</code>: <code>m1&lt;3</code>(m2 무관) 및 <code>m2&lt;3</code>(m1 무관) → <code>"learning"</code>, <code>nextReview</code> 값과 무관(null 포함).</li>
+      <li><code>npm run test</code> — <code>getWordState</code>: <code>m1≥3 && m2≥3</code> && <code>nextReview</code>가 today보다 과거 → <code>"reviewDue"</code>.</li>
+      <li><code>npm run test</code> — <code>getWordState</code>: <code>m1≥3 && m2≥3</code> && <code>nextReview === today</code> → <code>"reviewDue"</code> (경계값, 완료 조건 명시 케이스).</li>
+      <li><code>npm run test</code> — <code>getWordState</code>: <code>m1≥3 && m2≥3</code> && <code>nextReview</code>가 today보다 미래 → <code>"reviewScheduled"</code>.</li>
+      <li><code>npm run test</code> — <code>getWordState</code>: <code>m1&lt;3</code> && <code>nextReview===null</code> → <code>"learning"</code> (완료 조건 명시 케이스).</li>
+      <li><code>npm run test</code> — <code>getWordState</code>: <code>m1≥3 && m2≥3 && nextReview===null</code>(이상 상태) → <code>"reviewDue"</code> (설계 섹션의 방어적 기본값 검증).</li>
+      <li><code>npm run test</code> — <code>getSeoulToday</code>: <code>2026-07-19T14:59:00.000Z</code>(Seoul 23:59) → <code>"2026-07-19"</code>, <code>2026-07-19T15:00:00.000Z</code>(Seoul 00:00) → <code>"2026-07-20"</code> — 1분 차이의 UTC 인스턴트가 Asia/Seoul 자정을 사이에 두고 날짜가 갈리는지 검증.</li>
+      <li><code>npm run lint</code>(oxlint) — 신규 파일 통과 확인.</li>
+      <li><code>npm run build</code>(<code>tsc -b && vite build</code>) — 타입 에러 없이 빌드 성공. <code>wordState.test.ts</code>가 <code>tsconfig.app.json</code>의 <code>include</code>에 포함돼도 vitest의 타입 선언(devDependency)만으로 통과하는지 확인.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">7</span>완료 조건</h2>
+    <ul class="done-list">
+      <li>학습 중 / 복습 대기 / 복습 예약 세 상태 각각을 판정하는 vitest 케이스 작성 및 통과 (경계값 <code>nextReview === 오늘</code> 포함)</li>
+      <li><code>nextReview: null</code>(미졸업) 단어가 "학습 중"으로 올바르게 분류되는 케이스 통과</li>
+      <li>vitest를 레포 첫 테스트 프레임워크로 도입 (devDependency, 독립 <code>vitest.config.ts</code>, <code>npm run test</code> 스크립트)</li>
+      <li><code>npm run test</code> / <code>npm run lint</code> / <code>npm run build</code> 모두 통과</li>
+    </ul>
+  </section>
+
+  <footer>issue-plan · <a href="https://github.com/damdam6/vocabulary-study/issues/12">#12</a> · 2026-07-17</footer>
+</main>
+</body>
+</html>

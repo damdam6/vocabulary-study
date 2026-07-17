@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>#8 POST /api/answer 구현 — 정답 기록·졸업 판정·간격 갱신 — 작업 플랜</title>
+<style>
+  :root {
+    --bg: #f7f7f8; --card: #ffffff; --ink: #1c1c1e; --muted: #6e6e73;
+    --line: #e3e3e6; --accent: #3b6ef5; --accent-soft: #e8eefe;
+    --ok: #2e8b57; --warn: #b25e09; --code-bg: #f0f0f2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161618; --card: #202024; --ink: #ececf0; --muted: #98989f;
+      --line: #333338; --accent: #7a9bff; --accent-soft: #26304a;
+      --ok: #58c088; --warn: #e0a35c; --code-bg: #2a2a2f;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 40px 20px 80px; background: var(--bg); color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+                 "Segoe UI", "Noto Sans KR", sans-serif;
+    line-height: 1.65;
+  }
+  main { max-width: 860px; margin: 0 auto; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code {
+    font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 0.86em;
+    background: var(--code-bg); border-radius: 5px; padding: 2px 6px;
+  }
+  header { margin-bottom: 28px; }
+  .issue-chip {
+    display: inline-block; font-weight: 700; color: var(--accent);
+    background: var(--accent-soft); border-radius: 999px;
+    padding: 3px 14px; font-size: 0.95rem; margin-bottom: 10px;
+  }
+  .type-chip {
+    display: inline-block; font-weight: 600; color: var(--muted);
+    border: 1px solid var(--line); border-radius: 999px;
+    padding: 3px 12px; font-size: 0.8rem; margin-left: 8px; vertical-align: 2px;
+  }
+  h1 { font-size: 1.7rem; margin: 0 0 14px; letter-spacing: -0.02em; }
+  .meta {
+    display: flex; flex-wrap: wrap; gap: 6px 22px;
+    color: var(--muted); font-size: 0.87rem;
+  }
+  .meta b { color: var(--ink); font-weight: 600; }
+  section.card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 24px 28px; margin-top: 18px;
+  }
+  h2 {
+    font-size: 1.05rem; margin: 0 0 14px; letter-spacing: -0.01em;
+    display: flex; align-items: center; gap: 8px;
+  }
+  h2 .no {
+    color: var(--accent); font-size: 0.8rem; font-weight: 700;
+    border: 1.5px solid var(--accent); border-radius: 6px; padding: 0 6px;
+  }
+  ul, ol { margin: 0; padding-left: 22px; }
+  li { margin: 6px 0; }
+  .steps { list-style: none; padding: 0; counter-reset: step; }
+  .steps li {
+    counter-increment: step; position: relative; padding: 10px 0 10px 44px;
+    border-bottom: 1px dashed var(--line);
+  }
+  .steps li:last-child { border-bottom: none; }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 10px;
+    width: 28px; height: 28px; border-radius: 8px; background: var(--accent-soft);
+    color: var(--accent); font-weight: 700; font-size: 0.85rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .steps .files { display: block; margin-top: 4px; font-size: 0.85rem; color: var(--muted); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 0.82rem; }
+  .done-list { list-style: none; padding: 0; }
+  .done-list li { padding-left: 30px; position: relative; }
+  .done-list li::before {
+    content: ""; position: absolute; left: 2px; top: 7px; width: 15px; height: 15px;
+    border: 2px solid var(--ok); border-radius: 5px;
+  }
+  .scroll-x { overflow-x: auto; }
+  footer { margin-top: 30px; color: var(--muted); font-size: 0.8rem; text-align: center; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <span class="issue-chip"><a href="https://github.com/damdam6/vocabulary-study/issues/8">#8</a></span><span class="type-chip">기능 개선</span>
+    <h1>POST /api/answer 구현 — 정답 기록·졸업 판정·간격 갱신</h1>
+    <div class="meta">
+      <span><b>damdam6/vocabulary-study</b></span>
+      <span>브랜치 <b><code>feat/8-post-api-answer</code></b> ← <code>main</code></span>
+      <span>라벨 <b>enhancement</b></span>
+      <span>2026-07-17</span>
+    </div>
+  </header>
+
+  <section class="card">
+    <h2><span class="no">1</span>요약</h2>
+    <p>PRD에서 가장 복잡한 조각인 <code>POST /api/answer</code>를 신규 구현한다. 요청받은 탭+한자로 시트 행을 캐시 없이 재탐색하고, 한 요청 안에서 모드별 카운트(D/E) 증가, 졸업 판정(F열 최초 기록), 복습 간격 사다리 상승(F열 갱신), G열 이후 첫 빈 칸에 타임스탬프 append를 순차 수행한 뒤 GET과 동일한 단어 객체를 반환한다. GET /api/words가 쓰는 <code>parseWordRow</code> 정규화와 <code>sheets.ts</code>의 read/write 래퍼를 그대로 재사용해 새 코드는 최소화한다.</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">2</span>현황 분석</h2>
+    <ul>
+      <li><code>worker/index.ts:1-27</code> — 현재 라우팅은 <code>/api/health</code>, <code>GET /api/words</code> 둘뿐이고 그 외는 404 폴백. <code>POST /api/answer</code>는 없음.</li>
+      <li><code>worker/routes/words.ts:10-26</code> — GET 핸들러 패턴: <code>getSheetTitles</code> → <code>getValues(tab, "A2:F")</code> → <code>parseWordRow</code>. 새 라우트도 같은 파일 분리 방식(<code>lib/</code> 순수 로직 + <code>routes/</code> HTTP 핸들러)을 따른다.</li>
+      <li><code>worker/lib/words.ts:1-4</code> — 파일 헤더 주석에 이미 "POST /api/answer(#8)도 'GET과 같은 형태'로 응답해야 하므로 여기 정규화 로직을 재사용한다"고 명시돼 있음. <code>parseWordRow(tab, row)</code>는 <code>[hanzi, pinyin, meaning, m1, m2, nextReviewRaw] = row</code>만 구조분해하므로, G열 이후를 포함한 더 넓은 행 배열을 그대로 넘겨도 안전하게 동작한다.</li>
+      <li><code>worker/lib/sheets.ts:34-79</code> — <code>getValues/updateValues/appendValues</code> 전부 <code>(env, tab, range)</code> 시그니처이고 range는 A1 표기 그대로 전달돼 임의의 셀 좌표(<code>D5</code>, <code>12:12</code> 등)를 그대로 쓸 수 있다. <code>appendValues</code>는 "표 마지막 행 뒤에 새 행 추가"용이라 G열처럼 기존 행의 오른쪽 빈 셀에 쓰는 요구에는 맞지 않는다 — <code>updateValues</code>로 특정 셀을 직접 갱신해야 한다.</li>
+      <li><code>worker/lib/time.ts:1-21</code> — <code>formatSeoulDateTime(date)</code>(날짜+시간)만 있고, 날짜만(<code>YYYY-MM-DD</code>) 포맷 + "N일 후" 계산 함수는 없음 — 신규 추가 필요.</li>
+      <li><code>worker/lib/auth.ts</code> + <code>worker/index.ts:8-10</code> — <code>/api/*</code> 전체가 이미 비밀번호 미들웨어로 보호돼 있어 새 라우트도 자동으로 인증 대상.</li>
+      <li>시트 컬럼 계약(PRD §4.2): A한자 B병음 C뜻 D모드1카운트 E모드2카운트 F(<code>다음복습일|간격</code>) G열~ 타임스탬프. 신규 등록 시 D/E는 빈칸 또는 0.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">3</span>설계</h2>
+    <ul>
+      <li><b>행 재탐색</b>: <code>A2:A</code> 열만 읽어 hanzi와 일치하는 인덱스를 찾고(+2로 실제 행 번호 환산), 못 찾으면 404. 행 번호 캐시 금지(PRD 4.2) 요건과 일치. <i>대안 기각</i>: 매 요청마다 GET처럼 전체 <code>A2:F</code>를 읽고 필터링 — 컬럼 하나만 읽는 것보다 데이터 낭비가 커서 기각.</li>
+      <li><b>행 전체 재조회</b>: 행 번호를 찾은 뒤 <code>{row}:{row}</code>(행 전체, 컬럼 무제한 A1 표기)로 D~G+ 전체를 한 번에 읽고 <code>parseWordRow(tab, fullRow)</code>를 그대로 호출해 현재 m1/m2/nextReview/interval을 얻는다 — words.ts 주석이 예고한 재사용 지점.</li>
+      <li><b>카운트 +1 쓰기</b>: mode→열 매핑(m1→D, m2→E)으로 <code>updateValues(tab, "{D|E}{row}", [[newCount]])</code>.</li>
+      <li><b>F열 갱신 조건부 계산</b> (신규 <code>lib/answer.ts</code>에 캡슐화):
+        <ul>
+          <li><code>isReview===true</code> → 간격 사다리 <code>[1,3,7,14,30]</code>에서 현재 interval보다 큰 다음 값(없으면 30 유지) → <code>오늘+새간격|새간격</code>.</li>
+          <li><code>isReview===false</code>이고 이번 +1로 <b>증가 전 상태 기준</b> 처음 D≥3&&E≥3 성립(졸업) → <code>내일|1</code>.</li>
+          <li>그 외(아직 학습 중) → F열 쓰기 자체를 생략.</li>
+        </ul>
+        <i>대안 기각</i>: F열을 항상 재조립해 덮어쓰기(안 바뀌어도) — 코드는 단순해지지만 원본이 파싱 불가능한 값(수동 오타 등)이었을 경우 조용히 지워버리는 부작용이 있어 기각. 안 바뀌면 쓰기 자체를 생략하는 쪽을 택한다.</li>
+      <li><b>G열 append</b>: 재조회한 행 배열에서 인덱스 6(G, 0-based)부터 값이 있는 동안 전진해 첫 빈 인덱스를 찾고, base-26 컬럼 문자 변환(Z 다음 AA)으로 열 문자를 얻어 <code>updateValues(tab, "{col}{row}", [["{timestamp}|{mode}"]])</code>. Sheets append API(뒤에 새 "행" 추가)는 같은 행 오른쪽 빈 칸에 쓰는 이 요구에 맞지 않아 사용하지 않는다.</li>
+      <li><b>날짜 계산</b>: 한국은 DST가 없으므로 <code>now.getTime() + days*86400000</code>를 Asia/Seoul로 포매팅해도 달력 날짜가 어긋나지 않는다 → <code>time.ts</code>에 <code>addSeoulDays(date, days): string</code>(YYYY-MM-DD)만 추가하면 충분, 별도 타임존 라이브러리 불필요.</li>
+      <li><b>응답 구성</b>: 쓰기 성공 후 재조회하지 않고 이미 계산한 값(newM1/newM2, 새 F 또는 기존 F)으로 바로 <code>WordEntry</code>를 조립해 반환 — 왕복 1회 절약.</li>
+      <li><b>행 탐색 함수의 위치</b>: 탭+한자로 행 번호를 찾는 로직은 PRD 4.2가 명시한 공유 계약이라 <code>lib/words.ts</code>에 둔다. 다음 이슈로 예상되는 <code>POST /api/review-fail</code>도 동일 탐색이 필요하므로 재사용 지점이 된다 (단, 지금은 이 이슈에 필요한 시그니처만 구현한다).</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">4</span>작업 단계</h2>
+    <ol class="steps">
+      <li>날짜만(YYYY-MM-DD) 포맷 + N일 후 계산 <code>addSeoulDays(date, days)</code> 추가.
+        <span class="files"><code>worker/lib/time.ts</code></span>
+      </li>
+      <li>탭+한자로 행 번호를 캐시 없이 재탐색하는 <code>findRowNumber(env, tab, hanzi): Promise&lt;number | null&gt;</code> 추가 (<code>A2:A</code> 조회, PRD 4.2 계약).
+        <span class="files"><code>worker/lib/words.ts</code></span>
+      </li>
+      <li>신규 파일: 간격 사다리 상수·<code>nextLadderInterval(current)</code>, base-26 컬럼 문자 변환 <code>columnLetter(index)</code>, 첫 빈 G+ 셀 인덱스 탐색 <code>findNextEmptyColumn(row)</code>, 그리고 이를 조합해 D/E/F 갱신값을 계산하는 순수 함수 <code>computeAnswerUpdate(...)</code>.
+        <span class="files"><code>worker/lib/answer.ts</code>(신규)</span>
+      </li>
+      <li>요청 바디 검증(tab/hanzi/mode/timestamp/isReview 타입·mode∈{m1,m2}) → <code>findRowNumber</code>로 탐색(없으면 404) → 행 전체 재조회 → <code>lib/answer.ts</code> 계산 → <code>updateValues</code>로 D/E, (조건부) F, G+ 순차 기록 → 갱신된 <code>WordEntry</code> 응답.
+        <span class="files"><code>worker/routes/answer.ts</code>(신규)</span>
+      </li>
+      <li><code>POST /api/answer</code> 라우트 등록 — <code>GET /api/words</code>와 동일한 try/catch + 500 폴백 패턴.
+        <span class="files"><code>worker/index.ts</code></span>
+      </li>
+      <li>실제 시트(예: HSK6급 탭)로 <code>wrangler dev</code> + curl 왕복 테스트: 학습 중 정답, 졸업 순간, 복습 정답, 존재하지 않는 한자 4가지 케이스를 직접 호출해 시트 값 변화를 눈으로 확인.
+        <span class="files">코드 변경 없음 — 검증 단계</span>
+      </li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">5</span>리스크</h2>
+    <div class="scroll-x">
+    <table>
+      <thead><tr><th>리스크</th><th>영향</th><th>완화책</th></tr></thead>
+      <tbody>
+        <tr><td>Sheets API가 컬럼 생략 행 전체 범위(<code>{row}:{row}</code>) 표기를 예상과 다르게 처리</td><td>행 재조회 실패 → 500</td><td><code>wrangler dev</code>로 실제 시트에 먼저 확인, 필요시 <code>A{row}:ZZ{row}</code>처럼 넉넉한 고정 범위로 대체</td></tr>
+        <tr><td>G열이 오른쪽으로 계속 append되며 언젠가 Z를 넘는 열(AA 이상)에 도달</td><td>컬럼 문자 변환 버그 시 잘못된 셀에 기록</td><td>base-26 변환 함수를 Z→AA 경계값으로 직접 검증</td></tr>
+        <tr><td>요청의 tab이 실제 존재하지 않는 시트 이름인 경우</td><td>Sheets API 400 → 현재 설계는 500으로 처리(404 아님)</td><td>PRD가 요구하는 404는 "존재하지 않는 한자"뿐이라 범위 밖으로 명시. GET /api/words도 탭 유효성 검사를 하지 않는 것과 동일한 신뢰 모델</td></tr>
+        <tr><td>쓰기 3~4회(카운트/F/G) 사이 사용자가 시트를 직접 편집해 그 행이 바뀌는 동시성</td><td>드묾, 개인 단일 사용자</td><td>PRD 7.4에서 이미 비범위로 명시(락 없음, "읽고→계산→쓰기" 단순 구현으로 충분)</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">6</span>테스트 계획</h2>
+    <ul>
+      <li>학습 중 단어(D&lt;3 또는 E&lt;3, <code>isReview:false</code>)에 정답 호출 → 응답에서 해당 모드 카운트만 +1, <code>nextReview/interval</code>은 그대로 null, 시트 F열 불변, G열 이후 새 타임스탬프 1개 추가 확인.</li>
+      <li>같은 단어가 이번 호출로 D≥3&&E≥3 첫 달성 → 응답 <code>nextReview</code>=내일 날짜, <code>interval</code>=1, 시트 F열에 <code>내일|1</code> 기록 확인.</li>
+      <li>이미 졸업한 단어(<code>isReview:true</code>)에 정답 호출 → interval이 사다리대로 상승(예: 7→14), F열 <code>오늘+14|14</code>로 갱신, 카운트도 +1 확인.</li>
+      <li>interval=30인 단어에 복습 정답 → 사다리 최상단 유지, F열 <code>오늘+30|30</code> 확인.</li>
+      <li>여러 번 연속 호출해 G,H,I…로 타임스탬프가 순서대로 쌓이고 기존 값이 지워지지 않는지 확인.</li>
+      <li>시트에 없는 한자로 호출 → 404, 시트 값 변경 없음 확인.</li>
+      <li>필수 필드 누락/mode 오타(m1·m2 외 값) → 400, 시트 값 변경 없음 확인.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">7</span>완료 조건</h2>
+    <ul class="done-list">
+      <li>학습 중 단어 정답: 카운트만 +1, F열 불변</li>
+      <li>졸업 순간: F열에 <code>내일|1</code> 기록</li>
+      <li>복습 정답: 간격 사다리대로 상승(1→3→7→14→30→30) + F열 갱신</li>
+      <li>G열 이후 기존 타임스탬프 보존하며 다음 빈 셀에 append</li>
+      <li>존재하지 않는 한자로 호출 시 404</li>
+      <li>(추가) 필수 필드 누락·mode 오타 시 400 — 이슈 명시 항목은 아니나 견고성을 위해 구현에 포함</li>
+    </ul>
+  </section>
+
+  <footer>issue-plan · <a href="https://github.com/damdam6/vocabulary-study/issues/8">#8</a> · 2026-07-17</footer>
+</main>
+</body>
+</html>
