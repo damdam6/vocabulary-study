@@ -15,6 +15,7 @@
   --text-hint-dim: #3c4252;
   --accent: #2f63e6;
   --accent-light: #7ea4f7;
+  --accent-hover: #a9c2fa; /* §1.1 외 파생 토큰 — 목업 a:hover 값 */
   --green: #3fce8f;
   --red: #f0655a;
 
@@ -44,12 +45,16 @@ a {
   color: var(--accent-light);
 }
 a:hover {
-  color: #a9c2fa;
+  color: var(--accent-hover);
 }
 
 input {
   font-family: inherit;
   outline: none;
+}
+input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
 }
 input::placeholder {
   color: var(--text-placeholder);
