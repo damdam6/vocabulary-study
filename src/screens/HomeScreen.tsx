@@ -7,7 +7,7 @@ function HomeScreen({ onStart }: HomeScreenProps) {
   return (
     <div className="screen-placeholder">
       <h1>오늘의 학습</h1>
-      <button onClick={onStart}>학습 시작</button>
+      <button type="button" onClick={onStart}>학습 시작</button>
     </div>
   )
 }

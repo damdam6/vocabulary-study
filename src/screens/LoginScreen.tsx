@@ -7,7 +7,7 @@ function LoginScreen({ onLogin }: LoginScreenProps) {
   return (
     <div className="screen-placeholder">
       <h1>로그인</h1>
-      <button onClick={onLogin}>들어가기</button>
+      <button type="button" onClick={onLogin}>들어가기</button>
     </div>
   )
 }

@@ -7,7 +7,7 @@ function DoneScreen({ onGoHome }: DoneScreenProps) {
   return (
     <div className="screen-placeholder">
       <h1>세션 완료</h1>
-      <button onClick={onGoHome}>홈으로</button>
+      <button type="button" onClick={onGoHome}>홈으로</button>
     </div>
   )
 }

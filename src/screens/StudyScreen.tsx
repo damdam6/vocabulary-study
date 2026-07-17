@@ -12,8 +12,8 @@ function StudyScreen({ onExit, onComplete }: StudyScreenProps) {
       <span lang="zh-Hans" style={{ fontSize: 52 }}>
         经济
       </span>
-      <button onClick={onExit}>종료</button>
-      <button onClick={onComplete}>세션 완료</button>
+      <button type="button" onClick={onExit}>종료</button>
+      <button type="button" onClick={onComplete}>세션 완료</button>
     </div>
   )
 }
