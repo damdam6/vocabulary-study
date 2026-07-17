@@ -1,9 +1,10 @@
 /**
  * 시트 행(A2:F) ↔ 단어 객체 변환. PRD 4.2(컬럼 계약)·7.3(GET /api/words 응답)을 따른다.
- * POST /api/answer(#8)도 "GET과 같은 형태"로 응답해야 하므로 여기 정규화 로직을 재사용한다.
+ * POST /api/answer(#8)·POST /api/review-fail(#9)도 "GET과 같은 형태"로 응답해야 하므로
+ * 여기 정규화 로직과, 탭+A열 한자로 행을 재탐색하는 findWordRow를 함께 재사용한다.
  */
 
-import { getValues } from "./sheets.ts";
+import { getValues, SheetsApiError } from "./sheets.ts";
 
 export const WORD_ROW_RANGE = "A2:F";
 
@@ -34,12 +35,46 @@ export function parseWordRow(tab: string, row: string[]): WordEntry {
   };
 }
 
+export interface FoundWordRow {
+  rowNumber: number;
+  entry: WordEntry;
+}
+
+// 행 번호를 캐시하지 않고 쓰기 시점마다 재탐색한다(PRD 4.2 — 사용자가 시트를 정렬/삽입할 수 있음).
+/** 탭+A열 한자로 행을 찾아 시트 행 번호(헤더 오프셋 +2)와 정규화된 단어를 함께 반환한다. 없으면 null. */
+export async function findWordRow(env: Env, tab: string, hanzi: string): Promise<FoundWordRow | null> {
+  let rows: string[][];
+  try {
+    rows = await getValues(env, tab, WORD_ROW_RANGE);
+  } catch (err) {
+    // 존재하지 않는 탭을 조회하면 Sheets API가 400(Unable to parse range)을 던진다 — "찾지 못함"으로 취급한다.
+    if (err instanceof SheetsApiError && err.status === 400) {
+      return null;
+    }
+    throw err;
+  }
+  const index = rows.findIndex((row) => row[0] === hanzi);
+  if (index === -1) {
+    return null;
+  }
+  return { rowNumber: index + 2, entry: parseWordRow(tab, rows[index]) };
+}
+
 /**
  * 탭 이름 + A열 한자로 행 번호를 캐시 없이 재탐색한다 (PRD 4.2 — 사용자가 시트를
  * 정렬·삽입할 수 있어 행 번호를 저장해두면 안 된다). 없으면 null.
  */
 export async function findRowNumber(env: Env, tab: string, hanzi: string): Promise<number | null> {
-  const column = await getValues(env, tab, "A2:A");
+  let column: string[][];
+  try {
+    column = await getValues(env, tab, "A2:A");
+  } catch (err) {
+    // 존재하지 않는 탭을 조회하면 Sheets API가 400(Unable to parse range)을 던진다 — "찾지 못함"으로 취급한다.
+    if (err instanceof SheetsApiError && err.status === 400) {
+      return null;
+    }
+    throw err;
+  }
   const index = column.findIndex((row) => row[0] === hanzi);
   return index === -1 ? null : index + 2;
 }

@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>#9 POST /api/review-fail 구현 — 복습 오답 간격 후퇴 — 작업 플랜</title>
+<style>
+  :root {
+    --bg: #f7f7f8; --card: #ffffff; --ink: #1c1c1e; --muted: #6e6e73;
+    --line: #e3e3e6; --accent: #3b6ef5; --accent-soft: #e8eefe;
+    --ok: #2e8b57; --warn: #b25e09; --code-bg: #f0f0f2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161618; --card: #202024; --ink: #ececf0; --muted: #98989f;
+      --line: #333338; --accent: #7a9bff; --accent-soft: #26304a;
+      --ok: #58c088; --warn: #e0a35c; --code-bg: #2a2a2f;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 40px 20px 80px; background: var(--bg); color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+                 "Segoe UI", "Noto Sans KR", sans-serif;
+    line-height: 1.65;
+  }
+  main { max-width: 860px; margin: 0 auto; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code {
+    font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 0.86em;
+    background: var(--code-bg); border-radius: 5px; padding: 2px 6px;
+  }
+  header { margin-bottom: 28px; }
+  .issue-chip {
+    display: inline-block; font-weight: 700; color: var(--accent);
+    background: var(--accent-soft); border-radius: 999px;
+    padding: 3px 14px; font-size: 0.95rem; margin-bottom: 10px;
+  }
+  .type-chip {
+    display: inline-block; font-weight: 600; color: var(--muted);
+    border: 1px solid var(--line); border-radius: 999px;
+    padding: 3px 12px; font-size: 0.8rem; margin-left: 8px; vertical-align: 2px;
+  }
+  h1 { font-size: 1.7rem; margin: 0 0 14px; letter-spacing: -0.02em; }
+  .meta {
+    display: flex; flex-wrap: wrap; gap: 6px 22px;
+    color: var(--muted); font-size: 0.87rem;
+  }
+  .meta b { color: var(--ink); font-weight: 600; }
+  section.card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 24px 28px; margin-top: 18px;
+  }
+  h2 {
+    font-size: 1.05rem; margin: 0 0 14px; letter-spacing: -0.01em;
+    display: flex; align-items: center; gap: 8px;
+  }
+  h2 .no {
+    color: var(--accent); font-size: 0.8rem; font-weight: 700;
+    border: 1.5px solid var(--accent); border-radius: 6px; padding: 0 6px;
+  }
+  ul, ol { margin: 0; padding-left: 22px; }
+  li { margin: 6px 0; }
+  .steps { list-style: none; padding: 0; counter-reset: step; }
+  .steps li {
+    counter-increment: step; position: relative; padding: 10px 0 10px 44px;
+    border-bottom: 1px dashed var(--line);
+  }
+  .steps li:last-child { border-bottom: none; }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 10px;
+    width: 28px; height: 28px; border-radius: 8px; background: var(--accent-soft);
+    color: var(--accent); font-weight: 700; font-size: 0.85rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .steps .files { display: block; margin-top: 4px; font-size: 0.85rem; color: var(--muted); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 0.82rem; }
+  .done-list { list-style: none; padding: 0; }
+  .done-list li { padding-left: 30px; position: relative; }
+  .done-list li::before {
+    content: ""; position: absolute; left: 2px; top: 7px; width: 15px; height: 15px;
+    border: 2px solid var(--ok); border-radius: 5px;
+  }
+  .scroll-x { overflow-x: auto; }
+  footer { margin-top: 30px; color: var(--muted); font-size: 0.8rem; text-align: center; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <span class="issue-chip"><a href="https://github.com/damdam6/vocabulary-study/issues/9">#9</a></span><span class="type-chip">기능 개선</span>
+    <h1>POST /api/review-fail 구현 — 복습 오답 간격 후퇴</h1>
+    <div class="meta">
+      <span><b>damdam6/vocabulary-study</b></span>
+      <span>브랜치 <b><code>feat/9-post-api-review-fail</code></b> ← <code>main</code></span>
+      <span>라벨 <b>enhancement</b></span>
+      <span>2026-07-17</span>
+    </div>
+  </header>
+
+  <section class="card">
+    <h2><span class="no">1</span>요약</h2>
+    <p>복습 대기 단어를 틀렸을 때 기록 없이 간격만 한 단계 후퇴시키는 <code>POST /api/review-fail</code>을 신규 구현한다. 현재는 이 엔드포인트가 아예 없다. 같은 요청 안에서 해당 탭의 A열 한자로 행을 재탐색하고, F열의 간격 사다리(1→3→7→14→30)를 한 단계 낮춰 <code>오늘+후퇴간격|후퇴간격</code>으로 덮어쓰며, D/E열과 G열 이후 타임스탬프는 절대 건드리지 않는다. 형제 이슈 <a href="https://github.com/damdam6/vocabulary-study/issues/8">#8</a>(POST /api/answer)이 아직 착수 전이므로, 행 재탐색과 간격 사다리 계산을 이번에 재사용 가능한 형태로 먼저 만들어 둔다.</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">2</span>현황 분석</h2>
+    <p>현재 라우팅은 <code>GET /api/words</code> 하나뿐이다 (<code>worker/index.ts:16-23</code>). <code>/api/*</code> 요청은 <code>isAuthorized</code>가 먼저 걸러주므로(<code>worker/index.ts:8-10</code>, <code>worker/lib/auth.ts</code>) 새 라우트는 인증을 별도로 신경 쓸 필요가 없다.</p>
+    <ul>
+      <li><code>worker/lib/sheets.ts</code>: <code>getValues</code>/<code>updateValues</code>/<code>appendValues</code> 등 Sheets API v4 래퍼는 갖춰져 있다. 특정 셀 범위(예: <code>F5:F5</code>)만 <code>RAW</code>로 덮어쓰는 것도 <code>updateValues</code>로 바로 가능하다.</li>
+      <li><code>worker/lib/words.ts</code>: <code>parseWordRow</code>가 A~F열 한 행을 <code>WordEntry</code>로 정규화한다(D/E 빈칸→0, F 빈칸→<code>null</code> 쌍). 다만 "탭+한자로 행 번호를 재탐색"하는 함수는 아직 없다 — <code>GET /api/words</code>는 탭 전체를 훑기만 하고 특정 행에 쓰지 않기 때문이다.</li>
+      <li><code>worker/lib/time.ts</code>: <code>formatSeoulDateTime</code>은 <code>YYYY-MM-DD HH:mm</code>(시각 포함)만 만든다. F열에 필요한 "날짜만" 포맷과 "N일 더하기" 연산은 없다.</li>
+      <li>간격 사다리(1→3→7→14→30) 계산 로직은 코드베이스 어디에도 없다.</li>
+      <li>이슈 본문이 언급한 의존 이슈 <a href="https://github.com/damdam6/vocabulary-study/issues/5">#5</a>(구글 시트 API 연동)는 이미 main에 병합됐다. 반면 <a href="https://github.com/damdam6/vocabulary-study/issues/8">#8</a>(POST /api/answer)과 <a href="https://github.com/damdam6/vocabulary-study/issues/12">#12</a>(간격 상태 머신 유틸)의 워크트리는 둘 다 main HEAD(<code>02c6bb9</code>)에서 커밋이 없어 아직 착수 전이다. 즉 "공유"할 기존 코드가 없으므로, 이번 이슈가 행 재탐색·간격 사다리 유틸을 먼저 만들고 #8이 그 위에 얹는 순서가 된다.</li>
+      <li>테스트 프레임워크는 <code>package.json</code>에 아직 없다(oxlint만 존재) — 검증은 <code>npm run dev</code>(Cloudflare Vite Plugin으로 Worker까지 로컬 구동) + curl 수동 호출로 진행한다.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">3</span>설계</h2>
+    <ul>
+      <li><b>단일 읽기로 행 탐색+파싱을 겸한다.</b> <code>words.ts</code>에 <code>findWordRow(env, tab, hanzi)</code>를 추가해 <code>WORD_ROW_RANGE</code>("A2:F") 전체를 한 번 읽으며 A열이 일치하는 행을 찾고, 그 자리에서 <code>parseWordRow</code>로 파싱까지 끝내 <code>{ rowNumber, entry }</code>를 반환한다(못 찾으면 <code>null</code>). "행 번호만 찾는 함수 + 행 내용 다시 읽는 함수"로 나누면 Sheets API 호출이 두 번 되므로 합쳤다 — 이 저장소는 비밀번호 해시 캐싱까지 신경 쓸 만큼 성능에 민감한 편이다(<code>895ef4b</code>). 이 함수는 #8이 D/E 증가·G열 append에 그대로 재사용할 수 있는 형태로 설계한다.</li>
+      <li><b>간격 사다리는 <code>worker/lib/interval.ts</code> 새 모듈로 분리한다.</b> <code>REVIEW_INTERVAL_LADDER = [1,3,7,14,30]</code> 상수와 이번 이슈에 필요한 <code>stepBack(currentInterval)</code>만 구현한다. #8이 필요로 할 상승(<code>stepUp</code>) 함수는 #8 착수 시점에 이 모듈에 추가하도록 상단 주석으로 안내만 해두고 미리 만들지는 않는다(아직 쓰는 곳이 없는 코드를 미리 짜지 않기 위함).</li>
+      <li><b><code>stepBack</code>은 "정확히 사다리 위 값"이 아니어도 안전하게 동작해야 한다.</b> 현재 간격보다 크지 않은 가장 큰 사다리 값을 "현재 위치"로 보고 그 앞 칸을 반환한다(하한은 인덱스 0=1일). 정상 케이스(1/3/7/14/30)뿐 아니라 시트를 수동으로 건드려 간격이 사다리 밖 값이 된 경우도 항상 낮은 쪽으로만 움직여 안전하다.</li>
+      <li><b>F열이 비어 있거나 형식이 깨진 상태로 호출되면(정상 흐름에서는 발생하지 않아야 함) 최소 간격(1일)로 폴백</b>한다. <code>parseWordRow</code>가 이미 "형식이 깨지면 throw 대신 빈 상태로 취급"하는 방침(<code>words.ts:35</code> 주석)을 갖고 있어 같은 철학을 따른다 — 404 대신 조용히 가장 보수적인 값으로 처리해 사이트가 죽지 않게 한다.</li>
+      <li><b>날짜 연산은 서울 달력 날짜를 UTC 앵커로 취급해 계산한다.</b> Asia/Seoul은 DST가 없는 고정 UTC+9라, "오늘"의 y-m-d를 뽑아낸 뒤 그 값을 <code>Date.UTC(y, m-1, d)</code>로 취급하고 일 단위로 더해도 타임존 버그 없이 정확하다. <code>time.ts</code>에 날짜 전용 포맷터(<code>formatSeoulDate</code>)와 <code>addDays</code>를 추가한다 — #8의 "내일"(졸업)·"오늘+새간격"(복습 정답)도 같은 유틸을 쓰게 된다.</li>
+      <li><b>응답은 GET과 동일한 단어 객체를 반환한다.</b> PRD §7.3은 <code>POST /api/answer</code>는 "응답: 갱신된 단어 객체"라고 명시하지만 <code>review-fail</code> 항목에는 응답 형식이 없다. 형제 엔드포인트와의 일관성, 그리고 프론트가 재조회 없이 바로 로컬 상태를 갱신할 수 있다는 이점 때문에 같은 규약(<code>WordEntry</code> 형태)을 채택한다. 이미 파싱해 둔 <code>entry</code>에 새 <code>nextReview</code>/<code>interval</code>만 덮어써 반환하면 되므로 추가 API 호출도 없다.</li>
+      <li><b>없는 tab+hanzi 조합은 404.</b> PRD §4.2는 모든 쓰기 작업 공통 규약으로 "행 재탐색, 없으면 실패"를 요구하고 §7.3의 <code>POST /api/answer</code>가 이를 404로 명시한다. 이슈 #9 본문의 완료 조건에는 빠져 있지만 같은 규약이 적용되어야 하므로 포함한다.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">4</span>작업 단계</h2>
+    <ol class="steps">
+      <li>서울 기준 날짜 전용 포맷터 <code>formatSeoulDate(date)</code>(<code>YYYY-MM-DD</code>)와 날짜 덧셈 <code>addDays(dateStr, days)</code>를 추가한다. 기존 <code>formatSeoulDateTime</code>과 같은 <code>Intl.DateTimeFormat</code> 포매터를 재사용하되 시/분 파트를 뺀다.
+        <span class="files"><code>worker/lib/time.ts</code></span>
+      </li>
+      <li><code>worker/lib/interval.ts</code>를 신규 생성해 <code>REVIEW_INTERVAL_LADDER = [1,3,7,14,30]</code>과 <code>stepBack(currentInterval)</code>을 구현한다. 사다리 값이 아닌 입력에도 안전하게 동작하도록(설계 참고) 처리하고, #8이 상승 함수를 추가할 위치를 주석으로 안내한다.
+        <span class="files"><code>worker/lib/interval.ts</code> (신규)</span>
+      </li>
+      <li><code>worker/lib/words.ts</code>에 <code>findWordRow(env, tab, hanzi)</code>를 추가한다: <code>WORD_ROW_RANGE</code>로 탭 전체를 읽고 A열이 일치하는 행을 찾아 <code>{ rowNumber, entry }</code>(헤더 오프셋 +2) 또는 <code>null</code>을 반환한다. 모듈 상단 주석에 #9(및 향후 #8)가 이 함수를 공유한다고 갱신한다.
+        <span class="files"><code>worker/lib/words.ts</code></span>
+      </li>
+      <li><code>worker/routes/review-fail.ts</code>를 신규 생성한다: 요청 바디에서 <code>tab</code>/<code>hanzi</code> 파싱(문자열 아니거나 없으면 400) → <code>findWordRow</code>로 탐색(없으면 404) → 현재 간격(<code>entry.interval ?? 1</code>)에 <code>stepBack</code> 적용 → <code>formatSeoulDate(new Date())</code> + <code>addDays</code>로 새 날짜 계산 → <code>F{rowNumber}:F{rowNumber}</code>만 <code>updateValues</code>로 덮어쓰기(RAW, D/E/G열 미접근) → 갱신된 <code>entry</code>를 <code>Response.json</code>으로 응답.
+        <span class="files"><code>worker/routes/review-fail.ts</code> (신규)</span>
+      </li>
+      <li><code>worker/index.ts</code>에 <code>POST /api/review-fail</code> 라우팅을 추가한다. <code>handleGetWords</code>와 동일하게 try/catch로 감싸 예외 시 500 + <code>console.error</code> 로깅.
+        <span class="files"><code>worker/index.ts</code></span>
+      </li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">5</span>리스크</h2>
+    <div class="scroll-x">
+    <table>
+      <thead><tr><th>리스크</th><th>영향</th><th>완화책</th></tr></thead>
+      <tbody>
+        <tr><td>시트를 수동 편집해 F열 형식이 깨지거나 사다리 밖 값이 된 상태에서 호출</td><td>후퇴 폭을 잘못 계산할 수 있음</td><td><code>stepBack</code>이 "현재 값보다 크지 않은 가장 큰 사다리 칸"을 기준으로 항상 안전하게(더 낮은 쪽으로만) 움직이도록 구현. F 자체가 없으면 최소 간격(1일)로 폴백</td></tr>
+        <tr><td>존재하지 않는 tab/hanzi 조합으로 호출</td><td>엉뚱한 시트에 쓰기 시도</td><td><code>findWordRow</code>가 <code>null</code>이면 즉시 404, 쓰기 자체를 하지 않음</td></tr>
+        <tr><td>#8(POST /api/answer)이 아직 미착수라 이번에 만드는 <code>interval.ts</code>/<code>findWordRow</code>가 #8 요구사항과 어긋날 가능성</td><td>#8 작업 시 리팩터링 필요</td><td>두 함수 모두 방향성 없는 범용 인터페이스로 설계(행 조회는 읽기 전용 반환, 사다리는 상수+단일방향 함수)해 확장 시 시그니처 변경 없이 <code>stepUp</code>만 추가하면 되도록 함</td></tr>
+        <tr><td>실제 <code>HSK6급</code> 탭은 라이브 데이터라 테스트로 오염시키면 안 됨</td><td>진행 데이터 훼손</td><td><code>_test</code> 같은 임시 탭(언더스코어 접두 — GET 목록에는 안 잡히지만 review-fail은 탭 이름 제약이 없어 그대로 테스트 가능)에서 curl 테스트 후 행 삭제</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">6</span>테스트 계획</h2>
+    <ul>
+      <li><code>npm run dev</code>로 로컬 Worker 구동(Cloudflare Vite Plugin이 <code>/api/*</code>까지 처리). <code>.dev.vars</code>에 <code>SHEET_ID</code>·<code>GOOGLE_SERVICE_ACCOUNT_KEY</code>·<code>APP_PASSWORD</code> 필요(서비스 계정: <code>voca-dam@voca-502322.iam.gserviceaccount.com</code>, 키 파일 <code>.secret/</code>).</li>
+      <li>시트에 임시 탭(예: <code>_test</code>)을 만들고 졸업 상태 행 하나 추가: D=3, E=3, F=<code>2026-07-17|7</code>, G에 임의 타임스탬프 1~2개.</li>
+      <li><code>curl -X POST http://localhost:5173/api/review-fail -H "Authorization: Bearer &lt;APP_PASSWORD&gt;" -H "content-type: application/json" -d '{"tab":"_test","hanzi":"经济"}'</code> 호출 → 응답 <code>interval: 3</code>, <code>nextReview</code>가 오늘+3일인지 확인.</li>
+      <li>시트를 열어 D/E열 값과 G열 이후 타임스탬프가 호출 전과 동일한지, F열만 <code>오늘+3일|3</code>으로 바뀌었는지 육안 확인.</li>
+      <li>F열을 <code>임의날짜|1</code>로 세팅한 뒤 다시 호출 → 응답 <code>interval</code>이 여전히 1(하한 유지), <code>nextReview</code>는 오늘+1일로 갱신됐는지 확인.</li>
+      <li>존재하지 않는 <code>hanzi</code>로 호출 → 404 확인.</li>
+      <li><code>Authorization</code> 헤더 없이 호출 → 기존 인증 미들웨어가 401을 그대로 반환하는지 확인(회귀 없음).</li>
+      <li>테스트에 사용한 임시 탭/행 정리.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">7</span>완료 조건</h2>
+    <ul class="done-list">
+      <li>호출 시 F열만 변경되고 D/E열, G열 이후 타임스탬프는 불변</li>
+      <li>이미 1일 간격 상태에서 오답 시 간격 1일 유지(날짜만 오늘+1로 갱신, 간격 값은 그대로)</li>
+      <li>존재하지 않는 tab+hanzi 조합으로 호출 시 404</li>
+      <li>응답은 갱신된 단어 객체(GET /api/words와 동일한 <code>WordEntry</code> 형태)로 반환</li>
+    </ul>
+  </section>
+
+  <footer>issue-plan · <a href="https://github.com/damdam6/vocabulary-study/issues/9">#9</a> · 2026-07-17</footer>
+</main>
+</body>
+</html>
