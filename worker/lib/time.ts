@@ -22,8 +22,7 @@ export function formatSeoulDateTime(date: Date): string {
 
 /** `date`를 Asia/Seoul 기준 `YYYY-MM-DD` 문자열로 변환한다. */
 export function formatSeoulDate(date: Date): string {
-  const parts = Object.fromEntries(formatter.formatToParts(date).map((p) => [p.type, p.value]));
-  return `${parts.year}-${parts.month}-${parts.day}`;
+  return formatSeoulDateTime(date).slice(0, 10);
 }
 
 // Asia/Seoul은 DST가 없는 고정 UTC+9라, 추출한 서울 달력 날짜를 그대로 UTC 앵커로 다뤄도
