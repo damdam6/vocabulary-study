@@ -3,7 +3,7 @@
  * 한 요청 안에서 수행한다 (PRD 5.1, 5.3, 7.3, #8). 응답은 GET /api/words와 같은 단어 객체 형태.
  */
 
-import { getValues, updateValues } from "../lib/sheets.ts";
+import { batchUpdateValues, getValues } from "../lib/sheets.ts";
 import { findRowNumber, parseWordRow, type WordEntry } from "../lib/words.ts";
 import {
   columnLetter,
@@ -60,17 +60,18 @@ export async function handleAnswerPost(request: Request, env: Env): Promise<Resp
   const current = parseWordRow(answer.tab, row);
   const update = computeAnswerUpdate(current, answer.mode, answer.isReview, new Date());
 
+  // 카운트·F열·타임스탬프는 정답 1건의 한 단위이므로 한 요청으로 묶어 쓴다.
+  // 부분 실패로 카운트만 반영된 채 남으면 재시도 큐(PRD 10) 재전송 시 이중 증가한다.
   const newCount = answer.mode === "m1" ? update.m1 : update.m2;
-  await updateValues(env, answer.tab, `${MODE_COLUMN[answer.mode]}${rowNumber}`, [[newCount]]);
-
-  if (update.nextReviewChanged) {
-    await updateValues(env, answer.tab, `F${rowNumber}`, [[`${update.nextReview}|${update.interval}`]]);
-  }
-
   const timestampColumn = columnLetter(findNextEmptyColumn(row));
-  await updateValues(env, answer.tab, `${timestampColumn}${rowNumber}`, [
-    [`${answer.timestamp}|${answer.mode}`],
-  ]);
+  const writes = [
+    { range: `${MODE_COLUMN[answer.mode]}${rowNumber}`, values: [[newCount]] as (string | number)[][] },
+    { range: `${timestampColumn}${rowNumber}`, values: [[`${answer.timestamp}|${answer.mode}`]] },
+  ];
+  if (update.nextReviewChanged) {
+    writes.push({ range: `F${rowNumber}`, values: [[`${update.nextReview}|${update.interval}`]] });
+  }
+  await batchUpdateValues(env, answer.tab, writes);
 
   const updated: WordEntry = {
     tab: answer.tab,
