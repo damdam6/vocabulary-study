@@ -220,7 +220,7 @@ button {
   opacity: 0.7;
 }
 
-/* 화면 플레이스홀더 임시 스타일 — #13/#15가 실제 화면으로 교체하면서 제거 */
+/* 화면 플레이스홀더 임시 스타일 — #15가 실제 화면으로 교체하면서 제거 */
 .screen-placeholder {
   flex: 1;
   display: flex;
@@ -230,4 +230,159 @@ button {
   gap: 12px;
   padding: 24px;
   text-align: center;
+}
+
+/* design-prd §3 홈 화면 (#13) */
+.home-screen {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 32px 24px 28px;
+}
+
+.home-date {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.home-title {
+  margin: 6px 0 24px;
+  font-size: 1.5rem;
+  letter-spacing: -0.01em;
+}
+
+.home-spacer {
+  flex: 1;
+}
+
+.status-cards {
+  display: flex;
+  gap: 10px;
+}
+
+.status-card {
+  flex: 1;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-card);
+  border-radius: 15px;
+  padding: 16px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.status-card-value {
+  font-size: 1.6rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+.status-card-value.status-card-review-due {
+  color: var(--accent-light);
+}
+
+.status-card-value.status-card-graduated {
+  color: var(--green);
+}
+
+.status-card-label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.status-card.skeleton {
+  height: 78px;
+  background: linear-gradient(90deg, var(--bg-panel) 25%, var(--bg-disabled) 50%, var(--bg-panel) 75%);
+  background-size: 200% 100%;
+  animation: skeleton-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes skeleton-pulse {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.error-card {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-card);
+  border-radius: 15px;
+  padding: 24px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+}
+
+.error-card-title {
+  margin: 0;
+  color: var(--text);
+  font-weight: 600;
+}
+
+.error-card-reason {
+  margin: 0 0 8px;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.retry-fetch-button {
+  border: none;
+  border-radius: 14px;
+  padding: 10px 20px;
+  background: var(--accent);
+  color: var(--text);
+  font-weight: 600;
+}
+
+.retry-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 10px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.retry-indicator-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--red);
+  flex-shrink: 0;
+}
+
+.session-count {
+  margin: 0 0 10px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.start-button {
+  height: 58px;
+  border: none;
+  border-radius: 16px;
+  background: var(--accent);
+  color: var(--text);
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.start-button:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.start-button:disabled {
+  background: var(--bg-disabled);
+  color: var(--text-faint);
+  cursor: default;
 }

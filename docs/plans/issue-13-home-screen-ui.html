@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>#13 홈 화면 UI 구현 — 작업 플랜</title>
+<style>
+  :root {
+    --bg: #f7f7f8; --card: #ffffff; --ink: #1c1c1e; --muted: #6e6e73;
+    --line: #e3e3e6; --accent: #3b6ef5; --accent-soft: #e8eefe;
+    --ok: #2e8b57; --warn: #b25e09; --code-bg: #f0f0f2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161618; --card: #202024; --ink: #ececf0; --muted: #98989f;
+      --line: #333338; --accent: #7a9bff; --accent-soft: #26304a;
+      --ok: #58c088; --warn: #e0a35c; --code-bg: #2a2a2f;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 40px 20px 80px; background: var(--bg); color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+                 "Segoe UI", "Noto Sans KR", sans-serif;
+    line-height: 1.65;
+  }
+  main { max-width: 860px; margin: 0 auto; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code {
+    font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 0.86em;
+    background: var(--code-bg); border-radius: 5px; padding: 2px 6px;
+  }
+  header { margin-bottom: 28px; }
+  .issue-chip {
+    display: inline-block; font-weight: 700; color: var(--accent);
+    background: var(--accent-soft); border-radius: 999px;
+    padding: 3px 14px; font-size: 0.95rem; margin-bottom: 10px;
+  }
+  .type-chip {
+    display: inline-block; font-weight: 600; color: var(--muted);
+    border: 1px solid var(--line); border-radius: 999px;
+    padding: 3px 12px; font-size: 0.8rem; margin-left: 8px; vertical-align: 2px;
+  }
+  h1 { font-size: 1.7rem; margin: 0 0 14px; letter-spacing: -0.02em; }
+  .meta {
+    display: flex; flex-wrap: wrap; gap: 6px 22px;
+    color: var(--muted); font-size: 0.87rem;
+  }
+  .meta b { color: var(--ink); font-weight: 600; }
+  section.card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 24px 28px; margin-top: 18px;
+  }
+  h2 {
+    font-size: 1.05rem; margin: 0 0 14px; letter-spacing: -0.01em;
+    display: flex; align-items: center; gap: 8px;
+  }
+  h2 .no {
+    color: var(--accent); font-size: 0.8rem; font-weight: 700;
+    border: 1.5px solid var(--accent); border-radius: 6px; padding: 0 6px;
+  }
+  ul, ol { margin: 0; padding-left: 22px; }
+  li { margin: 6px 0; }
+  .steps { list-style: none; padding: 0; counter-reset: step; }
+  .steps li {
+    counter-increment: step; position: relative; padding: 10px 0 10px 44px;
+    border-bottom: 1px dashed var(--line);
+  }
+  .steps li:last-child { border-bottom: none; }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 10px;
+    width: 28px; height: 28px; border-radius: 8px; background: var(--accent-soft);
+    color: var(--accent); font-weight: 700; font-size: 0.85rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .steps .files { display: block; margin-top: 4px; font-size: 0.85rem; color: var(--muted); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 0.82rem; }
+  .done-list { list-style: none; padding: 0; }
+  .done-list li { padding-left: 30px; position: relative; }
+  .done-list li::before {
+    content: ""; position: absolute; left: 2px; top: 7px; width: 15px; height: 15px;
+    border: 2px solid var(--ok); border-radius: 5px;
+  }
+  .scroll-x { overflow-x: auto; }
+  footer { margin-top: 30px; color: var(--muted); font-size: 0.8rem; text-align: center; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <span class="issue-chip"><a href="https://github.com/damdam6/vocabulary-study/issues/13">#13</a></span><span class="type-chip">신규 기능</span>
+    <h1>홈 화면 UI 구현</h1>
+    <div class="meta">
+      <span><b>damdam6/vocabulary-study</b></span>
+      <span>브랜치 <b><code>feat/13-home-screen-ui</code></b> ← <code>main</code></span>
+      <span>라벨 <b>enhancement</b></span>
+      <span>2026-07-18</span>
+    </div>
+  </header>
+
+  <section class="card">
+    <h2><span class="no">1</span>요약</h2>
+    <p>design-prd §3이 정의하는 홈 화면(오늘 날짜 → 타이틀 → 현황 카드 3개 → 미전송 인디케이터 → "오늘 세션 · n문제" → "학습 시작" 버튼)을 구현한다. <code>GET /api/words</code>(#7)로 받은 단어 목록을 <code>getWordState</code>(#12)로 분류해 복습 대기/학습 중/졸업 수와 오늘 세션 문제 수(기능 PRD §6.1 큐 산식과 동일한 계산)를 계산하고, 로딩/에러/정상 3가지 화면 상태를 처리한다. 로그인 화면(#11)과 재시도 큐(#18)는 아직 구현되지 않았으므로, 이번 이슈에서 두 기능이 이후 그대로 재사용할 로컬스토리지 키·이벤트 계약을 먼저 정의해 둔다.</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">2</span>현황 분석</h2>
+    <ul>
+      <li><code>src/screens/HomeScreen.tsx:1-16</code>는 플레이스홀더 — 타이틀과 버튼 하나뿐이며 데이터 페칭도, 상태 판정도 없다. <code>App.tsx:16</code>이 <code>onStart</code>만 넘겨준다.</li>
+      <li>의존 이슈 둘 다 완료됨: <code>GET /api/words</code>(#7)는 <code>worker/routes/words.ts:10-26</code>에 구현되어 <code>{ fetchedAt, words: WordEntry[] }</code>를 반환하고, <code>WordEntry</code>(<code>worker/lib/words.ts:8-17</code>)는 이미 <code>m1</code>/<code>m2</code>/<code>nextReview</code>를 정규화해 넘긴다. <code>getWordState</code>·<code>getSeoulToday</code>(<code>src/lib/wordState.ts:17-51</code>)도 완성돼 있고 순수 함수라 그대로 재사용 가능.</li>
+      <li>반면 <b>로그인 화면(#11)은 아직 미착수</b> — <code>src/screens/LoginScreen.tsx:1-16</code>도 플레이스홀더이며 <code>onLogin</code>을 누르면 아무 저장 없이 바로 홈으로 이동한다. 즉 <code>Authorization: Bearer &lt;비밀번호&gt;</code>(<code>worker/lib/auth.ts:2</code>, 기능 PRD §7.2)를 localStorage에서 읽어올 저장 로직 자체가 레포에 아직 없다 — 이 이슈가 사실상 그 계약을 처음 정의하게 된다.</li>
+      <li><b>재시도 큐(#18)도 미착수.</b> design-prd §3(<code>docs/design-prd.md:79</code>)은 "재시도 큐에 항목이 있을 때만" 인디케이터를 표시하라고 하지만, 큐를 채우는 쪽(#18, <code>POST /api/answer</code> 실패 시 저장)이 아직 없어 이번 이슈는 "읽는 쪽" 계약만 먼저 세워야 한다.</li>
+      <li>design-prd §3 전문(<code>docs/design-prd.md:71-80</code>): 구성 순서, 현황 카드 3개 색 토큰(<code>accent-light</code>/<code>text</code>/<code>green</code>), "졸업 수 = <code>reviewDue + reviewScheduled</code>"(복습 대기 포함), 세션 수 산식 <code>min(60, min(복습대기,60) + 학습중 후보 문제 수)</code>, 로딩/에러/미전송 상태 사양, "홈 진입 시마다 재조회"가 모두 명시돼 있다.</li>
+      <li>기능 PRD §6.1(<code>docs/PRD.md:129-136</code>)의 후보 문제 수 정의: 학습 중 단어당 최대 2문제(<code>D&lt;3</code> → 모드1 후보, <code>E&lt;3</code> → 모드2 후보). 세션 수는 실제 큐 구성(#14, 별도 이슈) 없이 이 카운트만으로 계산 가능 — §6.1 전체를 이 이슈에서 구현할 필요는 없다.</li>
+      <li><code>src/index.css:134-144</code>의 <code>.screen-placeholder</code>는 임시 스타일이며 주석에 "#11/#13/#15가 실제 화면으로 교체하면서 제거"라고 명시 — 홈 화면은 이 클래스를 더 이상 쓰지 않게 된다. 색 토큰(<code>--bg-panel</code>/<code>--bg-disabled</code>/<code>--accent</code>/<code>--green</code>/<code>--accent-light</code>/<code>--red</code> 등)은 <code>src/index.css:1-23</code>에 이미 정의돼 있다.</li>
+      <li><code>package.json:9-28</code>에는 리액트 컴포넌트 테스트 도구(@testing-library 등)가 없다 — <code>src/lib/wordState.test.ts</code> 선례처럼 순수 함수 단위로 vitest 테스트를 쓰고, 컴포넌트 자체는 브라우저 수동 검증으로 확인하는 편이 기존 관례에 맞다.</li>
+      <li>메모리 기록(2026-07-14 세팅): 실 스프레드시트 <code>HSK6급</code> 탭은 헤더만 있고 데이터 행이 비어 있다 — "실제 데이터로 카드 숫자 확인"을 검증하려면 검증용 임시 행이 필요하다(#7이 자체 완료 조건에서 쓴 것과 같은 패턴).</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">3</span>설계</h2>
+    <ul>
+      <li><b><code>src/lib/auth.ts</code> 신설</b> — <code>getStoredPassword()</code>/<code>setStoredPassword()</code>/<code>clearStoredPassword()</code>, localStorage 키 <code>vocab-study:app-password</code>. 홈 화면이 처음으로 실제 인증 헤더가 필요한 화면이라 이 계약을 여기서 만들고, #11이 그대로 재사용하게 한다. <i>(대안: #11이 정의할 때까지 기다림 — 의존 방향이 반대다. #13은 #7·#12에만 의존하며 #11에 의존하지 않으므로, 저장 규약을 먼저 세우는 쪽이 맞다.)</i></li>
+      <li><b><code>src/lib/api.ts</code> 신설</b> — <code>apiFetch(path, init?)</code>: 저장된 비밀번호를 <code>Authorization: Bearer</code>로 붙여 <code>fetch</code>하고, <code>401</code>이면 저장값을 지운다(기능 PRD §8). 화면 전환(로그인으로 복귀)까지는 #11이 없어 이번 이슈 범위 밖 — 홈 화면 입장에서 <code>401</code>은 다른 실패와 동일하게 에러 상태로 처리한다.</li>
+      <li><b><code>src/lib/wordsApi.ts</code> 신설</b> — <code>fetchWords()</code>: <code>GET /api/words</code>를 <code>apiFetch</code>로 호출, 비-2xx면 <code>Error</code> throw, 성공 시 <code>{ words: WordProgress[] }</code>(<code>WordProgress</code>는 <code>src/lib/wordState.ts</code> 기존 export 재사용 — <code>m1</code>/<code>m2</code>/<code>nextReview</code>만 필요, <code>hanzi</code>/<code>pinyin</code>/<code>meaning</code>은 홈 집계에 불필요).</li>
+      <li><b><code>src/lib/homeStats.ts</code>(+ <code>.test.ts</code>) 신설</b> — <code>computeHomeStats(words: WordProgress[], today: string)</code> 순수 함수. <code>getWordState</code>로 각 단어를 분류해 <code>reviewDue</code>/<code>learning</code>/<code>reviewScheduled</code> 카운트, <code>graduated = reviewDue + reviewScheduled</code>, <code>learningCandidates</code>(학습 중 단어마다 <code>m1&lt;3</code>·<code>m2&lt;3</code> 각각 +1), <code>sessionCount = Math.min(60, Math.min(reviewDue,60) + learningCandidates)</code>를 반환. UI와 분리해 <code>wordState.test.ts</code>와 같은 방식으로 vitest 검증한다.</li>
+      <li><b><code>src/lib/retryQueue.ts</code> 신설</b> — <code>getRetryQueueLength()</code>(localStorage 키 <code>vocab-study:retry-queue</code>를 JSON 배열로 읽고, 없거나 파싱 실패면 0)와 <code>RETRY_QUEUE_CHANGED_EVENT</code>(문자열 상수, <code>window</code> 커스텀 이벤트 이름) export. #18이 큐에 쓰기/비우기를 할 때마다 이 이벤트를 <code>window.dispatchEvent</code>해야 홈 화면이 같은 탭에서 즉시 반응한다 — PR 설명과 코드 주석에 "#18 구현 시 이 계약 재사용" 명시. <i>(대안: <code>storage</code> 이벤트만 사용 — 그러나 <code>storage</code>는 다른 탭에서의 변경에만 발화하고 같은 탭 내 변경엔 발화하지 않아, 학습 세션 중 재전송 성공 후 홈으로 돌아왔을 때 즉시 반영되지 않는 문제가 생긴다. 두 이벤트를 함께 구독한다.)</i></li>
+      <li><b><code>src/lib/date.ts</code>(+ <code>.test.ts</code>) 신설</b> — <code>formatHomeDate(now = new Date())</code>: <code>Intl.DateTimeFormat("ko-KR", { timeZone: "Asia/Seoul", year:"numeric", month:"long", day:"numeric", weekday:"long" })</code>. 로컬에서 직접 확인한 결과 이 옵션 조합이 정확히 <code>"2026년 7월 17일 금요일"</code>을 만든다(한국어 로케일은 월 <code>"long"</code>도 <code>"7월"</code>로 렌더링됨 — 영문처럼 "July"가 되지 않음).</li>
+      <li><b><code>HomeScreen.tsx</code> 상태 모델</b>: <code>status: "loading" | "error" | "ready"</code> + <code>words</code>/<code>error</code>/<code>retryKey</code>(재시도 버튼용)/<code>retryQueueLength</code>. 마운트 시 <code>fetchWords()</code> 호출 — <code>App.tsx</code>가 화면을 조건부 렌더링(<code>{screen === 'home' && &lt;HomeScreen/&gt;}</code>)하므로 홈을 벗어났다 돌아올 때마다 컴포넌트가 새로 마운트되어 "홈 진입 시마다 재조회" 요구사항을 별도 로직 없이 만족한다.</li>
+      <li><b>에러 상태에서 기본 시작 버튼 숨김(판단 필요)</b>: design-prd는 에러 카드에 자체 "다시 시도" 버튼이 있다고만 하고, 하단 "학습 시작" 버튼의 노출 여부는 명시하지 않는다. 데이터가 없으면 세션 수를 계산할 수 없으므로, 에러 상태에서는 세션 수 줄과 시작 버튼을 모두 숨기고 에러 카드의 "다시 시도"를 유일한 CTA로 둔다(로딩 상태의 "세션 수 줄 숨김" 규칙과 일관). PR 설명에 이 해석을 명시해 리뷰에서 쉽게 뒤집을 수 있게 한다.</li>
+      <li><b>미전송 인디케이터 표시 조건</b>: <code>retryQueueLength &gt; 0</code>이면 로딩/에러/정상 상태와 무관하게 항상 표시(재전송 여부는 단어 목록 로딩과 무관한 별개 관심사). <code>window</code>의 <code>storage</code> 이벤트와 <code>RETRY_QUEUE_CHANGED_EVENT</code> 둘 다 구독해 큐가 비면 즉시 사라지게 한다.</li>
+      <li><b>스타일</b>: <code>src/index.css</code>에 이어서 추가(레포에 CSS 모듈/CSS-in-JS 관례가 없고 기존 <code>.app-*</code>/<code>.screen-placeholder</code>도 전역 스타일이라 동일 관례를 따름). 새 키프레임 <code>skeleton-pulse</code> 1개, 클래스는 <code>.home-*</code> 접두사로 다른 화면과 충돌 방지.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">4</span>작업 단계</h2>
+    <ol class="steps">
+      <li>✅ <code>src/lib/auth.ts</code> 작성 — <code>getStoredPassword</code>/<code>setStoredPassword</code>/<code>clearStoredPassword</code>, 키 <code>vocab-study:app-password</code>.
+        <span class="files"><code>src/lib/auth.ts</code></span>
+      </li>
+      <li>✅ <code>src/lib/api.ts</code> 작성 — <code>apiFetch()</code> 공통 래퍼(Bearer 부착, 401 시 저장값 삭제).
+        <span class="files"><code>src/lib/api.ts</code></span>
+      </li>
+      <li>✅ <code>src/lib/wordsApi.ts</code> 작성 — <code>fetchWords()</code>: <code>GET /api/words</code> 호출 + 비정상 응답 시 throw.
+        <span class="files"><code>src/lib/wordsApi.ts</code></span>
+      </li>
+      <li>✅ <code>src/lib/homeStats.ts</code> + <code>homeStats.test.ts</code> 작성 — 상태별 카운트·세션 수 산식, 60 상한 경계값 포함 케이스.
+        <span class="files"><code>src/lib/homeStats.ts</code>, <code>src/lib/homeStats.test.ts</code></span>
+      </li>
+      <li>✅ <code>src/lib/retryQueue.ts</code> 작성 — <code>getRetryQueueLength()</code> + <code>RETRY_QUEUE_CHANGED_EVENT</code>. 코드 상단 주석에 #18이 큐 변경 시 이 이벤트를 dispatch해야 한다는 계약 명시.
+        <span class="files"><code>src/lib/retryQueue.ts</code></span>
+      </li>
+      <li>✅ <code>src/lib/date.ts</code> + <code>date.test.ts</code> 작성 — <code>formatHomeDate(now?)</code>, 서울 자정 경계 케이스 포함.
+        <span class="files"><code>src/lib/date.ts</code>, <code>src/lib/date.test.ts</code></span>
+      </li>
+      <li>✅ <code>src/screens/HomeScreen.tsx</code> 재작성 — 마운트 시 페칭, 로딩/에러/정상 3분기 렌더, 현황 카드 3개, 미전송 인디케이터, 세션 수 줄, 시작 버튼 상태별 라벨/비활성 로직 전부 반영.
+        <span class="files"><code>src/screens/HomeScreen.tsx</code></span>
+      </li>
+      <li>✅ <code>src/index.css</code>에 홈 전용 스타일 추가 — <code>skeleton-pulse</code> 키프레임, <code>.home-*</code> 클래스(카드/스켈레톤/에러/버튼/인디케이터), 숫자 <code>tabular-nums</code>.
+        <span class="files"><code>src/index.css</code></span>
+      </li>
+      <li>✅ 로컬 실행 준비 — 메인 체크아웃의 <code>.secret/voca-502322-99c84e265c69.json</code>을 워크트리로 복사(gitignore 대상, 커밋 금지)하고 <code>.dev.vars</code>(gitignore 대상)에 <code>APP_PASSWORD</code>·<code>GOOGLE_SERVICE_ACCOUNT_KEY</code> 기록.
+        <span class="files">워크트리 로컬 파일 — 커밋 없음. 실제로는 <code>node_modules</code>도 없는 새 워크트리라 <code>npm install</code>부터 먼저 필요했다(패키지 추가 없음, <code>package-lock.json</code> 변경은 되돌림).</span>
+      </li>
+      <li>✅ <code>npm run dev</code>로 브라우저 수동 검증 — 로딩/에러(+재시도 성공 복구)/정상/0문제/미전송 인디케이터 5개 상태 모두 스크린샷으로 확인.
+        <span class="files">검증 단계 — 코드 변경 없음, 구글 시트 임시 데이터는 검증 후 제거. <b>계획 대비 실제:</b> <code>HSK6급</code> 탭은 2026-07-14 메모 기록과 달리 이미 학습 중 단어 46개가 실존해(모두 m1=0/m2=0) 그대로 "학습 중" 케이스 실데이터로 썼고, 복습 대기·복습 예약 검증용 임시 행 2개만 추가했다가 확인 후 삭제해 46개로 원복했다(<code>测试_ReviewDue_TMP</code>/<code>测试_ReviewScheduled_TMP</code>). "출제 0개" 상태는 실 데이터 46개를 건드리지 않기 위해 브라우저 콘솔에서 <code>window.fetch</code>를 일시적으로 모킹해 확인했다(코드 경로는 동일, 네트워크 응답만 대체).</span>
+      </li>
+      <li>✅ <code>npm run test</code>, <code>npm run lint</code>, <code>npm run build</code> 통과 확인.
+        <span class="files">검증 단계 — 파일 변경 없음. 15/15 테스트 통과, oxlint 클린, <code>tsc -b && vite build</code> 성공.</span>
+      </li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">5</span>리스크</h2>
+    <div class="scroll-x">
+    <table>
+      <thead><tr><th>리스크</th><th>영향</th><th>완화책</th></tr></thead>
+      <tbody>
+        <tr><td>로그인 화면(#11)이 미구현이라 실제 비밀번호 저장 플로우가 없음</td><td>실행 상태에서 <code>/api/words</code> 호출이 저장된 비밀번호 없이 나가 항상 401(에러 상태)로 떨어짐</td><td>devtools 콘솔에서 <code>localStorage.setItem("vocab-study:app-password", "...")</code>로 수동 세팅해 검증. 키 이름을 계약으로 문서화해 #11이 그대로 재사용하게 함</td></tr>
+        <tr><td>재시도 큐(#18)가 미구현이라 인디케이터를 채우는 쪽이 없음</td><td>정상 플로우로는 인디케이터가 절대 표시되지 않아 완료 조건 검증 불가</td><td>localStorage 키+이벤트 계약만 먼저 정의, 검증은 devtools로 <code>vocab-study:retry-queue</code>에 배열을 수동 주입해 확인</td></tr>
+        <tr><td>실 스프레드시트 <code>HSK6급</code> 탭에 데이터 행이 없음(2026-07-14 세팅 메모 기준)</td><td>"실제 데이터로 카드 숫자 일치" 완료 조건을 빈 데이터로는 의미 있게 검증 불가</td><td>#7 선례처럼 검증용 임시 행 추가 후 확인, 완료되면 즉시 삭제해 시트를 빈 상태로 복원. <b>실제 확인 결과 메모가 낡아 있었다</b> — 탭에 이미 학습 중 단어 46개가 있어 그대로 "학습 중" 실데이터로 쓰고, 복습 대기·복습 예약 2가지 상태만 임시 행으로 보강했다(검증 후 삭제, 46개로 원복)</td></tr>
+        <tr><td>에러 상태에서 "학습 시작" 버튼 노출 여부가 design-prd에 명시되지 않음</td><td>구현자마다 다르게 해석하면 리뷰에서 재작업 발생</td><td>설계 섹션의 판단(에러 시 시작 버튼·세션 수 줄 숨김, 에러 카드의 "다시 시도"만 노출)을 PR 설명에 명시</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">6</span>테스트 계획</h2>
+    <ul>
+      <li><code>npm run test</code> — <code>computeHomeStats</code>: 학습 중/복습 대기/복습 예약 혼합 목록에서 세 카운트와 <code>graduated</code>(복습 대기 포함)가 맞는지, 학습 중 단어의 <code>m1</code>/<code>m2</code> 조합별 <code>learningCandidates</code>(0~2)가 맞는지, <code>sessionCount</code>가 60 상한에서 정확히 캡되는지(예: 복습 대기 70개 → <code>min(70,60)=60</code>이라 학습 중 후보는 전혀 더해지지 않음) 확인.</li>
+      <li><code>npm run test</code> — <code>formatHomeDate</code>: 서울 자정 전후 인스턴트가 각각 전날/다음날 요일로 정확히 갈리는지(<code>wordState.test.ts</code>의 <code>getSeoulToday</code> 경계 케이스와 같은 패턴).</li>
+      <li><code>npm run test</code> — <code>getRetryQueueLength</code>: 키 없음 → 0, 손상된 JSON → 0, 정상 배열 → 길이 그대로.</li>
+      <li>수동(브라우저) — 로딩: 개발자도구 네트워크 스로틀로 스켈레톤 펄스와 "불러오는 중…" 비활성 버튼, 세션 수 줄 숨김 확인.</li>
+      <li>수동(브라우저) — 에러: 저장된 비밀번호를 틀리게 세팅해 401 유도 → 에러 카드 문구 + "다시 시도" 버튼, 클릭 시 재요청 확인.</li>
+      <li>수동(브라우저) — 정상: <code>HSK6급</code> 탭에 학습 중/복습 대기(오늘)/복습 예약(미래) 각 1행 이상 임시 추가 → 카드 3개 숫자와 "오늘 세션 · n문제"가 수식대로 계산되는지 확인 후 임시 행 삭제.</li>
+      <li>수동(브라우저) — 출제 0개: 전 단어가 복습 예약(미래)만 있도록 임시 데이터 조정 → 시작 버튼 비활성 + "오늘 할 것 없음" 확인.</li>
+      <li>수동(브라우저) — 미전송 인디케이터: devtools로 <code>vocab-study:retry-queue</code>에 항목을 넣고 <code>RETRY_QUEUE_CHANGED_EVENT</code>를 dispatch → 인디케이터 즉시 표시, 큐를 비우고 다시 dispatch → 즉시 제거 확인.</li>
+      <li><code>npm run lint</code>(oxlint), <code>npm run build</code>(tsc -b && vite build) 통과.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">7</span>완료 조건</h2>
+    <ul class="done-list">
+      <li>✅ 실제 데이터(임시 검증 행 포함)로 현황 카드 3개(복습 대기/학습 중/졸업) 숫자가 <code>getWordState</code> 판정과 일치 — 복습 대기 1 / 학습 중 46 / 졸업 2로 확인</li>
+      <li>✅ 출제 대상 0개일 때 시작 버튼 비활성 + "오늘 할 것 없음" 표시 확인</li>
+      <li>✅ <code>/api/words</code> 실패(401 등) 상황에서 에러 카드 + "다시 시도" 버튼 확인, 재시도 시 재요청 확인(재시도로 정상 상태 복귀까지 확인)</li>
+      <li>✅ "오늘 세션 · n문제" 수치가 <code>computeHomeStats</code> 산식(기능 PRD §6.1 큐 산식과 동일)과 일치 — 60문제(60 상한 캡) 확인</li>
+      <li>✅ 로딩 중 현황 카드 자리에 스켈레톤 표시, 세션 수 줄 숨김, 버튼 "불러오는 중…" 비활성 확인</li>
+      <li>✅ 재시도 큐(<code>vocab-study:retry-queue</code>)에 항목이 있을 때만 홈 인디케이터 표시, 비워지면(이벤트 발화 시) 즉시 제거 확인</li>
+      <li>✅ <code>npm run test</code>(15/15) / <code>npm run lint</code>(oxlint 클린) / <code>npm run build</code> 모두 통과</li>
+      <li>✅ 검증용으로 스프레드시트에 추가한 임시 행은 모두 삭제해 원상복구(46개로 확인)</li>
+    </ul>
+  </section>
+
+  <footer>issue-plan · <a href="https://github.com/damdam6/vocabulary-study/issues/13">#13</a> · 2026-07-18</footer>
+</main>
+</body>
+</html>
