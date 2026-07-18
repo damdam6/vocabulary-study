@@ -18,13 +18,13 @@ agents:
     max_tokens: 16384
   security:
     provider: kimi
-    model: kimi-k2.7-code
+    model: kimi-k3
     prompt_file: prompts/security.md
     temperature: 1
     max_tokens: 16384
   orchestrator:
     provider: kimi
-    model: kimi-k2.6
+    model: kimi-k3
     prompt_file: prompts/orchestrator.md
     temperature: 1
     max_tokens: 16384
