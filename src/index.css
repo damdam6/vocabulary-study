@@ -220,7 +220,333 @@ button {
   opacity: 0.7;
 }
 
-/* 화면 플레이스홀더 임시 스타일 — #13/#15가 실제 화면으로 교체하면서 제거 */
+/* §4.1 학습 화면 공통 프레임 (#15) — 수치는 목업(docs/design/prototype.dc.html) 기준 */
+.study {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 16px 20px 22px;
+  min-height: 0;
+}
+
+.study-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.study-exit {
+  height: 34px;
+  padding: 0 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border-input);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.study-progress {
+  font-size: 16px;
+  font-variant-numeric: tabular-nums;
+}
+
+.study-progress-now {
+  font-weight: 700;
+}
+
+.study-progress-total {
+  color: var(--text-faint);
+}
+
+/* 종료 버튼과 좌우 균형을 맞춰 진행도를 중앙에 고정 (목업의 62px 스페이서) */
+.study-header-spacer {
+  width: 62px;
+}
+
+.study-chips {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 16px;
+}
+
+.study-chip {
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-card);
+  color: var(--text-muted);
+}
+
+.study-chip--review {
+  background: rgba(91, 139, 245, 0.14);
+  border: none;
+  color: var(--accent-light);
+}
+
+/* §4.4 정오 피드백 오버레이 (#15) — .app-column 앵커. 논블로킹: pointer-events를
+   차단하지 않고, 이미 다음 문제로 전환된 화면 위에 0.4s 겹쳐 재생된다. */
+.study-feedback {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.study-feedback--o {
+  background: rgba(63, 206, 143, 0.08);
+}
+
+.study-feedback--x {
+  background: rgba(240, 101, 90, 0.08);
+}
+
+.study-feedback-glyph {
+  font-size: 130px;
+  font-weight: 800;
+  animation: popfb 0.4s ease forwards;
+}
+
+.study-feedback--o .study-feedback-glyph {
+  color: var(--green);
+}
+
+.study-feedback--x .study-feedback-glyph {
+  color: var(--red);
+}
+
+/* 모드 카드 플레이스홀더 최소 스타일 — 실제 카드 UI(§4.2/§4.3)는 #16/#17에서 교체 */
+.mode-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 16px;
+  min-height: 0;
+}
+
+.mode-card {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 24px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: 22px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.35);
+  color: var(--text);
+  font: inherit;
+  text-align: center;
+}
+
+.mode-card:disabled {
+  cursor: default;
+}
+
+.mode-card-hanzi {
+  font-size: 44px;
+  font-weight: 500;
+}
+
+.mode-card-pinyin {
+  font-size: 20px;
+  color: var(--accent-light);
+  font-weight: 500;
+}
+
+.mode-card-meaning {
+  font-size: 23px;
+  font-weight: 500;
+  text-wrap: pretty;
+}
+
+.mode-card-hint {
+  font-size: 13px;
+  color: var(--text-faint);
+}
+
+.mode-result-title {
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--red);
+}
+
+.mode-my-answer {
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+.mode-my-answer s {
+  color: var(--red);
+}
+
+.mode-footnote {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-hint-dim);
+}
+
+.mode-actions {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  align-items: center;
+  min-height: 54px;
+}
+
+.judge {
+  height: 54px;
+  padding: 0 22px;
+  border-radius: 14px;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.judge:active {
+  transform: scale(0.94);
+}
+
+.judge--x {
+  border: 2px solid var(--red);
+  background: rgba(240, 101, 90, 0.1);
+  color: var(--red);
+}
+
+.judge--o {
+  border: 2px solid var(--green);
+  background: rgba(63, 206, 143, 0.1);
+  color: var(--green);
+}
+
+.mode-input {
+  height: 60px;
+  border-radius: 14px;
+  border: 1px solid var(--border-input);
+  background: var(--bg-panel);
+  color: var(--text);
+  font-size: 28px;
+  text-align: center;
+}
+
+.primary-button {
+  height: 54px;
+  border-radius: 14px;
+  border: none;
+  background: var(--accent);
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.primary-button:active {
+  transform: scale(0.98);
+}
+
+/* §5 세션 완료 화면 (#15) */
+.done {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 30px 24px 26px;
+}
+
+.done-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+
+.done-check {
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  background: rgba(63, 206, 143, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 34px;
+  color: var(--green);
+  font-weight: 700;
+}
+
+.done-title {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.done-note {
+  margin: -6px 0 0;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.done-stats {
+  display: flex;
+  gap: 44px;
+  margin-top: 18px;
+}
+
+.done-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.done-stat-num {
+  font-size: 40px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.done-stat-num--correct {
+  color: var(--green);
+}
+
+.done-stat-num--wrong {
+  color: var(--red);
+}
+
+.done-stat-label {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.done-divider {
+  width: 1px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.done-home {
+  height: 58px;
+  border-radius: 16px;
+  border: none;
+  background: var(--accent);
+  color: #ffffff;
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.done-home:active {
+  transform: scale(0.98);
+}
+
+/* 화면 플레이스홀더 임시 스타일 — #13이 실제 홈 화면으로 교체하면서 제거 */
 .screen-placeholder {
   flex: 1;
   display: flex;
