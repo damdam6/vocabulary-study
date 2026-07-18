@@ -3,9 +3,12 @@ import {
   apiFetch,
   clearPassword,
   getStoredPassword,
+  postAnswer,
+  postReviewFail,
   savePassword,
   setUnauthorizedHandler,
   verifyPassword,
+  type WordEntry,
 } from "./api";
 
 // vitest는 node 환경이라 localStorage/fetch가 없다 — 전역에 스텁을 주입한다.
@@ -129,5 +132,66 @@ describe("verifyPassword", () => {
   it("네트워크 예외면 'error'", async () => {
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new TypeError("Failed to fetch")));
     await expect(verifyPassword("any")).resolves.toBe("error");
+  });
+});
+
+const WORD: WordEntry = {
+  tab: "HSK4",
+  hanzi: "经济",
+  pinyin: "jīngjì",
+  meaning: "경제",
+  m1: 3,
+  m2: 3,
+  nextReview: "2026-07-20",
+  interval: 7,
+};
+
+describe("postAnswer", () => {
+  it("/api/answer에 §7.3 형식의 JSON 바디를 POST하고 갱신 단어를 반환한다", async () => {
+    savePassword("secret");
+    const fetchMock = vi.fn().mockResolvedValue(Response.json({ ...WORD, m1: 4 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const record = {
+      tab: "HSK4",
+      hanzi: "经济",
+      mode: "m1" as const,
+      timestamp: "2026-07-18 09:12",
+      isReview: true,
+    };
+    await expect(postAnswer(record)).resolves.toEqual({ ...WORD, m1: 4 });
+
+    const [path, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(path).toBe("/api/answer");
+    expect(init.method).toBe("POST");
+    expect(new Headers(init.headers).get("Content-Type")).toBe("application/json");
+    expect(new Headers(init.headers).get("Authorization")).toBe("Bearer secret");
+    expect(JSON.parse(init.body as string)).toEqual(record);
+  });
+
+  it("비정상 응답이면 throw한다 — 셸의 fire-and-forget catch 대상", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(null, { status: 404 })));
+    await expect(
+      postAnswer({ tab: "HSK4", hanzi: "经济", mode: "m1", timestamp: "t", isReview: false }),
+    ).rejects.toThrow("404");
+  });
+});
+
+describe("postReviewFail", () => {
+  it("/api/review-fail에 {tab, hanzi}를 POST한다", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(Response.json({ ...WORD, interval: 3 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(postReviewFail("HSK4", "经济")).resolves.toEqual({ ...WORD, interval: 3 });
+
+    const [path, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(path).toBe("/api/review-fail");
+    expect(init.method).toBe("POST");
+    expect(JSON.parse(init.body as string)).toEqual({ tab: "HSK4", hanzi: "经济" });
+  });
+
+  it("비정상 응답이면 throw한다", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(null, { status: 500 })));
+    await expect(postReviewFail("HSK4", "经济")).rejects.toThrow("500");
   });
 });

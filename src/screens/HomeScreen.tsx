@@ -1,13 +1,17 @@
-// design-prd §3 홈 화면
+// design-prd §3 홈 화면. 세션 큐 구성은 홈 책임(기능 PRD §6.1) — 시작 클릭 시
+// 이미 조회해 둔 단어로 큐를 만들어 onStart(queue)로 올린다(#15 셸 계약).
+// 현황 집계(sessionCount)와 큐가 같은 조회 결과를 쓰므로 수치가 어긋나지 않는다.
 import { useEffect, useState } from "react";
+import { type WordEntry } from "../lib/api.ts";
 import { formatHomeDate } from "../lib/date.ts";
 import { computeHomeStats, type HomeStats } from "../lib/homeStats.ts";
 import { RETRY_QUEUE_CHANGED_EVENT, RETRY_QUEUE_STORAGE_KEY, getRetryQueueLength } from "../lib/retryQueue.ts";
+import { buildSessionQueue, type SessionQuestion } from "../lib/sessionQueue.ts";
 import { getSeoulToday } from "../lib/wordState.ts";
 import { fetchWords } from "../lib/wordsApi.ts";
 
 interface HomeScreenProps {
-  onStart: () => void
+  onStart: (queue: SessionQuestion<WordEntry>[]) => void
 }
 
 type Status = "loading" | "error" | "ready";
@@ -15,6 +19,7 @@ type Status = "loading" | "error" | "ready";
 function HomeScreen({ onStart }: HomeScreenProps) {
   const [status, setStatus] = useState<Status>("loading");
   const [stats, setStats] = useState<HomeStats | null>(null);
+  const [words, setWords] = useState<WordEntry[]>([]);
   const [errorMessage, setErrorMessage] = useState("");
   const [retryKey, setRetryKey] = useState(0);
   const [retryQueueLength, setRetryQueueLength] = useState(0);
@@ -26,9 +31,10 @@ function HomeScreen({ onStart }: HomeScreenProps) {
     const controller = new AbortController();
     setStatus("loading");
     fetchWords(controller.signal)
-      .then((words) => {
+      .then((fetched) => {
         if (cancelled) return;
-        setStats(computeHomeStats(words, getSeoulToday()));
+        setWords(fetched);
+        setStats(computeHomeStats(fetched, getSeoulToday()));
         setStatus("ready");
       })
       .catch((err: unknown) => {
@@ -62,6 +68,11 @@ function HomeScreen({ onStart }: HomeScreenProps) {
   }, []);
 
   const canStart = status === "ready" && (stats?.sessionCount ?? 0) > 0;
+
+  const handleStart = () => {
+    // canStart(sessionCount>0)와 같은 단어 집합·같은 산식이므로 빈 큐가 나올 수 없다
+    onStart(buildSessionQueue(words, getSeoulToday()));
+  };
 
   return (
     <div className="home-screen">
@@ -115,7 +126,7 @@ function HomeScreen({ onStart }: HomeScreenProps) {
       {status === "ready" && stats && <p className="session-count">오늘 세션 · {stats.sessionCount}문제</p>}
 
       {status !== "error" && (
-        <button type="button" className="start-button" disabled={!canStart} onClick={onStart}>
+        <button type="button" className="start-button" disabled={!canStart} onClick={handleStart}>
           {status === "loading" ? "불러오는 중…" : canStart ? "학습 시작" : "오늘 할 것 없음"}
         </button>
       )}
