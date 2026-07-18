@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { formatHomeDate } from "../lib/date.ts";
 import { computeHomeStats, type HomeStats } from "../lib/homeStats.ts";
-import { RETRY_QUEUE_CHANGED_EVENT, getRetryQueueLength } from "../lib/retryQueue.ts";
+import { RETRY_QUEUE_CHANGED_EVENT, RETRY_QUEUE_STORAGE_KEY, getRetryQueueLength } from "../lib/retryQueue.ts";
 import { getSeoulToday } from "../lib/wordState.ts";
 import { fetchWords } from "../lib/wordsApi.ts";
 
@@ -23,8 +23,9 @@ function HomeScreen({ onStart }: HomeScreenProps) {
   // 이 컴포넌트가 새로 마운트되어 design-prd §3의 "홈 진입 시마다 재조회"를 만족한다.
   useEffect(() => {
     let cancelled = false;
+    const controller = new AbortController();
     setStatus("loading");
-    fetchWords()
+    fetchWords(controller.signal)
       .then((words) => {
         if (cancelled) return;
         setStats(computeHomeStats(words, getSeoulToday()));
@@ -37,17 +38,25 @@ function HomeScreen({ onStart }: HomeScreenProps) {
       });
     return () => {
       cancelled = true;
+      controller.abort();
     };
   }, [retryKey]);
 
   // storage: 다른 탭에서의 재시도 큐 변경. RETRY_QUEUE_CHANGED_EVENT: 같은 탭에서의 변경(#18 계약).
   useEffect(() => {
     const updateRetryQueueLength = () => setRetryQueueLength(getRetryQueueLength());
+    // storage 이벤트는 탭 내 모든 localStorage 변경에 발화하므로, 재시도 큐 키(또는
+    // localStorage.clear()의 key:null)가 아니면 무시해 불필요한 재조회를 막는다.
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === RETRY_QUEUE_STORAGE_KEY || e.key === null) {
+        updateRetryQueueLength();
+      }
+    };
     updateRetryQueueLength();
-    window.addEventListener("storage", updateRetryQueueLength);
+    window.addEventListener("storage", handleStorage);
     window.addEventListener(RETRY_QUEUE_CHANGED_EVENT, updateRetryQueueLength);
     return () => {
-      window.removeEventListener("storage", updateRetryQueueLength);
+      window.removeEventListener("storage", handleStorage);
       window.removeEventListener(RETRY_QUEUE_CHANGED_EVENT, updateRetryQueueLength);
     };
   }, []);

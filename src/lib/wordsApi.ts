@@ -6,8 +6,8 @@
 import { apiFetch } from "./api.ts";
 import type { WordProgress } from "./wordState.ts";
 
-export async function fetchWords(): Promise<WordProgress[]> {
-  const response = await apiFetch("/api/words");
+export async function fetchWords(signal?: AbortSignal): Promise<WordProgress[]> {
+  const response = await apiFetch("/api/words", { signal });
   if (!response.ok) {
     throw new Error(`단어 목록을 불러오지 못했습니다 (HTTP ${response.status})`);
   }
