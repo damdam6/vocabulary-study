@@ -15,6 +15,10 @@
 	"observability": {
 		"enabled": true
 	},
+	// 응답별 서빙 버전 식별용 — 배포 전파 윈도우의 신/구 버전 혼재를 관측 가능하게 한다 (#23)
+	"version_metadata": {
+		"binding": "CF_VERSION_METADATA"
+	},
 	"upload_source_maps": true,
 	"compatibility_flags": [
 		"nodejs_compat"
