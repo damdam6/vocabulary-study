@@ -6,13 +6,21 @@ import { isAuthorized } from "./lib/auth.ts";
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
+    // 배포 전파 윈도우(신/구 버전 혼재) 중 어떤 버전이 응답했는지 식별하기 위해 노출 (#23)
+    const version = env.CF_VERSION_METADATA?.id ?? "unknown";
 
     if (url.pathname.startsWith("/api/") && !(await isAuthorized(request, env))) {
-      return new Response(null, { status: 401, headers: { "WWW-Authenticate": "Bearer" } });
+      return new Response(null, {
+        status: 401,
+        headers: { "WWW-Authenticate": "Bearer", "X-Worker-Version": version },
+      });
     }
 
     if (url.pathname === "/api/health") {
-      return Response.json({ ok: true, time: new Date().toISOString() });
+      return Response.json(
+        { ok: true, time: new Date().toISOString(), version },
+        { headers: { "X-Worker-Version": version } },
+      );
     }
 
     if (url.pathname === "/api/words" && request.method === "GET") {
