@@ -131,7 +131,96 @@ button {
   }
 }
 
-/* 화면 플레이스홀더 임시 스타일 — #11/#15가 실제 화면으로 교체하면서 제거 */
+/* §2 로그인 화면 (#11) — 수치는 목업(docs/design/prototype.dc.html) 기준 */
+.login {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 36px 30px 60px;
+}
+
+.login-logo {
+  width: 58px;
+  height: 58px;
+  border-radius: 17px;
+  /* §1.1 로고 그라데이션 — 끝색 #5b8bf5는 토큰 외 고정값 */
+  background: linear-gradient(135deg, #2f63e6, #5b8bf5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 30px;
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.login-title {
+  margin: 22px 0 0;
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.login-desc {
+  margin: 8px 0 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 30px;
+}
+
+.login-input {
+  height: 54px;
+  border-radius: 14px;
+  border: 1px solid var(--border-input);
+  background: var(--bg-panel);
+  color: var(--text);
+  font-size: 16px;
+  padding: 0 18px;
+}
+
+.login-input--error {
+  border-color: var(--red);
+  animation: shake 0.4s;
+}
+
+/* Enter 제출 시 포커스가 입력란에 남는다 — 전역 accent 아웃라인이 오류 표시를 가리지 않게 */
+.login-input--error:focus-visible {
+  outline-color: var(--red);
+}
+
+.login-error {
+  margin: -2px 0 0;
+  font-size: 13px;
+  color: var(--red);
+}
+
+.login-submit {
+  height: 54px;
+  border-radius: 14px;
+  border: none;
+  background: var(--accent);
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.login-submit:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.login-submit:disabled {
+  cursor: default;
+  opacity: 0.7;
+}
+
+/* 화면 플레이스홀더 임시 스타일 — #15가 실제 화면으로 교체하면서 제거 */
 .screen-placeholder {
   flex: 1;
   display: flex;
