@@ -1,6 +1,6 @@
 # AI 코드리뷰 에이전트 설정 — damdam6/ai-code-review-action@v1
 #
-# - provider는 등록된 GitHub Secrets(KIMI_API_KEY, DEEPSEEK_API_KEY) 기준 kimi + deepseek 조합.
+# - provider는 등록된 GitHub Secrets(KIMI_API_KEY, DEEPSEEK_API_KEY, ZAI_API_KEY) 기준 kimi + deepseek + zai 조합.
 # - prompt_file 경로는 액션 번들(GITHUB_ACTION_PATH/prompts/*.md) 기준이므로 그대로 둘 것.
 #   이 리포에 prompts/를 만들어도 v1에서는 읽히지 않는다.
 # kimi 계열은 temperature=1 강제 + 추론 토큰 소진 방지용 max_tokens 상향 (k2.5 실측 제약 승계).
@@ -23,11 +23,10 @@ agents:
     temperature: 1
     max_tokens: 16384
   orchestrator:
-    provider: kimi
-    model: kimi-k3
+    provider: zai
+    model: glm-5.2
     prompt_file: prompts/orchestrator.md
-    temperature: 1
-    max_tokens: 16384
+    max_tokens: 16384 # GLM-5.2는 thinking 모델 — 추론 토큰 소진 방지용 상향 유지 (temperature는 기본 0.3)
   resolver:
     provider: deepseek
     model: deepseek-v4-flash
