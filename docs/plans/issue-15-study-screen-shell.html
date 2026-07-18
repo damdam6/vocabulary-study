@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>#15 학습 화면 셸 + 세션 진행 규칙 구현 — 작업 플랜</title>
+<style>
+  :root {
+    --bg: #f7f7f8; --card: #ffffff; --ink: #1c1c1e; --muted: #6e6e73;
+    --line: #e3e3e6; --accent: #3b6ef5; --accent-soft: #e8eefe;
+    --ok: #2e8b57; --warn: #b25e09; --code-bg: #f0f0f2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161618; --card: #202024; --ink: #ececf0; --muted: #98989f;
+      --line: #333338; --accent: #7a9bff; --accent-soft: #26304a;
+      --ok: #58c088; --warn: #e0a35c; --code-bg: #2a2a2f;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 40px 20px 80px; background: var(--bg); color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+                 "Segoe UI", "Noto Sans KR", sans-serif;
+    line-height: 1.65;
+  }
+  main { max-width: 860px; margin: 0 auto; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code {
+    font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 0.86em;
+    background: var(--code-bg); border-radius: 5px; padding: 2px 6px;
+  }
+  header { margin-bottom: 28px; }
+  .issue-chip {
+    display: inline-block; font-weight: 700; color: var(--accent);
+    background: var(--accent-soft); border-radius: 999px;
+    padding: 3px 14px; font-size: 0.95rem; margin-bottom: 10px;
+  }
+  .type-chip {
+    display: inline-block; font-weight: 600; color: var(--muted);
+    border: 1px solid var(--line); border-radius: 999px;
+    padding: 3px 12px; font-size: 0.8rem; margin-left: 8px; vertical-align: 2px;
+  }
+  h1 { font-size: 1.7rem; margin: 0 0 14px; letter-spacing: -0.02em; }
+  .meta {
+    display: flex; flex-wrap: wrap; gap: 6px 22px;
+    color: var(--muted); font-size: 0.87rem;
+  }
+  .meta b { color: var(--ink); font-weight: 600; }
+  section.card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 24px 28px; margin-top: 18px;
+  }
+  h2 {
+    font-size: 1.05rem; margin: 0 0 14px; letter-spacing: -0.01em;
+    display: flex; align-items: center; gap: 8px;
+  }
+  h2 .no {
+    color: var(--accent); font-size: 0.8rem; font-weight: 700;
+    border: 1.5px solid var(--accent); border-radius: 6px; padding: 0 6px;
+  }
+  h3 { font-size: 0.95rem; margin: 18px 0 8px; }
+  ul, ol { margin: 0; padding-left: 22px; }
+  li { margin: 6px 0; }
+  .steps { list-style: none; padding: 0; counter-reset: step; }
+  .steps li {
+    counter-increment: step; position: relative; padding: 10px 0 10px 44px;
+    border-bottom: 1px dashed var(--line);
+  }
+  .steps li:last-child { border-bottom: none; }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 10px;
+    width: 28px; height: 28px; border-radius: 8px; background: var(--accent-soft);
+    color: var(--accent); font-weight: 700; font-size: 0.85rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .steps .files { display: block; margin-top: 4px; font-size: 0.85rem; color: var(--muted); }
+  .steps li.done::before { content: "✓"; background: var(--ok); color: #fff; }
+  .steps .note { display: block; margin-top: 4px; font-size: 0.85rem; color: var(--warn); }
+  .done-list li.checked::before {
+    content: "✓"; border-color: var(--ok); background: var(--ok); color: #fff;
+    font-size: 12px; font-weight: 700; line-height: 15px; text-align: center;
+  }
+  table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 0.82rem; }
+  .done-list { list-style: none; padding: 0; }
+  .done-list li { padding-left: 30px; position: relative; }
+  .done-list li::before {
+    content: ""; position: absolute; left: 2px; top: 7px; width: 15px; height: 15px;
+    border: 2px solid var(--ok); border-radius: 5px;
+  }
+  .scroll-x { overflow-x: auto; }
+  footer { margin-top: 30px; color: var(--muted); font-size: 0.8rem; text-align: center; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <span class="issue-chip"><a href="https://github.com/damdam6/vocabulary-study/issues/15">#15</a></span><span class="type-chip">기능 개선</span>
+    <h1>학습 화면 셸 + 세션 진행 규칙 구현</h1>
+    <div class="meta">
+      <span><b>damdam6/vocabulary-study</b></span>
+      <span>브랜치 <b><code>feat/15-study-screen-shell</code></b> ← <code>main</code></span>
+      <span>라벨 <b>enhancement</b></span>
+      <span>2026-07-18</span>
+    </div>
+  </header>
+
+  <section class="card">
+    <h2><span class="no">1</span>요약</h2>
+    <p>학습 화면의 오케스트레이션 레이어를 구현한다. 홈에서 만든 세션 큐를 프롭으로 받아, 문제 단위로 소비하면서 정답/오답 네 케이스에 맞는 기록 API 호출(<code>POST /api/answer</code> / <code>POST /api/review-fail</code>)과 학습 중 오답 1회 재삽입을 수행하고, 진행도(동적 분모)·복습 뱃지·모드 칩·논블로킹 정오 피드백 오버레이·세션 완료 화면(design-prd §4.1·§4.4·§4.5·§5)을 갖춘다. 모드 1·2의 실제 카드 UI는 #16/#17 몫이므로, 여기서는 셸↔모드 컴포넌트 계약(<code>onJudged</code>/<code>onProceed</code>)을 확정한 플레이스홀더로 네 케이스를 실제 구동 가능하게 만든다.</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">2</span>현황 분석</h2>
+    <ul>
+      <li><b>화면은 전부 플레이스홀더</b>: <code>src/screens/StudyScreen.tsx:7</code>은 종료/세션 완료 버튼만 있는 스텁, <code>src/screens/DoneScreen.tsx:6</code>도 수치 없는 스텁. 화면 전환 상태기계는 <code>src/App.tsx:12</code>에 있음(login→home→study→done).</li>
+      <li><b>큐 빌더는 완성됐지만 호출자가 없다</b>: <code>buildSessionQueue()</code>(<code>src/lib/sessionQueue.ts:33</code>)가 #14로 구현·테스트 완료. <code>SESSION_CAP = 60</code>(<code>src/lib/sessionQueue.ts:11</code>)의 주석이 "§6.2의 오답 재삽입 상한도 같은 값을 쓴다(#15)"라고 이 이슈를 지목. 문제 타입 <code>SessionQuestion&lt;T&gt;</code>(<code>src/lib/sessionQueue.ts:16</code>)에 <code>mode</code>·<code>isReview</code>가 이미 있음.</li>
+      <li><b>API 클라이언트는 인증만 있다</b>: <code>src/lib/api.ts:29</code>의 <code>apiFetch</code>(Bearer 첨부 + 401 처리)와 <code>verifyPassword</code>뿐. words 조회·answer·review-fail 클라이언트 함수가 없다.</li>
+      <li><b>백엔드 3종은 완료 상태</b>(#7·#8·#9): <code>GET /api/words</code>(<code>worker/routes/words.ts:10</code>)는 <code>{fetchedAt, words[]}</code> 반환. <code>POST /api/answer</code>(<code>worker/routes/answer.ts:37</code>)는 <code>{tab, hanzi, mode, timestamp, isReview}</code>를 받아 갱신된 단어 객체를 반환. <code>POST /api/review-fail</code>(<code>worker/routes/review-fail.ts:27</code>)은 <code>{tab, hanzi}</code>를 받아 간격 후퇴.</li>
+      <li><b>src ↛ worker import 경계</b>: <code>tsconfig.app.json:25</code>이 <code>include: ["src"]</code>라 <code>worker/lib/words.ts:11</code>의 <code>WordEntry</code>를 src에서 가져올 수 없다 → 클라이언트 쪽 <code>WordEntry</code> 타입(§7.3 응답 계약 미러)이 필요. 타임스탬프 포맷터(<code>formatSeoulDateTime</code>, <code>worker/lib/time.ts:27</code>)도 같은 이유로 클라이언트 미러 필요. "오늘"은 <code>getSeoulToday()</code>(<code>src/lib/wordState.ts:17</code>)가 이미 src에 있다.</li>
+      <li><b>CSS 기반은 준비돼 있다</b>: 색 토큰·<code>popfb</code>/<code>fadeup</code>/<code>shake</code> 키프레임(<code>src/index.css:88</code>), 그리고 <code>.app-column</code>의 <code>position: relative</code>가 "정오 피드백 오버레이(§4.4, #15)의 absolute 앵커"로 미리 주석돼 있음(<code>src/index.css:82</code>).</li>
+      <li><b>목업이 참조 구현을 제공</b>: <code>docs/design/prototype.dc.html:66-167</code>에 학습 프레임·오버레이·완료 화면 마크업, <code>:272-280</code>에 <code>advance()</code>의 재삽입 로직(<code>!q.review && !q.re && queue.length &lt; 60</code>). 단 design-prd §6의 변경점 — <b>m1AutoMs 딜레이 삭제(즉시 진행), 오버레이 0.68s→0.4s 논블로킹, 로컬 시간 로직 이식 금지</b> — 를 반영해야 한다.</li>
+      <li><b>이슈 분담</b>(design-prd §9): #15 = §4.1 공통 프레임 · §4.4 오버레이 · §4.5 진행 규칙 · §5 완료 화면. §4.2 모드1 카드 UI = #16(OPEN), §4.3 모드2 UI = #17(OPEN), 재시도 큐 = #18(OPEN), 홈 실제 UI = #13(OPEN).</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">3</span>설계</h2>
+    <h3>데이터 흐름 — 큐는 홈이 만들고 셸은 받는다</h3>
+    <ul>
+      <li><code>HomeScreen</code>(플레이스홀더 유지, 배선만 추가)이 "학습 시작" 클릭 시 <code>fetchWords()</code> → <code>buildSessionQueue(words, getSeoulToday())</code> → <code>onStart(queue)</code>로 올린다. <code>App</code>이 큐를 상태로 보관해 <code>StudyScreen</code>에 프롭으로 전달하고, 완료 시 <code>onComplete({correct, wrong})</code> 결과를 받아 <code>DoneScreen</code>에 넘긴다.</li>
+      <li><b>기각</b>: 셸이 <code>/api/words</code>를 직접 fetch — PRD §3 "홈 진입 시마다 재조회"와 이중 조회가 되고, 홈의 "오늘 세션 · n문제" 계산과 큐가 어긋날 수 있다. 큐 구성은 홈 책임으로 고정, #13은 이 계약 위에서 UI만 교체.</li>
+    </ul>
+    <h3>진행 로직 — 순수 리듀서 <code>studySession.ts</code></h3>
+    <ul>
+      <li>vitest가 node 환경(RTL·jsdom 없음, <code>vitest.config.ts:5</code>)이므로, 검증 대상인 진행 규칙을 컴포넌트 밖 순수 모듈로 분리한다 — <code>wordState</code>/<code>sessionQueue</code>와 같은 저장소 컨벤션.</li>
+      <li><code>recordAnswer(state, correct)</code> → <code>{ state, effect }</code>로 네 케이스를 한 곳에서 판정:
+        <ul>
+          <li><b>정답</b>(복습/학습중 공통): <code>correct+1</code>, effect = <code>{kind:'answer', question}</code> (<code>isReview</code>는 큐 구성 시 값 그대로).</li>
+          <li><b>복습 오답</b>: <code>wrong+1</code>, effect = <code>{kind:'review-fail', question}</code>, 재삽입 없음(복습 문제는 단어당 1개뿐이라 "이번 세션 재출제 없음"이 자동 성립).</li>
+          <li><b>학습 중 오답</b>: <code>wrong+1</code>, effect 없음, <code>requeued</code> 플래그가 없고 <code>queue.length &lt; SESSION_CAP</code>일 때만 <code>{...q, requeued: true}</code>를 큐 맨 뒤에 push → <b>분모 즉시 증가</b>. 재삽입 복사본이 다시 틀려도 <code>requeued</code>가 재재삽입을 막는다("1회만").</li>
+        </ul>
+      </li>
+      <li><code>advance(state)</code>는 <code>pos+1</code>만. <code>applyWordUpdate(state, word)</code>는 answer 응답의 갱신 단어를 남은 큐 스냅샷(같은 tab+hanzi)에 반영 — 화면 영향은 없지만 이슈 기대 동작("응답으로 카운트/간격 갱신 반영")과 데이터 정합을 지킨다. effect에 타임스탬프를 넣지 않아 모듈을 순수하게 유지(시각은 셸이 발사 시점에 생성).</li>
+    </ul>
+    <h3>진행 템포 — 셸이 규칙을 소유(§4.5), 모드 컴포넌트는 판정만</h3>
+    <ul>
+      <li>계약: 모드 컴포넌트는 판정 순간 <code>onJudged(correct)</code>를 호출. 셸이 기록(effect 발사)하고 — 모드1 O/X와 모드2 정답은 <b>오버레이 + 즉시 advance</b>, 모드2 오답만 <b>홀드</b>(모드 컴포넌트가 내부 결과 화면 표시) 후 "다음" 버튼의 <code>onProceed()</code>로 advance(오버레이 없음, §4.4).</li>
+      <li>모드2 채점(트림 후 정확 일치, 빈 입력=오답)은 §4.3 소관이므로 모드 컴포넌트(플레이스홀더) 안에 둔다. 셸은 판정 결과만 받는다 — #17이 UI를 갈아끼워도 셸 무변경.</li>
+      <li>문제 전환 시 <code>key={pos}</code>로 모드 컴포넌트를 리마운트해 입력값·공개 상태 잔존을 차단(재삽입 복사본도 pos가 다르므로 안전).</li>
+    </ul>
+    <h3>기록 전송 — 문제 단위 fire-and-forget</h3>
+    <ul>
+      <li><code>postAnswer</code>/<code>postReviewFail</code>은 실패 시 throw하는 정직한 헬퍼로 두고, 셸이 <code>.catch()</code>로 무시(전송 실패가 진행을 막지 않음 — 재시도 큐는 #18이 이 catch 지점에 배선). 성공 시 <code>applyWordUpdate</code> 반영. await 없이 발사하므로 advance가 네트워크를 기다리지 않는다.</li>
+    </ul>
+    <h3>오버레이·완료 전환</h3>
+    <ul>
+      <li>오버레이는 <code>.app-column</code> 앵커의 <code>position:absolute; inset:0; pointer-events:none</code>, O/X 글리프 130px + 배경 틴트, <code>popfb 0.4s forwards</code>. 발사마다 증가하는 시퀀스를 <code>key</code>로 써서 연속 정답에도 애니메이션이 재시작되게 하고 <code>onAnimationEnd</code>에서 제거. 다음 문제 카드가 이미 전환된 위에 겹쳐 재생(논블로킹).</li>
+      <li><b>기각</b>: 목업처럼 오버레이 종료 후 advance — 확정 사양 "진행을 막거나 지연시키지 않는다"(§4.4) 위배.</li>
+      <li><b>예외 — 마지막 문제</b>: 즉시 <code>onComplete</code>하면 StudyScreen이 언마운트돼 마지막 판정의 피드백이 유실된다. 이 경우만 오버레이 <code>onAnimationEnd</code>(0.4s)에서 <code>onComplete</code>를 호출한다. 문제 간 전환은 여전히 즉시.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">4</span>작업 단계</h2>
+    <ol class="steps">
+      <li class="done">API 클라이언트 확장 — §7.3 응답 계약의 클라이언트 미러 <code>WordEntry</code> 타입 + <code>fetchWords()</code> / <code>postAnswer()</code> / <code>postReviewFail()</code> (모두 <code>apiFetch</code> 경유, 비정상 응답은 throw). 요청 경로·바디·Authorization 테스트 추가.
+        <span class="files"><code>src/lib/api.ts</code>, <code>src/lib/api.test.ts</code></span>
+      </li>
+      <li class="done">서울 타임스탬프 유틸 — <code>formatSeoulDateTime()</code> (<code>worker/lib/time.ts</code> 미러, PRD §5.4 <code>YYYY-MM-DD HH:mm</code>) + 포맷 테스트.
+        <span class="files"><code>src/lib/time.ts</code>(신규), <code>src/lib/time.test.ts</code>(신규)</span>
+      </li>
+      <li class="done">세션 진행 순수 리듀서 — <code>startSession</code>/<code>currentQuestion</code>/<code>isDone</code>/<code>recordAnswer</code>/<code>advance</code>/<code>applyWordUpdate</code>. 테스트: 네 케이스별 effect 종류, 학습중 오답 재삽입(맨 뒤·<code>requeued</code> 플래그·분모 증가), 재삽입 1회 제한, <code>SESSION_CAP</code> 상한, 복습 오답 무재삽입, 정오 집계(X 자가판정=오답), 스냅샷 갱신.
+        <span class="files"><code>src/lib/studySession.ts</code>(신규), <code>src/lib/studySession.test.ts</code>(신규)</span>
+      </li>
+      <li class="done">모드 카드 플레이스홀더 — 계약 <code>{question, onJudged, onProceed}</code> 확정. Mode1: 한자 표시 → 탭으로 뜻·병음 공개 → O/X 버튼(<code>onJudged</code>). Mode2: 뜻 표시 + <code>lang="zh-Hans"</code> 입력·제출 → 트림 정확일치 채점 → 정답 <code>onJudged(true)</code>, 오답은 내부 결과 화면(정답 한자·병음·뜻·내 답) + "다음"(<code>onProceed</code>). 파일 상단에 "#16/#17에서 실제 UI로 교체" 마커.
+        <span class="files"><code>src/screens/Mode1Card.tsx</code>(신규), <code>src/screens/Mode2Card.tsx</code>(신규)</span>
+      </li>
+      <li class="done">학습 셸 재작성 — §4.1 헤더(좌 "종료"→즉시 <code>onExit</code>, 중앙 <code>현재 / 전체</code> tabular-nums, 우측 스페이서) + 복습 뱃지·모드 칩 + 모드 카드 렌더(<code>key={pos}</code>) + §4.4 오버레이 컴포넌트 + 오케스트레이션(<code>onJudged</code>→기록·effect 발사·홀드/advance, <code>onProceed</code>→advance, 소진 시 <code>onComplete({correct, wrong})</code>).
+        <span class="files"><code>src/screens/StudyScreen.tsx</code></span>
+      </li>
+      <li class="done">완료 화면 — §5 사양: ✓ 원형(76px, green 틴트) · "세션 완료" · "기록은 문제 단위로 이미 저장되었습니다" · 정답(green)/구분선/오답(red) 40px · "홈으로" 버튼. 프롭 <code>{correct, wrong, onGoHome}</code>.
+        <span class="files"><code>src/screens/DoneScreen.tsx</code></span>
+      </li>
+      <li class="done">홈·App 배선 — <code>HomeScreen</code>: 클릭 시 fetch→큐 구성→<code>onStart(queue)</code>, 로딩("불러오는 중…" 비활성)·에러(재시도)·빈 큐("오늘 할 것 없음") 최소 처리(UI는 #13). <code>App</code>: <code>sessionQueue</code>/<code>sessionResult</code> 상태 추가, study/done 프롭 연결.
+        <span class="files"><code>src/screens/HomeScreen.tsx</code>, <code>src/App.tsx</code></span>
+      </li>
+      <li class="done">스타일 — <code>.study-*</code>(헤더·진행도·칩·뱃지·오버레이)·<code>.done-*</code> 클래스를 목업 수치(<code>docs/design/prototype.dc.html:66-167</code>)로 추가, 플레이스홀더 카드 최소 스타일. <code>.screen-placeholder</code> 주석을 "#13 남음"으로 갱신.
+        <span class="files"><code>src/index.css</code></span>
+      </li>
+      <li class="done">검증 — <code>npm test</code>·<code>npm run lint</code>·<code>npm run build</code>(tsc -b). 메인 체크아웃의 <code>.dev.vars</code>를 워크트리로 복사 후 <code>npm run dev</code>로 실기 수동 검증(§6 테스트 계획).
+        <span class="files">(코드 변경 없음)</span>
+        <span class="note">실기 검증 방식 변경: 실데이터(HSK6급 46단어, 전부 학습 중) 오염을 피하려 별도 스프레드시트를 만들려 했으나 서비스 계정의 파일 생성이 403(프로젝트 Drive API 비활성)이라, 실시트에 TEST15 임시 탭(복습 2·학습 2)을 추가하고 검증 동안만 HSK6급→_HSK6급 리네임으로 숨겨 진행. 네 케이스·분모 증가·논블로킹 오버레이·완료 수치·빈 큐·오프라인 진행까지 브라우저 실기 확인, 시트 기록(카운트·F열 간격·타임스탬프)도 API로 검증. 종료 후 탭 원복·TEST15 삭제·실데이터 46단어 무결 확인 완료.</span>
+      </li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">5</span>리스크</h2>
+    <div class="scroll-x">
+    <table>
+      <thead><tr><th>리스크</th><th>영향</th><th>완화책</th></tr></thead>
+      <tbody>
+        <tr><td>마지막 문제에서 즉시 완료 전환 시 오버레이 유실</td><td>마지막 판정의 O/X 피드백이 안 보임</td><td>마지막 문제만 <code>onAnimationEnd</code>(0.4s) 후 <code>onComplete</code> — 문제 간 전환은 즉시 유지</td></tr>
+        <tr><td>재삽입·분모·집계가 여러 곳에서 갱신되며 어긋남</td><td>진행도/완료 수치 부정확 (완료 조건 위반)</td><td>큐 변형은 <code>recordAnswer</code> 한 곳에서만, 단위 테스트로 고정</td></tr>
+        <tr><td>fire-and-forget 실패 무시로 기록 유실</td><td>오프라인 학습 기록이 시트에 안 남음</td><td>v1 허용 범위(이슈 명시 — 재시도 큐는 #18). 헬퍼는 throw로 정직하게, 셸 catch 지점에 #18 배선 주석</td></tr>
+        <tr><td>같은 단어 재출제 시 모드 컴포넌트 상태 잔존</td><td>이전 입력/공개 상태가 새 문제에 남음</td><td><code>key={pos}</code> 리마운트로 문제마다 초기화</td></tr>
+        <tr><td>학습 중 401 수신 시 화면 전환 충돌</td><td>세션 도중 로그인 화면 강제 복귀</td><td>기존 <code>apiFetch</code>+<code>setUnauthorizedHandler</code>(#11) 동작 그대로 — 세션 상태는 App에 남지만 재로그인 후 홈부터 시작이라 무해. 수동 확인만</td></tr>
+        <tr><td>#13·#16·#17과의 경계 침범</td><td>후속 이슈와 충돌·재작업</td><td>홈은 배선만(UI 불변), 모드 카드는 계약 확정한 최소 플레이스홀더로 한정</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">6</span>테스트 계획</h2>
+    <ul>
+      <li><b>vitest — studySession</b>: ① 복습 정답 → effect <code>answer(isReview:true)</code> ② 복습 오답 → effect <code>review-fail</code> + 큐 길이 불변 ③ 학습중 정답 → effect <code>answer(isReview:false)</code> ④ 학습중 오답 → effect 없음 + 맨 뒤 재삽입(<code>requeued:true</code>) + 분모 +1 / 재삽입 복사본 재오답 시 무재삽입 / <code>SESSION_CAP</code>=60에서 재삽입 생략 / 정답·오답 집계 / <code>applyWordUpdate</code>가 남은 동일 단어 스냅샷 갱신.</li>
+      <li><b>vitest — api</b>: <code>postAnswer</code>가 <code>/api/answer</code>에 <code>{tab, hanzi, mode, timestamp, isReview}</code> JSON을 Authorization과 함께 POST, <code>postReviewFail</code>·<code>fetchWords</code> 동형 검증, 비정상 응답 throw.</li>
+      <li><b>vitest — time</b>: 고정 <code>Date</code>로 <code>formatSeoulDateTime</code>이 <code>YYYY-MM-DD HH:mm</code>(Asia/Seoul) 반환.</li>
+      <li><b>회귀</b>: <code>npm test</code> 전체(기존 wordState·sessionQueue·api 테스트 포함) + <code>npm run lint</code> + <code>npm run build</code>(tsc -b로 src/worker 타입 경계 확인).</li>
+      <li><b>수동(dev 서버, 실제 시트)</b>: 네 케이스 각각에서 네트워크 탭으로 API 호출/무호출 확인 — 복습 정답(<code>answer</code>, <code>isReview:true</code>) · 복습 오답(<code>review-fail</code>, 재출제 없음) · 학습중 정답(<code>answer</code>, <code>isReview:false</code>) · 학습중 오답(호출 없음, 큐 뒤 재삽입, 분모 즉시 +1).</li>
+      <li><b>수동 — 진행 템포·오버레이</b>: 모드1 O/X·모드2 정답 직후 다음 카드가 즉시 표시되고 오버레이가 그 위에 겹쳐 재생되는지(연속 빠른 진행 가능), 모드2 오답만 결과 화면+"다음"인지.</li>
+      <li><b>수동 — 실패 내성</b>: DevTools 오프라인로 <code>answer</code> 전송 실패시켜도 다음 문제로 진행되는지.</li>
+      <li><b>수동 — 종료/완료</b>: "종료" 즉시 홈 복귀(다이얼로그 없음), 큐 소진 시 완료 화면 수치가 세션 정오 집계와 일치, "홈으로" 복귀.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">7</span>완료 조건</h2>
+    <ul class="done-list">
+      <li class="checked">진행도 표시가 큐 소비에 따라 정확히 갱신된다 (<code>현재 / 전체</code>, tabular-nums)</li>
+      <li class="checked">학습 중 오답 재삽입 발생 시 진행도 분모가 즉시 증가한다</li>
+      <li class="checked">복습 정답/오답, 학습중 정답/오답 네 케이스 모두 올바른 API 호출·재삽입 동작 (단위 테스트 + 실기 확인)</li>
+      <li class="checked">API 전송 실패에도 다음 문제로 진행된다</li>
+      <li class="checked">정오 피드백 오버레이가 입력을 막지 않는다 (논블로킹, 연속 진행 가능)</li>
+      <li class="checked">큐 소진 시 완료 화면 수치(정답/오답 수)가 정확하다</li>
+      <li class="checked">모드 컴포넌트 계약(<code>onJudged</code>/<code>onProceed</code>)이 주석으로 문서화돼 #16/#17이 셸 수정 없이 착수 가능</li>
+      <li class="checked"><code>npm test</code>·<code>lint</code>·<code>build</code> 전부 통과</li>
+    </ul>
+  </section>
+
+  <footer>issue-plan · <a href="https://github.com/damdam6/vocabulary-study/issues/15">#15</a> · 2026-07-18</footer>
+</main>
+</body>
+</html>
