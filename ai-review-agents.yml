@@ -6,11 +6,10 @@
 # kimi 계열은 temperature=1 강제 + 추론 토큰 소진 방지용 max_tokens 상향 (k2.5 실측 제약 승계).
 agents:
   quality:
-    provider: kimi
-    model: kimi-k2.7-code
+    provider: deepseek
+    model: deepseek-v4-flash
     prompt_file: prompts/quality.md
-    temperature: 1
-    max_tokens: 16384
+    max_tokens: 8192
   performance:
     provider: kimi
     model: kimi-k2.7-code
@@ -18,15 +17,17 @@ agents:
     temperature: 1
     max_tokens: 16384
   security:
-    provider: deepseek
-    model: deepseek-v4-pro
+    provider: kimi
+    model: kimi-k3
     prompt_file: prompts/security.md
-    max_tokens: 8192
+    temperature: 1
+    max_tokens: 16384
   orchestrator:
-    provider: deepseek
-    model: deepseek-v4-flash
+    provider: kimi
+    model: kimi-k3
     prompt_file: prompts/orchestrator.md
-    max_tokens: 8192
+    temperature: 1
+    max_tokens: 16384
   resolver:
     provider: deepseek
     model: deepseek-v4-flash
