@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>#14 학습 세션 큐 구성 로직 구현 — 작업 플랜</title>
+<style>
+  :root {
+    --bg: #f7f7f8; --card: #ffffff; --ink: #1c1c1e; --muted: #6e6e73;
+    --line: #e3e3e6; --accent: #3b6ef5; --accent-soft: #e8eefe;
+    --ok: #2e8b57; --warn: #b25e09; --code-bg: #f0f0f2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161618; --card: #202024; --ink: #ececf0; --muted: #98989f;
+      --line: #333338; --accent: #7a9bff; --accent-soft: #26304a;
+      --ok: #58c088; --warn: #e0a35c; --code-bg: #2a2a2f;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 40px 20px 80px; background: var(--bg); color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+                 "Segoe UI", "Noto Sans KR", sans-serif;
+    line-height: 1.65;
+  }
+  main { max-width: 860px; margin: 0 auto; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code {
+    font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 0.86em;
+    background: var(--code-bg); border-radius: 5px; padding: 2px 6px;
+  }
+  header { margin-bottom: 28px; }
+  .issue-chip {
+    display: inline-block; font-weight: 700; color: var(--accent);
+    background: var(--accent-soft); border-radius: 999px;
+    padding: 3px 14px; font-size: 0.95rem; margin-bottom: 10px;
+  }
+  .type-chip {
+    display: inline-block; font-weight: 600; color: var(--muted);
+    border: 1px solid var(--line); border-radius: 999px;
+    padding: 3px 12px; font-size: 0.8rem; margin-left: 8px; vertical-align: 2px;
+  }
+  h1 { font-size: 1.7rem; margin: 0 0 14px; letter-spacing: -0.02em; }
+  .meta {
+    display: flex; flex-wrap: wrap; gap: 6px 22px;
+    color: var(--muted); font-size: 0.87rem;
+  }
+  .meta b { color: var(--ink); font-weight: 600; }
+  section.card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 24px 28px; margin-top: 18px;
+  }
+  h2 {
+    font-size: 1.05rem; margin: 0 0 14px; letter-spacing: -0.01em;
+    display: flex; align-items: center; gap: 8px;
+  }
+  h2 .no {
+    color: var(--accent); font-size: 0.8rem; font-weight: 700;
+    border: 1.5px solid var(--accent); border-radius: 6px; padding: 0 6px;
+  }
+  ul, ol { margin: 0; padding-left: 22px; }
+  li { margin: 6px 0; }
+  .steps { list-style: none; padding: 0; counter-reset: step; }
+  .steps li {
+    counter-increment: step; position: relative; padding: 10px 0 10px 44px;
+    border-bottom: 1px dashed var(--line);
+  }
+  .steps li:last-child { border-bottom: none; }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 10px;
+    width: 28px; height: 28px; border-radius: 8px; background: var(--accent-soft);
+    color: var(--accent); font-weight: 700; font-size: 0.85rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .steps .files { display: block; margin-top: 4px; font-size: 0.85rem; color: var(--muted); }
+  .steps li.done::before { content: "✓"; background: var(--ok); color: #fff; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 0.82rem; }
+  .done-list { list-style: none; padding: 0; }
+  .done-list li { padding-left: 30px; position: relative; }
+  .done-list li::before {
+    content: ""; position: absolute; left: 2px; top: 7px; width: 15px; height: 15px;
+    border: 2px solid var(--ok); border-radius: 5px;
+  }
+  .scroll-x { overflow-x: auto; }
+  footer { margin-top: 30px; color: var(--muted); font-size: 0.8rem; text-align: center; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <span class="issue-chip"><a href="https://github.com/damdam6/vocabulary-study/issues/14">#14</a></span><span class="type-chip">기능 개선</span>
+    <h1>학습 세션 큐 구성 로직 구현</h1>
+    <div class="meta">
+      <span><b>damdam6/vocabulary-study</b></span>
+      <span>브랜치 <b><code>feat/14-session-queue-builder</code></b> ← <code>main</code></span>
+      <span>라벨 <b>enhancement</b></span>
+      <span>2026-07-17</span>
+    </div>
+  </header>
+
+  <section class="card">
+    <h2><span class="no">1</span>요약</h2>
+    <p>PRD §6.1의 세션 큐 구성 규칙을 순수 함수 모듈 <code>src/lib/sessionQueue.ts</code>로 구현한다. 복습 대기 단어 전부(초과 시 복습일 오래된 순 60개)를 먼저 담고, 남은 슬롯에 학습 중 단어를 총 정답 수 내림차순으로 채운 뒤(단어당 최대 2문제), 같은 단어의 문제가 연달아 나오지 않도록 셔플한다. 큐 구성은 PRD §7.3에 따라 클라이언트 책임이므로 <code>src/lib</code>에 두고, 기존 상태 판정 유틸(<code>getWordState</code>)을 재사용한다. UI 연결은 #15의 몫이고 이 이슈는 로직+테스트까지다.</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">2</span>현황 분석</h2>
+    <p>세션 큐 구성 로직은 현재 어디에도 없다. 관련 기반은 모두 준비된 상태다:</p>
+    <ul>
+      <li><b>상태 판정 유틸(#12 완료)</b> — <code>src/lib/wordState.ts:36</code>의 <code>getWordState(word, today)</code>가 단어를 <code>learning</code> / <code>reviewDue</code> / <code>reviewScheduled</code>로 분류한다. 주석(<code>src/lib/wordState.ts:2-4</code>)에 "학습 세션 큐 구성에서 재사용"이 명시돼 있다. <code>getSeoulToday</code>(<code>src/lib/wordState.ts:17</code>)로 "오늘"을 계산한다.</li>
+      <li><b>데이터 형태</b> — <code>GET /api/words</code>(#7 완료)가 <code>WordEntry</code>(<code>worker/lib/words.ts:11-20</code>: tab, hanzi, pinyin, meaning, m1, m2, nextReview, interval)를 시트 행 순서 그대로 배열로 반환한다. 즉 <b>배열 인덱스가 곧 "시트 상 순서"</b>다. <code>nextReview</code>는 <code>YYYY-MM-DD</code> zero-padded 문자열 또는 <code>null</code>로 정규화된다(<code>worker/lib/words.ts:83-93</code>).</li>
+      <li><b>소비처</b> — <code>src/screens/StudyScreen.tsx</code>는 플레이스홀더뿐이다("실제 학습 화면은 #15·#16·#17에서 구현"). 이 이슈는 큐를 <i>만드는</i> 함수까지만 책임지고, 세션 진행·오답 재삽입(§6.2)은 #15가 이 모듈의 출력을 받아 구현한다.</li>
+      <li><b>모드 표기</b> — <code>POST /api/answer</code>는 <code>mode: "m1" | "m2"</code>를 받는다(PRD §7.3). 큐 항목의 모드 표기도 이와 일치시켜야 #15에서 변환 없이 전달된다.</li>
+      <li><b>데이터 이상 케이스</b> — 졸업했는데 <code>nextReview: null</code>인 단어는 <code>getWordState</code>가 의도적으로 <code>reviewDue</code>로 취급한다(<code>src/lib/wordState.ts:40-48</code>). 큐의 "복습일 오래된 순" 정렬에서 이 <code>null</code>을 어디에 둘지 결정이 필요하다.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">3</span>설계</h2>
+    <p><b>API</b> — 제네릭 순수 함수 하나:</p>
+    <ul>
+      <li><code>buildSessionQueue&lt;T extends WordProgress&gt;(words: readonly T[], today: string, rng?: () =&gt; number): SessionQuestion&lt;T&gt;[]</code></li>
+      <li><code>SessionQuestion&lt;T&gt; = { word: T; mode: "m1" | "m2"; isReview: boolean }</code> — <code>mode</code>는 <code>POST /api/answer</code> 요청 형식과 동일, <code>isReview</code>는 §5.3(복습 오답 처리 분기)에 필요.</li>
+      <li>제네릭으로 두면 <code>WordEntry</code> 타입을 <code>src</code>에 중복 정의하지 않고도 호출자가 넣은 전체 객체를 그대로 돌려받는다 — <code>wordState.ts</code>가 <code>WordProgress</code> 최소 필드 방식을 쓴 것과 같은 결. 단, 셔플 분산의 "같은 단어" 식별에는 <code>tab + hanzi</code> 키가 필요하므로 <code>T extends WordProgress &amp; { tab: string; hanzi: string }</code>로 제약한다.</li>
+      <li><code>rng</code> 주입(기본 <code>Math.random</code>)으로 모드 무작위 선택·셔플을 테스트에서 결정론적으로 만든다.</li>
+      <li><code>SESSION_CAP = 60</code> 상수를 export — #15의 오답 재삽입("60문제 상한 내에서")도 같은 상수를 쓴다.</li>
+    </ul>
+    <p><b>알고리즘</b> (PRD §6.1 그대로 4단계):</p>
+    <ul>
+      <li><b>① 분류</b>: <code>getWordState(word, today)</code>로 전 단어를 분류. <code>reviewScheduled</code>는 제외.</li>
+      <li><b>② 복습 대기</b>: <code>nextReview</code> 오름차순(오래된 순) 정렬 후 앞 60개. <code>null</code>(데이터 이상)은 <b>가장 오래된 것으로 취급해 맨 앞</b> — <code>getWordState</code>의 "눈에 띄게 한다" 방침과 일치. 동률은 시트 순서 유지(JS <code>toSorted</code>는 stable). 단어당 1문제, 모드는 <code>rng()</code>로 m1/m2 균등 선택, <code>isReview: true</code>.</li>
+      <li><b>③ 학습 중</b>: 총 정답 수(<code>m1+m2</code>) 내림차순, 동률은 시트 순서(stable sort). 정렬된 단어를 앞에서부터 순회하며 <code>m1 &lt; 3</code>이면 m1 문제, <code>m2 &lt; 3</code>이면 m2 문제를 추가(단어당 최대 2, m1 후보 먼저). 전체 60에 도달하면 중단 — 슬롯이 1개 남았는데 후보가 2개면 m1 후보만 들어간다. <code>isReview: false</code>.</li>
+      <li><b>④ 셔플+분산</b>: Fisher–Yates(<code>rng</code> 사용)로 전체 셔플 후, 인접한 같은 단어(<code>tab+hanzi</code>) 쌍을 스캔해 새 인접 쌍을 만들지 않는 위치와 교환하는 보정 패스 1회. 교환 불가능한 배치(예: 같은 단어 2문제만 있는 큐)는 그대로 둔다 — PRD의 "가능한 한 분산"이 허용하는 범위.</li>
+    </ul>
+    <p><b>기각한 대안</b>: (a) 인터리빙 방식 재배치(빈도 기반 슬롯 배치) — 단어당 최대 2문제·상한 60이라 셔플+보정이 훨씬 단순하고 충분함. (b) 큐 항목에 단어 필드 복사(flat 구조) — #15에서 <code>POST /api/answer</code> 후 갱신된 단어로 교체하기엔 참조 방식이 낫고, 중복 타입 정의도 피함. (c) <code>worker/lib/words.ts</code>의 <code>WordEntry</code>를 직접 import — 클라이언트 코드가 worker 코드에 의존하는 방향이 생겨 경계가 흐려짐.</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">4</span>작업 단계</h2>
+    <ol class="steps">
+      <li class="done">타입·상수·시그니처 정의: <code>SessionQuestion&lt;T&gt;</code>, <code>SESSION_CAP = 60</code>, <code>buildSessionQueue(words, today, rng)</code> 골격과 모듈 헤더 주석(PRD §6.1 근거) 작성
+        <span class="files"><code>src/lib/sessionQueue.ts</code> (신규)</span>
+      </li>
+      <li class="done">복습 대기 선별 구현: <code>getWordState</code>로 분류 → <code>nextReview</code> 오름차순(null 최우선, stable) 정렬 → 60개 컷 → 단어당 1문제·모드 무작위(<code>rng</code>)
+        <span class="files"><code>src/lib/sessionQueue.ts</code></span>
+      </li>
+      <li class="done">학습 중 채우기 구현: <code>m1+m2</code> 내림차순(stable) 정렬 → 단어당 m1/m2 후보 생성(카운트 3 미만인 모드만) → 남은 슬롯만큼 순서대로 채움
+        <span class="files"><code>src/lib/sessionQueue.ts</code></span>
+      </li>
+      <li class="done">Fisher–Yates 셔플 + 인접 동일 단어 보정 패스 구현
+        <span class="files"><code>src/lib/sessionQueue.ts</code></span>
+      </li>
+      <li class="done">단위 테스트 작성: 이슈 완료 조건 4건 + 경계 케이스(빈 입력, reviewScheduled 제외, null nextReview 우선, 정확히 60, 모드 후보 규칙, isReview 플래그). <code>rng</code>는 고정 수열/간단 LCG로 결정론화, 셔플 분산은 여러 시드로 검증
+        <span class="files"><code>src/lib/sessionQueue.test.ts</code> (신규)</span>
+      </li>
+      <li class="done">검증: <code>npm test</code> · <code>npm run lint</code> · <code>npm run build</code>(tsc 포함) 통과 확인 후 리포 스타일 커밋
+        <span class="files"><code>package.json</code> scripts</span>
+      </li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">5</span>리스크</h2>
+    <div class="scroll-x">
+    <table>
+      <thead><tr><th>리스크</th><th>영향</th><th>완화책</th></tr></thead>
+      <tbody>
+        <tr><td>분산이 수학적으로 불가능한 구성(예: 같은 단어 2문제뿐인 큐)</td><td>보정 패스가 인접 쌍을 못 없앰</td><td>PRD가 "가능한 한"으로 허용 — 보정은 최선 노력으로 두고, 테스트는 분리 가능한 구성에서만 무인접을 단정</td></tr>
+        <tr><td><code>nextReview: null</code>인 복습 대기(데이터 이상)의 정렬 위치가 미정의</td><td>60개 컷에서 포함/제외가 갈림</td><td>"가장 오래된 것"으로 취급해 최우선 포함 — <code>wordState.ts:40-42</code>의 "눈에 띄게 한다" 방침과 일치, 주석·테스트로 고정</td></tr>
+        <tr><td>PRD의 "시트 상 순서"를 코드에서 식별할 별도 필드가 없음</td><td>동률 정렬이 무근거해질 수 있음</td><td><code>GET /api/words</code>가 시트 행 순서대로 반환하므로 입력 배열 순서를 그 자체로 사용, stable sort(<code>toSorted</code>)로 보존 — 문서화 주석 필수</td></tr>
+        <tr><td>#15(진행 규칙)와의 인터페이스 어긋남</td><td>재작업</td><td><code>mode: "m1"|"m2"</code>·<code>isReview</code>를 API 계약(PRD §7.3)에 맞추고 <code>SESSION_CAP</code> export로 §6.2 재삽입 상한도 대비</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">6</span>테스트 계획</h2>
+    <ul>
+      <li>복습 대기 61개 이상 → 복습일 오래된 순 60개만 포함, 가장 최신 복습일 단어가 잘리는지 확인 (이슈 완료 조건 1)</li>
+      <li>학습 중 정렬: 총 정답 수(D+E) 큰 단어 우선, 동률이면 입력(시트) 순서 유지 — 슬롯을 제한해 어떤 단어가 들어왔는지로 검증 (완료 조건 2)</li>
+      <li>복습 30 + 학습 후보 100+ → 큐 길이 정확히 60 (완료 조건 3)</li>
+      <li>분리 가능한 구성에서 여러 rng 시드로 셔플 → 같은 단어(tab+hanzi) 인접 쌍 0건 (완료 조건 4)</li>
+      <li>모드 후보 규칙: <code>m1≥3, m2&lt;3</code>인 학습 단어는 m2 문제만 생성</li>
+      <li>복습 문제는 <code>isReview: true</code>·단어당 1문제·모드가 rng에 따라 m1/m2 모두 나올 수 있음, 학습 문제는 <code>isReview: false</code></li>
+      <li><code>reviewScheduled</code>(복습 예약) 단어는 큐에서 완전 제외</li>
+      <li><code>nextReview: null</code>인 졸업 단어(데이터 이상)가 60개 컷에서 최우선 포함</li>
+      <li>빈 입력 → 빈 큐, 학습 단어만 / 복습 단어만인 경우도 정상 동작</li>
+      <li>기존 테스트 회귀 없음: <code>npm test</code> 전체 통과, <code>npm run lint</code>·<code>npm run build</code> 클린</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">7</span>완료 조건</h2>
+    <ul class="done-list">
+      <li>복습 대기 60개 초과 케이스에서 복습일 오래된 순으로 잘린다 (null은 최우선, 동률은 시트 순서)</li>
+      <li>학습 중 단어가 총 정답 수 내림차순·동률 시 시트 순서로 선별된다</li>
+      <li>단어당 후보 규칙(D&lt;3→모드1, E&lt;3→모드2, 최대 2문제)이 지켜진다</li>
+      <li>전체 큐가 60문제 상한을 준수한다</li>
+      <li>분리 가능한 구성에서 같은 단어의 문제가 연달아 나오지 않는다</li>
+      <li>큐 항목이 <code>mode: "m1"|"m2"</code>·<code>isReview</code>를 담아 #15가 변환 없이 소비할 수 있다</li>
+      <li><code>npm test</code>·<code>npm run lint</code>·<code>npm run build</code> 통과</li>
+    </ul>
+  </section>
+
+  <footer>issue-plan · <a href="https://github.com/damdam6/vocabulary-study/issues/14">#14</a> · 2026-07-17</footer>
+</main>
+</body>
+</html>
