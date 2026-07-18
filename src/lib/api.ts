@@ -66,7 +66,7 @@ export async function verifyPassword(candidate: string): Promise<VerifyResult> {
  * GET /api/words 응답의 단어 객체 (PRD §7.3). worker/lib/words.ts의 WordEntry와
  * 같은 형태지만, tsconfig.app.json이 src만 포함해 worker 타입을 import할 수 없어
  * 클라이언트 쪽 계약 미러로 둔다. wordState의 WordProgress·sessionQueue의
- * QueueWord 요구 필드와 구조적으로 호환된다.
+ * QueueWord 요구 필드와 구조적으로 호환된다. 목록 조회는 wordsApi.ts의 fetchWords.
  */
 export interface WordEntry {
   tab: string;
@@ -77,16 +77,6 @@ export interface WordEntry {
   m2: number;
   nextReview: string | null;
   interval: number | null;
-}
-
-/** GET /api/words — 전 탭 통합 단어 목록. 비정상 응답은 throw (홈이 에러 상태로 표시). */
-export async function fetchWords(): Promise<WordEntry[]> {
-  const response = await apiFetch("/api/words");
-  if (!response.ok) {
-    throw new Error(`GET /api/words 실패 (${response.status})`);
-  }
-  const body = (await response.json()) as { words: WordEntry[] };
-  return body.words;
 }
 
 /** POST /api/answer 요청 바디 (PRD §7.3). timestamp는 판정 시각(YYYY-MM-DD HH:mm, Asia/Seoul). */

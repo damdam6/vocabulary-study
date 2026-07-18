@@ -2,7 +2,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   apiFetch,
   clearPassword,
-  fetchWords,
   getStoredPassword,
   postAnswer,
   postReviewFail,
@@ -146,27 +145,6 @@ const WORD: WordEntry = {
   nextReview: "2026-07-20",
   interval: 7,
 };
-
-describe("fetchWords", () => {
-  it("GET /api/words를 apiFetch 경유로 호출하고 words 배열을 반환한다", async () => {
-    savePassword("secret");
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValue(Response.json({ fetchedAt: "2026-07-18 09:00", words: [WORD] }));
-    vi.stubGlobal("fetch", fetchMock);
-
-    await expect(fetchWords()).resolves.toEqual([WORD]);
-
-    const [path, init] = fetchMock.mock.calls[0] as [string, RequestInit];
-    expect(path).toBe("/api/words");
-    expect(new Headers(init.headers).get("Authorization")).toBe("Bearer secret");
-  });
-
-  it("비정상 응답이면 throw한다", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(null, { status: 500 })));
-    await expect(fetchWords()).rejects.toThrow("500");
-  });
-});
 
 describe("postAnswer", () => {
   it("/api/answer에 §7.3 형식의 JSON 바디를 POST하고 갱신 단어를 반환한다", async () => {
