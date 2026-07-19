@@ -121,7 +121,17 @@ export async function postAnswer(answer: AnswerRecord): Promise<WordEntry> {
   return (await response.json()) as WordEntry;
 }
 
-/** POST /api/review-fail — 복습 오답의 간격 후퇴 (PRD §5.3). 실패 처리 방침은 postAnswer와 동일. */
+/** POST /api/review-fail 요청 바디 (PRD §5.3). */
+export interface ReviewFailRecord {
+  tab: string;
+  hanzi: string;
+}
+
+/**
+ * POST /api/review-fail — 복습 오답의 간격 후퇴 (PRD §5.3). 비정상 응답은 throw한다
+ * — 셸이 catch로 무시해 진행을 막지 않는다(§6.2). 실패분 재전송은 재시도 큐(#18,
+ * #43)가 그 catch 지점에 배선된다.
+ */
 export async function postReviewFail(tab: string, hanzi: string): Promise<WordEntry> {
   const response = await apiFetch("/api/review-fail", {
     method: "POST",

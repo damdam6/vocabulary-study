@@ -8,7 +8,7 @@ import { useRef, useState } from 'react'
 import Mode1Card from './Mode1Card.tsx'
 import Mode2Card from './Mode2Card.tsx'
 import { postAnswer, postReviewFail, type AnswerRecord, type WordEntry } from '../lib/api.ts'
-import { enqueueAnswer } from '../lib/retryQueue.ts'
+import { enqueueAnswer, enqueueReviewFail } from '../lib/retryQueue.ts'
 import type { SessionQuestion } from '../lib/sessionQueue.ts'
 import {
   advance,
@@ -50,7 +50,8 @@ function StudyScreen({ queue, onExit, onComplete }: StudyScreenProps) {
   const question = currentQuestion(session)
 
   // 기록 전송은 문제 단위 비동기 fire-and-forget — 실패가 진행을 막지 않는다(§6.2).
-  // 실패분은 재시도 큐(#18)에 적재해 재전송한다 — timestamp는 최초 판정 시각 유지.
+  // 실패분은 재시도 큐(#18, #43)에 적재해 재전송한다 — answer의 timestamp는
+  // 최초 판정 시각 유지.
   const fireEffect = (effect: RecordEffect) => {
     if (effect.kind === 'answer') {
       const { word, mode, isReview } = effect.question
@@ -66,7 +67,7 @@ function StudyScreen({ queue, onExit, onComplete }: StudyScreenProps) {
         .catch(() => enqueueAnswer(record))
     } else if (effect.kind === 'review-fail') {
       const { word } = effect.question
-      postReviewFail(word.tab, word.hanzi).catch(() => {})
+      postReviewFail(word.tab, word.hanzi).catch(() => enqueueReviewFail({ tab: word.tab, hanzi: word.hanzi }))
     }
   }
 
