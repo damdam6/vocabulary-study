@@ -155,7 +155,8 @@
         <span class="files"><code>src/lib/registerValidation.ts</code>, <code>src/lib/registerValidation.test.ts</code></span>
       </li>
       <li><span class="step-done">✓ 완료</span> — <code>fetchTabs()</code>(GET /api/tabs)·<code>registerWords()</code>(POST /api/words/register) 작성 — 기존 wordsApi.ts/api.ts와 동일하게 apiFetch 경유 + 비정상 응답 throw 패턴, 계약은 플랜 §6. 단위 테스트 6건 통과.
-        <span class="files"><code>src/lib/registerApi.ts</code>, <code>src/lib/registerApi.test.ts</code></span>
+        <span class="step-note">추가 반영(#48 머지 후): 실제 <code>worker/routes/register.ts</code> 계약과 대조한 결과 <code>RegisterResult.added</code>가 <code>string[]</code>가 아니라 등록된 단어 전체 객체(<code>ParsedWord[]</code>)였고, 응답에 <code>tab</code>·<code>created</code> 필드도 있었다 — 타입을 바로잡고 결과 화면에 반영. 비정상 응답도 Worker의 <code>{error}</code> 본문을 우선 파싱하도록 수정(예: "헤더를 복사할 기존 탭이 없습니다"). <code>GET /api/tabs</code>는 애초 가정과 정확히 일치해 변경 없음. main 머지·전체 스위트(158건) 재확인 완료.</span>
+        <span class="files"><code>src/lib/registerApi.ts</code>, <code>src/lib/registerApi.test.ts</code>, <code>src/screens/RegisterScreen.tsx</code></span>
       </li>
       <li><span class="step-done">✓ 완료</span> — 기존 디자인 토큰(design-prd §1)을 재사용해 <code>register-</code> 접두 클래스 추가 — textarea·검증 테이블·탭 드롭다운·확인 배너 스타일. 브라우저 확인 중 테이블이 <code>min-width</code>로 390px에서 가로 스크롤을 요구하던 문제를 발견해 <code>table-layout: fixed</code> + 열別 폭 배분으로 수정.
         <span class="files"><code>src/index.css</code></span>
