@@ -4,12 +4,11 @@
  */
 
 import { formatSeoulDateTime } from "../lib/time.ts";
-import { getSheetTitles, getValues } from "../lib/sheets.ts";
-import { parseWordRow, WORD_ROW_RANGE, type WordEntry } from "../lib/words.ts";
+import { getValues } from "../lib/sheets.ts";
+import { getWordTabTitles, parseWordRow, WORD_ROW_RANGE, type WordEntry } from "../lib/words.ts";
 
 export async function handleGetWords(env: Env): Promise<Response> {
-  const titles = await getSheetTitles(env);
-  const wordTabs = titles.filter((title) => !title.startsWith("_"));
+  const wordTabs = await getWordTabTitles(env);
 
   const rowsByTab = await Promise.all(
     wordTabs.map((tab) => getValues(env, tab, WORD_ROW_RANGE)),

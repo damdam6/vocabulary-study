@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>#48 Worker 단어 등록 API — 작업 플랜</title>
+<style>
+  :root {
+    --bg: #f7f7f8; --card: #ffffff; --ink: #1c1c1e; --muted: #6e6e73;
+    --line: #e3e3e6; --accent: #3b6ef5; --accent-soft: #e8eefe;
+    --ok: #2e8b57; --warn: #b25e09; --code-bg: #f0f0f2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161618; --card: #202024; --ink: #ececf0; --muted: #98989f;
+      --line: #333338; --accent: #7a9bff; --accent-soft: #26304a;
+      --ok: #58c088; --warn: #e0a35c; --code-bg: #2a2a2f;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 40px 20px 80px; background: var(--bg); color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+                 "Segoe UI", "Noto Sans KR", sans-serif;
+    line-height: 1.65;
+  }
+  main { max-width: 860px; margin: 0 auto; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code {
+    font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 0.86em;
+    background: var(--code-bg); border-radius: 5px; padding: 2px 6px;
+  }
+  header { margin-bottom: 28px; }
+  .issue-chip {
+    display: inline-block; font-weight: 700; color: var(--accent);
+    background: var(--accent-soft); border-radius: 999px;
+    padding: 3px 14px; font-size: 0.95rem; margin-bottom: 10px;
+  }
+  .type-chip {
+    display: inline-block; font-weight: 600; color: var(--muted);
+    border: 1px solid var(--line); border-radius: 999px;
+    padding: 3px 12px; font-size: 0.8rem; margin-left: 8px; vertical-align: 2px;
+  }
+  h1 { font-size: 1.7rem; margin: 0 0 14px; letter-spacing: -0.02em; }
+  .meta {
+    display: flex; flex-wrap: wrap; gap: 6px 22px;
+    color: var(--muted); font-size: 0.87rem;
+  }
+  .meta b { color: var(--ink); font-weight: 600; }
+  section.card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 24px 28px; margin-top: 18px;
+  }
+  h2 {
+    font-size: 1.05rem; margin: 0 0 14px; letter-spacing: -0.01em;
+    display: flex; align-items: center; gap: 8px;
+  }
+  h2 .no {
+    color: var(--accent); font-size: 0.8rem; font-weight: 700;
+    border: 1.5px solid var(--accent); border-radius: 6px; padding: 0 6px;
+  }
+  ul, ol { margin: 0; padding-left: 22px; }
+  li { margin: 6px 0; }
+  .steps { list-style: none; padding: 0; counter-reset: step; }
+  .steps li {
+    counter-increment: step; position: relative; padding: 10px 0 10px 44px;
+    border-bottom: 1px dashed var(--line);
+  }
+  .steps li:last-child { border-bottom: none; }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 10px;
+    width: 28px; height: 28px; border-radius: 8px; background: var(--accent-soft);
+    color: var(--accent); font-weight: 700; font-size: 0.85rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .steps .files { display: block; margin-top: 4px; font-size: 0.85rem; color: var(--muted); }
+  .steps li.done::before { content: "✓"; background: var(--ok); color: #fff; }
+  .steps li.done { color: var(--muted); }
+  .steps li.done code { color: var(--ink); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 0.82rem; }
+  .done-list { list-style: none; padding: 0; }
+  .done-list li { padding-left: 30px; position: relative; }
+  .done-list li::before {
+    content: ""; position: absolute; left: 2px; top: 7px; width: 15px; height: 15px;
+    border: 2px solid var(--ok); border-radius: 5px;
+  }
+  .scroll-x { overflow-x: auto; }
+  footer { margin-top: 30px; color: var(--muted); font-size: 0.8rem; text-align: center; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <span class="issue-chip"><a href="https://github.com/damdam6/vocabulary-study/issues/48">#48</a></span><span class="type-chip">기능 개선</span>
+    <h1>Worker 단어 등록 API — GET /api/tabs + POST /api/words/register</h1>
+    <div class="meta">
+      <span><b>damdam6/vocabulary-study</b></span>
+      <span>브랜치 <b><code>feat/48-worker-register-api</code></b> ← <code>main</code></span>
+      <span>라벨 <b>enhancement</b></span>
+      <span>2026-07-19</span>
+    </div>
+  </header>
+
+  <section class="card">
+    <h2><span class="no">1</span>요약</h2>
+    <p>단어 등록 시스템 플랜(<code>docs/plans/word-registration-system.md</code> §6)의 3단계(저장) Worker API 2개를 구현한다. <code>GET /api/tabs</code>는 학습 대상 탭 목록을 반환하고, <code>POST /api/words/register</code>는 클라이언트가 보낸 단어 배열을 서버에서 재검증한 뒤 탭 내 중복 한자는 스킵하고 나머지만 A·B·C열에 append-only로 기록한다. 기존 <code>worker/lib/sheets.ts</code>·<code>google-auth.ts</code>·Bearer 인증 미들웨어를 그대로 재사용하며, 새 탭은 제출 시점에만 기존 탭의 헤더 행을 복사해 생성한다(빈 탭 방지).</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">2</span>현황 분석</h2>
+    <ul>
+      <li>Worker에는 <code>GET /api/words</code>·<code>POST /api/answer</code>·<code>POST /api/review-fail</code>만 존재한다(<code>worker/index.ts:26-51</code>). 등록 관련 엔드포인트 없음.</li>
+      <li>모든 <code>/api/*</code> 요청은 <code>isAuthorized</code> 미들웨어를 먼저 통과해야 한다(<code>worker/lib/auth.ts</code>, <code>worker/index.ts:12-17</code>) — 새 라우트도 <code>worker/index.ts</code>에 분기만 추가하면 자동으로 이 게이트를 상속한다.</li>
+      <li><code>worker/lib/sheets.ts</code>는 <code>getValues</code>·<code>updateValues</code>·<code>batchUpdateValues</code>·<code>getSheetTitles</code>·<code>appendValues</code>를 제공한다(<code>worker/lib/sheets.ts:39-100</code>). 그런데 <code>appendValues</code>(<code>:append</code> 엔드포인트, 암묵적 테이블 경계 감지)는 어떤 라우트도 쓰지 않는다 — 기존 라우트(<code>worker/routes/answer.ts</code>, <code>worker/routes/review-fail.ts</code>)는 전부 "<code>A2:A</code> 스캔으로 행 번호를 매 요청 재계산 → <code>updateValues</code>/<code>batchUpdateValues</code>로 명시적 range에 쓰기" 패턴을 쓴다(<code>worker/lib/words.ts:44-61,67-80</code> 주석 — PRD 4.2, "행 번호는 캐시하지 않고 재탐색").</li>
+      <li><code>routes/words.ts:11-12</code>가 이미 <code>_</code> 접두 탭 제외 필터(<code>title.startsWith("_")</code>)를 구현 중 — 새 <code>GET /api/tabs</code>가 같은 필터를 그대로 복제하면 로직이 두 곳에 흩어진다.</li>
+      <li>탭 생성(스프레드시트 구조 변경, <code>addSheet</code> 요청)은 <code>sheets.ts</code>에 아직 없다 — 기존 <code>batchUpdateValues</code>는 <code>/values:batchUpdate</code>(값 쓰기 전용)라 별개 엔드포인트다.</li>
+      <li>테스트는 <code>worker/index.test.ts</code> 한 파일뿐이고 인증 게이트·<code>/api/health</code>만 검증한다 — Sheets API를 모킹하는 라우트 레벨 테스트는 이 저장소에 아직 한 건도 없다. 클라이언트 쪽(<code>src/lib/wordsApi.test.ts</code>, <code>retryQueue.test.ts</code>)은 <code>vi.stubGlobal("fetch", ...)</code>로 전역 <code>fetch</code>를 스텁하는 패턴을 쓴다.</li>
+      <li><code>worker/lib/google-auth.ts</code>는 isolate 스코프 모듈 캐시(<code>cached</code> 토큰, <code>cachedPrivateKey</code>, <code>inFlight</code>)를 갖는다 — 실제 RSA 서명 없이 테스트하려면 이 모듈을 통째로 모킹하는 게 가장 안전하다.</li>
+      <li>PRD 컬럼 계약(<code>docs/PRD.md:57-67</code>): A=한자(탭 내 유일 키)·B=병음·C=한국어 뜻은 "등록 skill"이 쓰는 열, D(모드1)·E(모드2)·F(복습)·G~(타임스탬프)는 "사이트"가 쓰는 열 — 즉 등록 API는 A·B·C만 채우고 신규 행의 D·E·F는 빈칸으로 남겨야 한다.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">3</span>설계</h2>
+    <ul>
+      <li><b>라우트 분리</b>: <code>worker/routes/tabs.ts</code>(<code>GET /api/tabs</code>), <code>worker/routes/register.ts</code>(<code>POST /api/words/register</code>) — 기존 1라우트-1파일 컨벤션 유지.</li>
+      <li><b>순수 로직 분리</b>: 새 <code>worker/lib/register.ts</code>에 <code>parseRegisterWords</code>(스키마 §3 재검증: 필드 존재·타입·트림 후 비어있지 않음·배열 내 중복 한자 금지), <code>normalizeTabName</code>(트림 + <code>_</code> 시작 차단), <code>partitionByExisting</code>(기존 한자 목록 대비 skip/add 분리)를 둔다. <code>lib/answer.ts</code>의 <code>computeAnswerUpdate</code>와 같은 패턴 — Sheets 모킹 없이 순수 함수 유닛 테스트가 가능해진다.</li>
+      <li><b>신규 행 쓰기 방식</b>: <code>appendValues</code>(<code>:append</code>, 암묵적 테이블 감지)를 쓰지 않고, 이미 중복 검사를 위해 읽어둔 <code>A2:A</code> 결과의 길이로 다음 행 번호(<code>rows.length + 2</code>)를 계산해 <code>updateValues(tab, "A{n}:C{n+k-1}", rows)</code>로 명시적으로 쓴다. 저장소 전역 원칙("행 번호 캐시 금지, 매 요청 재탐색")과 일치하고, 이미 가진 데이터를 재사용하며, D열 이후를 절대 건드리지 않는다는 걸 range만 보고도 보장할 수 있다.</li>
+      <li><b>탭 생성(<code>addSheet</code>)</b>: <code>sheets.ts</code>에 스프레드시트 레벨 <code>:batchUpdate</code>(<code>addSheet</code> 요청 — 값 batchUpdate와 다른 엔드포인트)를 새로 추가한다.</li>
+      <li><b>헤더 복사 원본 선택</b>(이슈 텍스트가 "기존 탭"이라고만 하고 특정하지 않음 — 추론): <code>GET /api/tabs</code>와 같은 필터로 구한 첫 번째 단어 탭의 1행을 헤더 원본으로 쓴다. 그런 탭이 하나도 없으면 400("헤더를 복사할 기존 탭이 없습니다").</li>
+      <li><b>탭 미존재 + <code>createTab</code> 미지정</b>(이슈 텍스트에 없는 조합 — 추론): 정상 클라이언트 플로우(드롭다운 선택 vs "+ 새 탭")에서는 나오지 않지만, 플랜 §2 "클라이언트를 신뢰하지 않는다" 원칙에 따라 Worker가 방어적으로 400 처리한다.</li>
+      <li><b>탭 이름 규칙 위반 응답</b>: 트림 후 빈 문자열이거나 <code>_</code>로 시작하면 400. 트림 후 기존 탭과 동일하면 <code>createTab</code> 값과 무관하게 그 기존 탭을 사용(신규 생성 안 함).</li>
+      <li><b>응답 스키마</b>: <code>{ tab, created, added: {hanzi,pinyin,meaning}[], skipped: string[] }</code> — 이슈가 요구하는 "added/skipped 상세"를 만족.</li>
+      <li><b>기각한 대안</b>: Worker에서 <code>pinyin-pro</code> 사전 검증까지 재실행 — 기각. 플랜 §5(작업 3, 별도 이슈)의 클라이언트 책임이고, 플랜 §6은 Worker 역할을 "스키마 재검증"(구조적 검증)으로 한정한다. Worker는 필드 존재·타입·공백 여부·배열 내 중복까지만 본다.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">4</span>작업 단계</h2>
+    <ol class="steps">
+      <li class="done">Sheets API 래퍼에 탭 생성 함수 추가 — 스프레드시트 레벨 <code>:batchUpdate</code>(<code>addSheet</code> 요청)를 감싸는 <code>addSheet(env, title)</code>.
+        <span class="files"><code>worker/lib/sheets.ts</code></span>
+      </li>
+      <li class="done"><code>_</code> 접두 필터 공유 헬퍼 추출 — <code>getWordTabTitles(env)</code>(<code>getSheetTitles</code> + 필터)를 만들고 <code>handleGetWords</code>가 이걸 쓰도록 리팩터.
+        <span class="files"><code>worker/lib/words.ts</code> 또는 <code>worker/lib/sheets.ts</code>, <code>worker/routes/words.ts</code></span>
+      </li>
+      <li class="done">등록 전용 순수 로직 모듈 작성 — <code>parseRegisterWords</code>·<code>normalizeTabName</code>·<code>partitionByExisting</code>.
+        <span class="files"><code>worker/lib/register.ts</code></span>
+      </li>
+      <li class="done"><code>GET /api/tabs</code> 라우트 구현 — <code>getWordTabTitles</code> 호출 후 <code>{ tabs: string[] }</code> 반환.
+        <span class="files"><code>worker/routes/tabs.ts</code></span>
+      </li>
+      <li class="done"><code>POST /api/words/register</code> 라우트 구현 — 바디 파싱(400 처리 포함) → 탭 이름 정규화·해석(기존 탭 재사용/생성/400) → 생성 시 헤더 원본 탭 선택 + <code>addSheet</code> + 헤더 행 복사 → <code>A2:A</code> 스캔으로 기존 한자 목록 확보 → <code>partitionByExisting</code> → 신규 행을 다음 빈 행부터 A·B·C열에만 <code>updateValues</code>로 기록 → 응답 조립.
+        <span class="files"><code>worker/routes/register.ts</code></span>
+      </li>
+      <li class="done">두 라우트를 <code>worker/index.ts</code>에 배선 — 기존 라우트와 같은 try/catch + <code>console.error</code> + 500 패턴.
+        <span class="files"><code>worker/index.ts</code></span>
+      </li>
+      <li class="done">순수 로직 유닛 테스트 — <code>parseRegisterWords</code>(필드 누락/빈 문자열/배열 내 중복 → null), <code>normalizeTabName</code>(트림/<code>_</code>차단/빈 문자열 → error), <code>partitionByExisting</code>(중복 스킵 분리). Sheets 모킹 불필요.
+        <span class="files"><code>worker/lib/register.test.ts</code></span>
+      </li>
+      <li class="done">라우트 레벨 테스트용 Sheets 모킹 하네스 구성 — <code>google-auth.ts</code>를 <code>vi.mock</code>으로 대체(고정 토큰 반환)하고 <code>vi.stubGlobal("fetch", ...)</code>로 <code>sheets.googleapis.com</code> 호출을 경로별로 가로채는 헬퍼 작성.
+        <span class="files"><code>worker/index.test.ts</code> 또는 새 <code>worker/routes/register.test.ts</code> — 계획과 달리 공유 모듈로 뽑지 않고 각 테스트 파일에 인라인으로 둠(register 쪽은 GET/PUT/addSheet까지 흉내내는 전체 하네스, tabs 쪽은 titles만 흉내내는 5줄짜리 축약판) — 재사용 범위가 작아 분리 이득이 없었음</span>
+      </li>
+      <li class="done">라우트 레벨 시나리오 테스트 — 인증 없음 401(기존 게이트 재확인), 탭 이름 규칙 위반 400, 페이로드 스키마 위반 400, 중복 한자 스킵(기존 행 미변경 검증), 신규 행 append-only(A-C열만, 다음 빈 행), <code>createTab</code> 헤더 복사 후 등록, 트림 후 기존 탭과 동일하면 재사용(생성 안 함).
+        <span class="files"><code>worker/index.test.ts</code> 또는 <code>worker/routes/register.test.ts</code>, <code>worker/routes/tabs.test.ts</code></span>
+      </li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">5</span>리스크</h2>
+    <div class="scroll-x">
+    <table>
+      <thead><tr><th>리스크</th><th>영향</th><th>완화책</th></tr></thead>
+      <tbody>
+        <tr><td>라우트 레벨 Sheets 모킹 하네스가 이 저장소 최초 사례</td><td>실제 Google API 응답 형태와 모킹이 어긋나면 테스트는 통과해도 실제 호출은 실패할 수 있음</td><td>기존 <code>sheets.ts</code> 응답 타입(<code>UpdateResult</code>/<code>BatchUpdateResult</code> 등)에 맞춰 모킹 응답을 구성하고, 최종적으로 <code>npm run deploy</code> 전 실제 시트로 수동 확인 1회 권장</td></tr>
+        <tr><td>헤더 복사 원본 탭 선택 기준(첫 번째 단어 탭)이 이슈 텍스트에 명시되지 않은 추론</td><td>사용자가 기대한 원본과 다를 수 있음</td><td>구현 중 사용자에게 확인하거나 PR 설명에 명시</td></tr>
+        <tr><td>탭 미존재 + <code>createTab</code> 미지정 조합의 400 처리도 추론</td><td>정상 플로우에서는 발생하지 않지만 계약 문서화 누락 가능</td><td>에러 메시지에 원인을 명확히 남기고 PR에 언급</td></tr>
+        <tr><td>동시 등록 요청 레이스(같은 탭에 동시 두 요청 → 같은 다음 행 계산)</td><td>낮은 확률로 행 충돌</td><td>개인용 저트래픽 앱이라 범위 밖으로 간주 — 기록만 해둠</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">6</span>테스트 계획</h2>
+    <ul>
+      <li><code>parseRegisterWords</code>: 정상 배열 통과, 필드 누락/빈 문자열/타입 불일치/배열 내 한자 중복 → null 반환 확인.</li>
+      <li><code>normalizeTabName</code>: 앞뒤 공백 트림, <code>_</code> 시작 차단, 트림 후 빈 문자열 차단 확인.</li>
+      <li><code>partitionByExisting</code>: 기존 한자와 겹치는 항목은 skipped로, 나머지는 toAdd로 정확히 분리되는지 확인.</li>
+      <li>라우트: 인증 헤더 없이 <code>POST /api/words/register</code> → 401 (기존 <code>/api/*</code> 게이트 재사용 확인).</li>
+      <li>라우트: 탭 이름이 <code>_test</code>처럼 <code>_</code>로 시작 → 400, 에러 메시지에 규칙 명시.</li>
+      <li>라우트: <code>words</code>가 빈 배열이거나 스키마 위반 필드 포함 → 400.</li>
+      <li>라우트: 대상 탭에 이미 존재하는 한자가 포함된 요청 → 해당 항목은 <code>skipped</code>로 응답되고, 기존 행에 대한 쓰기 호출(<code>updateValues</code>/<code>batchUpdateValues</code>)이 발생하지 않는지 모킹 호출 인자로 검증.</li>
+      <li>라우트: 신규 단어만 있는 요청 → 다음 빈 행부터 <code>A{n}:C{n+k-1}</code> range로만 쓰기가 발생(D~G열 미포함) 확인.</li>
+      <li>라우트: <code>createTab: true</code> + 신규 탭 이름 → <code>addSheet</code> 호출 후 헤더 행이 기존 탭에서 복사되고, 그 다음 단어 쓰기가 2행부터 시작하는지 확인.</li>
+      <li>라우트: 트림 후 이름이 기존 탭과 동일 → <code>createTab: true</code>여도 <code>addSheet</code>가 호출되지 않고 기존 탭에 등록되는지 확인.</li>
+      <li>라우트: <code>GET /api/tabs</code> → <code>_</code> 접두 탭 제외한 목록만 반환되는지 확인.</li>
+      <li><code>npm test</code> 전체 그린 확인, <code>npm run lint</code> 통과 확인.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">7</span>완료 조건</h2>
+    <ul class="done-list">
+      <li><code>GET /api/tabs</code>·<code>POST /api/words/register</code> 두 엔드포인트가 인증 하에 동작, 미인증 401.</li>
+      <li>탭 내 A열 중복 한자 스킵 — 기존 행은 어떤 경우에도 수정되지 않음(테스트로 검증).</li>
+      <li>신규 단어는 마지막 데이터 행 아래 A·B·C열에만 append(D열 이후 불가침) — 테스트로 검증.</li>
+      <li><code>createTab</code> 요청 시 기존 탭 헤더 행 복사로 새 탭 생성(빈 탭 방지) — 테스트로 검증.</li>
+      <li>탭 이름 규칙(트림, <code>_</code> 시작 차단) 위반 시 400.</li>
+      <li>스키마 위반 페이로드(필드 누락/타입 불일치/배열 내 중복) 400 — 기존 <code>answer.ts</code>/<code>review-fail.ts</code> 테스트 스타일과 동일한 검증 방식.</li>
+    </ul>
+  </section>
+
+  <footer>issue-plan · <a href="https://github.com/damdam6/vocabulary-study/issues/48">#48</a> · 2026-07-19</footer>
+</main>
+</body>
+</html>

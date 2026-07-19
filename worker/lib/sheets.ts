@@ -51,6 +51,14 @@ export async function getSheetTitles(env: Env): Promise<string[]> {
     .filter((title): title is string => !!title);
 }
 
+// 값(`/values:batchUpdate`)이 아니라 스프레드시트 구조 자체(탭 추가)를 바꾸는 별도 엔드포인트.
+/** 새 탭을 생성한다. 등록 API의 `createTab` 처리(플랜 §6)가 사용한다. */
+export async function addSheet(env: Env, title: string): Promise<void> {
+  await sheetsFetch(env, "POST", ":batchUpdate", {
+    requests: [{ addSheet: { properties: { title } } }],
+  });
+}
+
 /** 지정 범위에 값을 덮어쓴다. RAW: 문자열을 그대로 저장 (PRD의 `날짜|간격` 같은 텍스트 계약 보호). */
 export async function updateValues(
   env: Env,
