@@ -74,7 +74,7 @@ claude.ai 프로젝트에 올릴 산출물 2개 (리포 `docs/registration-kit/`
 | 엔드포인트 | 동작 |
 |---|---|
 | `GET /api/tabs` | 학습 대상 탭 목록 (`_` 접두 제외) |
-| `POST /api/words/register` | `{ tab, createTab?, words[] }` → 스키마 재검증, 탭 내 중복 스킵, A·B·C열만 마지막 데이터 행 아래 append. `createTab`이면 기존 탭 1행 헤더 복사해 생성 (탭 생성은 이 시점에만 — 빈 탭 방지). 응답: added/skipped 상세 |
+| `POST /api/words/register` | `{ tab, createTab?, words[] }` → 스키마 재검증(`words` 최대 100건, 초과 `400`), 탭 내 중복 스킵, A·B·C열만 마지막 데이터 행 아래 append (`valueInputOption=RAW` — 수식 인젝션 차단). `createTab`이면 기존 탭 1행 헤더 복사해 생성 (탭 생성은 이 시점에만 — 빈 탭 방지). 응답: added/skipped 상세 |
 
 - 탭 이름 규칙 (Worker에서도 강제): 앞뒤 공백 트림, **`_` 시작 차단**(학습 제외 탭과 모순), 트림 후 기존 탭과 동일하면 그 탭에 등록.
 - 인증: 기존 Bearer 미들웨어 그대로. `worker/lib/sheets.ts`·`google-auth.ts` 재사용.
@@ -89,7 +89,7 @@ claude.ai 프로젝트에 올릴 산출물 2개 (리포 `docs/registration-kit/`
 | 3 | 등록 화면 UI + 클라이언트 검증 (pinyin-pro 포함) | `RegisterScreen`, 홈 진입 링크, 검증 로직, 테스트 |
 | 4 | PRD 개정 | §3 비범위 수정, §7.3 API 추가, §4 쓰는 주체 갱신, §9 화면 추가 |
 
-의존: 2·3은 병렬 가능 (스키마는 이 문서로 이미 확정). 1·4는 독립·병렬. pinyin-pro는 클라이언트 번들 의존성 추가 — 3에서 번들 크기 확인.
+의존: 2·3은 병렬 가능 (스키마는 이 문서로 이미 확정). 1·4는 독립·병렬. pinyin-pro는 클라이언트 의존성 추가 — 등록 화면 전용 청크로 지연 로드(dynamic import), 3에서 번들 크기 확인.
 
 ## 8. 결정 로그 (grill 세션, 2026-07-19)
 
