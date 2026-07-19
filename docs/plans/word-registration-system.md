@@ -74,7 +74,7 @@ claude.ai 프로젝트에 올릴 산출물 2개 (리포 `docs/registration-kit/`
 | 엔드포인트 | 동작 |
 |---|---|
 | `GET /api/tabs` | 학습 대상 탭 목록 (`_` 접두 제외) |
-| `POST /api/words/register` | `{ tab, createTab?, words[] }` → 스키마 재검증, 탭 내 중복 스킵, A·B·C열만 마지막 데이터 행 아래 append. `createTab`이면 기존 탭 1행 헤더 복사해 생성 (탭 생성은 이 시점에만 — 빈 탭 방지). 응답: added/skipped 상세 |
+| `POST /api/words/register` | `{ tab, createTab?, words[] }` → 스키마 재검증(`words` 최대 100건, 초과 `400`), 탭 내 중복 스킵, A·B·C열만 마지막 데이터 행 아래 append (`valueInputOption=RAW` — 수식 인젝션 차단). `createTab`이면 기존 탭 1행 헤더 복사해 생성 (탭 생성은 이 시점에만 — 빈 탭 방지). 응답: added/skipped 상세 |
 
 - 탭 이름 규칙 (Worker에서도 강제): 앞뒤 공백 트림, **`_` 시작 차단**(학습 제외 탭과 모순), 트림 후 기존 탭과 동일하면 그 탭에 등록.
 - 인증: 기존 Bearer 미들웨어 그대로. `worker/lib/sheets.ts`·`google-auth.ts` 재사용.
