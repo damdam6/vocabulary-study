@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>#58 PRD §10 재시도 큐 서술 갱신 — review-fail 포함 — 작업 플랜</title>
+<style>
+  :root {
+    --bg: #f7f7f8; --card: #ffffff; --ink: #1c1c1e; --muted: #6e6e73;
+    --line: #e3e3e6; --accent: #3b6ef5; --accent-soft: #e8eefe;
+    --ok: #2e8b57; --warn: #b25e09; --code-bg: #f0f0f2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161618; --card: #202024; --ink: #ececf0; --muted: #98989f;
+      --line: #333338; --accent: #7a9bff; --accent-soft: #26304a;
+      --ok: #58c088; --warn: #e0a35c; --code-bg: #2a2a2f;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 40px 20px 80px; background: var(--bg); color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+                 "Segoe UI", "Noto Sans KR", sans-serif;
+    line-height: 1.65;
+  }
+  main { max-width: 860px; margin: 0 auto; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code {
+    font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 0.86em;
+    background: var(--code-bg); border-radius: 5px; padding: 2px 6px;
+  }
+  header { margin-bottom: 28px; }
+  .issue-chip {
+    display: inline-block; font-weight: 700; color: var(--accent);
+    background: var(--accent-soft); border-radius: 999px;
+    padding: 3px 14px; font-size: 0.95rem; margin-bottom: 10px;
+  }
+  .type-chip {
+    display: inline-block; font-weight: 600; color: var(--muted);
+    border: 1px solid var(--line); border-radius: 999px;
+    padding: 3px 12px; font-size: 0.8rem; margin-left: 8px; vertical-align: 2px;
+  }
+  h1 { font-size: 1.7rem; margin: 0 0 14px; letter-spacing: -0.02em; }
+  .meta {
+    display: flex; flex-wrap: wrap; gap: 6px 22px;
+    color: var(--muted); font-size: 0.87rem;
+  }
+  .meta b { color: var(--ink); font-weight: 600; }
+  section.card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 24px 28px; margin-top: 18px;
+  }
+  h2 {
+    font-size: 1.05rem; margin: 0 0 14px; letter-spacing: -0.01em;
+    display: flex; align-items: center; gap: 8px;
+  }
+  h2 .no {
+    color: var(--accent); font-size: 0.8rem; font-weight: 700;
+    border: 1.5px solid var(--accent); border-radius: 6px; padding: 0 6px;
+  }
+  ul, ol { margin: 0; padding-left: 22px; }
+  li { margin: 6px 0; }
+  .steps { list-style: none; padding: 0; counter-reset: step; }
+  .steps li {
+    counter-increment: step; position: relative; padding: 10px 0 10px 44px;
+    border-bottom: 1px dashed var(--line);
+  }
+  .steps li:last-child { border-bottom: none; }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 10px;
+    width: 28px; height: 28px; border-radius: 8px; background: var(--accent-soft);
+    color: var(--accent); font-weight: 700; font-size: 0.85rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .steps .files { display: block; margin-top: 4px; font-size: 0.85rem; color: var(--muted); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 0.82rem; }
+  .done-list { list-style: none; padding: 0; }
+  .done-list li { padding-left: 30px; position: relative; }
+  .done-list li::before {
+    content: ""; position: absolute; left: 2px; top: 7px; width: 15px; height: 15px;
+    border: 2px solid var(--ok); border-radius: 5px;
+  }
+  .scroll-x { overflow-x: auto; }
+  footer { margin-top: 30px; color: var(--muted); font-size: 0.8rem; text-align: center; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <span class="issue-chip"><a href="https://github.com/damdam6/vocabulary-study/issues/58">#58</a></span><span class="type-chip">문서 정합화</span>
+    <h1>PRD §10 재시도 큐 서술 갱신 — review-fail 포함 (#43 반영)</h1>
+    <div class="meta">
+      <span><b>damdam6/vocabulary-study</b></span>
+      <span>브랜치 <b><code>docs/58-prd-retry-queue-wording</code></b> ← <code>main</code></span>
+      <span>라벨 <b>documentation</b></span>
+      <span>2026-07-19</span>
+    </div>
+  </header>
+
+  <section class="card">
+    <h2><span class="no">1</span>요약</h2>
+    <p>
+      #43(PR #45)에서 <code>POST /api/review-fail</code> 실패도 재시도 큐에 적재되도록 확장됐지만,
+      <code>docs/PRD.md</code> §10 서술은 아직 #43 이전 상태로 <code>POST /api/answer</code> 실패만 재시도 대상으로 적고 있다.
+      실제 코드(<code>src/lib/retryQueue.ts</code>)는 answer·review-fail 두 종류를 하나의 큐에 <code>kind</code> 태그를 붙여
+      적재하고 FIFO로 재전송한다. §10을 양쪽 실패가 재시도 큐 대상임을 반영해 고치고,
+      answer(타임스탬프 = 최초 발생 시각 보존)와 review-fail(간격 후퇴 재전송, tab·hanzi만 재생) 차이를 한 줄로 명시한다.
+      §7.3 review-fail 절에도 "실패 시 재시도 큐" 한 줄을 더한다. <strong>코드 변경 없는 순수 문서 정합화.</strong>
+    </p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">2</span>현황 분석</h2>
+    <p>재시도 큐의 실제 동작(<code>src/lib/retryQueue.ts</code>)이 사실상의 명세이며, 이미 answer·review-fail 두 종류를 모두 다룬다:</p>
+    <ul>
+      <li>엔트리 타입이 <code>kind</code> 태그로 두 종류를 구분한다 — <code>{ kind: "answer" | "review-fail", record }</code> (<code>retryQueue.ts:21-23</code>).</li>
+      <li>적재 진입점이 둘 — <code>enqueueAnswer</code>·<code>enqueueReviewFail</code>이 <em>같은 배열</em> 끝에 순서대로 push (<code>retryQueue.ts:67-74</code>).</li>
+      <li>플러시가 <code>kind</code>로 분기 — answer는 <code>postAnswer(record)</code>, review-fail은 <code>postReviewFail(record.tab, record.hanzi)</code> (<code>retryQueue.ts:96-100</code>).</li>
+      <li>두 종류의 성격 차이 — answer는 <code>timestamp</code>(최초 판정 시각)를 그대로 보존해 재전송(<code>retryQueue.ts:7-8</code>), review-fail 레코드는 <code>tab</code>·<code>hanzi</code>만 담아 간격 후퇴 재요청을 재생한다(타임스탬프 개념 없음).</li>
+    </ul>
+    <p>문서 쪽 현황:</p>
+    <ul>
+      <li><code>docs/PRD.md:276</code> §10 "기록 유실 방지" — <code>POST /api/answer</code> 실패<em>만</em> 재시도 대상으로 기재. #43 이전 상태.</li>
+      <li><code>docs/PRD.md:211-214</code> §7.3 <code>POST /api/review-fail</code> 절 — Worker 동작만 서술, 전송 실패 시 재시도 큐로 간다는 언급 없음.</li>
+      <li><code>docs/design-prd.md:115</code> §4.5 — "기록 전송은 비동기 … 재시도 큐(#18)로"로 이미 넓게 서술되어 정합. <strong>변경 불필요.</strong></li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">3</span>설계</h2>
+    <p><strong>선택:</strong> 코드가 이미 정답이므로, 문서를 코드에 맞춘다. 두 곳만 손댄다.</p>
+    <ul>
+      <li>§10 "기록 유실 방지" 한 항목을 answer·review-fail 양쪽 실패가 재시도 큐 대상이도록 다시 쓰고, 두 종류의 재전송 성격 차이를 한 줄로 붙인다.</li>
+      <li>§7.3 <code>POST /api/review-fail</code> 절 끝에 "전송 실패 시 재시도 큐(§10)에 적재·재전송" 한 줄 추가.</li>
+    </ul>
+    <p><strong>배제한 대안:</strong></p>
+    <ul>
+      <li>§7.3를 크게 재작성 — 이슈 범위(한 줄 추가)를 벗어남. answer 절과의 서술 톤도 무너뜨림.</li>
+      <li>design-prd §4.5 수정 — 이미 재시도 큐를 넓게 포괄하므로 건드리면 오히려 중복. 정합 확인만.</li>
+      <li>큐 종류를 별도 표/절로 신설 — 비기능 요구사항 한 항목에 담기는 분량이라 과설계.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">4</span>작업 단계</h2>
+    <ol class="steps">
+      <li>✅ §10 "기록 유실 방지" 항목 수정 — <code>POST /api/answer</code>·<code>POST /api/review-fail</code> 양쪽 실패를 <code>localStorage</code> 재시도 큐 대상으로 기술. answer는 타임스탬프(최초 발생 시각) 보존, review-fail은 간격 후퇴 재전송이라는 차이를 한 줄로 명시.
+        <span class="files"><code>docs/PRD.md:277</code> · 완료 — 종류 태그·FIFO 재전송 문구 포함</span>
+      </li>
+      <li>✅ §7.3 <code>POST /api/review-fail</code> 절에 "전송 실패 시 재시도 큐(§10)에 적재 후 재전송" 한 줄 추가.
+        <span class="files"><code>docs/PRD.md:215</code> · 완료 — §7.3 answer 절엔 재시도 큐 줄이 없어 "대칭" 대신 §10을 참조하는 한 줄로 추가</span>
+      </li>
+      <li>✅ design-prd §4.5가 여전히 재시도 큐를 포괄하는지 재확인(모순 없음 확인만, 수정 없음).
+        <span class="files"><code>docs/design-prd.md:115</code> · 완료 — "재시도 큐(#18)로" 서술 그대로 정합, 변경 없음</span>
+      </li>
+      <li>✅ 최종 대조 — 갱신된 §10 서술이 <code>retryQueue.ts</code>의 실제 kind 분기·타임스탬프 처리와 문자 그대로 일치하는지 확인.
+        <span class="files"><code>src/lib/retryQueue.ts:21-23,96-100</code> · 완료 — kind 태그·answer 타임스탬프 보존·review-fail(tab·hanzi) 재전송 일치</span>
+      </li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">5</span>리스크</h2>
+    <div class="scroll-x">
+    <table>
+      <thead><tr><th>리스크</th><th>영향</th><th>완화책</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>서술이 review-fail도 타임스탬프를 보존하는 것처럼 읽힐 오해</td>
+          <td>낮음 — 문서 정확성</td>
+          <td>review-fail 레코드는 <code>tab</code>·<code>hanzi</code>만 담아 간격 후퇴만 재생함을 명시 (타임스탬프 보존은 answer에만 걸리도록 문장 구조 분리)</td>
+        </tr>
+        <tr>
+          <td>코드 변경 없음 → 기능 회귀</td>
+          <td>없음</td>
+          <td>순수 마크다운 diff, 실행 경로 무변경</td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">6</span>테스트 계획</h2>
+    <ul>
+      <li>문서 전용 변경이라 실행 테스트 없음 — 마크다운 diff만 발생하며 빌드·런타임 경로에 영향 없음.</li>
+      <li>코드-문서 대조: 갱신된 §10 문장을 <code>retryQueue.ts:21-23</code>(kind 태그), <code>:67-74</code>(두 적재 진입점), <code>:96-100</code>(kind 분기 재전송)와 한 줄씩 맞춰 불일치 없음 확인.</li>
+      <li>design-prd §4.5 재독 — "재시도 큐(#18)로" 서술과 갱신된 §10 사이에 모순 없음 확인.</li>
+      <li>렌더 확인 — §10·§7.3의 마크다운(코드 백틱, 강조)이 깨지지 않는지 diff로 육안 점검.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">7</span>완료 조건</h2>
+    <ul class="done-list">
+      <li>PRD §10이 answer·review-fail 양쪽을 재시도 큐 대상으로 기술</li>
+      <li>answer(타임스탬프 보존)와 review-fail(간격 후퇴 재전송)의 차이가 한 줄로 명시됨</li>
+      <li>§7.3 review-fail 절에 실패 시 재시도 큐 한 줄 추가됨</li>
+      <li>코드(<code>retryQueue.ts</code>)의 실제 동작과 서술이 일치</li>
+      <li>design-prd와 모순 없음</li>
+    </ul>
+  </section>
+
+  <footer>issue-plan · <a href="https://github.com/damdam6/vocabulary-study/issues/58">#58</a> · 2026-07-19</footer>
+</main>
+</body>
+</html>
