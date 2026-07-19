@@ -116,11 +116,13 @@ function Dropdown({ id, value, options, onChange }: DropdownProps) {
           className="dropdown-panel"
           role="listbox"
           tabIndex={-1}
+          aria-activedescendant={`${listboxId}-option-${activeIndex}`}
           onKeyDown={handleListKeyDown}
         >
           {options.map((option, index) => (
             <li
               key={option.value}
+              id={`${listboxId}-option-${index}`}
               role="option"
               aria-selected={option.value === value}
               className={`dropdown-option${option.value === value ? ' dropdown-option--selected' : ''}${
