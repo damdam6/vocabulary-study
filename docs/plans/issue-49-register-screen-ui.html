@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>#49 단어 등록 화면 — 붙여넣기 검증(pinyin-pro)·탭 선택·등록 — 작업 플랜</title>
+<style>
+  :root {
+    --bg: #f7f7f8; --card: #ffffff; --ink: #1c1c1e; --muted: #6e6e73;
+    --line: #e3e3e6; --accent: #3b6ef5; --accent-soft: #e8eefe;
+    --ok: #2e8b57; --warn: #b25e09; --code-bg: #f0f0f2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161618; --card: #202024; --ink: #ececf0; --muted: #98989f;
+      --line: #333338; --accent: #7a9bff; --accent-soft: #26304a;
+      --ok: #58c088; --warn: #e0a35c; --code-bg: #2a2a2f;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 40px 20px 80px; background: var(--bg); color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+                 "Segoe UI", "Noto Sans KR", sans-serif;
+    line-height: 1.65;
+  }
+  main { max-width: 860px; margin: 0 auto; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code {
+    font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 0.86em;
+    background: var(--code-bg); border-radius: 5px; padding: 2px 6px;
+  }
+  header { margin-bottom: 28px; }
+  .issue-chip {
+    display: inline-block; font-weight: 700; color: var(--accent);
+    background: var(--accent-soft); border-radius: 999px;
+    padding: 3px 14px; font-size: 0.95rem; margin-bottom: 10px;
+  }
+  .type-chip {
+    display: inline-block; font-weight: 600; color: var(--muted);
+    border: 1px solid var(--line); border-radius: 999px;
+    padding: 3px 12px; font-size: 0.8rem; margin-left: 8px; vertical-align: 2px;
+  }
+  h1 { font-size: 1.7rem; margin: 0 0 14px; letter-spacing: -0.02em; }
+  .meta {
+    display: flex; flex-wrap: wrap; gap: 6px 22px;
+    color: var(--muted); font-size: 0.87rem;
+  }
+  .meta b { color: var(--ink); font-weight: 600; }
+  section.card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 24px 28px; margin-top: 18px;
+  }
+  h2 {
+    font-size: 1.05rem; margin: 0 0 14px; letter-spacing: -0.01em;
+    display: flex; align-items: center; gap: 8px;
+  }
+  h2 .no {
+    color: var(--accent); font-size: 0.8rem; font-weight: 700;
+    border: 1.5px solid var(--accent); border-radius: 6px; padding: 0 6px;
+  }
+  ul, ol { margin: 0; padding-left: 22px; }
+  li { margin: 6px 0; }
+  .steps { list-style: none; padding: 0; counter-reset: step; }
+  .steps li {
+    counter-increment: step; position: relative; padding: 10px 0 10px 44px;
+    border-bottom: 1px dashed var(--line);
+  }
+  .steps li:last-child { border-bottom: none; }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 10px;
+    width: 28px; height: 28px; border-radius: 8px; background: var(--accent-soft);
+    color: var(--accent); font-weight: 700; font-size: 0.85rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .steps .files { display: block; margin-top: 4px; font-size: 0.85rem; color: var(--muted); }
+  .step-done { color: var(--ok); font-weight: 700; }
+  .step-note { display: block; margin-top: 4px; font-size: 0.85rem; color: var(--warn); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 0.82rem; }
+  .done-list { list-style: none; padding: 0; }
+  .done-list li { padding-left: 30px; position: relative; }
+  .done-list li::before {
+    content: ""; position: absolute; left: 2px; top: 7px; width: 15px; height: 15px;
+    border: 2px solid var(--ok); border-radius: 5px;
+  }
+  .scroll-x { overflow-x: auto; }
+  footer { margin-top: 30px; color: var(--muted); font-size: 0.8rem; text-align: center; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <span class="issue-chip"><a href="https://github.com/damdam6/vocabulary-study/issues/49">#49</a></span><span class="type-chip">신규 기능</span>
+    <h1>단어 등록 화면 — 붙여넣기 검증(pinyin-pro)·탭 선택·등록</h1>
+    <div class="meta">
+      <span><b>damdam6/vocabulary-study</b></span>
+      <span>브랜치 <b><code>feat/49-register-screen-ui</code></b> ← <code>main</code></span>
+      <span>라벨 <b>enhancement</b></span>
+      <span>2026-07-19</span>
+    </div>
+  </header>
+
+  <section class="card">
+    <h2><span class="no">1</span>요약</h2>
+    <p>단어 등록 시스템(전체 플랜 <code>docs/plans/word-registration-system.md</code>) 3단계 중 2단계 화면이다. 홈 화면에 저강조 링크로 진입해, JSON 붙여넣기 → 형식·pinyin-pro 병음 검증·시트 중복 대조 → 검증 결과 테이블 → 탭 선택/생성 → 중복 확인 → 제출까지 이어지는 클라이언트 플로우를 구현한다. Worker API(<code>GET /api/tabs</code>, <code>POST /api/words/register</code>, #48)는 아직 미구현이라 계약(플랜 §6)만 근거로 병렬 진행하고, 종단 검증은 #48 머지 이후로 미룬다. pinyin-pro가 gzip 약 145KB로 무거워, 지연 로딩으로 학습 플로우 번들에 영향을 주지 않게 설계한다.</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">2</span>현황 분석</h2>
+    <ul>
+      <li><code>src/App.tsx:10</code> — <code>Screen</code> 유니온이 <code>'login'|'home'|'study'|'done'</code>, 라우터 없이 조건부 렌더링(<code>src/App.tsx:44-58</code>). 화면 전환은 <code>setScreen</code> 콜백을 자식에 내려주는 방식.</li>
+      <li><code>src/screens/HomeScreen.tsx:13-15,128-132</code> — "학습 시작" 버튼이 화면의 마지막 요소이고 <code>onStart</code> prop 하나만 받는다. 등록 화면 진입 링크를 붙일 지점.</li>
+      <li><code>src/lib/api.ts:45-59</code> — 모든 <code>/api/*</code> 호출은 <code>apiFetch</code>를 경유해야 Bearer 첨부·401 처리가 적용된다. <code>WordEntry</code> 클라이언트측 계약 미러(<code>src/lib/api.ts:87-96</code>). <code>postAnswer</code>/<code>postReviewFail</code>(<code>112-145</code>)이 "비정상 응답 throw" 패턴의 참조 구현.</li>
+      <li><code>src/lib/wordsApi.ts:10-17</code> — <code>fetchWords()</code>: GET /api/words 얇은 래퍼. 홈 화면 현황 집계·세션 큐 구성이 이미 재사용 중이며, 이 이슈의 시트-중복 대조도 동일 함수를 재사용한다.</li>
+      <li><code>worker/routes/words.ts:10-26</code> — GET /api/words는 이미 구현되어 <code>_</code> 접두 탭을 제외한 전 탭을 통합 반환한다. 각 항목에 <code>tab</code> 필드가 있어(<code>worker/lib/words.ts:12</code>) 클라이언트에서 <code>words.filter(w =&gt; w.tab === selectedTab)</code>로 탭별 중복 대조셋을 만들 수 있다.</li>
+      <li><code>worker/index.ts:26,35,44,53</code> — 라우트가 문자열 매칭 체인이고 <code>/api/tabs</code>·<code>/api/words/register</code>는 아직 없어 53행 404 폴백으로 떨어진다. 이슈 #48(OPEN) 소관이며 계약은 <code>docs/plans/word-registration-system.md</code> §6에 확정돼 있다.</li>
+      <li><code>package.json:15-18</code> — dependencies는 react/react-dom뿐, pinyin-pro 미설치.</li>
+      <li><code>docs/design-prd.md:153-163</code> — §9 이슈 매핑이 #18까지만 있고 등록 화면 목업·사양이 없다. 디자인 토큰(§1)·모바일 우선 레이아웃 규칙(§1.4, 390px 기준)은 그대로 따르되, 화면 구조 자체는 이번에 새로 설계해야 한다.</li>
+      <li><code>vitest.config.ts:1-7</code> — 테스트 환경이 node이고 jsdom/테스팅 라이브러리가 없다. 기존 <code>*.test.ts</code>는 전부 <code>src/lib/*</code> 순수 함수 대상이고(<code>src/lib/wordsApi.test.ts</code>, <code>src/lib/api.test.ts</code> 등) 화면 컴포넌트(<code>*.tsx</code>) 단위 테스트는 이 저장소에 전례가 없다 — "로직은 단위 테스트, 화면은 브라우저 수동 확인"이 확립된 관행.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">3</span>설계</h2>
+    <p>주요 설계 결정과 기각한 대안:</p>
+    <div class="scroll-x">
+    <table>
+      <thead><tr><th>항목</th><th>결정</th><th>기각한 대안</th></tr></thead>
+      <tbody>
+        <tr><td>번들 크기 대응</td><td><code>Screen</code>에 <code>'register'</code> 추가 + <code>React.lazy</code>/<code>Suspense</code>로 <code>RegisterScreen</code> 지연 로딩. pinyin-pro가 gzip 약 145KB(의존성 0개)이고 등록 화면은 비핵심 경로라, 즉시 import하면 로그인·홈·학습 초기 번들이 그만큼 무거워진다.</td><td>즉시 import — 이슈 자체 완료 조건("번들 크기 확인")에 실질적으로 대응하지 못하고 초기 로드만 저하시킴.</td></tr>
+        <tr><td>검증 로직 위치</td><td><code>src/lib/registerValidation.ts</code>에 순수 함수로 분리 — <code>wordState</code>/<code>sessionQueue</code>/<code>studySession</code>과 동일하게 로직·컴포넌트를 계층화.</td><td>컴포넌트 내부에 검증 로직 인라인 — 이 저장소는 화면 컴포넌트 테스트 관행이 없으므로(§2) 로직을 분리해야만 단위 테스트 커버리지를 확보할 수 있음.</td></tr>
+        <tr><td>병음-한자 일치 판정</td><td>한자를 코드포인트 단위로 순회, 각 글자의 후보 배열(<code>pinyin(char, {multiple:true, type:'array'})</code> — 공식 문서상 <code>multiple</code>은 <code>text</code> 길이 1일 때만 유효)을 구해 카티전 곱 중 하나라도 공백 제거한 입력 병음과 정확히 일치하면 통과.</td><td>붙여넣은 병음 문자열을 음절 단위로 직접 분리하는 파서 — 음절 경계가 모호해(예: "jing"+"ji" vs "ji"+"ngji") 범용 분리가 어렵다. 카티전 곱 비교는 이 문제를 완전히 우회한다. 성조 부호 형식 검증도 별도 정규식 없이 자연히 겸한다 — 후보는 항상 성조 부호를 포함하므로 무성조·숫자성조 입력은 어떤 후보와도 일치하지 않아 저절로 차단된다.</td></tr>
+        <tr><td>행 분류 우선순위</td><td>오류(형식·병음불일치·빈 값·입력 내 중복) &gt; 중복(시트 내, 선택 탭 기준). 입력 내 중복 한자는 어느 쪽이 진짜인지 판별 불가하므로 시트-중복보다 먼저 차단으로 분류.</td><td>입력 내 중복도 "중복"으로 묶어 스킵 허용 — 사용자가 실수로 둘 중 하나만 남기려던 의도를 놓칠 위험이 있음.</td></tr>
+        <tr><td>#48 의존 처리</td><td><code>GET /api/tabs</code>/<code>POST /api/words/register</code> 클라이언트 함수는 플랜 §6 계약대로 선(先)구현하고 mock fetch 단위 테스트로 커버. 화면은 탭 조회 실패를 홈 화면과 동일한 에러 카드 패턴으로 흡수해 크래시 없이 동작.</td><td>#48 머지까지 대기 — 이슈 본문이 명시적으로 "#48과 병렬 진행 가능"이라 밝힘.</td></tr>
+        <tr><td>중복 확인 UI</td><td>모달 대신 인라인 확인 배너 + "확인하고 제출" 2단계 버튼.</td><td>모달 다이얼로그 — 이 저장소에 모달 컴포넌트 관행이 없고(<code>StudyScreen</code> "종료"도 design-prd §4.1에 따라 확인 없이 인라인 즉시 처리), 전부 인라인 상태 전환으로 화면을 구성하는 기존 스타일과 어긋남.</td></tr>
+        <tr><td>새 탭 이름 클라이언트 검증</td><td>트림·<code>_</code>시작 차단을 UX 개선 목적으로 클라이언트에도 적용하되, 최종 강제는 #48 Worker 책임으로 남김.</td><td>클라이언트 검증 생략 — 플랜 §2 "신뢰 경계"가 2·3단계 모두 재검증하도록 명시하므로, 클라이언트 검증은 우회 가능해도 방어선 하나를 보태는 것으로 충분함.</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">4</span>작업 단계</h2>
+    <ol class="steps">
+      <li><span class="step-done">✓ 완료</span> — pinyin-pro 의존성 추가.
+        <span class="files"><code>package.json</code></span>
+      </li>
+      <li><span class="step-done">✓ 완료</span> — 문자 단위 후보 카티전 곱으로 한자-병음 일치(다음자 허용)를 판정하는 순수 함수 작성. 단위 테스트 10건(정상·다음자 기본/비기본 후보·후보 밖 값·공백/대소문자 무시·무성조/숫자성조 차단·빈 값) 통과.
+        <span class="files"><code>src/lib/pinyinValidation.ts</code>, <code>src/lib/pinyinValidation.test.ts</code></span>
+      </li>
+      <li><span class="step-done">✓ 완료</span> — JSON 파싱 → 스키마(플랜 §3) 검증 → 입력 내 중복 → pinyinValidation 호출 → 선택 탭 기준 시트 중복 대조(기존 words 배열을 인자로 주입) 순으로 각 행을 정상/오류/중복으로 분류하는 순수 함수 작성. 새 탭 이름 검증(<code>validateNewTabName</code>)도 여기 추가. 단위 테스트 19건 통과.
+        <span class="files"><code>src/lib/registerValidation.ts</code>, <code>src/lib/registerValidation.test.ts</code></span>
+      </li>
+      <li><span class="step-done">✓ 완료</span> — <code>fetchTabs()</code>(GET /api/tabs)·<code>registerWords()</code>(POST /api/words/register) 작성 — 기존 wordsApi.ts/api.ts와 동일하게 apiFetch 경유 + 비정상 응답 throw 패턴, 계약은 플랜 §6. 단위 테스트 6건 통과.
+        <span class="step-note">추가 반영(#48 머지 후): 실제 <code>worker/routes/register.ts</code> 계약과 대조한 결과 <code>RegisterResult.added</code>가 <code>string[]</code>가 아니라 등록된 단어 전체 객체(<code>ParsedWord[]</code>)였고, 응답에 <code>tab</code>·<code>created</code> 필드도 있었다 — 타입을 바로잡고 결과 화면에 반영. 비정상 응답도 Worker의 <code>{error}</code> 본문을 우선 파싱하도록 수정(예: "헤더를 복사할 기존 탭이 없습니다"). <code>GET /api/tabs</code>는 애초 가정과 정확히 일치해 변경 없음. main 머지·전체 스위트(158건) 재확인 완료.</span>
+        <span class="files"><code>src/lib/registerApi.ts</code>, <code>src/lib/registerApi.test.ts</code>, <code>src/screens/RegisterScreen.tsx</code></span>
+      </li>
+      <li><span class="step-done">✓ 완료</span> — 기존 디자인 토큰(design-prd §1)을 재사용해 <code>register-</code> 접두 클래스 추가 — textarea·검증 테이블·탭 드롭다운·확인 배너 스타일. 브라우저 확인 중 테이블이 <code>min-width</code>로 390px에서 가로 스크롤을 요구하던 문제를 발견해 <code>table-layout: fixed</code> + 열別 폭 배분으로 수정.
+        <span class="files"><code>src/index.css</code></span>
+      </li>
+      <li><span class="step-done">✓ 완료</span> — 검증 결과 테이블(정상/오류/중복) presentational 컴포넌트 작성.
+        <span class="files"><code>src/screens/RegisterTable.tsx</code></span>
+      </li>
+      <li><span class="step-done">✓ 완료</span> — 등록 화면 셸 작성 — 붙여넣기 → 검토 → 테이블+탭선택 → 중복확인 → 제출 → 결과 상태 머신.
+        <span class="step-note">계획과 달라진 점: <code>GET /api/tabs</code> 실패를 <code>GET /api/words</code>와 같은 전체 화면 에러 카드로 묶지 않고 분리했다 — words(기존 엔드포인트, 실패는 진짜 장애)만 화면을 막고, tabs(#48 미구현으로 지금은 항상 실패)는 드롭다운 없이 "새 탭" 수동 입력으로 대체해 화면을 계속 쓸 수 있게 했다. 그렇지 않으면 #48이 머지되기 전까지 이 화면을 전혀 확인할 수 없었다.</span>
+        <span class="files"><code>src/screens/RegisterScreen.tsx</code></span>
+      </li>
+      <li><span class="step-done">✓ 완료</span> — "학습 시작" 버튼 아래 저강조 링크 "단어 등록 ›" 추가, <code>onNavigateRegister</code> prop 배선.
+        <span class="files"><code>src/screens/HomeScreen.tsx</code></span>
+      </li>
+      <li><span class="step-done">✓ 완료</span> — <code>Screen</code> 유니온에 <code>'register'</code> 추가, <code>React.lazy</code>+<code>Suspense</code>로 RegisterScreen 지연 로딩, 홈↔등록 전환 배선. 빌드 산출물에서 <code>RegisterScreen</code> 청크(gzip 144.93KB)가 메인 청크(65.30KB)와 분리됨을 확인.
+        <span class="files"><code>src/App.tsx</code></span>
+      </li>
+      <li><span class="step-done">✓ 완료</span> — 등록 화면 절(§6) 신설 + 이슈 매핑 표에 #49 행 추가 — 기존 §6~§9는 §7~§10으로 순연(코드 주석이 인용하는 절 번호는 전부 §1~§5라 영향 없음, 사전 확인함).
+        <span class="files"><code>docs/design-prd.md</code></span>
+      </li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">5</span>리스크</h2>
+    <div class="scroll-x">
+    <table>
+      <thead><tr><th>리스크</th><th>영향</th><th>완화책</th></tr></thead>
+      <tbody>
+        <tr><td>pinyin-pro 번들 크기(gzip 약 145KB)</td><td>모바일 우선 앱의 초기 로드 지연</td><td>React.lazy로 RegisterScreen만 분리해 학습 플로우 청크에서 제외, 빌드 후 청크 분리 확인(테스트 계획 참고)</td></tr>
+        <tr><td>#48(Worker API) 미구현</td><td>탭 목록 조회·제출 종단 검증을 지금 로컬에서 할 수 없음(404)</td><td>계약(플랜 §6) 기준 선구현 + mock fetch 단위 테스트로 커버, 화면은 실패를 에러 카드로 흡수, 종단 확인은 #48 머지 후로 명시적으로 미룸</td></tr>
+        <tr><td>pinyin-pro가 드문 고유명사·신조어의 병음 후보를 못 찾을 가능성</td><td>정상 단어가 오탐으로 차단될 수 있음</td><td>후보가 비는 경우(미상 문자) 다른 사유와 구분되는 오류 메시지 표시. §8 결정 로그대로 "차단(수정 강제)"가 의도된 동작이므로 우회 로직은 추가하지 않음</td></tr>
+        <tr><td>design-prd.md에 이 화면 사양이 없어 신규 디자인 결정이 다수 발생</td><td>이후 사양 변경 시 근거 문서 부재</td><td>화면 절 신설 + §9 매핑 추가로 다른 화면과 동일하게 문서화(작업 단계 10)</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">6</span>테스트 계획</h2>
+    <ul>
+      <li><code>npm run test</code> — pinyinValidation: 정상 일치, 다음자 후보 중 하나만 일치해도 통과, 완전 불일치 차단, 무성조·숫자성조 입력 차단.</li>
+      <li><code>npm run test</code> — registerValidation: 정상 JSON, JSON 파싱 실패, 스키마 위반(필드 누락·빈 값·한자 유니코드 범위 밖), 입력 내 중복 한자, 선택 탭 기준 시트 중복(다른 탭의 동일 한자는 중복 아님 포함), 분류 우선순위(오류 &gt; 중복) 검증.</li>
+      <li><code>npm run test</code> — registerApi: fetchTabs/registerWords가 apiFetch 경유로 Bearer를 첨부하고 비정상 응답에 throw하는지(기존 wordsApi.test.ts/api.test.ts 패턴과 동일하게).</li>
+      <li><span class="step-done">✓ 실행됨</span> — 브라우저 확인(<code>npm run dev</code> + Playwright/Chromium, 390×844 뷰포트). <code>/api/tabs</code>·<code>/api/words</code>·<code>/api/words/register</code>를 라우트 모킹해 두 시나리오(#48 미구현 상태를 그대로 반영한 tabs 404 / tabs 성공)를 모두 재현: 홈→등록 진입, 실제 pinyin-pro로 다음자 통과·한자 범위 오류·시트 중복 분류가 테이블에 정확히 표시됨, 중복 확인 배너 전에는 제출 버튼 비활성, 확인 후 제출→결과 화면까지 왕복, 콘솔 에러 없음(404 자체의 브라우저 로그 한 줄 제외)을 확인. 스크린샷으로 레이아웃 육안 확인 중 테이블 가로 스크롤 문제를 발견해 수정(작업 단계 5 참고).</li>
+      <li><span class="step-done">✓ 실행됨</span> — <code>npm run build</code> 후 산출물 확인 — <code>RegisterScreen-*.js</code>(gzip 144.93KB)가 메인 청크(65.30KB)와 분리되어 로그인/홈/학습 플로우 번들에 pinyin-pro가 포함되지 않음을 확인(지연 로딩 검증, 이슈 완료 조건의 번들 크기 확인 항목).</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">7</span>완료 조건</h2>
+    <ul class="done-list">
+      <li>홈 링크 → 등록 화면 진입·복귀 동작 (App.tsx Screen 전환 + HomeScreen 링크)</li>
+      <li>유효/무효/중복 샘플 각각 검증 테이블에 올바르게 분류 (registerValidation 단위 테스트 + 수동 확인)</li>
+      <li>pinyin-pro 불일치 차단·다음자 통과 케이스 테스트 (pinyinValidation 단위 테스트)</li>
+      <li>중복 확인 단계 거쳐야만 제출 가능 (인라인 확인 게이트)</li>
+      <li>새 탭 이름 트림·<code>_</code> 시작 차단 (클라이언트 선검증 — 최종 강제는 #48 Worker)</li>
+      <li>모바일 뷰포트 확인, pinyin-pro 추가 후 번들 크기 확인 (React.lazy 분리 + 빌드 산출물 확인)</li>
+    </ul>
+  </section>
+
+  <footer>issue-plan · <a href="https://github.com/damdam6/vocabulary-study/issues/49">#49</a> · 2026-07-19</footer>
+</main>
+</body>
+</html>

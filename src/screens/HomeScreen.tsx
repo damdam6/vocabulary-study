@@ -12,11 +12,12 @@ import { fetchWords } from "../lib/wordsApi.ts";
 
 interface HomeScreenProps {
   onStart: (queue: SessionQuestion<WordEntry>[]) => void
+  onNavigateRegister: () => void
 }
 
 type Status = "loading" | "error" | "ready";
 
-function HomeScreen({ onStart }: HomeScreenProps) {
+function HomeScreen({ onStart, onNavigateRegister }: HomeScreenProps) {
   const [status, setStatus] = useState<Status>("loading");
   const [stats, setStats] = useState<HomeStats | null>(null);
   const [words, setWords] = useState<WordEntry[]>([]);
@@ -130,6 +131,11 @@ function HomeScreen({ onStart }: HomeScreenProps) {
           {status === "loading" ? "불러오는 중…" : canStart ? "학습 시작" : "오늘 할 것 없음"}
         </button>
       )}
+
+      {/* 단어 등록 진입 (#49) — 오늘 학습 상태와 무관하게 항상 노출 */}
+      <button type="button" className="home-register-link" onClick={onNavigateRegister}>
+        단어 등록 ›
+      </button>
     </div>
   );
 }
