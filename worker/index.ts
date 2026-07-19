@@ -1,6 +1,8 @@
 import { handleAnswerPost } from "./routes/answer.ts";
 import { handleGetWords } from "./routes/words.ts";
 import { handleReviewFail } from "./routes/review-fail.ts";
+import { handleGetTabs } from "./routes/tabs.ts";
+import { handleWordsRegister } from "./routes/register.ts";
 import { isAuthorized } from "./lib/auth.ts";
 
 export default {
@@ -47,6 +49,24 @@ export default {
       } catch (err) {
         console.error("[POST /api/review-fail]", err);
         return Response.json({ error: "failed to update review interval" }, { status: 500 });
+      }
+    }
+
+    if (url.pathname === "/api/tabs" && request.method === "GET") {
+      try {
+        return await handleGetTabs(env);
+      } catch (err) {
+        console.error("[GET /api/tabs]", err);
+        return Response.json({ error: "failed to load tabs" }, { status: 500 });
+      }
+    }
+
+    if (url.pathname === "/api/words/register" && request.method === "POST") {
+      try {
+        return await handleWordsRegister(request, env);
+      } catch (err) {
+        console.error("[POST /api/words/register]", err);
+        return Response.json({ error: "failed to register words" }, { status: 500 });
       }
     }
 
