@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>#47 단어 등록 Claude 프로젝트 킷 — 추출 프롬프트 + schema_check.py — 작업 플랜</title>
+<style>
+  :root {
+    --bg: #f7f7f8; --card: #ffffff; --ink: #1c1c1e; --muted: #6e6e73;
+    --line: #e3e3e6; --accent: #3b6ef5; --accent-soft: #e8eefe;
+    --ok: #2e8b57; --warn: #b25e09; --code-bg: #f0f0f2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161618; --card: #202024; --ink: #ececf0; --muted: #98989f;
+      --line: #333338; --accent: #7a9bff; --accent-soft: #26304a;
+      --ok: #58c088; --warn: #e0a35c; --code-bg: #2a2a2f;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 40px 20px 80px; background: var(--bg); color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+                 "Segoe UI", "Noto Sans KR", sans-serif;
+    line-height: 1.65;
+  }
+  main { max-width: 860px; margin: 0 auto; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code {
+    font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 0.86em;
+    background: var(--code-bg); border-radius: 5px; padding: 2px 6px;
+  }
+  header { margin-bottom: 28px; }
+  .issue-chip {
+    display: inline-block; font-weight: 700; color: var(--accent);
+    background: var(--accent-soft); border-radius: 999px;
+    padding: 3px 14px; font-size: 0.95rem; margin-bottom: 10px;
+  }
+  .type-chip {
+    display: inline-block; font-weight: 600; color: var(--muted);
+    border: 1px solid var(--line); border-radius: 999px;
+    padding: 3px 12px; font-size: 0.8rem; margin-left: 8px; vertical-align: 2px;
+  }
+  h1 { font-size: 1.7rem; margin: 0 0 14px; letter-spacing: -0.02em; }
+  .meta {
+    display: flex; flex-wrap: wrap; gap: 6px 22px;
+    color: var(--muted); font-size: 0.87rem;
+  }
+  .meta b { color: var(--ink); font-weight: 600; }
+  section.card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 24px 28px; margin-top: 18px;
+  }
+  h2 {
+    font-size: 1.05rem; margin: 0 0 14px; letter-spacing: -0.01em;
+    display: flex; align-items: center; gap: 8px;
+  }
+  h2 .no {
+    color: var(--accent); font-size: 0.8rem; font-weight: 700;
+    border: 1.5px solid var(--accent); border-radius: 6px; padding: 0 6px;
+  }
+  ul, ol { margin: 0; padding-left: 22px; }
+  li { margin: 6px 0; }
+  .steps { list-style: none; padding: 0; counter-reset: step; }
+  .steps li {
+    counter-increment: step; position: relative; padding: 10px 0 10px 44px;
+    border-bottom: 1px dashed var(--line);
+  }
+  .steps li:last-child { border-bottom: none; }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 10px;
+    width: 28px; height: 28px; border-radius: 8px; background: var(--accent-soft);
+    color: var(--accent); font-weight: 700; font-size: 0.85rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .steps .files { display: block; margin-top: 4px; font-size: 0.85rem; color: var(--muted); }
+  .steps li.done::before { content: "✓"; background: var(--ok); color: #fff; }
+  .steps li.done .note { display: block; margin-top: 4px; font-size: 0.85rem; color: var(--ok); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 0.82rem; }
+  .done-list { list-style: none; padding: 0; }
+  .done-list li { padding-left: 30px; position: relative; }
+  .done-list li::before {
+    content: ""; position: absolute; left: 2px; top: 7px; width: 15px; height: 15px;
+    border: 2px solid var(--ok); border-radius: 5px;
+  }
+  .scroll-x { overflow-x: auto; }
+  footer { margin-top: 30px; color: var(--muted); font-size: 0.8rem; text-align: center; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <span class="issue-chip"><a href="https://github.com/damdam6/vocabulary-study/issues/47">#47</a></span><span class="type-chip">기능 개선 (문서·킷 산출물)</span>
+    <h1>단어 등록 Claude 프로젝트 킷 — 추출 프롬프트 + schema_check.py</h1>
+    <div class="meta">
+      <span><b>damdam6/vocabulary-study</b></span>
+      <span>브랜치 <b><code>feat/47-registration-kit-schema</code></b> ← <code>main</code></span>
+      <span>라벨 <b>enhancement</b></span>
+      <span>2026-07-19</span>
+    </div>
+  </header>
+
+  <section class="card">
+    <h2><span class="no">1</span>요약</h2>
+    <p>단어 등록 파이프라인 3단계 중 <b>1단계(추출)</b>용 claude.ai 프로젝트 킷을 만든다. 산출물은 <code>docs/registration-kit/</code>에 두는 2개 파일 — 이미지·깨진 텍스트를 스키마 JSON으로 변환하는 <b>영어 지침 프롬프트</b>와, Claude가 출력 전 스스로 실행해 자체 검증하는 <b>스키마 검증기 <code>schema_check.py</code></b>. 스키마 원본은 <code>docs/plans/word-registration-system.md</code> §3으로 이미 확정되어 있고, 이 이슈는 코드(사이트·Worker)를 건드리지 않는 문서·킷 전용 작업이다. 이슈 #48(Worker API)·#49(등록 화면)와 독립·병렬.</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">2</span>현황 분석</h2>
+    <ul>
+      <li>전체 설계는 <code>docs/plans/word-registration-system.md</code>(2026-07-19 확정)에 있다. §2가 3단계 구조(추출 → 등록 화면 → Worker 저장), §3이 데이터 스키마, §4가 이 이슈의 킷 스펙을 정의한다.</li>
+      <li>현재 단어 등록은 리포 밖 별도 skill이 구글 시트에 직접 쓰는 방식이다 (PRD <code>docs/PRD.md</code> §1·§3 비범위 처리). 이 방식은 시트 자격증명이 추출 쪽에 있어 멀티 디바이스가 불가 — 새 구조에서는 추출 단계가 시트를 전혀 모르고 JSON만 내놓는다.</li>
+      <li>플랜 §4의 "기존 작성본"(개정 대상 프롬프트)은 claude.ai 프로젝트에 있고 리포·로컬·vault 어디에도 없다. 따라서 §4 스펙(파싱 지침 유지, 시트 연결 정보 전부 제거, 출력 = 스키마 JSON 코드블록 1개, 출력 전 <code>schema_check.py</code> 자체 검증)을 기준으로 <b>신규 작성</b>한다.</li>
+      <li>시트 컬럼 계약(PRD §4.2): A=한자(간체, 탭 내 유일 키) · B=병음 · C=한국어 뜻 — 스키마의 <code>hanzi</code>/<code>pinyin</code>/<code>meaning</code>과 1:1 대응.</li>
+      <li><code>docs/registration-kit/</code> 디렉토리는 아직 없다. 이슈 본문은 한 줄("재시도 실패 시 수동 확인")뿐인데, 이는 완료 조건의 일부 — <b>schema_check 실패 시 Claude가 수정·재시도하고, 재시도로도 통과 못 하면 사용자에게 수동 확인을 요청</b>하라는 프롬프트 요구사항으로 해석한다.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">3</span>설계</h2>
+    <p><b>산출물 1 — 지침 프롬프트</b> (<code>docs/registration-kit/extraction-prompt.md</code>, 영어):</p>
+    <ul>
+      <li>입력: 캡처 이미지·깨진 텍스트(인코딩 깨짐, OCR 잔해 포함). 간체자 단어를 식별하고 병음(성조 부호)·한국어 뜻을 붙인다.</li>
+      <li>출력: §3 스키마(<code>{"version":1,"words":[{"hanzi","pinyin","meaning"}]}</code>) JSON 코드블록 <b>정확히 하나</b>. 다른 산문·표 금지 — 사용자가 통째로 복사해 등록 화면에 붙여넣는 인터체인지 포맷이므로.</li>
+      <li>탭 이름·분류는 출력에 넣지 않는다 (플랜 §3 확정 — 탭은 등록 화면에서만 선택).</li>
+      <li>시트 ID·서비스 계정·API 등 연결 정보는 일절 포함하지 않는다 (신뢰 경계 — 자격증명은 Worker에만).</li>
+      <li>자체 검증 루프: 출력 전 <code>schema_check.py</code>를 코드 실행으로 돌리고, 실패하면 수정 후 재실행. <b>재시도 후에도 실패하면 오류 내역을 보여주고 사용자 수동 확인 요청</b> (이슈 본문 요구).</li>
+      <li>파일 상단에 claude.ai 프로젝트 세팅 방법(두 파일 업로드 위치)과 스키마 원본 참조를 주석으로 남긴다.</li>
+    </ul>
+    <p><b>산출물 2 — <code>schema_check.py</code></b> (<code>docs/registration-kit/schema_check.py</code>):</p>
+    <ul>
+      <li>실행 환경: claude.ai 코드 실행 샌드박스 → <b>표준 라이브러리만</b> 사용 (pip 의존성 금지). 입력은 파일 인자 또는 stdin, 결과는 행 번호가 붙은 오류 목록 + 종료코드 0/1.</li>
+      <li>검증 항목 (플랜 §4 명세): ① JSON 파싱·<code>version==1</code>·<code>words</code> 배열·필드 존재/문자열/비어있지 않음 ② <code>hanzi</code> 유니코드 범위 — CJK 통합 한자(U+4E00–U+9FFF) + 확장 A(U+3400–U+4DBF) ③ <code>pinyin</code> 성조 부호 형식 — 숫자 표기 차단, 허용 문자(라틴 소문자·성조 모음·ü·아포스트로피·공백)만, 성조 부호 최소 1개 ④ 배열 내 <code>hanzi</code> 중복.</li>
+      <li>성조 부호 0개는 오류로 처리한다 (플랜 §3 "성조 부호 필수"). 전체가 경성인 단어(예: 的)는 어휘 등록 대상으로 사실상 없으므로 예외 로직을 두지 않되, 오류 메시지에 사유를 명시해 수동 판단이 가능하게 한다.</li>
+      <li>병음-한자 <b>일치</b> 검증은 여기서 하지 않는다 — 그건 2단계 등록 화면의 <code>pinyin-pro</code> 몫 (#49). 이 검증기는 형식만 본다.</li>
+      <li>drift 방지: 두 파일 모두 스키마 원본(<code>docs/plans/word-registration-system.md</code> §3) 참조 주석을 남긴다 (플랜 §3 규정).</li>
+    </ul>
+    <p><b>기각한 대안</b>: 기존 skill 프롬프트 재사용(리포에 없음 + 시트 접근 로직이 얽혀 있어 스펙 기준 신규 작성이 더 깨끗함) · 검증기에 병음-한자 일치 사전 포함(stdlib 불가, 2단계와 중복).</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">4</span>작업 단계</h2>
+    <ol class="steps">
+      <li class="done">스키마 검증기 <code>schema_check.py</code> 작성 — stdlib only, 파일/stdin 입력, 4개 검증 축(필드·한자 범위·성조 형식·중복), 행 번호 포함 오류 출력, 종료코드 0/1, 스키마 원본 참조 주석
+        <span class="files"><code>docs/registration-kit/schema_check.py</code></span>
+        <span class="note">완료 — 추가로 마크다운 코드펜스 관용 처리, 스키마 외 필드 차단, 비표준 <code>v</code> 표기 차단(<code>ü</code> 강제)을 포함</span>
+      </li>
+      <li class="done">영어 지침 프롬프트 작성 — 이미지/깨진 텍스트 파싱 지침, 출력 = 스키마 JSON 코드블록 1개 고정, 탭·시트 정보 배제, schema_check 자체 검증 루프(실패 → 수정·재시도 → 그래도 실패 시 사용자 수동 확인), 상단에 킷 세팅 방법 안내
+        <span class="files"><code>docs/registration-kit/extraction-prompt.md</code></span>
+        <span class="note">완료 — 번체→간체 변환, 다음자 의미 기준 독음 선택, 판독 불가 항목은 JSON 앞에 노트로 표기하는 규칙 포함</span>
+      </li>
+      <li class="done">검증기 자체 테스트 — 정상 샘플(exit 0)과 오류 유형별 샘플(비JSON, version 불일치, 필드 누락/빈 값, 한자 아닌 문자, 숫자 병음, 성조 부호 없음, 중복 hanzi → 각각 exit 1 + 해당 메시지)을 로컬 <code>python3</code>로 실행해 확인
+        <span class="files"><code>docs/registration-kit/schema_check.py</code></span>
+        <span class="note">완료 — 14개 케이스 전부 기대 동작 확인(stdin·코드펜스 경로 포함), <code>npm test</code> 96/96 그린</span>
+      </li>
+      <li class="done">커밋·푸시·PR — 플랜 HTML 최종본 포함, <code>Closes #47</code>
+        <span class="files"><code>docs/registration-kit/</code>, <code>docs/plans/issue-47-registration-kit-schema.html</code></span>
+        <span class="note">완료 — 킷 커밋 + 플랜 최종본 커밋 후 PR 오픈</span>
+      </li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">5</span>리스크</h2>
+    <div class="scroll-x">
+    <table>
+      <thead><tr><th>리스크</th><th>영향</th><th>완화책</th></tr></thead>
+      <tbody>
+        <tr><td>경성-전용 단어(성조 부호 0개)를 오류로 오탐</td><td>극히 드문 케이스에서 등록이 막힘</td><td>오류 메시지에 사유 명시 → 프롬프트의 "재시도 실패 시 수동 확인" 경로로 사용자가 판단</td></tr>
+        <tr><td>확장 B 이상 희귀 한자가 유니코드 범위 검사에 걸림</td><td>정당한 단어가 차단</td><td>HSK·교재 어휘는 통합+확장A로 충분; 오류 메시지에 문자와 코드포인트를 표시해 원인 즉시 식별</td></tr>
+        <tr><td>스키마 3벌 구현(킷·화면·Worker) 간 drift</td><td>1단계 통과 JSON이 2·3단계에서 거부</td><td>두 파일에 원본(<code>word-registration-system.md</code> §3) 참조 주석 — #48·#49도 같은 규정을 따름</td></tr>
+        <tr><td>claude.ai 코드 실행 환경 제약(패키지 설치 불가)</td><td>검증기 실행 실패</td><td>표준 라이브러리만 사용, 단일 파일, Python 3.8+ 문법으로 보수적으로 작성</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">6</span>테스트 계획</h2>
+    <ul>
+      <li>정상 샘플 (<code>{"version":1,"words":[{"hanzi":"经济","pinyin":"jīngjì","meaning":"경제"}]}</code>) → <code>python3 schema_check.py</code> exit 0, PASS 출력.</li>
+      <li>오류 유형별 샘플 8종 (비JSON · version≠1 · words 비배열 · 필드 누락 · 빈 값 · 비한자 문자(<code>hanzi</code>에 라틴/한글) · 숫자 병음(<code>jing1ji4</code>) · 성조 부호 없음 · 배열 내 중복) → 각각 exit 1 + 행 번호와 원인이 있는 메시지.</li>
+      <li>stdin 입력 경로(<code>cat sample.json | python3 schema_check.py</code>)도 동일 동작 확인.</li>
+      <li>기존 리포 테스트(<code>npm test</code>)는 코드 변경이 없으므로 영향 없음 — 그린 확인만.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">7</span>완료 조건</h2>
+    <ul class="done-list">
+      <li><code>docs/registration-kit/extraction-prompt.md</code>(영어)와 <code>docs/registration-kit/schema_check.py</code>가 존재한다.</li>
+      <li>프롬프트에 시트 접근·연결 정보(시트 ID, 서비스 계정, API)가 전혀 없고, 출력이 §3 스키마 JSON 코드블록 하나로 고정된다.</li>
+      <li>프롬프트가 출력 전 <code>schema_check.py</code> 실행을 지시하고, 검증 실패 → 수정·재시도 → 재시도 실패 시 사용자 수동 확인 흐름을 포함한다 (이슈 본문 요구).</li>
+      <li><code>schema_check.py</code>가 필드 존재·한자 유니코드 범위·성조 부호 형식·배열 내 중복 4개 축을 stdlib만으로 검증하고, 정상/오류 샘플에서 기대대로 동작한다.</li>
+      <li>두 파일 모두 스키마 원본(<code>docs/plans/word-registration-system.md</code> §3) 참조 주석을 담고 있다.</li>
+    </ul>
+  </section>
+
+  <footer>issue-plan · <a href="https://github.com/damdam6/vocabulary-study/issues/47">#47</a> · 2026-07-19</footer>
+</main>
+</body>
+</html>
