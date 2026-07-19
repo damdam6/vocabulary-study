@@ -3,7 +3,8 @@ import LoginScreen from './screens/LoginScreen.tsx'
 import HomeScreen from './screens/HomeScreen.tsx'
 import StudyScreen, { type SessionResult } from './screens/StudyScreen.tsx'
 import DoneScreen from './screens/DoneScreen.tsx'
-import { getStoredPassword, setUnauthorizedHandler, type WordEntry } from './lib/api.ts'
+import { getStoredPassword, setApiSuccessHandler, setUnauthorizedHandler, type WordEntry } from './lib/api.ts'
+import { flushRetryQueue } from './lib/retryQueue.ts'
 import type { SessionQuestion } from './lib/sessionQueue.ts'
 
 type Screen = 'login' | 'home' | 'study' | 'done'
@@ -19,6 +20,14 @@ function App() {
   useEffect(() => {
     setUnauthorizedHandler(() => setScreen('login'))
     return () => setUnauthorizedHandler(null)
+  }, [])
+
+  // 재시도 큐 재전송(PRD §10, #18): 앱 로드 시 1회 + 이후 어느 API든 성공 시점.
+  // flush 자체의 성공이 핸들러를 재호출해도 flushRetryQueue의 재진입 가드가 막는다.
+  useEffect(() => {
+    setApiSuccessHandler(() => void flushRetryQueue())
+    void flushRetryQueue()
+    return () => setApiSuccessHandler(null)
   }, [])
 
   const startSession = (queue: SessionQuestion<WordEntry>[]) => {

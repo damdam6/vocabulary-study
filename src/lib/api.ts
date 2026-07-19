@@ -27,7 +27,21 @@ export function setUnauthorizedHandler(handler: (() => void) | null): void {
   unauthorizedHandler = handler;
 }
 
-/** 저장된 비밀번호를 Bearer로 첨부해 fetch. 401이면 저장값을 지우고 핸들러를 호출한 뒤 응답을 그대로 반환한다. */
+let successHandler: (() => void) | null = null;
+
+/**
+ * 정상 응답(response.ok) 수신 시 호출될 핸들러 등록. App이 재시도 큐 재전송
+ * (PRD §10 "다음 API 호출 성공 시점", #18)에 사용한다. retryQueue가 api를
+ * import하는 방향이므로, 여기서 큐를 직접 부르지 않고 콜백으로 역방향을 잇는다.
+ */
+export function setApiSuccessHandler(handler: (() => void) | null): void {
+  successHandler = handler;
+}
+
+/**
+ * 저장된 비밀번호를 Bearer로 첨부해 fetch. 401이면 저장값을 지우고 unauthorized
+ * 핸들러를, 정상 응답이면 success 핸들러를 호출한 뒤 응답을 그대로 반환한다.
+ */
 export async function apiFetch(path: string, init: RequestInit = {}): Promise<Response> {
   const headers = new Headers(init.headers);
   const password = getStoredPassword();
@@ -38,6 +52,8 @@ export async function apiFetch(path: string, init: RequestInit = {}): Promise<Re
   if (response.status === 401) {
     clearPassword();
     unauthorizedHandler?.();
+  } else if (response.ok) {
+    successHandler?.();
   }
   return response;
 }
