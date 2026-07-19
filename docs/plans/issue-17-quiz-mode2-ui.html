@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>#17 퀴즈 모드 2 UI — 뜻→한자 입력 자동채점 — 작업 플랜</title>
+<style>
+  :root {
+    --bg: #f7f7f8; --card: #ffffff; --ink: #1c1c1e; --muted: #6e6e73;
+    --line: #e3e3e6; --accent: #3b6ef5; --accent-soft: #e8eefe;
+    --ok: #2e8b57; --warn: #b25e09; --code-bg: #f0f0f2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161618; --card: #202024; --ink: #ececf0; --muted: #98989f;
+      --line: #333338; --accent: #7a9bff; --accent-soft: #26304a;
+      --ok: #58c088; --warn: #e0a35c; --code-bg: #2a2a2f;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 40px 20px 80px; background: var(--bg); color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+                 "Segoe UI", "Noto Sans KR", sans-serif;
+    line-height: 1.65;
+  }
+  main { max-width: 860px; margin: 0 auto; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code {
+    font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 0.86em;
+    background: var(--code-bg); border-radius: 5px; padding: 2px 6px;
+  }
+  header { margin-bottom: 28px; }
+  .issue-chip {
+    display: inline-block; font-weight: 700; color: var(--accent);
+    background: var(--accent-soft); border-radius: 999px;
+    padding: 3px 14px; font-size: 0.95rem; margin-bottom: 10px;
+  }
+  .type-chip {
+    display: inline-block; font-weight: 600; color: var(--muted);
+    border: 1px solid var(--line); border-radius: 999px;
+    padding: 3px 12px; font-size: 0.8rem; margin-left: 8px; vertical-align: 2px;
+  }
+  h1 { font-size: 1.7rem; margin: 0 0 14px; letter-spacing: -0.02em; }
+  .meta {
+    display: flex; flex-wrap: wrap; gap: 6px 22px;
+    color: var(--muted); font-size: 0.87rem;
+  }
+  .meta b { color: var(--ink); font-weight: 600; }
+  section.card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 24px 28px; margin-top: 18px;
+  }
+  h2 {
+    font-size: 1.05rem; margin: 0 0 14px; letter-spacing: -0.01em;
+    display: flex; align-items: center; gap: 8px;
+  }
+  h2 .no {
+    color: var(--accent); font-size: 0.8rem; font-weight: 700;
+    border: 1.5px solid var(--accent); border-radius: 6px; padding: 0 6px;
+  }
+  ul, ol { margin: 0; padding-left: 22px; }
+  li { margin: 6px 0; }
+  .steps { list-style: none; padding: 0; counter-reset: step; }
+  .steps li {
+    counter-increment: step; position: relative; padding: 10px 0 10px 44px;
+    border-bottom: 1px dashed var(--line);
+  }
+  .steps li:last-child { border-bottom: none; }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 10px;
+    width: 28px; height: 28px; border-radius: 8px; background: var(--accent-soft);
+    color: var(--accent); font-weight: 700; font-size: 0.85rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .steps .files { display: block; margin-top: 4px; font-size: 0.85rem; color: var(--muted); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 0.82rem; }
+  .done-list { list-style: none; padding: 0; }
+  .done-list li { padding-left: 30px; position: relative; }
+  .done-list li::before {
+    content: ""; position: absolute; left: 2px; top: 7px; width: 15px; height: 15px;
+    border: 2px solid var(--ok); border-radius: 5px;
+  }
+  .scroll-x { overflow-x: auto; }
+  footer { margin-top: 30px; color: var(--muted); font-size: 0.8rem; text-align: center; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <span class="issue-chip"><a href="https://github.com/damdam6/vocabulary-study/issues/17">#17</a></span><span class="type-chip">기능 개선</span>
+    <h1>퀴즈 모드 2 UI — 뜻→한자 입력 자동채점</h1>
+    <div class="meta">
+      <span><b>damdam6/vocabulary-study</b></span>
+      <span>브랜치 <b><code>feat/17-quiz-mode2-ui</code></b> ← <code>main</code></span>
+      <span>라벨 <b>enhancement</b></span>
+      <span>2026-07-18</span>
+    </div>
+  </header>
+
+  <section class="card">
+    <h2><span class="no">1</span>요약</h2>
+    <p>#15 학습 셸이 머지되면서 모드 2의 뼈대(채점 규칙·오답 결과 화면·입력 속성·셸과의 진행 계약)는 플레이스홀더 <code>Mode2Card.tsx</code>에 이미 구현되어 있다. 남은 일은 design-prd §4.3의 실제 디자인으로 마감하는 것: 오답 결과 화면의 <code>fadeup</code> 등장·"오답" 타이틀 <code>shake</code>, 화면별 타이포 크기(출제 뜻 27px / 정답 한자 50px / 병음 19px / 뜻 21px), 목업 기준 레이아웃 간격이다. 더불어 채점 규칙(트림 후 A열 정확 일치, 빈 입력 오답)을 순수 함수로 추출해 vitest로 고정한다 — 컴포넌트 테스트 인프라(jsdom) 없이 완료 조건 1을 자동화 테스트로 커버하는 저비용 경로다.</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">2</span>현황 분석</h2>
+    <p>셸(#15)과 플레이스홀더가 이미 담당 중인 것:</p>
+    <ul>
+      <li><b>진행 템포는 셸 소유</b>: 모드 2 정답 → O 글리프 오버레이 + 즉시 다음 문제(<code>src/screens/StudyScreen.tsx:96-97</code>), 오답 → 카드가 결과 화면을 띄운 채 머물고(<code>src/screens/StudyScreen.tsx:90-94</code>) "다음" 버튼의 <code>onProceed</code>(<code>src/screens/StudyScreen.tsx:100</code>)로만 진행. 이슈의 "정답 즉시 진행 / 오답만 결과 화면" 계약이 셸 레벨에서 이미 성립.</li>
+      <li><b>채점 로직</b>: <code>src/screens/Mode2Card.tsx:24-34</code> — <code>value.trim() === word.hanzi</code> 정확 일치, 빈 입력 = 오답. PRD §5.2와 일치하나 테스트가 없다(스크린 컴포넌트라 vitest node 환경에서 실행 불가).</li>
+      <li><b>입력 속성</b>: <code>src/screens/Mode2Card.tsx:63-76</code> — <code>autoFocus</code>, <code>autoComplete/autoCorrect/autoCapitalize="off"</code>, <code>spellCheck={false}</code>, <code>enterKeyHint="done"</code>, <code>lang="zh-Hans"</code>, placeholder "汉字" 모두 충족. Enter 제출은 form <code>onSubmit</code>으로 동작.</li>
+      <li><b>오답 결과 화면</b>: <code>src/screens/Mode2Card.tsx:36-55</code> — "오답" + 정답 한자·병음·뜻 + 입력했었다면 "내 답" 취소선. 마크업 구성은 목업(<code>docs/design/prototype.dc.html:124-136</code>)과 동일 구조.</li>
+      <li><b>폰트/애니메이션 기반</b>: Noto Sans KR/SC 웹폰트는 <code>index.html:14-25</code>에서 비차단 로딩, 한자 폰트는 <code>:lang(zh-Hans)</code> 셀렉터(<code>src/index.css:40-42</code>) 한 곳으로 수렴. <code>shake</code>·<code>fadeup</code> keyframes도 이미 정의됨(<code>src/index.css:108-132</code>).</li>
+    </ul>
+    <p>design-prd §4.3·목업 대비 남은 갭 (CSS는 전부 "플레이스홀더 최소 스타일" 블록 <code>src/index.css:325-454</code>):</p>
+    <ul>
+      <li>오답 결과 카드에 <b>등장 <code>fadeup 0.3s</code> 없음</b> (목업 <code>prototype.dc.html:125</code>).</li>
+      <li><b>"오답" 타이틀에 <code>shake 0.4s</code> 없음</b> — 이슈 기대 동작에 명시된 항목 (<code>.mode-result-title</code>, <code>src/index.css:379-383</code>).</li>
+      <li>타이포 크기가 모드 1 뒷면 공용값: 정답 한자 44px↔사양 50px(<code>src/index.css:357-360</code>), 병음 20px↔19px, 뜻 23px↔결과 21px·출제 27px(§4.3 "뜻 카드(27px)", 목업 <code>prototype.dc.html:116</code>).</li>
+      <li>레이아웃 간격이 목업과 다름: 목업은 카드-폼 사이 18px·폼 내부 12px·결과 카드 내부 gap 11px, 현재는 <code>.mode-area</code> gap 14px 균일(<code>src/index.css:326-333</code>).</li>
+    </ul>
+    <p>충돌 요인: 모드 1 실 UI(#16)가 같은 <code>.mode-card*</code> 클래스군을 재작업할 예정. <code>feat/16-quiz-mode1-ui</code> 브랜치는 현재 main과 동일(커밋 없음)이라 지금 충돌은 없다.</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">3</span>설계</h2>
+    <ul>
+      <li><b>마크업 구조는 유지, 스타일만 §4.3로 마감</b>: 플레이스홀더의 JSX 구조(출제: form 안 카드+입력+제출 / 결과: 카드+다음 버튼)가 목업과 이미 동일하므로 컴포넌트 구조 변경 없이 클래스 추가로 해결한다. 셸과의 계약(<code>onJudged</code> 1회 호출, 오답 시 머무름, key 리마운트)은 그대로.</li>
+      <li><b>모드 2 전용 스타일은 모디파이어로 스코프</b>: 기존 컨벤션(<code>.login-input--error</code>, <code>.study-chip--review</code>)대로 <code>.mode-card--result</code>(fadeup·gap 11px)를 카드에 붙이고, 결과 화면 타이포는 <code>.mode-card--result .mode-card-hanzi { font-size: 50px }</code>식 컨텍스트 셀렉터로 오버라이드한다. 출제 화면 뜻은 <code>.mode-card-meaning--question</code>(27px/600). 공용 기본값(44/20/23px)은 건드리지 않는다 — #16이 모드 1 쪽을 재작업할 때 충돌 면적을 최소화하기 위함. (기각안: <code>.mode2-*</code> 신규 클래스군 — 공용 카드 스타일 중복 정의가 생겨 기각.)</li>
+      <li><b>채점을 순수 함수로 추출</b>: <code>gradeMode2(input, hanzi)</code>를 <code>src/lib/studySession.ts</code>(학습 모델 도메인, PRD §5.2)에 추가하고 컴포넌트는 호출만 한다. jsdom/testing-library 의존성 추가 없이(현재 devDeps에 없음, 리포는 lib 단위 테스트 컨벤션) 채점 세 케이스 + 병음·부분일치·번체 불허를 vitest로 고정한다.</li>
+      <li><b>정오 피드백 오버레이·기록 API는 손대지 않음</b>: §4.4 오버레이(<code>src/index.css:293-323</code>)와 fire-and-forget 기록(<code>StudyScreen.tsx:53-69</code>)은 #15에서 완결.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">4</span>작업 단계</h2>
+    <ol class="steps">
+      <li>✅ 채점 순수 함수 <code>gradeMode2(input, hanzi)</code> 추가 — 트림 후 A열 한자와 정확 일치만 정답, 빈 입력·공백만 입력은 오답 (PRD §5.2 주석 인용). 트림된 입력값도 반환해 결과 화면 "내 답" 표시에 쓴다.
+        <span class="files"><code>src/lib/studySession.ts</code></span>
+      </li>
+      <li>✅ 채점 테스트 추가 — 정확 일치 정답 / 앞뒤 공백 포함 정답 / 빈 입력 오답 / 공백만 오답 / 병음 입력 오답 / 부분 일치 오답 / 간체·번체 불일치 오답 (6 케이스, 스위트 70개 그린).
+        <span class="files"><code>src/lib/studySession.test.ts</code></span>
+      </li>
+      <li>✅ <code>Mode2Card</code>를 실제 구현으로 교체 — 인라인 채점을 <code>gradeMode2</code> 호출로 바꾸고, 결과 카드에 <code>mode-card--result</code>, 출제 뜻에 <code>mode-card-meaning--question</code>, 영역에 <code>mode-area--m2</code> 클래스를 적용. 파일 상단 "플레이스홀더" 주석을 실제 구현 설명(§4.3 계약)으로 갱신.
+        <span class="files"><code>src/screens/Mode2Card.tsx</code></span>
+      </li>
+      <li>✅ §4.3 스타일 마감 — <code>.mode-card--result</code>(fadeup 0.3s ease, gap 11px), <code>.mode-result-title</code>에 shake 0.4s, 결과 카드 스코프 타이포(한자 50px·병음 19px·뜻 21px), <code>.mode-card-meaning--question</code> 27px/600/line-height 1.4, <code>.mode-area--m2</code> 간격 목업 정렬(카드-폼 18px, 폼 내부 12px). 블록 주석에서 #17 완료를 반영(#16 몫만 남김).
+        <span class="files"><code>src/index.css</code></span>
+      </li>
+      <li>✅ 검증 — <code>npm test</code>(70개) / <code>npm run lint</code> / <code>npm run build</code> 그린. 브라우저 검증은 로컬 API 인증이 로컬 dev에서 401이라(시크릿 파싱 이슈, 별도 트랙) 실제 <code>StudyScreen</code>+<code>Mode2Card</code>+<code>index.css</code>를 그대로 마운트한 스크래치 하니스로 수행(검증 후 삭제) — 채점 3케이스·즉시 진행·오답 게이트·재삽입 분모·속성·폰트·타이포까지 전부 통과(테스트 계획 §6 참조). Chrome MCP가 중간에 끊겨 cmux 브라우저 자동화(click/fill/eval)로 전환.
+        <span class="files">전체 스위트 + cmux browser 하니스 검증</span>
+      </li>
+      <li>리포 스타일 커밋 → push → PR 오픈(<code>Closes #17</code>) — through-token에 따라 승인 대기 없이 issue-work로 진행.
+        <span class="files"><code>docs/plans/issue-17-quiz-mode2-ui.html</code> 최종 상태 포함</span>
+      </li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">5</span>리스크</h2>
+    <div class="scroll-x">
+    <table>
+      <thead><tr><th>리스크</th><th>영향</th><th>완화책</th></tr></thead>
+      <tbody>
+        <tr><td>#16(모드 1 UI)이 같은 <code>.mode-card*</code> 클래스군을 재작업 — 병합 순서에 따라 <code>index.css</code> 충돌</td><td>머지 시 수동 충돌 해소 필요</td><td>모드 2 변경을 <code>--result</code>/<code>--question</code> 모디파이어와 결과 카드 스코프 셀렉터로 한정, 공용 기본값은 불변</td></tr>
+        <tr><td>iOS Safari에서 문제 전환 리마운트 시 <code>autoFocus</code>로 키보드가 유지되지 않을 수 있음</td><td>모바일에서 문제마다 입력란 재탭 필요</td><td>플레이스홀더와 동일 동작이라 회귀 아님 — 데스크톱에서 포커스 확인, 실기기 이슈면 후속 이슈로 분리</td></tr>
+        <tr><td>정답 직후 O 오버레이가 다음 문제 입력란 위에 겹침</td><td>입력 차단 시 템포 저해</td><td>오버레이는 <code>pointer-events: none</code> 논블로킹(#15 완결) — 회귀 확인만</td></tr>
+        <tr><td>결과 카드 <code>fadeup</code>과 타이틀 <code>shake</code> 동시 재생 시 시각적 간섭</td><td>연출 어색</td><td>목업(<code>prototype.dc.html:125-126</code>)과 동일 조합 — 브라우저 시각 확인으로 마감</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">6</span>테스트 계획</h2>
+    <ul>
+      <li><b>vitest</b>: <code>gradeMode2</code> 신규 케이스 7종(정확 일치·공백 포함·빈 입력·공백만·병음·부분 일치·번체) + 기존 스위트(<code>studySession</code>·<code>sessionQueue</code>·<code>wordState</code> 등) 회귀 그린.</li>
+      <li><b>정적 검증</b>: <code>npm run lint</code>(oxlint), <code>npm run build</code>(tsc + vite) 그린.</li>
+      <li><b>브라우저(dev 서버 + Chrome)</b>: 모드 2 문제에서 ① 정답 제출 → 결과 화면 없이 O 글리프 + 즉시 다음 문제 ② 정답에 앞뒤 공백 붙여 제출 → 정답 처리 ③ 빈 입력 제출 → 오답 결과 화면 ④ 오답 → "오답" shake + 정답 한자·병음·뜻 + "내 답" 취소선 표시, "다음" 누르기 전 자동 진행 없음 확인.</li>
+      <li><b>DOM 검사</b>: 입력란 <code>autocomplete/autocorrect/autocapitalize/spellcheck/enterkeyhint/lang</code> 속성 렌더 확인, 입력란·정답 한자에 Noto Sans SC 적용(computed style) 확인.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">7</span>완료 조건</h2>
+    <ul class="done-list">
+      <li>✅ 정확 일치 / 공백 포함 입력 / 빈 입력 세 케이스 — vitest(gradeMode2 6케이스) + 브라우저 하니스에서 확인</li>
+      <li>✅ 정답 시 결과 화면 없이 즉시 다음 문제 진행 — 제출 직후 진행도 1/4→2/4 전환 + O 글리프가 다음 문제 위에 논블로킹 재생 확인</li>
+      <li>✅ 오답 시 정답 정보(한자 50px·병음 19px·뜻 21px)와 "내 답" 취소선(red) 표시, "오답" 타이틀 shake 0.4s + 카드 fadeup 0.3s 확인</li>
+      <li>✅ 오답 시 2.5초 대기에도 자동 진행 없음, "다음" 클릭으로만 진행 확인</li>
+      <li>✅ 입력란 <code>autocomplete/autocorrect/autocapitalize=off</code>, <code>spellcheck=false</code>, <code>enterkeyhint=done</code> DOM 렌더 확인</li>
+      <li>✅ 입력란·정답 한자 <code>lang="zh-Hans"</code> + computed font "Noto Sans SC" 적용, <code>document.fonts.check</code> 로드 확인</li>
+      <li>✅ npm test(70) / lint / build 그린 — PR 오픈으로 마감</li>
+    </ul>
+  </section>
+
+  <footer>issue-plan · <a href="https://github.com/damdam6/vocabulary-study/issues/17">#17</a> · 2026-07-18</footer>
+</main>
+</body>
+</html>
