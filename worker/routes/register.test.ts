@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 vi.mock("../lib/google-auth.ts", () => ({ getAccessToken: async () => "test-token" }));
 
 import worker from "../index.ts";
+import { MAX_REGISTER_WORDS } from "../lib/register.ts";
 
 const PASSWORD = "test-password";
 type WorkerRequest = Parameters<typeof worker.fetch>[0];
@@ -170,7 +171,11 @@ describe("POST /api/words/register", () => {
 
   it("words가 100건을 초과하면 400", async () => {
     stubSheetsFetch(baseState());
-    const words = Array.from({ length: 101 }, () => ({ hanzi: "经济", pinyin: "jīngjì", meaning: "경제" }));
+    const words = Array.from({ length: MAX_REGISTER_WORDS + 1 }, () => ({
+      hanzi: "经济",
+      pinyin: "jīngjì",
+      meaning: "경제",
+    }));
     const res = await worker.fetch(registerRequest({ tab: "HSK6급", words }), env);
     expect(res.status).toBe(400);
   });
