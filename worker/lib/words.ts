@@ -4,9 +4,15 @@
  * 여기 정규화 로직과, 탭+A열 한자로 행을 재탐색하는 findWordRow를 함께 재사용한다.
  */
 
-import { getValues, SheetsApiError } from "./sheets.ts";
+import { getSheetTitles, getValues, SheetsApiError } from "./sheets.ts";
 
 export const WORD_ROW_RANGE = "A2:F";
+
+/** `_` 접두 탭(학습 제외)을 뺀 탭 제목 목록. GET /api/words·GET /api/tabs·등록 시 헤더 원본 탭 선택이 공유한다. */
+export async function getWordTabTitles(env: Env): Promise<string[]> {
+  const titles = await getSheetTitles(env);
+  return titles.filter((title) => !title.startsWith("_"));
+}
 
 export interface WordEntry {
   tab: string;
