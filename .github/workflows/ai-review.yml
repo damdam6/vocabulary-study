@@ -36,3 +36,4 @@ jobs:
           kimi-api-key: ${{ secrets.KIMI_API_KEY }}
           deepseek-api-key: ${{ secrets.DEEPSEEK_API_KEY }}
           openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          zai-api-key: ${{ secrets.ZAI_API_KEY }}
