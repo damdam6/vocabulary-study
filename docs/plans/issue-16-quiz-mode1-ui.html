@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>#16 퀴즈 모드 1 UI — 한자→뜻 자가판정 — 작업 플랜</title>
+<style>
+  :root {
+    --bg: #f7f7f8; --card: #ffffff; --ink: #1c1c1e; --muted: #6e6e73;
+    --line: #e3e3e6; --accent: #3b6ef5; --accent-soft: #e8eefe;
+    --ok: #2e8b57; --warn: #b25e09; --code-bg: #f0f0f2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161618; --card: #202024; --ink: #ececf0; --muted: #98989f;
+      --line: #333338; --accent: #7a9bff; --accent-soft: #26304a;
+      --ok: #58c088; --warn: #e0a35c; --code-bg: #2a2a2f;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 40px 20px 80px; background: var(--bg); color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+                 "Segoe UI", "Noto Sans KR", sans-serif;
+    line-height: 1.65;
+  }
+  main { max-width: 860px; margin: 0 auto; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code {
+    font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 0.86em;
+    background: var(--code-bg); border-radius: 5px; padding: 2px 6px;
+  }
+  header { margin-bottom: 28px; }
+  .issue-chip {
+    display: inline-block; font-weight: 700; color: var(--accent);
+    background: var(--accent-soft); border-radius: 999px;
+    padding: 3px 14px; font-size: 0.95rem; margin-bottom: 10px;
+  }
+  .type-chip {
+    display: inline-block; font-weight: 600; color: var(--muted);
+    border: 1px solid var(--line); border-radius: 999px;
+    padding: 3px 12px; font-size: 0.8rem; margin-left: 8px; vertical-align: 2px;
+  }
+  h1 { font-size: 1.7rem; margin: 0 0 14px; letter-spacing: -0.02em; }
+  .meta {
+    display: flex; flex-wrap: wrap; gap: 6px 22px;
+    color: var(--muted); font-size: 0.87rem;
+  }
+  .meta b { color: var(--ink); font-weight: 600; }
+  section.card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 24px 28px; margin-top: 18px;
+  }
+  h2 {
+    font-size: 1.05rem; margin: 0 0 14px; letter-spacing: -0.01em;
+    display: flex; align-items: center; gap: 8px;
+  }
+  h2 .no {
+    color: var(--accent); font-size: 0.8rem; font-weight: 700;
+    border: 1.5px solid var(--accent); border-radius: 6px; padding: 0 6px;
+  }
+  ul, ol { margin: 0; padding-left: 22px; }
+  li { margin: 6px 0; }
+  .steps { list-style: none; padding: 0; counter-reset: step; }
+  .steps li {
+    counter-increment: step; position: relative; padding: 10px 0 10px 44px;
+    border-bottom: 1px dashed var(--line);
+  }
+  .steps li:last-child { border-bottom: none; }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 10px;
+    width: 28px; height: 28px; border-radius: 8px; background: var(--accent-soft);
+    color: var(--accent); font-weight: 700; font-size: 0.85rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .steps .files { display: block; margin-top: 4px; font-size: 0.85rem; color: var(--muted); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 0.82rem; }
+  .done-list { list-style: none; padding: 0; }
+  .done-list li { padding-left: 30px; position: relative; }
+  .done-list li::before {
+    content: ""; position: absolute; left: 2px; top: 7px; width: 15px; height: 15px;
+    border: 2px solid var(--ok); border-radius: 5px;
+  }
+  .scroll-x { overflow-x: auto; }
+  footer { margin-top: 30px; color: var(--muted); font-size: 0.8rem; text-align: center; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <span class="issue-chip"><a href="https://github.com/damdam6/vocabulary-study/issues/16">#16</a></span><span class="type-chip">기능 개선</span>
+    <h1>퀴즈 모드 1 UI — 한자→뜻 자가판정</h1>
+    <div class="meta">
+      <span><b>damdam6/vocabulary-study</b></span>
+      <span>브랜치 <b><code>feat/16-quiz-mode1-ui</code></b> ← <code>main</code></span>
+      <span>라벨 <b>enhancement</b></span>
+      <span>2026-07-18</span>
+    </div>
+  </header>
+
+  <section class="card">
+    <h2><span class="no">1</span>요약</h2>
+    <p>#15에서 셸과 판정 계약(<code>onJudged</code>)까지 완성된 모드 1 플레이스홀더 카드를 design-prd §4.2의 확정 사양으로 교체한다. 핵심은 3D 플립 카드(앞면 한자만 → 탭 시 rotateX 0.55s 플립 → 뒷면 한자+병음+뜻), 글자 수 적응형 한자 크기(84/64/52px), 공개 후 fadeup으로 등장하는 82px 원형 O/X 버튼(X 왼쪽·O 오른쪽)이다. 진행·기록·피드백 오버레이는 전부 셸 소유이므로 이 이슈는 <code>Mode1Card.tsx</code> 한 컴포넌트와 CSS만 건드린다.</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">2</span>현황 분석</h2>
+    <p>셸(#15, 머지됨)이 이미 오케스트레이션을 전부 소유한다:</p>
+    <ul>
+      <li><code>src/screens/StudyScreen.tsx:131-132</code> — 모드 1 문제면 <code>&lt;Mode1Card key={session.pos} question onJudged={handleJudged}/&gt;</code>로 렌더. <b>문제마다 key가 바뀌어 리마운트</b>되므로 카드 내부 상태(플립 여부)는 초기화를 신경 쓸 필요 없다.</li>
+      <li><code>src/screens/StudyScreen.tsx:86-98</code> — <code>handleJudged(correct)</code>가 기록 effect 발사 + O/X 오버레이 재생 + <b>즉시 다음 문제 전환</b>까지 처리. 카드는 O/X 탭 순간 <code>onJudged</code>를 한 번 호출하고 끝나면 된다(대기 없음 — 목업의 700ms 딜레이는 이슈 코멘트에서 기각 확정).</li>
+      <li><code>src/screens/Mode1Card.tsx</code> — 현재 플레이스홀더: 플립 없이 같은 카드 안에서 내용만 교체(<code>revealed</code> state), O/X는 직사각형 버튼(O가 오른쪽인 것은 이미 맞음), 한자 크기는 44px 고정.</li>
+      <li><code>src/index.css:325-430</code> — 플레이스홀더 스타일. <code>.mode-card</code>·<code>.mode-card-hanzi(44px)</code>·<code>.mode-card-pinyin(20px)</code>·<code>.mode-card-meaning(23px)</code>·<code>.mode-card-hint</code>는 <b>Mode2Card(#17)도 공유</b>하고, <code>.judge</code>·<code>.mode-footnote</code>는 모드 1 전용.</li>
+      <li><code>src/index.css:108-117</code> — <code>fadeup</code> keyframe은 이미 존재(0.3s는 사용처 지정). <code>flip</code>은 keyframe이 아니라 <b>transform transition</b>으로 구현하는 게 목업 방식(<code>docs/design/prototype.dc.html:82</code>).</li>
+      <li><code>src/index.css:40-42</code> — <code>:lang(zh-Hans)</code> 셀렉터가 한자 폰트(Noto Sans SC 웹폰트+폴백)를 일괄 적용. 한자 요소에 <code>lang="zh-Hans"</code>만 달면 된다(완료 조건의 폰트 항목은 이 경로로 충족, 이슈 코멘트가 "시스템 폰트" 문구를 웹폰트 사양으로 대체 확정).</li>
+      <li>목업 원본 <code>docs/design/prototype.dc.html:81-109</code> — 플립 구조의 정확한 수치: 스테이지 <code>perspective:1200px</code>, 래퍼 <code>transform-style:preserve-3d; transition:transform 0.55s cubic-bezier(0.3,0.7,0.2,1)</code>, 공개 시 <code>rotateX(-180deg)</code>, 앞·뒷면 <code>position:absolute; inset:0; backface-visibility:hidden</code>(뒷면은 <code>rotateX(180deg)</code> 선회전). 하단 판정 영역 <code>min-height:132px; align-items:flex-end; padding-top:18px</code>, 버튼 아래 12px 라벨, 미공개 시 힌트 문구 <code>margin:0 0 34px</code>.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">3</span>설계</h2>
+    <ul>
+      <li><b>컴포넌트 구조</b>: <code>Mode1Card</code>를 플립 구조로 재작성 — <code>.flip-stage</code>(flex:1, perspective, min-height:0) 안에 탭 대상인 <code>button.flip-card</code>(preserve-3d 래퍼, <code>revealed</code>면 <code>.flip-card--revealed</code>로 rotateX(-180deg)) &gt; 앞면/뒷면 <code>.flip-face</code> 두 장. 공개 후엔 <code>disabled</code>로 재탭 무력화(플레이스홀더와 동일 패턴).</li>
+      <li><b>한자 크기 스케일</b>: 순수 헬퍼 <code>hanziSizeClass(hanzi)</code>를 <code>src/lib/hanziSize.ts</code>로 분리해 vitest(node)로 검증 — 이 레포는 컴포넌트 테스트 환경(jsdom/testing-library)이 없어 로직을 lib로 빼는 게 기존 패턴(<code>wordState</code>·<code>sessionQueue</code>와 동일 배치). 글자 수는 <code>Array.from(hanzi).length</code>(코드포인트 기준): 2 이하 84px / 3 = 64px / 4 이상 52px. CSS 클래스 3종(<code>--s2/--s3/--s4</code>)으로 매핑.</li>
+      <li><b>뒷면 텍스트</b>: 공유 클래스 <code>.mode-card-hanzi</code>(44px)·<code>.mode-card-pinyin</code>·<code>.mode-card-meaning</code>을 재사용 — Mode2Card(#17)와 수치가 동일 사양이므로 중복 정의하지 않는다.</li>
+      <li><b>O/X 버튼</b>: <code>.judge</code>를 §4.2 원형 사양으로 재정의(82px 원형, 글리프 32px/800, active scale 0.94 유지, 색 틴트는 기존 <code>.judge--x/--o</code> 유지). <code>.judge</code>는 Mode1 전용이라 안전. 버튼+라벨("몰랐음"/"알고 있었음")을 세로 묶음으로, 등장은 래퍼에 <code>fadeup 0.3s</code>.</li>
+      <li><b>기각한 대안</b>: ① 플립을 keyframe 애니메이션으로 — 역방향 재생·중간 상태 관리가 불필요하게 복잡, 목업도 transition. ② 크기 스케일을 인라인 style로 — 토큰·수치를 CSS에 모으는 기존 컨벤션(§1 토큰 주석) 위배. ③ 컴포넌트 렌더 테스트 추가 — jsdom 셋업 도입은 이 이슈 범위 밖, 로직은 lib 헬퍼로 커버.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">4</span>작업 단계</h2>
+    <ol class="steps">
+      <li>✅ 한자 크기 스케일 순수 헬퍼 + 단위 테스트 — 코드포인트 수 기준 84/64/52px 결정 (2자 이하·3자·4자 이상·서로게이트 쌍 케이스)
+        <span class="files"><code>src/lib/hanziSize.ts</code>, <code>src/lib/hanziSize.test.ts</code></span>
+      </li>
+      <li>✅ Mode1Card를 3D 플립 구조로 재작성 — 앞면(한자 크기 스케일 + "탭해서 뜻 보기"), 뒷면(한자 44px + 병음 + 뜻), 탭 → 플립, 공개 후 X("몰랐음")·O("알고 있었음") 원형 버튼 + 미공개 힌트. <code>onJudged</code> 즉시 호출 계약 유지, 모든 한자 요소 <code>lang="zh-Hans"</code>
+        <span class="files"><code>src/screens/Mode1Card.tsx</code></span>
+      </li>
+      <li>✅ CSS: 플립 스테이지·카드면·원형 judge 버튼·판정 영역 스타일 — 목업 수치 그대로(perspective 1200 / 0.55s cubic-bezier(0.3,0.7,0.2,1) / 뒷면 rotateX(180deg) / fadeup 0.3s). 플레이스홀더 전용이던 <code>.judge</code> 재정의, Mode2 공유 클래스는 불변. <em>노트: 판정 영역은 mode-area gap 14px을 차감해 min-height 118px + padding-top 4px로 목업의 132/18px 리듬을 유지.</em>
+        <span class="files"><code>src/index.css</code></span>
+      </li>
+      <li>✅ 정적 검증 — <code>npm run test</code> 68개 통과(기존 64 + 신규 4), <code>npm run lint</code>·<code>npm run build</code> 클린
+        <span class="files"><code>vitest.config.ts</code> 기준, 코드 변경 없음</span>
+      </li>
+      <li>✅ 실기기 흐름 검증 — <code>.dev.vars</code> 복사(gitignored) 후 <code>npm run dev</code>(5174 — 5173은 메인 체크아웃의 다른 서버가 선점), 390px 컬럼으로 로그인→학습 시작→모드1에서 플립·O/X·즉시 진행 실확인. <em>노트 1: 기록 API는 페이지에서 스텁(500 반환)해 실제 구글 시트 오염 방지 — POST 발사 여부는 스텁 로그로 관측(O→<code>POST /api/answer</code> mode:m1 1건, X→0건). 노트 2: X 후 분모 증가는 큐가 이미 60=SESSION_CAP이라 이 데이터로는 관측 불가한 것이 정상 동작 — 재삽입 규칙은 #15의 <code>studySession.test.ts</code>가 커버. 노트 3: 모드2 회귀는 브라우저 연결 종료로 CSS diff 정적 확인으로 대체 — 모드2가 쓰는 클래스는 diff에 없음(불변).</em>
+        <span class="files">브라우저 검증 (코드 변경 없음)</span>
+      </li>
+      <li>✅ 플랜 체크오프·커밋(레포 스타일 한국어 메시지)·push·PR 오픈(<code>Closes #16</code>)
+        <span class="files"><code>docs/plans/issue-16-quiz-mode1-ui.html</code></span>
+      </li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">5</span>리스크</h2>
+    <div class="scroll-x">
+    <table>
+      <thead><tr><th>리스크</th><th>영향</th><th>완화책</th></tr></thead>
+      <tbody>
+        <tr><td><code>.judge</code> 재정의가 다른 화면에 파급</td><td>낮음 — 스타일 붕괴</td><td>grep으로 사용처 확인 완료: <code>Mode1Card.tsx</code>에서만 사용. Mode2는 <code>primary-button</code> 사용.</td></tr>
+        <tr><td>플립 뒷면이 Safari(iOS)에서 비치는 backface 버그</td><td>중간 — 앞면에 뒷면 텍스트 겹침</td><td>목업과 동일하게 <code>-webkit-backface-visibility:hidden</code> 병기, 뒷면 <code>rotateX(180deg)</code> 선회전 방식 유지.</td></tr>
+        <tr><td>같은 단어의 재삽입 문제에서 플립 상태 잔존</td><td>중간 — 뒷면부터 보이는 스포일러</td><td>셸이 <code>key={session.pos}</code>로 리마운트(<code>StudyScreen.tsx:132</code>) — 상태 자동 초기화. 검증 단계에서 X→재출제 흐름으로 실확인.</td></tr>
+        <tr><td>플립 transition 중 O/X가 먼저 떠서 뒷면 스포일러 전 판정 가능</td><td>낮음 — UX 어색함</td><td>목업도 동일(공개 즉시 fadeup) — 사양대로 두되 검증 단계에서 체감 확인만.</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">6</span>테스트 계획</h2>
+    <ul>
+      <li><code>npm run test</code> — 신규 <code>hanziSize.test.ts</code>(1·2자→84px 클래스, 3자→64px, 4자 이상→52px) + 기존 전체 회귀 통과.</li>
+      <li><code>npm run lint</code> · <code>npm run build</code> — oxlint·tsc 클린.</li>
+      <li>브라우저(390px 뷰포트, 로컬 dev): ① 앞면 한자만+힌트 → 탭 → 0.55s 플립 → 뒷면 병음·뜻 확인, ② O 탭 → 초록 O 오버레이 + 즉시 다음 문제 + 정답 기록(네트워크 탭에서 <code>POST /api/answer</code> 발사 확인), ③ X 탭 → 빨강 X 오버레이 + 즉시 다음 문제 + API 미발사 + 학습 중 문제면 분모 증가, ④ 2자/4자 단어에서 한자 크기 차이 확인, ⑤ 한자 요소 computed font-family가 Noto Sans SC인지 확인.</li>
+      <li>기존 동작 회귀: 모드 2 문제 화면(공유 클래스)·완료 화면 전환이 변형 없는지 같은 세션에서 확인.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">7</span>완료 조건</h2>
+    <ul class="done-list">
+      <li>공개 전/후 화면 전환: 앞면 한자만 → 탭 → 3D 플립(0.55s) → 뒷면 한자 44px+병음+뜻.</li>
+      <li>한자 크기 스케일: 2자 이하 84px / 3자 64px / 4자 이상 52px 적용.</li>
+      <li>O/X 원형 82px 버튼이 공개 후 fadeup으로 하단 등장 — X 왼쪽("몰랐음") / O 오른쪽("알고 있었음").</li>
+      <li>O 탭 → <code>onJudged(true)</code>(정답 기록 발사) / X 탭 → <code>onJudged(false)</code>, 둘 다 대기 없이 즉시 다음 문제.</li>
+      <li>모바일 뷰포트(390px)에서 한자 가독성·82px 터치 영역 확인.</li>
+      <li>모든 한자 표시 요소에 <code>lang="zh-Hans"</code> — Noto Sans SC 웹폰트(+폴백) 적용 확인.</li>
+      <li><code>npm run test</code>/<code>lint</code>/<code>build</code> 통과, PR 오픈(<code>Closes #16</code>).</li>
+    </ul>
+  </section>
+
+  <footer>issue-plan · <a href="https://github.com/damdam6/vocabulary-study/issues/16">#16</a> · 2026-07-18</footer>
+</main>
+</body>
+</html>
