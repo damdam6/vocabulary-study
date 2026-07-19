@@ -69,7 +69,10 @@ export async function flushRetryQueue(): Promise<void> {
       saveQueue(readQueue().slice(1));
     }
   } catch {
-    // 첫 실패에서 중단 — 실패 항목과 잔여는 큐에 유지
+    // 첫 실패에서 중단 — 실패 항목과 잔여는 큐에 유지. postAnswer 실패뿐 아니라
+    // 전송 성공 직후 saveQueue 실패(쿼터 등)도 여기로 와 즉시 중단된다 — 이 경우
+    // 제거되지 못한 항목이 다음 플러시에서 중복 제출될 수 있으나, 유실 방지를
+    // 우선하는 PRD §10 트레이드오프로 수용한다(응답 유실 중복과 같은 성격).
   } finally {
     flushing = false;
   }
