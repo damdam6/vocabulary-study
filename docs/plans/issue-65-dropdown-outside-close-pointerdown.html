@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>#65 커스텀 드롭다운 외부 탭 닫힘이 mousedown에만 의존 — 터치 환경에서 안 닫힐 수 있음 — 작업 플랜</title>
+<style>
+  :root {
+    --bg: #f7f7f8; --card: #ffffff; --ink: #1c1c1e; --muted: #6e6e73;
+    --line: #e3e3e6; --accent: #3b6ef5; --accent-soft: #e8eefe;
+    --ok: #2e8b57; --warn: #b25e09; --code-bg: #f0f0f2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161618; --card: #202024; --ink: #ececf0; --muted: #98989f;
+      --line: #333338; --accent: #7a9bff; --accent-soft: #26304a;
+      --ok: #58c088; --warn: #e0a35c; --code-bg: #2a2a2f;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 40px 20px 80px; background: var(--bg); color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+                 "Segoe UI", "Noto Sans KR", sans-serif;
+    line-height: 1.65;
+  }
+  main { max-width: 860px; margin: 0 auto; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code {
+    font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 0.86em;
+    background: var(--code-bg); border-radius: 5px; padding: 2px 6px;
+  }
+  header { margin-bottom: 28px; }
+  .issue-chip {
+    display: inline-block; font-weight: 700; color: var(--accent);
+    background: var(--accent-soft); border-radius: 999px;
+    padding: 3px 14px; font-size: 0.95rem; margin-bottom: 10px;
+  }
+  .type-chip {
+    display: inline-block; font-weight: 600; color: var(--muted);
+    border: 1px solid var(--line); border-radius: 999px;
+    padding: 3px 12px; font-size: 0.8rem; margin-left: 8px; vertical-align: 2px;
+  }
+  h1 { font-size: 1.7rem; margin: 0 0 14px; letter-spacing: -0.02em; }
+  .meta {
+    display: flex; flex-wrap: wrap; gap: 6px 22px;
+    color: var(--muted); font-size: 0.87rem;
+  }
+  .meta b { color: var(--ink); font-weight: 600; }
+  section.card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 24px 28px; margin-top: 18px;
+  }
+  h2 {
+    font-size: 1.05rem; margin: 0 0 14px; letter-spacing: -0.01em;
+    display: flex; align-items: center; gap: 8px;
+  }
+  h2 .no {
+    color: var(--accent); font-size: 0.8rem; font-weight: 700;
+    border: 1.5px solid var(--accent); border-radius: 6px; padding: 0 6px;
+  }
+  ul, ol { margin: 0; padding-left: 22px; }
+  li { margin: 6px 0; }
+  .steps { list-style: none; padding: 0; counter-reset: step; }
+  .steps li {
+    counter-increment: step; position: relative; padding: 10px 0 10px 44px;
+    border-bottom: 1px dashed var(--line);
+  }
+  .steps li:last-child { border-bottom: none; }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 10px;
+    width: 28px; height: 28px; border-radius: 8px; background: var(--accent-soft);
+    color: var(--accent); font-weight: 700; font-size: 0.85rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .steps .files { display: block; margin-top: 4px; font-size: 0.85rem; color: var(--muted); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 0.82rem; }
+  .done-list { list-style: none; padding: 0; }
+  .done-list li { padding-left: 30px; position: relative; }
+  .done-list li::before {
+    content: ""; position: absolute; left: 2px; top: 7px; width: 15px; height: 15px;
+    border: 2px solid var(--ok); border-radius: 5px;
+  }
+  .scroll-x { overflow-x: auto; }
+  footer { margin-top: 30px; color: var(--muted); font-size: 0.8rem; text-align: center; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <span class="issue-chip"><a href="https://github.com/damdam6/vocabulary-study/issues/65">#65</a></span><span class="type-chip">기능 개선</span>
+    <h1>커스텀 드롭다운 외부 탭 닫힘이 mousedown에만 의존 — 터치 환경에서 안 닫힐 수 있음</h1>
+    <div class="meta">
+      <span><b>damdam6/vocabulary-study</b></span>
+      <span>브랜치 <b><code>feat/65-dropdown-outside-close-pointerdown</code></b> ← <code>main</code></span>
+      <span>라벨 <b>enhancement</b></span>
+      <span>2026-07-19</span>
+    </div>
+  </header>
+
+  <section class="card">
+    <h2><span class="no">1</span>요약</h2>
+    <p>
+      #56/PR #60에서 만든 커스텀 <code>Dropdown</code>의 바깥-탭 닫힘 리스너가 <code>document</code>의
+      <code>mousedown</code> 이벤트에만 의존한다. 이 앱은 모바일이 주 환경인데, 터치 입력은 브라우저가
+      만들어주는 합성 <code>mousedown</code>에 의존하는 구조라 일부 브라우저·제스처에서 바깥을 탭해도
+      패널이 닫히지 않을 수 있다(PR #60 리뷰 코멘트에서 지적). <code>mousedown</code> 리스너를
+      <code>pointerdown</code>으로 교체해 마우스·터치·펜을 단일 이벤트로 커버한다. 변경 범위는
+      리스너 하나뿐이고, ESC 닫힘·내부 클릭 유지·키보드 내비게이션 등 나머지 동작은 그대로 둔다.
+    </p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">2</span>현황 분석</h2>
+    <p>
+      <code>src/components/Dropdown.tsx:30-50</code> — 패널이 열려 있을 때만(<code>if (!open) return</code>)
+      <code>useEffect</code>가 두 개의 <code>document</code> 리스너를 붙인다.
+    </p>
+    <ul>
+      <li>
+        <code>Dropdown.tsx:32-36</code> — <code>handlePointerDown(event: MouseEvent)</code>: 이름은
+        <code>handlePointerDown</code>이지만 실제로는 <code>mousedown</code> 전용 핸들러다. 클릭 대상이
+        <code>containerRef</code>(트리거 버튼 + 패널을 감싸는 <code>div</code>) 밖이면 <code>setOpen(false)</code>.
+      </li>
+      <li><code>Dropdown.tsx:37-43</code> — <code>keydown</code>으로 <code>Escape</code> 처리, 별개 리스너라 이번 변경과 무관.</li>
+      <li><code>Dropdown.tsx:44</code> — <code>document.addEventListener('mousedown', handlePointerDown)</code>.</li>
+      <li><code>Dropdown.tsx:47</code> — cleanup에서 동일하게 <code>'mousedown'</code>으로 제거.</li>
+      <li>
+        옵션 선택(<code>Dropdown.tsx:132</code>, <code>&lt;li onClick=&#123;() =&gt; selectOption(index)&#125;&gt;</code>)과
+        트리거 토글(<code>Dropdown.tsx:105</code>)은 React 합성 <code>onClick</code>을 쓰는데, 이는 이미
+        모든 포인터 타입(마우스/터치/펜)에서 동작하므로 이번 이슈의 대상이 아니다 — 오직 바깥-탭 닫힘
+        리스너만 <code>mousedown</code> 원시 이벤트에 묶여 있다.
+      </li>
+      <li>
+        이 프로젝트에는 아직 컴포넌트 레벨 테스트 인프라(jsdom/happy-dom, <code>@testing-library/react</code>)가
+        없다 — <code>vitest.config.ts</code>는 기본(node) 환경이고 기존 <code>*.test.ts</code>는 모두 순수
+        함수 단위 테스트다. PR #60도 같은 이유로 임시 하네스 + cmux 브라우저 자동화로 수동 QA만 하고
+        하네스를 삭제하는 방식을 택했다.
+      </li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">3</span>설계</h2>
+    <ul>
+      <li>
+        <b>채택</b>: <code>document.addEventListener('mousedown', …)</code> →
+        <code>document.addEventListener('pointerdown', …)</code>로 교체하고, 핸들러 파라미터 타입도
+        <code>MouseEvent</code> → <code>PointerEvent</code>로 바꾼다. <code>PointerEvent</code>는
+        <code>MouseEvent</code>를 확장하므로 <code>event.target</code> 기반 <code>containerRef.current?.contains(...)</code>
+        로직은 변경 없이 그대로 재사용된다. 이슈가 요구하는 "단일 리스너로 마우스·터치·펜 커버"에 정확히 대응하고,
+        변경 범위가 이벤트 이름 두 곳 + 타입 한 곳으로 최소화된다.
+      </li>
+      <li>
+        <b>기각 — <code>mousedown</code> + <code>touchstart</code> 이중 바인딩</b>: PR #60 리뷰 코멘트가 대안으로
+        언급했지만, 이렇게 하면 터치 기기에서 <code>touchstart</code>와 뒤이은 합성 <code>mousedown</code>이
+        같은 탭에 대해 두 번 호출돼 방어 코드(예: 플래그, <code>preventDefault</code>)가 추가로 필요해진다.
+        <code>pointerdown</code> 단일 리스너가 더 간단하고 이슈의 기대 동작과도 정확히 일치한다.
+      </li>
+      <li>
+        <b>기각 — <code>mousedown</code>과 <code>pointerdown</code> 동시 바인딩(구형 브라우저 폴백)</b>: 이
+        레포는 Vite + React 19 기반 최신 빌드 타깃이고 <code>PointerEvent</code>는 Safari 13+/모든 최신
+        모바일 브라우저에서 지원된다. 존재하지 않는 구형 브라우저 지원 요구를 가정한 폴백은 불필요한
+        복잡도만 늘린다(레포 관례상 불필요한 방어 코드 지양).
+      </li>
+      <li>
+        키보드(ESC/화살표/Enter) 리스너와 포커스 관리(<code>Dropdown.tsx:52-60</code>)는 이번 변경과 완전히
+        독립적이라 손대지 않는다.
+      </li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">4</span>작업 단계</h2>
+    <ol class="steps">
+      <li>✅ 바깥-탭 닫힘 핸들러의 이벤트 타입을 <code>MouseEvent</code>에서 <code>PointerEvent</code>로 변경
+        <span class="files"><code>src/components/Dropdown.tsx:32</code></span>
+      </li>
+      <li>✅ 리스너 등록을 <code>mousedown</code>에서 <code>pointerdown</code>으로 변경
+        <span class="files"><code>src/components/Dropdown.tsx:44</code></span>
+      </li>
+      <li>✅ cleanup의 리스너 해제도 동일하게 <code>pointerdown</code>으로 맞춤
+        <span class="files"><code>src/components/Dropdown.tsx:47</code></span>
+      </li>
+      <li>✅ PR #60과 동일한 방식으로 로그인/Worker 없이 <code>Dropdown</code>만 마운트하는 임시 하네스(<code>src/main.tsx</code> 임시 교체)를
+        만들어 cmux 브라우저 자동화로 QA 후 원상복구. 데스크톱은 실제 <code>click</code> 자동화(마우스
+        pointerdown 경로)로, 모바일 터치는 WKWebView가 저수준 <code>input touch</code> 명령을 지원하지
+        않아(<code>not_supported</code>) <code>pointerType: 'touch'</code> <code>PointerEvent</code>를
+        직접 dispatch하는 방식으로 검증 — 두 경우 모두 바깥 탭 시 패널이 닫힘을 확인. 같은 세션에서 ESC
+        닫힘, 트리거 재클릭 시 토글(바깥 핸들러 간섭 없음), 방향키(↓↓)+Enter 선택(값 "탭 C"로 정상 반영)도
+        기존과 동일하게 동작함을 확인.
+        <span class="files">임시 파일, 커밋에 포함하지 않음</span>
+      </li>
+      <li>✅ <code>npm test</code>(17개 파일 158건 통과) · <code>npm run lint</code>(oxlint 통과) ·
+        <code>npm run build</code>(통과) 확인
+        <span class="files">전체 스위트</span>
+      </li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">5</span>리스크</h2>
+    <div class="scroll-x">
+    <table>
+      <thead><tr><th>리스크</th><th>영향</th><th>완화책</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>매우 오래된 브라우저(레거시 Safari/Android WebView 등)가 <code>PointerEvent</code>를 지원하지 않을 가능성</td>
+          <td>해당 환경에서 바깥-탭 닫힘이 동작하지 않음</td>
+          <td>이 앱의 실제 타깃은 최신 모바일 브라우저(Vite/React19 빌드 타깃과 일치) — 별도 폴백 없이 진행하고, 실사용 중 리포트되면 그때 대응</td>
+        </tr>
+        <tr>
+          <td>포인터 타입에 따라 <code>pointerdown</code>이 <code>click</code>보다 먼저 발생 → 트리거 버튼 토글과의 순서 상호작용</td>
+          <td>트리거를 눌러 닫을 때 이중 토글 등 예기치 못한 동작 가능성</td>
+          <td>트리거 버튼이 <code>containerRef</code> 내부에 있어 바깥-탭 핸들러가 아예 반응하지 않음(기존 <code>mousedown</code> 구조와 동일) — 현황 분석에서 확인, 하네스 QA에서 트리거 재클릭 케이스도 함께 확인</td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">6</span>테스트 계획</h2>
+    <ul>
+      <li><code>npm test</code> — 기존 17개 파일 전체 스위트 통과 확인(이번 변경은 컴포넌트 로직에 자동 테스트가 없으므로 회귀 없음만 확인).</li>
+      <li><code>npm run lint</code> — <code>oxlint</code> 통과 확인.</li>
+      <li>cmux 브라우저 자동화(임시 하네스): 데스크톱 — 패널 연 뒤 바깥 영역 마우스 클릭 시 닫힘.</li>
+      <li>cmux 브라우저 자동화(임시 하네스): 모바일 — 터치 에뮬레이션으로 패널 연 뒤 바깥 영역 탭 시 닫힘(핵심 회귀 검증 대상).</li>
+      <li>동일 하네스에서 ESC 닫힘, 트리거/옵션 내부 클릭 시 유지, 방향키(↑/↓)+Enter 선택이 기존과 동일하게 동작하는지 확인.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">7</span>완료 조건</h2>
+    <ul class="done-list">
+      <li>✅ 외부 닫힘 리스너가 <code>pointerdown</code> 기반으로 동작</li>
+      <li>✅ 데스크톱(마우스)·모바일(터치)에서 외부 탭 시 패널 닫힘 확인</li>
+      <li>✅ 기존 키보드 동작(ESC·화살표·Enter) 회귀 없음</li>
+      <li>✅ <code>npm test</code> · <code>npm run lint</code> 통과</li>
+    </ul>
+  </section>
+
+  <footer>issue-plan · <a href="https://github.com/damdam6/vocabulary-study/issues/65">#65</a> · 2026-07-19</footer>
+</main>
+</body>
+</html>

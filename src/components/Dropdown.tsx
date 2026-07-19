@@ -29,7 +29,7 @@ function Dropdown({ id, value, options, onChange }: DropdownProps) {
   // 바깥 클릭/ESC로 닫힘 — 패널이 열려 있을 때만 리스너를 붙여 다른 UI에 영향을 주지 않는다.
   useEffect(() => {
     if (!open) return
-    const handlePointerDown = (event: MouseEvent) => {
+    const handlePointerDown = (event: PointerEvent) => {
       if (!containerRef.current?.contains(event.target as Node)) {
         setOpen(false)
       }
@@ -41,10 +41,10 @@ function Dropdown({ id, value, options, onChange }: DropdownProps) {
         triggerRef.current?.focus()
       }
     }
-    document.addEventListener('mousedown', handlePointerDown)
+    document.addEventListener('pointerdown', handlePointerDown)
     document.addEventListener('keydown', handleKeyDown)
     return () => {
-      document.removeEventListener('mousedown', handlePointerDown)
+      document.removeEventListener('pointerdown', handlePointerDown)
       document.removeEventListener('keydown', handleKeyDown)
     }
   }, [open])
