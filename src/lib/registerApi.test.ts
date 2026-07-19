@@ -43,23 +43,37 @@ describe("fetchTabs", () => {
     expect(init.signal).toBe(controller.signal);
   });
 
-  it("비정상 응답이면 throw한다", async () => {
+  it("비정상 응답이고 본문이 JSON이 아니면 HTTP 상태를 담은 메시지로 throw한다", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(null, { status: 500 })));
     await expect(fetchTabs()).rejects.toThrow("500");
+  });
+
+  it("비정상 응답의 {error} 본문이 있으면 그 메시지로 throw한다", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(Response.json({ error: "failed to load tabs" }, { status: 500 })),
+    );
+    await expect(fetchTabs()).rejects.toThrow("failed to load tabs");
   });
 });
 
 describe("registerWords", () => {
-  it("/api/words/register에 JSON 바디를 POST하고 결과를 반환한다", async () => {
+  it("/api/words/register에 JSON 바디를 POST하고 결과(worker/routes/register.ts 실측 응답 형태)를 반환한다", async () => {
     savePassword();
-    const fetchMock = vi.fn().mockResolvedValue(Response.json({ added: ["经济"], skipped: [] }));
+    const responseBody = {
+      tab: "HSK4",
+      created: false,
+      added: [{ hanzi: "经济", pinyin: "jīngjì", meaning: "경제" }],
+      skipped: ["你好"],
+    };
+    const fetchMock = vi.fn().mockResolvedValue(Response.json(responseBody));
     vi.stubGlobal("fetch", fetchMock);
 
     const request = {
       tab: "HSK4",
       words: [{ hanzi: "经济", pinyin: "jīngjì", meaning: "경제" }],
     };
-    await expect(registerWords(request)).resolves.toEqual({ added: ["经济"], skipped: [] });
+    await expect(registerWords(request)).resolves.toEqual(responseBody);
 
     const [path, init] = fetchMock.mock.calls[0] as [string, RequestInit];
     expect(path).toBe("/api/words/register");
@@ -70,7 +84,9 @@ describe("registerWords", () => {
   });
 
   it("createTab이 true면 바디에 그대로 포함된다", async () => {
-    const fetchMock = vi.fn().mockResolvedValue(Response.json({ added: [], skipped: [] }));
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(Response.json({ tab: "새탭", created: true, added: [], skipped: [] }));
     vi.stubGlobal("fetch", fetchMock);
 
     await registerWords({ tab: "새탭", createTab: true, words: [] });
@@ -79,9 +95,19 @@ describe("registerWords", () => {
     expect(JSON.parse(init.body as string)).toEqual({ tab: "새탭", createTab: true, words: [] });
   });
 
-  it("비정상 응답이면 throw한다", async () => {
+  it("비정상 응답이고 본문이 JSON이 아니면 HTTP 상태를 담은 메시지로 throw한다", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(null, { status: 400 })));
     await expect(registerWords({ tab: "HSK4", words: [] })).rejects.toThrow("400");
+  });
+
+  it("비정상 응답의 {error} 본문이 있으면 Worker가 준 구체적 사유로 throw한다", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(Response.json({ error: "헤더를 복사할 기존 탭이 없습니다" }, { status: 400 })),
+    );
+    await expect(registerWords({ tab: "새탭", createTab: true, words: [] })).rejects.toThrow(
+      "헤더를 복사할 기존 탭이 없습니다",
+    );
   });
 });
 

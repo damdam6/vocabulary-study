@@ -181,7 +181,10 @@ function RegisterScreen({ onGoHome }: RegisterScreenProps) {
         <RegisterHeader />
         <div className="register-result">
           <p className="register-result-line">
+            <strong>{result.tab}</strong>
+            {' 탭에 '}
             <span className="register-result-added">{result.added.length}건 추가</span>
+            {result.created && ' · 새 탭 생성됨'}
             {result.skipped.length > 0 && (
               <>
                 {' · '}
