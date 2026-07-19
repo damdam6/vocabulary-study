@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import LoginScreen from './screens/LoginScreen.tsx'
 import HomeScreen from './screens/HomeScreen.tsx'
 import StudyScreen, { type SessionResult } from './screens/StudyScreen.tsx'
@@ -7,7 +7,11 @@ import { getStoredPassword, setApiSuccessHandler, setUnauthorizedHandler, type W
 import { flushRetryQueue } from './lib/retryQueue.ts'
 import type { SessionQuestion } from './lib/sessionQueue.ts'
 
-type Screen = 'login' | 'home' | 'study' | 'done'
+// pinyin-pro(gzip 약 145KB) 의존성이 등록 화면에만 있어(#49) 학습 플로우 번들에서
+// 제외되도록 지연 로딩한다 — 등록 화면은 홈의 저강조 링크로만 진입하는 비핵심 경로.
+const RegisterScreen = lazy(() => import('./screens/RegisterScreen.tsx'))
+
+type Screen = 'login' | 'home' | 'study' | 'done' | 'register'
 
 function App() {
   // 새로고침 시 저장된 비밀번호가 있으면 재입력 없이 통과 (PRD §8)
@@ -44,7 +48,9 @@ function App() {
     <div className="app-frame">
       <div className="app-column">
         {screen === 'login' && <LoginScreen onLogin={() => setScreen('home')} />}
-        {screen === 'home' && <HomeScreen onStart={startSession} />}
+        {screen === 'home' && (
+          <HomeScreen onStart={startSession} onNavigateRegister={() => setScreen('register')} />
+        )}
         {screen === 'study' && (
           <StudyScreen queue={sessionQueue} onExit={() => setScreen('home')} onComplete={completeSession} />
         )}
@@ -54,6 +60,11 @@ function App() {
             wrong={sessionResult.wrong}
             onGoHome={() => setScreen('home')}
           />
+        )}
+        {screen === 'register' && (
+          <Suspense fallback={<div className="register-screen"><p className="register-hint">불러오는 중…</p></div>}>
+            <RegisterScreen onGoHome={() => setScreen('home')} />
+          </Suspense>
         )}
       </div>
     </div>
