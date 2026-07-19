@@ -6,6 +6,7 @@ import {
   postAnswer,
   postReviewFail,
   savePassword,
+  setApiSuccessHandler,
   setUnauthorizedHandler,
   verifyPassword,
   type WordEntry,
@@ -27,6 +28,7 @@ beforeEach(() => {
 
 afterEach(() => {
   setUnauthorizedHandler(null);
+  setApiSuccessHandler(null);
   vi.unstubAllGlobals();
 });
 
@@ -103,6 +105,31 @@ describe("apiFetch", () => {
     await apiFetch("/api/words");
 
     expect(getStoredPassword()).toBe("secret");
+    expect(handler).not.toHaveBeenCalled();
+  });
+
+  it("정상 응답이면 success 핸들러를 호출한다 — 재시도 큐 재전송 트리거(#18)", async () => {
+    const handler = vi.fn();
+    setApiSuccessHandler(handler);
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("{}", { status: 200 })));
+
+    await apiFetch("/api/words");
+
+    expect(handler).toHaveBeenCalledTimes(1);
+  });
+
+  it("401·500 응답에서는 success 핸들러를 호출하지 않는다", async () => {
+    const handler = vi.fn();
+    setApiSuccessHandler(handler);
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(new Response(null, { status: 401 }))
+      .mockResolvedValueOnce(new Response(null, { status: 500 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await apiFetch("/api/words");
+    await apiFetch("/api/words");
+
     expect(handler).not.toHaveBeenCalled();
   });
 });

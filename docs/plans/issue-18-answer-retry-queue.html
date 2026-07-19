@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>#18 기록 유실 방지 — POST /api/answer 실패 시 localStorage 재시도 큐 — 작업 플랜</title>
+<style>
+  :root {
+    --bg: #f7f7f8; --card: #ffffff; --ink: #1c1c1e; --muted: #6e6e73;
+    --line: #e3e3e6; --accent: #3b6ef5; --accent-soft: #e8eefe;
+    --ok: #2e8b57; --warn: #b25e09; --code-bg: #f0f0f2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161618; --card: #202024; --ink: #ececf0; --muted: #98989f;
+      --line: #333338; --accent: #7a9bff; --accent-soft: #26304a;
+      --ok: #58c088; --warn: #e0a35c; --code-bg: #2a2a2f;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 40px 20px 80px; background: var(--bg); color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+                 "Segoe UI", "Noto Sans KR", sans-serif;
+    line-height: 1.65;
+  }
+  main { max-width: 860px; margin: 0 auto; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code {
+    font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 0.86em;
+    background: var(--code-bg); border-radius: 5px; padding: 2px 6px;
+  }
+  header { margin-bottom: 28px; }
+  .issue-chip {
+    display: inline-block; font-weight: 700; color: var(--accent);
+    background: var(--accent-soft); border-radius: 999px;
+    padding: 3px 14px; font-size: 0.95rem; margin-bottom: 10px;
+  }
+  .type-chip {
+    display: inline-block; font-weight: 600; color: var(--muted);
+    border: 1px solid var(--line); border-radius: 999px;
+    padding: 3px 12px; font-size: 0.8rem; margin-left: 8px; vertical-align: 2px;
+  }
+  h1 { font-size: 1.7rem; margin: 0 0 14px; letter-spacing: -0.02em; }
+  .meta {
+    display: flex; flex-wrap: wrap; gap: 6px 22px;
+    color: var(--muted); font-size: 0.87rem;
+  }
+  .meta b { color: var(--ink); font-weight: 600; }
+  section.card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 24px 28px; margin-top: 18px;
+  }
+  h2 {
+    font-size: 1.05rem; margin: 0 0 14px; letter-spacing: -0.01em;
+    display: flex; align-items: center; gap: 8px;
+  }
+  h2 .no {
+    color: var(--accent); font-size: 0.8rem; font-weight: 700;
+    border: 1.5px solid var(--accent); border-radius: 6px; padding: 0 6px;
+  }
+  ul, ol { margin: 0; padding-left: 22px; }
+  li { margin: 6px 0; }
+  .steps { list-style: none; padding: 0; counter-reset: step; }
+  .steps li {
+    counter-increment: step; position: relative; padding: 10px 0 10px 44px;
+    border-bottom: 1px dashed var(--line);
+  }
+  .steps li:last-child { border-bottom: none; }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 10px;
+    width: 28px; height: 28px; border-radius: 8px; background: var(--accent-soft);
+    color: var(--accent); font-weight: 700; font-size: 0.85rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .steps .files { display: block; margin-top: 4px; font-size: 0.85rem; color: var(--muted); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 0.82rem; }
+  .done-list { list-style: none; padding: 0; }
+  .done-list li { padding-left: 30px; position: relative; }
+  .done-list li::before {
+    content: ""; position: absolute; left: 2px; top: 7px; width: 15px; height: 15px;
+    border: 2px solid var(--ok); border-radius: 5px;
+  }
+  .scroll-x { overflow-x: auto; }
+  footer { margin-top: 30px; color: var(--muted); font-size: 0.8rem; text-align: center; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <span class="issue-chip"><a href="https://github.com/damdam6/vocabulary-study/issues/18">#18</a></span><span class="type-chip">기능 개선</span>
+    <h1>기록 유실 방지 — POST /api/answer 실패 시 localStorage 재시도 큐</h1>
+    <div class="meta">
+      <span><b>damdam6/vocabulary-study</b></span>
+      <span>브랜치 <b><code>feat/18-answer-retry-queue</code></b> ← <code>main</code></span>
+      <span>라벨 <b>enhancement</b></span>
+      <span>2026-07-18</span>
+    </div>
+  </header>
+
+  <section class="card">
+    <h2><span class="no">1</span>요약</h2>
+    <p><code>POST /api/answer</code>가 네트워크 등으로 실패하면 요청 페이로드를 localStorage 재시도 큐에 적재하고, 앱 로드 시와 다음 API 호출 성공 시점에 FIFO로 재전송한다(PRD §10). 큐 계약(저장 키·변경 이벤트)과 홈 화면 미전송 인디케이터는 #13에서 이미 선구현되어 있으므로, 이번 작업은 큐 본체(적재·재전송)와 StudyScreen 배선, 재전송 트리거 배선이 전부다. 타임스탬프는 최초 판정 시각을 유지하고, 재전송 실패분은 큐에 그대로 남긴다.</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">2</span>현황 분석</h2>
+    <ul>
+      <li><b>기록 유실 지점</b>: <code>src/screens/StudyScreen.tsx:53-69</code>의 <code>fireEffect</code>가 문제 단위 fire-and-forget으로 <code>postAnswer</code>를 발사하고, 실패는 <code>.catch(() =&gt; {})</code>로 무시한다 — 주석에도 "#18이 이 catch에 배선될 예정"이라고 명시되어 있다.</li>
+      <li><b>큐 계약(읽는 쪽) 선구현</b>: <code>src/lib/retryQueue.ts</code>에 저장 키 <code>RETRY_QUEUE_STORAGE_KEY</code>("vocab-study:retry-queue", JSON 배열), 같은 탭 변경 알림용 커스텀 이벤트 <code>RETRY_QUEUE_CHANGED_EVENT</code>, <code>getRetryQueueLength</code>가 이미 있다. #18은 이 키에 저장하고 추가·제거 시마다 이벤트를 발화해야 한다는 계약이 파일 헤더에 박혀 있다.</li>
+      <li><b>홈 인디케이터 완료</b>: <code>src/screens/HomeScreen.tsx:52-68, 119-124</code>가 큐 길이를 구독(storage 이벤트 + 커스텀 이벤트)해 "● 미전송 기록 n건 · 연결되면 자동 저장"을 이미 렌더링한다. 이벤트 발화 계약만 지키면 UI 추가 작업은 없다.</li>
+      <li><b>전송 페이로드</b>: <code>src/lib/api.ts:83-89</code>의 <code>AnswerRecord</code>(tab·hanzi·mode·timestamp·isReview)가 그대로 큐 항목 형태가 된다 — JSON 직렬화 가능하고 timestamp가 이미 판정 시각(Asia/Seoul <code>YYYY-MM-DD HH:mm</code>, <code>src/lib/time.ts</code>)이다.</li>
+      <li><b>재전송 트리거 훅 부재</b>: "다음 API 호출 성공 시점" 감지 수단이 없다. <code>src/lib/api.ts:23-28</code>의 <code>setUnauthorizedHandler</code>가 같은 성격(모듈 레벨 콜백 등록)의 기존 패턴이다. 앱 로드 시점 훅은 <code>src/App.tsx:19-22</code>의 마운트 useEffect가 자리다.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">3</span>설계</h2>
+    <p><b>모듈 구도</b> — 순환 import 없이 세 지점을 배선한다:</p>
+    <ul>
+      <li><code>retryQueue.ts</code>가 큐 본체를 소유: <code>enqueueAnswer(record)</code>(읽기→append→저장→이벤트 발화), <code>flushRetryQueue()</code>(재전송). <code>api.ts</code>의 <code>postAnswer</code>·<code>AnswerRecord</code>를 import한다.</li>
+      <li><code>api.ts</code>에 성공 알림 훅 추가: <code>setApiSuccessHandler(handler)</code> — <code>apiFetch</code>가 <code>response.ok</code>일 때 호출. <code>setUnauthorizedHandler</code> 패턴의 미러. api.ts는 retryQueue를 import하지 않는다(순환 차단).</li>
+      <li><code>App.tsx</code>가 배선: 마운트 시 <code>setApiSuccessHandler(flushRetryQueue)</code> 등록 + <code>flushRetryQueue()</code> 1회 호출(앱 로드 시 재전송). 이러면 홈의 <code>fetchWords</code> 성공, 학습 중 <code>postAnswer</code> 성공 등 모든 API 성공이 재전송 기회가 된다 — 이슈의 "다음 API 호출 성공 시점"을 문자 그대로 충족.</li>
+      <li><code>StudyScreen.tsx</code>의 <code>fireEffect</code>: <code>AnswerRecord</code>를 변수로 만들어 <code>postAnswer</code>에 넘기고, <code>.catch</code>에서 같은 객체를 <code>enqueueAnswer</code>로 적재 — 타임스탬프가 자동으로 최초 판정 시각으로 보존된다.</li>
+    </ul>
+    <p><b>flush 알고리즘</b> (FIFO, 실패 시 중단, 재진입 가드):</p>
+    <ul>
+      <li>모듈 레벨 in-flight 플래그로 재진입 차단 — flush 중의 <code>postAnswer</code> 성공이 success 핸들러를 다시 부르므로 가드가 없으면 재귀한다. 가드에 걸리면 즉시 no-op 반환.</li>
+      <li>루프: 큐를 읽어 비어 있으면 종료 → <code>queue[0]</code>을 원본 그대로 <code>postAnswer</code> → 성공 시 큐를 다시 읽어 맨 앞 항목 제거·저장·이벤트 발화 → 실패 시 즉시 중단(항목 유지). 네트워크가 죽어 있으면 나머지도 실패할 것이므로 첫 실패에서 멈추는 게 낭비가 없다.</li>
+      <li>flush 중 새로 실패한 항목은 <code>enqueueAnswer</code>가 뒤에 append하므로(제거는 항상 재읽기 후 맨 앞) 유실되지 않는다. flush의 <code>postAnswer</code> 응답(갱신 단어)은 세션 문맥이 없으므로 무시한다.</li>
+      <li>localStorage 파손 JSON은 빈 큐로 취급(기존 <code>getRetryQueueLength</code>와 동일 방침), <code>enqueueAnswer</code>의 저장 실패(쿼터 등)는 try/catch로 삼킨다 — 학습 진행을 막지 않는 원칙(§6.2)이 우선.</li>
+    </ul>
+    <p><b>기각한 대안</b>:</p>
+    <ul>
+      <li><code>apiFetch</code> 내부에서 직접 <code>flushRetryQueue()</code> 호출 — retryQueue↔api 순환 import가 생기고 api.ts가 큐 존재를 알게 됨. 콜백 등록으로 방향을 한쪽으로 유지.</li>
+      <li>StudyScreen의 <code>postAnswer</code> 성공 시에만 flush — 홈 <code>fetchWords</code> 성공(네트워크 복구 후 홈 재진입) 시 재전송 기회를 놓쳐 스펙("다음 API 호출 성공 시점")보다 좁다.</li>
+      <li><code>postReviewFail</code> 실패도 큐잉 — PRD §10과 이슈가 <code>POST /api/answer</code>만 명시. review-fail은 멱등하지 않은 간격 후퇴라 재전송 의미론이 다르므로 비범위로 남긴다.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">4</span>작업 단계</h2>
+    <ol class="steps">
+      <li>✅ retryQueue.ts에 큐 본체 구현 — 내부 read/write 헬퍼, <code>enqueueAnswer(record: AnswerRecord)</code>(append+이벤트), <code>flushRetryQueue()</code>(재진입 가드, FIFO 재전송, 성공 항목만 맨 앞 제거+이벤트, 실패 시 중단). 파일 헤더 주석을 "구현 완료" 상태로 갱신.
+        <span class="files"><code>src/lib/retryQueue.ts</code></span>
+      </li>
+      <li>✅ api.ts에 성공 알림 훅 추가 — <code>setApiSuccessHandler</code> 등록 함수와 <code>apiFetch</code>의 <code>response.ok</code> 분기에서 호출. <code>setUnauthorizedHandler</code>(api.ts:23-28) 패턴 그대로.
+        <span class="files"><code>src/lib/api.ts</code></span>
+      </li>
+      <li>✅ App.tsx 배선 — 마운트 useEffect에서 <code>setApiSuccessHandler(flushRetryQueue)</code> 등록(+cleanup에서 해제) 및 앱 로드 시 <code>flushRetryQueue()</code> 1회 호출.
+        <span class="files"><code>src/App.tsx</code></span>
+      </li>
+      <li>✅ StudyScreen 배선 — <code>fireEffect</code>의 answer 분기에서 <code>AnswerRecord</code>를 변수로 추출해 <code>postAnswer</code>와 실패 시 <code>enqueueAnswer</code>에 공유. "#18 배선 예정" 주석 정리.
+        <span class="files"><code>src/screens/StudyScreen.tsx</code></span>
+      </li>
+      <li>✅ 단위 테스트 — retryQueue.test.ts 신규: enqueue 적재·직렬화·이벤트 발화 / flush FIFO 순서·원본 타임스탬프 보존·성공 항목 제거·첫 실패 중단(잔여 유지)·빈 큐 no-op·재진입 가드 / 파손 JSON 허용. api.test.ts에 success 핸들러 호출(200에서 호출, 401·500에서 미호출) 케이스 추가. node 환경이므로 localStorage·fetch·window 이벤트는 기존 스타일(api.test.ts:14-22)대로 스텁.
+        <span class="files"><code>src/lib/retryQueue.test.ts</code>, <code>src/lib/api.test.ts</code></span>
+      </li>
+      <li>✅ 검증 — <code>npm test</code>(76개)·<code>npm run lint</code>·<code>npm run build</code> 그린. E2E는 fetch 오버라이드 대신 dev 서버 중단으로 실제 네트워크 실패를 재현: 서버 다운 상태에서 정답 처리(以~为主, 10:33) → 큐 적재·홈 인디케이터 "미전송 기록 1건" 확인 → 서버 복구·재로드(10:35) → 큐 비움·인디케이터 제거 → 시트 행 <code>m1=1, G열="2026-07-19 10:33|m1"</code> 확인(최초 시각 보존·중복 없음).
+        <span class="files"><code>npm run dev</code>, 구글 시트</span>
+      </li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">5</span>리스크</h2>
+    <div class="scroll-x">
+    <table>
+      <thead><tr><th>리스크</th><th>영향</th><th>완화책</th></tr></thead>
+      <tbody>
+        <tr><td>서버는 기록에 성공했으나 응답이 유실된 경우 재전송으로 시트에 중복 행</td><td>기록 1건이 2행으로 적힘</td><td>PRD §10이 유실 방지를 우선하는 트레이드오프로 수용. 시트 특성상 수동 정리 가능. 리스크로 명시만.</td></tr>
+        <tr><td>flush 중 401 수신 — apiFetch가 비밀번호 삭제·로그인 복귀</td><td>flush 중단</td><td>의도된 동작: 실패 항목은 큐에 유지되고, 재로그인 후 다음 API 성공 시 자동 재전송.</td></tr>
+        <tr><td>영구 실패 페이로드(예: 서버가 400을 계속 반환)가 큐 맨 앞을 점유</td><td>뒤 항목까지 재전송 지연</td><td>이슈 스펙이 "재전송 실패 시 큐 유지(버리지 않음)"를 명시 — v1은 스펙대로 유지하고 비고로 남김.</td></tr>
+        <tr><td>flush의 postAnswer 성공 → success 핸들러 → flush 재귀</td><td>무한 루프</td><td>모듈 레벨 in-flight 가드로 재진입 no-op + 재진입 가드 단위 테스트.</td></tr>
+        <tr><td>localStorage 쿼터 초과·파손 JSON</td><td>적재 실패·큐 읽기 실패</td><td>enqueue는 try/catch로 삼켜 학습 진행 보호, 파손 JSON은 빈 큐 취급(기존 getRetryQueueLength와 동일 방침).</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">6</span>테스트 계획</h2>
+    <ul>
+      <li><b>단위(vitest)</b>: 신규 retryQueue.test.ts — enqueue가 JSON 배열로 append·이벤트 발화 / flush가 FIFO로 원본 페이로드(타임스탬프 포함) 그대로 전송 / 성공 항목만 제거·이벤트 발화 / 첫 실패에서 중단하고 잔여 유지 / 빈 큐 no-op / 재진입 가드 / flush 중 enqueue된 항목 보존 / 파손 JSON → 빈 큐. api.test.ts 추가 — 200 응답에서 success 핸들러 호출, 401·500에서 미호출.</li>
+      <li><b>기존 회귀</b>: <code>npm test</code> 전체 그린 (기존 api·homeStats·sessionQueue·studySession 등), <code>npm run lint</code>, <code>npm run build</code>(tsc -b 포함).</li>
+      <li><b>E2E (이슈 완료 조건 재현)</b>: dev 서버 + 브라우저에서 ① <code>/api/answer</code>만 실패하도록 fetch를 일시 오버라이드한 상태로 정답 처리 → localStorage <code>vocab-study:retry-queue</code>에 항목 적재 확인 ② 홈 복귀 시 "미전송 기록 n건" 인디케이터 표시 확인 ③ 오버라이드 해제 후 새로고침 → 큐 재전송 → 시트 기록의 G열이 최초 판정 시각인지 확인 ④ 큐가 비고 인디케이터가 제거되며 시트에 중복 행이 없는지 확인.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">7</span>완료 조건</h2>
+    <ul class="done-list">
+      <li>네트워크 실패 상태에서 정답 처리 시 요청이 localStorage 큐(<code>vocab-study:retry-queue</code>)에 쌓인다</li>
+      <li>네트워크 복구 후 앱 재로드 시(및 다음 API 호출 성공 시) 큐가 재전송되어 시트에 기록된다</li>
+      <li>재전송된 기록의 타임스탬프(G열)가 최초 판정 시각이다 — 재전송 시각으로 덮어쓰지 않음</li>
+      <li>성공 전송된 항목은 큐에서 제거되어 중복 기록되지 않고, 재전송 실패분은 큐에 유지된다</li>
+      <li>큐에 항목이 있을 때 홈 인디케이터가 표시되고, 큐가 비면 즉시 제거된다 (같은 탭 변경도 커스텀 이벤트로 반영)</li>
+      <li>학습 중에는 어떤 실패 표시도 하지 않는다 — 전송 실패가 진행을 막지 않는 기존 원칙 유지</li>
+      <li><code>npm test</code>·<code>npm run lint</code>·<code>npm run build</code> 그린</li>
+    </ul>
+  </section>
+
+  <footer>issue-plan · <a href="https://github.com/damdam6/vocabulary-study/issues/18">#18</a> · 2026-07-18</footer>
+</main>
+</body>
+</html>
