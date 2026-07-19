@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>#56 등록 화면 탭 드롭다운을 커스텀 컴포넌트로 교체 — 네이티브 select 제거 — 작업 플랜</title>
+<style>
+  :root {
+    --bg: #f7f7f8; --card: #ffffff; --ink: #1c1c1e; --muted: #6e6e73;
+    --line: #e3e3e6; --accent: #3b6ef5; --accent-soft: #e8eefe;
+    --ok: #2e8b57; --warn: #b25e09; --code-bg: #f0f0f2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161618; --card: #202024; --ink: #ececf0; --muted: #98989f;
+      --line: #333338; --accent: #7a9bff; --accent-soft: #26304a;
+      --ok: #58c088; --warn: #e0a35c; --code-bg: #2a2a2f;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 40px 20px 80px; background: var(--bg); color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+                 "Segoe UI", "Noto Sans KR", sans-serif;
+    line-height: 1.65;
+  }
+  main { max-width: 860px; margin: 0 auto; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code {
+    font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 0.86em;
+    background: var(--code-bg); border-radius: 5px; padding: 2px 6px;
+  }
+  header { margin-bottom: 28px; }
+  .issue-chip {
+    display: inline-block; font-weight: 700; color: var(--accent);
+    background: var(--accent-soft); border-radius: 999px;
+    padding: 3px 14px; font-size: 0.95rem; margin-bottom: 10px;
+  }
+  .type-chip {
+    display: inline-block; font-weight: 600; color: var(--muted);
+    border: 1px solid var(--line); border-radius: 999px;
+    padding: 3px 12px; font-size: 0.8rem; margin-left: 8px; vertical-align: 2px;
+  }
+  h1 { font-size: 1.7rem; margin: 0 0 14px; letter-spacing: -0.02em; }
+  .meta {
+    display: flex; flex-wrap: wrap; gap: 6px 22px;
+    color: var(--muted); font-size: 0.87rem;
+  }
+  .meta b { color: var(--ink); font-weight: 600; }
+  section.card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 24px 28px; margin-top: 18px;
+  }
+  h2 {
+    font-size: 1.05rem; margin: 0 0 14px; letter-spacing: -0.01em;
+    display: flex; align-items: center; gap: 8px;
+  }
+  h2 .no {
+    color: var(--accent); font-size: 0.8rem; font-weight: 700;
+    border: 1.5px solid var(--accent); border-radius: 6px; padding: 0 6px;
+  }
+  ul, ol { margin: 0; padding-left: 22px; }
+  li { margin: 6px 0; }
+  .steps { list-style: none; padding: 0; counter-reset: step; }
+  .steps li {
+    counter-increment: step; position: relative; padding: 10px 0 10px 44px;
+    border-bottom: 1px dashed var(--line);
+  }
+  .steps li:last-child { border-bottom: none; }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 10px;
+    width: 28px; height: 28px; border-radius: 8px; background: var(--accent-soft);
+    color: var(--accent); font-weight: 700; font-size: 0.85rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .steps .files { display: block; margin-top: 4px; font-size: 0.85rem; color: var(--muted); }
+  .step-done { color: var(--ok); font-weight: 700; }
+  .step-note { display: block; margin-top: 4px; font-size: 0.85rem; color: var(--warn); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 0.82rem; }
+  .done-list { list-style: none; padding: 0; }
+  .done-list li { padding-left: 30px; position: relative; }
+  .done-list li::before {
+    content: ""; position: absolute; left: 2px; top: 7px; width: 15px; height: 15px;
+    border: 2px solid var(--ok); border-radius: 5px;
+  }
+  .scroll-x { overflow-x: auto; }
+  footer { margin-top: 30px; color: var(--muted); font-size: 0.8rem; text-align: center; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <span class="issue-chip"><a href="https://github.com/damdam6/vocabulary-study/issues/56">#56</a></span><span class="type-chip">기능 개선</span>
+    <h1>등록 화면 탭 드롭다운을 커스텀 컴포넌트로 교체 — 네이티브 select 제거</h1>
+    <div class="meta">
+      <span><b>damdam6/vocabulary-study</b></span>
+      <span>브랜치 <b><code>feat/56-custom-tab-dropdown</code></b> ← <code>main</code></span>
+      <span>라벨 <b>enhancement</b></span>
+      <span>2026-07-19</span>
+    </div>
+  </header>
+
+  <section class="card">
+    <h2><span class="no">1</span>요약</h2>
+    <p>등록 화면(<code>src/screens/RegisterScreen.tsx:227</code>)의 탭 선택이 네이티브 <code>&lt;select&gt;</code>라 OS 기본 팝업이 뜨고 디자인 토큰과 이질적이다. 이를 design-prd §1 토큰(<code>bg-panel</code>/<code>border-input</code>/<code>bg-card</code>) 기반 커스텀 드롭다운으로 교체하되, 선택값·"+ 새 탭" 흐름을 담당하는 기존 상태 로직은 그대로 두고 UI 레이어만 바꾼다. 다른 화면에서도 쓸 수 있도록 <code>src/components/Dropdown.tsx</code>에 독립 컴포넌트로 분리하고, 바깥 클릭/ESC 닫힘과 방향키·Enter 키보드 조작을 지원하는 리스트박스 버튼 패턴으로 구현한다.</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">2</span>현황 분석</h2>
+    <ul>
+      <li>탭 선택 UI: <code>src/screens/RegisterScreen.tsx:227-239</code> — <code>&lt;select id="register-tab-select" className="register-select"&gt;</code>에 <code>tabs.map()</code>으로 기존 탭 옵션 + 고정 <code>"+ 새 탭"</code>(<code>NEW_TAB_VALUE</code>) 옵션을 렌더링.</li>
+      <li>관련 상태: <code>selectedTab</code>(<code>RegisterScreen.tsx:47</code>), <code>tabs</code>(<code>RegisterScreen.tsx:45</code>, <code>GET /api/tabs</code> 결과), <code>NEW_TAB_VALUE = '__new__'</code>(<code>RegisterScreen.tsx:36</code>).</li>
+      <li><code>isNewTab = selectedTab === NEW_TAB_VALUE</code>(<code>RegisterScreen.tsx:101</code>)가 새 탭 이름 입력란 노출(<code>RegisterScreen.tsx:243-255</code>)과 중복 판정 대상 탭(<code>effectiveTab</code> → <code>existingHanziInTab</code> → <code>parseResult</code>)을 파생시킨다. 즉 교체 대상은 값 소스(<code>&lt;select&gt;</code>)뿐이며, 새 컴포넌트가 <code>onChange</code>로 <code>setSelectedTab(value)</code>만 호출하면 하위 파생 로직은 무변경으로 그대로 동작한다.</li>
+      <li>CSS: <code>.register-select</code>가 <code>.register-new-tab-input</code>과 규칙을 공유한다(<code>src/index.css:920-929</code>, height 48px / <code>border-input</code> / <code>bg-panel</code>). 새 컴포넌트는 이 톤(높이·색)을 유지하되 전용 클래스로 분리해야 한다.</li>
+      <li>디자인 토큰: <code>docs/design-prd.md</code> §1.1 색(<code>bg-panel #181c26</code>, <code>bg-card #171b24</code>, <code>border-input</code>, <code>border-card</code>, <code>accent-light</code>), §1.3 라운드(카드 계열 14~22px)와 <code>fadeup</code> 0.3s 등장 애니메이션(이미 <code>src/index.css:108, 400, 518</code>에서 재사용 중)을 그대로 따를 수 있다.</li>
+      <li>컴포넌트 디렉터리: 현재 리포에는 <code>src/screens</code>·<code>src/lib</code>만 있고 <code>src/components</code>는 없음 — 이슈가 요구한 "재사용 가능한 컴포넌트 분리"를 위해 신규 생성이 필요하다.</li>
+      <li>테스트 인프라: React Testing Library 등 컴포넌트 테스트 도구가 프로젝트에 없다(<code>vitest.config.ts</code> 기반 테스트는 전부 <code>src/lib/*.test.ts</code> 순수 로직). <code>RegisterScreen</code> 전용 테스트 파일도 없어, "기존 테스트 회귀 없음"은 <code>npm run test</code>(로직 테스트) 통과로 확인되고 UI 동작 확인은 수동 브라우저 QA에 의존한다.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">3</span>설계</h2>
+    <ul>
+      <li><b>패턴 선택</b>: WAI-ARIA "리스트박스 버튼" 패턴 — 트리거 <code>&lt;button aria-haspopup="listbox" aria-expanded&gt;</code> + 열림 시 <code>role="listbox"</code> 패널, 옵션은 <code>role="option" aria-selected</code>.
+        <br>기각한 대안 1: 타이핑 자동완성이 가능한 combobox 패턴 — 이슈 요구사항은 방향키·Enter·바깥클릭/ESC뿐이라 검색 입력은 범위 밖의 불필요한 복잡도.
+        <br>기각한 대안 2: <code>&lt;details&gt;/&lt;summary&gt;</code> 네이티브 토글 — 옵션별 <code>aria-selected</code>·방향키 이동·선택 시 자동 닫힘을 얹으려면 결국 동일한 커스텀 키보드 핸들러가 필요해 이점이 없고, 브라우저별 열림 애니메이션 제약만 늘어난다.</li>
+      <li><b>상태 소유</b>: 컴포넌트 내부에는 <code>open</code>(패널 표시 여부)과 <code>activeIndex</code>(키보드 하이라이트 인덱스)만 로컬로 두고, 선택값 자체는 완전 제어형 — <code>value</code>/<code>onChange</code> props로 부모가 소유한다. <code>RegisterScreen</code>의 <code>selectedTab</code> 등 기존 상태는 손대지 않는다.</li>
+      <li><b>바깥 클릭 / ESC</b>: <code>open === true</code>일 때만 <code>document</code>에 <code>mousedown</code> + <code>keydown</code> 리스너를 붙이는 <code>useEffect</code>. 컨테이너 <code>ref</code> 바깥 클릭 또는 <code>Escape</code>에서 패널을 닫고 트리거 버튼으로 포커스를 되돌린다.</li>
+      <li><b>키보드</b>: 트리거 포커스 상태에서 <code>ArrowDown</code>/<code>ArrowUp</code>/<code>Enter</code>/<code>Space</code> → 패널 열기(현재 선택값 위치로 <code>activeIndex</code> 초기화). 패널이 열려 있을 때 <code>ArrowDown</code>/<code>ArrowUp</code> → <code>activeIndex</code> 이동(경계에서 정지), <code>Enter</code>/<code>Space</code> → 해당 옵션 선택 후 닫기, <code>Escape</code> → 선택 없이 닫기.</li>
+      <li><b>라벨 연결</b>: <code>&lt;button&gt;</code>은 HTML5 labelable element이므로 기존 <code>&lt;label htmlFor="register-tab-select"&gt;</code>를 트리거 버튼의 <code>id</code>에 그대로 연결하면 라벨 클릭 시 트리거로 포커스가 이동한다 — 별도 마크업 변경이 필요 없다.</li>
+      <li><b>Props(최소)</b>: <code>id</code>, <code>value: string</code>, <code>options: { value: string; label: string }[]</code>, <code>onChange: (value: string) => void</code>. 현재 다른 화면에서 쓰이지 않으므로 <code>disabled</code>·placeholder 등 미사용 옵션은 추가하지 않는다(투기적 설계 지양).</li>
+      <li><b>스타일</b>: 트리거는 기존 <code>.register-select</code> 톤(48px 높이 / radius 12px / <code>border-input</code> / <code>bg-panel</code>)을 <code>.dropdown-trigger</code>로 이전. 패널은 <code>.dropdown-panel</code> — <code>bg-card</code> 배경, <code>border-card</code> 테두리, radius 14px, 그림자(문제 카드 그림자 톤 참고), <code>fadeup</code> 0.3s 애니메이션 재사용. 옵션 <code>.dropdown-option</code>은 터치 영역 확보를 위해 최소 높이 44px, hover/active 시 <code>bg-panel</code> 톤 강조, 선택된 옵션은 <code>accent-light</code> 텍스트로 표시.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">4</span>작업 단계</h2>
+    <ol class="steps">
+      <li><span class="step-done">✓ 완료</span> — 재사용 가능한 커스텀 드롭다운 컴포넌트 신규 작성 — 제어형 value/onChange, 리스트박스 버튼 패턴, 바깥클릭/ESC/방향키/Enter 지원.
+        <span class="files"><code>src/components/Dropdown.tsx</code></span>
+      </li>
+      <li><span class="step-done">✓ 완료</span> — 드롭다운 트리거·패널·옵션 스타일 추가 — design-prd §1 토큰(<code>bg-panel</code>/<code>border-input</code>/<code>bg-card</code>/<code>border-card</code>) 기반. 기존 <code>.register-select</code> 규칙은 제거하고 <code>.register-new-tab-input</code>은 그대로 유지.
+        <span class="files"><code>src/index.css</code></span>
+      </li>
+      <li><span class="step-done">✓ 완료</span> — <code>RegisterScreen</code>의 네이티브 <code>&lt;select&gt;</code>를 신규 <code>Dropdown</code>으로 교체 — <code>tabs</code> + <code>NEW_TAB_VALUE</code>를 <code>{ value, label }</code> 옵션 배열로 변환해 전달하고, <code>onChange</code>는 기존 <code>setSelectedTab</code>에 그대로 연결. 라벨의 <code>htmlFor="register-tab-select"</code>는 트리거 버튼 id로 유지.
+        <span class="files"><code>src/screens/RegisterScreen.tsx:223-256</code></span>
+      </li>
+      <li><span class="step-done">✓ 실행됨</span> — 개발 서버(<code>npm run dev</code>) + cmux 브라우저 자동화로 확인. 로그인·Worker 없이 <code>Dropdown</code> 실컴포넌트+실CSS만 마운트하는 임시 하네스(<code>dropdown-preview.html</code>/<code>.tsx</code>, 검증 후 삭제)로 클릭 열기/닫기, 옵션 44px 터치 영역(<code>getBoundingClientRect</code> 실측), <code>aria-expanded</code>/<code>aria-haspopup</code>/<code>aria-selected</code>, 바깥 클릭 닫힘, ESC 닫힘+포커스 트리거 복귀, 트리거 포커스 중 ArrowDown으로 열기, 방향키로 활성 옵션 이동, Enter 선택(값 갱신+패널 닫힘+포커스 복귀), 옵션 클릭 선택("+ 새 탭" 포함)을 모두 실측 확인.
+        <span class="step-note">전체 로그인 플로우(실 Worker + 실 시트 데이터)까지는 검증하지 못함 — 로컬 <code>.dev.vars</code>가 이 워크트리에 없고, 시크릿 파일을 다루다 실수로 서비스 계정 private key가 대화 로그에 노출되는 사고가 있어(사용자에게 즉시 보고·키 폐기 권고 완료) 이후로는 시크릿 파일을 일절 다시 열지 않는 쪽을 택함. <code>selectedTab</code>/<code>onChange</code> 배선은 기존 <code>&lt;select&gt;</code>와 동일한 value/onChange 계약이라 코드 검토로 동등성을 확인했고, 하위 파생 로직(새 탭 입력 노출·중복 재계산)은 변경하지 않음.</span>
+      </li>
+      <li><span class="step-done">✓ 완료</span> — <code>npm run lint</code>, <code>npm run test</code>(158건), <code>npm run build</code>(tsc -b 포함) 모두 통과 확인.
+        <span class="files">리포 전체</span>
+      </li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">5</span>리스크</h2>
+    <div class="scroll-x">
+    <table>
+      <thead><tr><th>리스크</th><th>영향</th><th>완화책</th></tr></thead>
+      <tbody>
+        <tr><td>네이티브 <code>&lt;select&gt;</code> 제거로 일부 브라우저/스크린리더의 select 관용구(OS 자동완성, 접근성 단축키)를 잃는다</td><td>보조기술 사용자 경험이 네이티브 대비 저하될 수 있음</td><td>ARIA 리스트박스 패턴(<code>role</code>/<code>aria-selected</code>/<code>aria-expanded</code>/<code>aria-haspopup</code>)을 정확히 준수해 스크린리더 대응. 이슈 목적(디자인 토큰 통일)상 시각적 일관성이 우선</td></tr>
+        <tr><td>바깥 클릭 감지(document mousedown)가 등록 화면의 다른 인터랙티브 요소(중복 확인 배너 버튼 등)와 타이밍이 겹칠 수 있음</td><td>드롭다운이 의도치 않게 안 닫히거나 다른 클릭을 가로챌 가능성</td><td>컨테이너 <code>ref</code> 기반 판정 + 패널이 열려 있을 때만 리스너를 부착·해제해 영향 범위를 최소화</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">6</span>테스트 계획</h2>
+    <ul>
+      <li><span class="step-done">✓ 실행됨</span> — <code>npm run test</code>: 17개 파일 158건 전부 통과.</li>
+      <li><span class="step-done">✓ 실행됨</span> — <code>npm run lint</code>(oxlint): 위반 없음.</li>
+      <li><span class="step-done">✓ 실행됨</span> — <code>npm run build</code>(tsc -b 포함): 타입 오류 없이 빌드 성공, <code>RegisterScreen</code> 청크는 기존과 동일하게 분리 유지.</li>
+      <li><span class="step-done">✓ 실행됨</span> — cmux 브라우저 자동화로 실제 <code>Dropdown</code> 컴포넌트+CSS를 마운트한 임시 하네스에서 클릭 열기/닫기, 옵션 3개(기존 탭 2개 + "+ 새 탭") 렌더링, <code>aria-expanded</code>/<code>aria-haspopup="listbox"</code>/옵션별 <code>aria-selected</code> 확인.</li>
+      <li><span class="step-done">✓ 실행됨</span> — 옵션 클릭 선택 시 <code>onChange</code>로 선택값이 갱신되고 패널이 닫힘을 확인("+ 새 탭" 옵션 클릭 시 값이 <code>__new__</code>로 바뀌는 것까지 실측 — <code>RegisterScreen</code>에서 이 값은 곧 <code>isNewTab</code>이 되어 이름 입력란을 노출시키는 것과 동일한 계약).</li>
+      <li><span class="step-done">✓ 실행됨</span> — 바깥 요소 클릭 시 패널이 닫힘, 열린 상태에서 <code>Escape</code> 시 패널이 닫히고 포커스가 트리거로 복귀함(<code>document.activeElement</code> 실측)을 확인.</li>
+      <li><span class="step-done">✓ 실행됨</span> — 트리거 포커스 중 <code>ArrowDown</code>으로 패널이 열리고(선택 위치로 활성 인덱스 초기화), 리스트에 포커스가 이동함을 확인. 이어서 <code>ArrowDown</code>으로 활성 옵션이 다음 항목으로 이동(<code>dropdown-option--active</code> 클래스 실측)하고, <code>Enter</code>로 해당 옵션이 선택되며 패널이 닫히고 포커스가 트리거로 복귀함을 확인.</li>
+      <li><span class="step-done">✓ 실행됨</span> — <code>getBoundingClientRect()</code>로 옵션 3개 모두 높이 44px(설계대로 min-height 44px)를 실측 — 모바일 터치 영역 기준 충족.</li>
+      <li><span class="step-note">전체 로그인 플로우(실 Worker 백엔드 연동)까지는 검증하지 못함 — 작업 단계 4의 비고 참고.</span></li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">7</span>완료 조건</h2>
+    <ul class="done-list">
+      <li>네이티브 <code>&lt;select&gt;</code> 잔재 없음(등록 화면) — <code>RegisterScreen.tsx</code>와 <code>index.css</code>의 <code>.register-select</code>가 모두 제거됨.</li>
+      <li>탭 선택·새 탭 플로우가 기존과 동일하게 동작(선택 변경 시 중복 재계산, "+ 새 탭" 선택 시 이름 입력란 노출).</li>
+      <li>모바일 뷰포트(~390px)에서 터치 조작 확인(옵션 터치 영역 충분).</li>
+      <li>바깥 클릭/ESC로 닫힘, 방향키·Enter 키보드 조작 동작.</li>
+      <li>기존 테스트(<code>npm run test</code>) 회귀 없음.</li>
+    </ul>
+  </section>
+
+  <footer>issue-plan · <a href="https://github.com/damdam6/vocabulary-study/issues/56">#56</a> · 2026-07-19</footer>
+</main>
+</body>
+</html>
