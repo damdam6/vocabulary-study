@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { normalizeTabName, parseRegisterWords, partitionByExisting } from "./register.ts";
+import { MAX_REGISTER_WORDS, normalizeTabName, parseRegisterWords, partitionByExisting } from "./register.ts";
 
 describe("parseRegisterWords", () => {
   it("정상 배열은 트림된 형태로 통과한다", () => {
@@ -33,6 +33,46 @@ describe("parseRegisterWords", () => {
       { hanzi: "经济", pinyin: "jīngjì", meaning: "경제학" },
     ];
     expect(parseRegisterWords(dup)).toBeNull();
+  });
+
+  it("정확히 100건이면 통과한다", () => {
+    const words = Array.from({ length: MAX_REGISTER_WORDS }, (_, i) => ({
+      hanzi: String.fromCodePoint(0x4e00 + i),
+      pinyin: "jīngjì",
+      meaning: "경제",
+    }));
+    const result = parseRegisterWords(words);
+    expect(result).not.toBeNull();
+    expect(result).toHaveLength(MAX_REGISTER_WORDS);
+  });
+
+  it("100건을 초과하면 null", () => {
+    const words = Array.from({ length: MAX_REGISTER_WORDS + 1 }, () => ({
+      hanzi: "经济",
+      pinyin: "jīngjì",
+      meaning: "경제",
+    }));
+    expect(parseRegisterWords(words)).toBeNull();
+  });
+
+  it("한자가 기본 블록(U+4E00–U+9FFF) 밖이면(CJK 확장 A 등) null", () => {
+    expect(parseRegisterWords([{ hanzi: "㐀", pinyin: "jīngjì", meaning: "경제" }])).toBeNull();
+  });
+
+  it("한자에 비한자 문자가 섞이면 null", () => {
+    expect(parseRegisterWords([{ hanzi: "abc经", pinyin: "jīngjì", meaning: "경제" }])).toBeNull();
+  });
+
+  it("병음이 숫자 성조 표기면 null", () => {
+    expect(parseRegisterWords([{ hanzi: "经济", pinyin: "jing1ji4", meaning: "경제" }])).toBeNull();
+  });
+
+  it("병음에 성조 부호가 전혀 없으면 null", () => {
+    expect(parseRegisterWords([{ hanzi: "经济", pinyin: "jingji", meaning: "경제" }])).toBeNull();
+  });
+
+  it("병음에 허용되지 않는 문자가 섞이면 null", () => {
+    expect(parseRegisterWords([{ hanzi: "经济", pinyin: "jīngjì!", meaning: "경제" }])).toBeNull();
   });
 });
 

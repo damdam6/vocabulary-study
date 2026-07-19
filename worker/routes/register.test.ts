@@ -150,6 +150,31 @@ describe("POST /api/words/register", () => {
     expect(res.status).toBe(400);
   });
 
+  it("한자가 유니코드 범위(U+4E00–U+9FFF) 밖이면 400", async () => {
+    stubSheetsFetch(baseState());
+    const res = await worker.fetch(
+      registerRequest({ tab: "HSK6급", words: [{ hanzi: "㐀", pinyin: "jīngjì", meaning: "경제" }] }),
+      env,
+    );
+    expect(res.status).toBe(400);
+  });
+
+  it("병음이 숫자 성조 표기면 400", async () => {
+    stubSheetsFetch(baseState());
+    const res = await worker.fetch(
+      registerRequest({ tab: "HSK6급", words: [{ hanzi: "严重", pinyin: "yan2zhong4", meaning: "심각하다" }] }),
+      env,
+    );
+    expect(res.status).toBe(400);
+  });
+
+  it("words가 100건을 초과하면 400", async () => {
+    stubSheetsFetch(baseState());
+    const words = Array.from({ length: 101 }, () => ({ hanzi: "经济", pinyin: "jīngjì", meaning: "경제" }));
+    const res = await worker.fetch(registerRequest({ tab: "HSK6급", words }), env);
+    expect(res.status).toBe(400);
+  });
+
   it("존재하지 않는 탭 + createTab 없으면 400", async () => {
     stubSheetsFetch(baseState());
     const res = await worker.fetch(
