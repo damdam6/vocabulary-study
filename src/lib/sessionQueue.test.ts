@@ -41,10 +41,9 @@ function questionsOf(queue: SessionQuestion<TestWord>[], hanzi: string): Session
   return queue.filter((q) => q.word.hanzi === hanzi);
 }
 
-function hasAdjacentSameWord(queue: SessionQuestion<TestWord>[]): boolean {
-  return queue.some(
-    (q, i) => i > 0 && q.word.tab === queue[i - 1].word.tab && q.word.hanzi === queue[i - 1].word.hanzi,
-  );
+/** 유일성 판정 키 — 탭이 다르면 같은 한자라도 다른 단어다. */
+function wordKeys(queue: SessionQuestion<TestWord>[]): string[] {
+  return queue.map((q) => `${q.word.tab}\t${q.word.hanzi}`);
 }
 
 describe("buildSessionQueue — 복습 대기 선별", () => {
@@ -88,9 +87,9 @@ describe("buildSessionQueue — 복습 대기 선별", () => {
 
 describe("buildSessionQueue — 학습 중 채우기", () => {
   it("총 정답 수(D+E)가 많은 단어부터 채우고, 동률이면 시트 순서를 따른다", () => {
-    // 29개 고득점 단어(후보 58개) + 동률(0점) 2개 — 남은 슬롯 2개를 시트 순서가
-    // 앞서는 "동앞"이 가져가고 "동뒤"는 전부 밀려난다
-    const high = Array.from({ length: 29 }, (_, i) => learningWord(`학${i}`, 2, i % 3));
+    // 59개 고득점 단어(단어당 1문제 → 후보 59개) + 동률(0점) 2개 — 남은 슬롯 1개를
+    // 시트 순서가 앞서는 쪽이 가져가고 다른 하나는 밀려난다
+    const high = Array.from({ length: 59 }, (_, i) => learningWord(`학${i}`, 2, i % 3));
     const tieFirst = learningWord("동앞", 0, 0);
     const tieSecond = learningWord("동뒤", 0, 0);
     const queue = buildSessionQueue([tieSecond, ...high, tieFirst], today, mulberry32(2));
@@ -101,22 +100,39 @@ describe("buildSessionQueue — 학습 중 채우기", () => {
     expect(hanziSet(queue).has("동앞")).toBe(false);
   });
 
-  it("모드별 카운트가 3 이상이면 그 모드 문제는 만들지 않는다 (단어당 최대 2문제)", () => {
+  it("한쪽 모드만 미달이면 그 모드로 단어당 1문제만 낸다", () => {
     const queue = buildSessionQueue(
-      [learningWord("갑", 3, 1), learningWord("을", 0, 4), learningWord("병", 1, 2)],
+      [learningWord("갑", 3, 1), learningWord("을", 0, 4)],
       today,
       mulberry32(3),
     );
 
     expect(questionsOf(queue, "갑").map((q) => q.mode)).toEqual(["m2"]);
     expect(questionsOf(queue, "을").map((q) => q.mode)).toEqual(["m1"]);
-    expect(questionsOf(queue, "병").map((q) => q.mode).toSorted()).toEqual(["m1", "m2"]);
     expect(queue.every((q) => !q.isReview)).toBe(true);
+  });
+
+  it("양쪽 모드가 모두 미달이어도 1문제만 내고 모드는 rng로 정해진다 (#44)", () => {
+    const words = [learningWord("병", 1, 2)];
+    expect(buildSessionQueue(words, today, () => 0)).toEqual([
+      { word: words[0], mode: "m1", isReview: false },
+    ]);
+    expect(buildSessionQueue(words, today, () => 0.7)).toEqual([
+      { word: words[0], mode: "m2", isReview: false },
+    ]);
+  });
+
+  it("신규 단어만 48개면 홈 산식과 같은 48문제가 나온다 (#44)", () => {
+    const words = Array.from({ length: 48 }, (_, i) => learningWord(`신${i}`, 0, 0));
+    const queue = buildSessionQueue(words, today, mulberry32(8));
+
+    expect(queue).toHaveLength(48);
+    expect(hanziSet(queue).size).toBe(48); // 단어당 1문제
   });
 });
 
 describe("buildSessionQueue — 상한·제외·경계", () => {
-  it("복습 30 + 학습 후보 80이면 전체 60문제 상한을 지킨다", () => {
+  it("복습 30 + 학습 40이면 전체 60문제 상한을 지킨다", () => {
     const reviews = Array.from({ length: 30 }, (_, i) => reviewWord(`복${i}`, "2026-07-01"));
     const learnings = Array.from({ length: 40 }, (_, i) => learningWord(`학${i}`, i % 3, 0));
     const queue = buildSessionQueue([...reviews, ...learnings], today, mulberry32(4));
@@ -142,25 +158,24 @@ describe("buildSessionQueue — 상한·제외·경계", () => {
   });
 });
 
-describe("buildSessionQueue — 셔플 분산", () => {
-  it("분산 가능한 구성에서는 같은 단어의 두 문제가 연달아 나오지 않는다 (시드 20종)", () => {
-    // 학습 12단어 × 2문제 + 복습 6단어 = 30문제 — 단어 종류가 충분해 분산 가능
+describe("buildSessionQueue — 단어 유일성 (#44)", () => {
+  it("복습·학습이 섞여도 같은 단어는 큐에 한 번만 들어간다 (시드 20종)", () => {
+    // 학습 12단어 + 복습 6단어 = 18문제 — 단어당 1문제라 어떤 셔플에서도 중복 없음
     const learnings = Array.from({ length: 12 }, (_, i) => learningWord(`학${i}`, 0, 0));
     const reviews = Array.from({ length: 6 }, (_, i) => reviewWord(`복${i}`, "2026-07-01"));
     for (let seed = 1; seed <= 20; seed++) {
       const queue = buildSessionQueue([...learnings, ...reviews], today, mulberry32(seed));
-      expect(queue).toHaveLength(30);
-      expect(hasAdjacentSameWord(queue)).toBe(false);
+      expect(queue).toHaveLength(18);
+      expect(new Set(wordKeys(queue)).size).toBe(queue.length);
     }
   });
 
-  it("탭이 다르면 같은 한자라도 다른 단어로 취급한다", () => {
+  it("탭이 다르면 같은 한자라도 다른 단어로 취급해 각각 1문제씩 낸다", () => {
     const a = { ...learningWord("经济", 0, 0), tab: "HSK4" };
     const b = { ...learningWord("经济", 0, 0), tab: "HSK6" };
     const queue = buildSessionQueue([a, b], today, mulberry32(7));
 
-    expect(queue).toHaveLength(4);
-    // a·b 각각 2문제 — tab이 분리 키로 동작해 인접 판정이 단어 단위로 이뤄지는지만 확인
-    expect(queue.filter((q) => q.word.tab === "HSK4")).toHaveLength(2);
+    expect(queue).toHaveLength(2);
+    expect(queue.filter((q) => q.word.tab === "HSK4")).toHaveLength(1);
   });
 });

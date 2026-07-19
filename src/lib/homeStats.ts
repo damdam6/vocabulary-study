@@ -13,7 +13,7 @@ export interface HomeStats {
   learning: number;
   /** design-prd §3: 졸업 수 = 복습 대기를 포함한 졸업 단어 총수 (reviewDue + reviewScheduled). */
   graduated: number;
-  /** design-prd §3 / 기능 PRD §6.1: min(60, min(복습대기,60) + 학습중 후보 문제 수). */
+  /** design-prd §3 / 기능 PRD §6.1: min(60, min(복습대기,60) + 학습중 단어 수). 학습 중은 단어당 1문제(#44). */
   sessionCount: number;
 }
 
@@ -21,14 +21,11 @@ export function computeHomeStats(words: WordProgress[], today: string): HomeStat
   let reviewDue = 0;
   let reviewScheduled = 0;
   let learning = 0;
-  let learningCandidates = 0;
 
   for (const word of words) {
     const state = getWordState(word, today);
     if (state === "learning") {
       learning += 1;
-      if (word.m1 < 3) learningCandidates += 1;
-      if (word.m2 < 3) learningCandidates += 1;
     } else if (state === "reviewDue") {
       reviewDue += 1;
     } else {
@@ -40,6 +37,6 @@ export function computeHomeStats(words: WordProgress[], today: string): HomeStat
     reviewDue,
     learning,
     graduated: reviewDue + reviewScheduled,
-    sessionCount: Math.min(SESSION_CAP, Math.min(reviewDue, SESSION_CAP) + learningCandidates),
+    sessionCount: Math.min(SESSION_CAP, Math.min(reviewDue, SESSION_CAP) + learning),
   };
 }
