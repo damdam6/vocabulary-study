@@ -322,7 +322,7 @@ button {
   color: var(--red);
 }
 
-/* 모드 카드 플레이스홀더 최소 스타일 — 실제 카드 UI(§4.2/§4.3)는 #16/#17에서 교체 */
+/* 모드 카드 공통 컨테이너 + 공유 텍스트 스타일. 모드2 실제 UI(§4.3)는 #17에서 교체 */
 .mode-area {
   flex: 1;
   display: flex;
@@ -391,26 +391,108 @@ button {
   color: var(--red);
 }
 
-.mode-footnote {
-  margin: 0;
-  font-size: 13px;
-  color: var(--text-hint-dim);
+/* §4.2 모드1 3D 플립 카드 (#16) — 수치는 목업(docs/design/prototype.dc.html) 기준 */
+.flip-stage {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  perspective: 1200px;
 }
 
-.mode-actions {
+.flip-card {
+  position: absolute;
+  inset: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  transform-style: preserve-3d;
+  transition: transform 0.55s cubic-bezier(0.3, 0.7, 0.2, 1);
+}
+
+.flip-card:disabled {
+  cursor: default;
+}
+
+.flip-card--revealed {
+  transform: rotateX(-180deg);
+}
+
+/* 뒷면은 미리 180deg 선회전 — backface-visibility로 플립 전에는 숨겨진다 */
+.flip-face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: 22px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.35);
+  color: var(--text);
+}
+
+.flip-face--back {
+  transform: rotateX(180deg);
+  gap: 12px;
+}
+
+.flip-hanzi {
+  font-weight: 500;
+  letter-spacing: 0.04em;
+}
+
+/* §1.2 글자 수 적응 크기 — 클래스 선택은 hanziFontSize(src/lib/hanziSize.ts) */
+.flip-hanzi--84 {
+  font-size: 84px;
+}
+
+.flip-hanzi--64 {
+  font-size: 64px;
+}
+
+.flip-hanzi--52 {
+  font-size: 52px;
+}
+
+.flip-hint {
+  position: absolute;
+  bottom: 22px;
+  font-size: 13px;
+  color: var(--text-faint);
+}
+
+/* 목업 판정 영역(min-height 132/padding-top 18)에서 mode-area gap 14px만큼 차감 */
+.judge-zone {
+  min-height: 118px;
+  padding-top: 4px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.judge-row {
   display: flex;
   gap: 20px;
-  justify-content: center;
+  animation: fadeup 0.3s ease;
+}
+
+.judge-group {
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  min-height: 54px;
+  gap: 8px;
 }
 
 .judge {
-  height: 54px;
-  padding: 0 22px;
-  border-radius: 14px;
-  font-size: 16px;
-  font-weight: 700;
+  width: 82px;
+  height: 82px;
+  border-radius: 50%;
+  font-size: 32px;
+  font-weight: 800;
 }
 
 .judge:active {
@@ -427,6 +509,17 @@ button {
   border: 2px solid var(--green);
   background: rgba(63, 206, 143, 0.1);
   color: var(--green);
+}
+
+.judge-label {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.mode-footnote {
+  margin: 0 0 34px;
+  font-size: 13px;
+  color: var(--text-hint-dim);
 }
 
 .mode-input {
