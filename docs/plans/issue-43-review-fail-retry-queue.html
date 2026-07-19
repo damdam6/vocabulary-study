@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>#43 복습 오답 기록(POST /api/review-fail) 전송 실패 시 간격 후퇴 유실 — 재시도 큐 미적용 — 작업 플랜</title>
+<style>
+  :root {
+    --bg: #f7f7f8; --card: #ffffff; --ink: #1c1c1e; --muted: #6e6e73;
+    --line: #e3e3e6; --accent: #3b6ef5; --accent-soft: #e8eefe;
+    --ok: #2e8b57; --warn: #b25e09; --code-bg: #f0f0f2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161618; --card: #202024; --ink: #ececf0; --muted: #98989f;
+      --line: #333338; --accent: #7a9bff; --accent-soft: #26304a;
+      --ok: #58c088; --warn: #e0a35c; --code-bg: #2a2a2f;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 40px 20px 80px; background: var(--bg); color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+                 "Segoe UI", "Noto Sans KR", sans-serif;
+    line-height: 1.65;
+  }
+  main { max-width: 860px; margin: 0 auto; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code {
+    font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 0.86em;
+    background: var(--code-bg); border-radius: 5px; padding: 2px 6px;
+  }
+  header { margin-bottom: 28px; }
+  .issue-chip {
+    display: inline-block; font-weight: 700; color: var(--accent);
+    background: var(--accent-soft); border-radius: 999px;
+    padding: 3px 14px; font-size: 0.95rem; margin-bottom: 10px;
+  }
+  .type-chip {
+    display: inline-block; font-weight: 600; color: var(--muted);
+    border: 1px solid var(--line); border-radius: 999px;
+    padding: 3px 12px; font-size: 0.8rem; margin-left: 8px; vertical-align: 2px;
+  }
+  h1 { font-size: 1.7rem; margin: 0 0 14px; letter-spacing: -0.02em; }
+  .meta {
+    display: flex; flex-wrap: wrap; gap: 6px 22px;
+    color: var(--muted); font-size: 0.87rem;
+  }
+  .meta b { color: var(--ink); font-weight: 600; }
+  section.card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 24px 28px; margin-top: 18px;
+  }
+  h2 {
+    font-size: 1.05rem; margin: 0 0 14px; letter-spacing: -0.01em;
+    display: flex; align-items: center; gap: 8px;
+  }
+  h2 .no {
+    color: var(--accent); font-size: 0.8rem; font-weight: 700;
+    border: 1.5px solid var(--accent); border-radius: 6px; padding: 0 6px;
+  }
+  ul, ol { margin: 0; padding-left: 22px; }
+  li { margin: 6px 0; }
+  .steps { list-style: none; padding: 0; counter-reset: step; }
+  .steps li {
+    counter-increment: step; position: relative; padding: 10px 0 10px 44px;
+    border-bottom: 1px dashed var(--line);
+  }
+  .steps li:last-child { border-bottom: none; }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 10px;
+    width: 28px; height: 28px; border-radius: 8px; background: var(--accent-soft);
+    color: var(--accent); font-weight: 700; font-size: 0.85rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .steps li.done::before { content: "✓"; background: var(--ok); color: #fff; }
+  .steps .files { display: block; margin-top: 4px; font-size: 0.85rem; color: var(--muted); }
+  .step-note { display: block; margin-top: 4px; font-size: 0.85rem; color: var(--ok); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 0.82rem; }
+  .done-list { list-style: none; padding: 0; }
+  .done-list li { padding-left: 30px; position: relative; }
+  .done-list li::before {
+    content: ""; position: absolute; left: 2px; top: 7px; width: 15px; height: 15px;
+    border: 2px solid var(--ok); border-radius: 5px;
+  }
+  .done-list li.done::before { background: var(--ok); }
+  .done-list li.done::after {
+    content: "✓"; position: absolute; left: 4px; top: 6px; width: 15px; height: 15px;
+    color: #fff; font-size: 11px; font-weight: 700; line-height: 15px; text-align: center;
+  }
+  .done-note { display: block; margin-top: 2px; font-size: 0.82rem; color: var(--warn); }
+  .scroll-x { overflow-x: auto; }
+  footer { margin-top: 30px; color: var(--muted); font-size: 0.8rem; text-align: center; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <span class="issue-chip"><a href="https://github.com/damdam6/vocabulary-study/issues/43">#43</a></span><span class="type-chip">기능 개선</span>
+    <h1>복습 오답 기록(POST /api/review-fail) 전송 실패 시 간격 후퇴 유실 — 재시도 큐 미적용</h1>
+    <div class="meta">
+      <span><b>damdam6/vocabulary-study</b></span>
+      <span>브랜치 <b><code>feat/43-review-fail-retry-queue</code></b> ← <code>main</code></span>
+      <span>라벨 <b>enhancement</b></span>
+      <span>2026-07-19</span>
+    </div>
+  </header>
+
+  <section class="card">
+    <h2><span class="no">1</span>요약</h2>
+    <p>재시도 큐(#18, PR #40)는 <code>POST /api/answer</code> 전용으로만 구현되어 있어, 복습 오답 시 호출하는 <code>POST /api/review-fail</code>이 실패하면 <code>StudyScreen.tsx:69</code>에서 그냥 무시되고 간격 후퇴가 유실된다. 큐 저장 포맷을 answer 전용 배열에서 종류가 태그된(tagged) 엔트리 배열로 확장해 review-fail 실패분도 같은 FIFO 큐에 담고, 앱 로드 시·다음 API 성공 시점에 종류별로 올바른 엔드포인트로 재전송한다.</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">2</span>현황 분석</h2>
+    <p><b>재시도 큐(#18)는 answer 전용 구조다.</b> <code>src/lib/retryQueue.ts:20</code>의 <code>readQueue()</code>는 저장된 JSON을 <code>AnswerRecord[]</code>로 취급하고, <code>flushRetryQueue()</code>(<code>retryQueue.ts:60-84</code>)는 큐 맨 앞 항목을 항상 <code>postAnswer</code>(<code>retryQueue.ts:69</code>)로만 재전송한다. 큐에 review-fail 실패분을 넣을 방법 자체가 없다.</p>
+    <p><b>review-fail 실패는 지금 완전히 삼켜진다.</b> <code>src/screens/StudyScreen.tsx:67-70</code>의 <code>fireEffect</code>에서 answer 분기는 실패 시 <code>enqueueAnswer(record)</code>(<code>retryQueue.ts:43</code>)로 큐에 적재하지만, review-fail 분기는 <code>postReviewFail(word.tab, word.hanzi).catch(() =&gt; {})</code>로 끝 — 실패가 그냥 사라진다.</p>
+    <p><b>두 엔드포인트는 요청 바디 형태가 다르다.</b> <code>src/lib/api.ts:112-122</code>의 <code>postAnswer(answer: AnswerRecord)</code>는 <code>{tab, hanzi, mode, timestamp, isReview}</code> 전체를 바디로 보내는 반면, <code>api.ts:125-135</code>의 <code>postReviewFail(tab, hanzi)</code>는 <code>{tab, hanzi}</code> 두 필드만 보낸다. 즉 큐 엔트리를 단일 타입으로 합칠 수 없고, 종류를 구분해 저장·재생해야 한다.</p>
+    <p><b>재전송 배선은 이미 종류 무관하게 재사용 가능하다.</b> <code>src/App.tsx:26-30</code>은 마운트 시 <code>flushRetryQueue()</code>를 1회 호출하고 <code>setApiSuccessHandler</code>로 이후 모든 API 성공 시점마다 재호출되도록 배선해 두었다(<code>src/lib/api.ts:37-39</code>) — 이 배선 자체는 큐 내용물의 종류를 몰라도 되므로 변경이 필요 없다. <code>src/screens/HomeScreen.tsx:53</code>의 <code>getRetryQueueLength()</code> 기반 인디케이터도 큐 길이만 세므로 종류 무관하게 그대로 동작한다.</p>
+    <p><b>순서 보존 요구.</b> 이슈는 "같은 단어의 answer/review-fail이 섞여 있어도 시트 상태가 일관되도록 큐에 담긴 순서대로 재전송"을 요구한다 — 현재 <code>flushRetryQueue</code>가 이미 단일 배열을 FIFO로(맨 앞부터, 성공 시에만 제거, 첫 실패에서 중단) 처리하므로, answer/review-fail을 같은 배열에 태그를 붙여 넣기만 하면 이 요구는 자동으로 만족된다.</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">3</span>설계</h2>
+    <p><b>채택안 — 큐 엔트리를 종류 태그가 붙은 유니온으로 확장.</b></p>
+    <pre><code>type RetryQueueEntry =
+  | { kind: "answer"; record: AnswerRecord }
+  | { kind: "review-fail"; record: ReviewFailRecord }  // { tab, hanzi }</code></pre>
+    <p><code>readQueue</code>/<code>saveQueue</code>는 <code>RetryQueueEntry[]</code> 기준으로 그대로 재사용하고, <code>flushRetryQueue</code>는 큐 맨 앞 엔트리의 <code>kind</code>에 따라 <code>postAnswer</code> 또는 <code>postReviewFail</code>을 호출하도록 한 줄만 분기한다. 기존 FIFO·재진입 가드·"첫 실패에서 중단"·"성공 시에만 제거" 정책은 엔트리 종류와 무관하게 그대로 유지된다.</p>
+    <p><b>기각한 대안 1 — review-fail 전용 별도 큐(별도 localStorage 키).</b> 큐가 둘로 나뉘면 같은 탭에서 answer와 review-fail을 별도 순서로 재전송하게 되어, 이슈가 명시한 "섞여 있어도 순서대로" 요구를 어긴다 — 예를 들어 같은 단어에 대해 review-fail(후퇴) 이후 answer(갱신)가 발생했는데 두 큐를 독립적으로 비우면 answer가 먼저 반영되어 최종 갱신 값을 review-fail이 덮어쓸 수 있다.</p>
+    <p><b>기각한 대안 2 — 저장 포맷을 <code>{type, payload}</code> 대신 판별 불가능한 유니온으로 두고 필드 존재 여부로 추론.</b> <code>mode</code>/<code>timestamp</code>/<code>isReview</code> 필드 유무로 종류를 추론하는 방식은 taggedunion보다 취약하고, review-fail 레코드가 우연히 <code>mode</code> 유사 필드를 갖게 되는 미래 변경에 깨지기 쉽다. 명시적 <code>kind</code> 태그가 더 안전하다.</p>
+    <p><b>레거시 큐 데이터 처리.</b> 배포된 앱이 이미 (#18/PR #40) 기준 <code>AnswerRecord[]</code> 평면 배열 포맷으로 큐를 저장 중일 수 있다. <code>readQueue</code>에서 파싱한 배열의 각 항목에 <code>kind</code> 필드가 없으면 레거시 answer 레코드로 간주해 <code>{ kind: "answer", record: item }</code>로 승격시켜 마이그레이션한다 — 배포 시점에 남아있던 미전송 항목이 파싱 실패로 통째로 버려지는 것(유실 방지라는 #18의 취지 위반)을 막기 위함.</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">4</span>작업 단계</h2>
+    <ol class="steps">
+      <li class="done">큐 엔트리를 <code>RetryQueueEntry</code> 태그드 유니온으로 확장한다. <code>readQueue</code>는 레거시(플랫 <code>AnswerRecord</code>) 항목을 <code>kind: "answer"</code>로 승격시켜 반환하고, <code>saveQueue</code>는 그대로 저장한다. <code>enqueueAnswer</code>는 <code>{kind:"answer", record}</code>로 래핑하도록 내부만 바꾸고 시그니처는 유지하며, <code>enqueueReviewFail(record: ReviewFailRecord)</code>를 신설한다. <code>flushRetryQueue</code>는 맨 앞 엔트리의 <code>kind</code>로 <code>postAnswer</code>/<code>postReviewFail</code>을 분기 호출하도록 수정한다.
+        <span class="files"><code>src/lib/retryQueue.ts</code></span>
+        <span class="step-note">완료 — 계획대로 구현.</span>
+      </li>
+      <li class="done"><code>ReviewFailRecord</code> 타입(<code>{ tab: string; hanzi: string }</code>)을 export하고, <code>postReviewFail</code>의 주석을 <code>postAnswer</code>와 같은 톤으로 갱신해 재시도 큐 연계(#43)를 명시한다. 함수 시그니처·동작은 변경하지 않는다.
+        <span class="files"><code>src/lib/api.ts</code></span>
+        <span class="step-note">완료 — 계획대로 구현.</span>
+      </li>
+      <li class="done"><code>fireEffect</code>의 review-fail 분기에서 <code>.catch(() =&gt; {})</code>를 <code>.catch(() =&gt; enqueueReviewFail({ tab: word.tab, hanzi: word.hanzi }))</code>로 교체한다. answer 분기와 대칭되는 형태로 맞춘다.
+        <span class="files"><code>src/screens/StudyScreen.tsx</code></span>
+        <span class="step-note">완료 — 계획대로 구현.</span>
+      </li>
+      <li class="done">기존 answer 전용 테스트를 새 엔트리 스키마에 맞게 갱신하고, review-fail enqueue·flush·레거시 마이그레이션·answer와 review-fail이 섞인 큐의 FIFO 순서 보존·review-fail 실패 시 큐 유지 케이스를 추가한다.
+        <span class="files"><code>src/lib/retryQueue.test.ts</code></span>
+        <span class="step-note">완료 — 계획대로 구현, 9개 테스트 추가/갱신.</span>
+      </li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">5</span>리스크</h2>
+    <div class="scroll-x">
+    <table>
+      <thead><tr><th>리스크</th><th>영향</th><th>완화책</th></tr></thead>
+      <tbody>
+        <tr><td>배포된 앱에 이미 쌓여있는 레거시(플랫 <code>AnswerRecord[]</code>) 큐 데이터</td><td>새 포맷 배포 후 <code>kind</code> 없는 기존 항목이 파싱되지 않아 재전송 자체가 실패하거나 항목이 통째로 버려질 수 있음</td><td>2단계에서 <code>readQueue</code>가 <code>kind</code> 없는 항목을 answer로 자동 승격 — 마이그레이션 테스트로 확인</td></tr>
+        <tr><td>review-fail도 <code>flushRetryQueue</code>의 "첫 실패에서 중단" 정책을 그대로 따름</td><td>큐 앞쪽에 review-fail 실패가 있으면 뒤의 answer도 이번 플러시에서 재전송되지 않음(기존 answer 전용 정책과 동일한 트레이드오프)</td><td>기존 PRD §10 트레이드오프를 그대로 계승 — 새 리스크 아님, 유실 방지 우선이 의도된 동작</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">6</span>테스트 계획</h2>
+    <ul>
+      <li><code>retryQueue.test.ts</code>에 <code>enqueueReviewFail</code> 단위 테스트 추가 — 빈 큐 적재, 기존 항목 뒤 append, 변경 이벤트 발화 확인.</li>
+      <li><code>flushRetryQueue</code>가 review-fail 엔트리를 <code>POST /api/review-fail</code>로, answer 엔트리를 <code>POST /api/answer</code>로 각각 올바른 바디({tab,hanzi} vs 전체 AnswerRecord)로 보내는지 확인.</li>
+      <li>answer/review-fail이 섞인 큐를 시딩해 FIFO 순서 그대로 재전송되는지(호출 순서가 큐 삽입 순서와 일치) 확인.</li>
+      <li>review-fail 재전송 실패 시 해당 항목과 잔여가 큐에 유지되는지(기존 answer 중간 실패 테스트와 대칭) 확인.</li>
+      <li><code>kind</code> 필드 없는 레거시 플랫 <code>AnswerRecord[]</code> JSON을 시딩했을 때 answer로 정상 파싱·재전송되는지 확인.</li>
+      <li>기존 answer 전용 회귀 테스트(빈 큐, append, 파손 JSON, 재진입 가드, 전송 중 신규 적재)가 모두 통과하는지 <code>npm test</code>로 확인.</li>
+      <li>수동: 네트워크 차단 상태에서 복습 오답 → 큐에 review-fail 항목 적재 확인(이슈 완료 조건 1) → 네트워크 복구 후 재로드 → 시트 F열 간격 후퇴 반영 확인(완료 조건 2) → 재전송 성공 항목이 큐에서 제거돼 중복 후퇴 없는지 확인(완료 조건 3).</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">7</span>완료 조건</h2>
+    <ul class="done-list">
+      <li>네트워크 차단 상태에서 복습 오답 → 재시도 큐에 review-fail 항목이 쌓인다.
+        <span class="done-note">단위 테스트(fetch reject 시뮬레이션)로 동등 검증 — 실제 브라우저·네트워크 차단 수동 시연은 이 세션에서 미실시(개발 서버·실기기 필요).</span>
+      </li>
+      <li>네트워크 복구 후 앱 재로드 시 재전송되어 F열 간격 후퇴가 시트에 반영된다.
+        <span class="done-note">단위 테스트로 재전송 로직(올바른 엔드포인트·바디) 검증 — 실제 구글 시트 F열 반영 수동 확인은 이 세션에서 미실시(실 시트 연동 필요).</span>
+      </li>
+      <li class="done">성공적으로 전송된 항목이 큐에서 제거되어 간격이 중복 후퇴하지 않는다.</li>
+      <li class="done">기존 answer 재시도 큐 동작에 회귀가 없다(기존 테스트 통과) — <code>npm test</code> 93개 전체 통과.</li>
+      <li class="done">레거시(비태그) 큐 데이터가 새 배포에서도 파싱되어 유실되지 않는다.</li>
+    </ul>
+  </section>
+
+  <footer>issue-plan · <a href="https://github.com/damdam6/vocabulary-study/issues/43">#43</a> · 2026-07-19</footer>
+</main>
+</body>
+</html>
