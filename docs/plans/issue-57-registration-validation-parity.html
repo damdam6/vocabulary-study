@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>#57 단어 등록 검증 계층 정합화 — 작업 플랜</title>
+<style>
+  :root {
+    --bg: #f7f7f8; --card: #ffffff; --ink: #1c1c1e; --muted: #6e6e73;
+    --line: #e3e3e6; --accent: #3b6ef5; --accent-soft: #e8eefe;
+    --ok: #2e8b57; --warn: #b25e09; --code-bg: #f0f0f2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161618; --card: #202024; --ink: #ececf0; --muted: #98989f;
+      --line: #333338; --accent: #7a9bff; --accent-soft: #26304a;
+      --ok: #58c088; --warn: #e0a35c; --code-bg: #2a2a2f;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 40px 20px 80px; background: var(--bg); color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+                 "Segoe UI", "Noto Sans KR", sans-serif;
+    line-height: 1.65;
+  }
+  main { max-width: 860px; margin: 0 auto; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code {
+    font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 0.86em;
+    background: var(--code-bg); border-radius: 5px; padding: 2px 6px;
+  }
+  header { margin-bottom: 28px; }
+  .issue-chip {
+    display: inline-block; font-weight: 700; color: var(--accent);
+    background: var(--accent-soft); border-radius: 999px;
+    padding: 3px 14px; font-size: 0.95rem; margin-bottom: 10px;
+  }
+  .type-chip {
+    display: inline-block; font-weight: 600; color: var(--muted);
+    border: 1px solid var(--line); border-radius: 999px;
+    padding: 3px 12px; font-size: 0.8rem; margin-left: 8px; vertical-align: 2px;
+  }
+  h1 { font-size: 1.7rem; margin: 0 0 14px; letter-spacing: -0.02em; }
+  .meta {
+    display: flex; flex-wrap: wrap; gap: 6px 22px;
+    color: var(--muted); font-size: 0.87rem;
+  }
+  .meta b { color: var(--ink); font-weight: 600; }
+  section.card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 24px 28px; margin-top: 18px;
+  }
+  h2 {
+    font-size: 1.05rem; margin: 0 0 14px; letter-spacing: -0.01em;
+    display: flex; align-items: center; gap: 8px;
+  }
+  h2 .no {
+    color: var(--accent); font-size: 0.8rem; font-weight: 700;
+    border: 1.5px solid var(--accent); border-radius: 6px; padding: 0 6px;
+  }
+  ul, ol { margin: 0; padding-left: 22px; }
+  li { margin: 6px 0; }
+  .steps { list-style: none; padding: 0; counter-reset: step; }
+  .steps li {
+    counter-increment: step; position: relative; padding: 10px 0 10px 44px;
+    border-bottom: 1px dashed var(--line);
+  }
+  .steps li:last-child { border-bottom: none; }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 10px;
+    width: 28px; height: 28px; border-radius: 8px; background: var(--accent-soft);
+    color: var(--accent); font-weight: 700; font-size: 0.85rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .steps .files { display: block; margin-top: 4px; font-size: 0.85rem; color: var(--muted); }
+  .steps li.done::before { content: "\2713"; background: var(--ok); color: #fff; }
+  .steps .outcome { color: var(--ok); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 0.82rem; }
+  .done-list { list-style: none; padding: 0; }
+  .done-list li { padding-left: 30px; position: relative; }
+  .done-list li::before {
+    content: ""; position: absolute; left: 2px; top: 7px; width: 15px; height: 15px;
+    border: 2px solid var(--ok); border-radius: 5px;
+  }
+  .scroll-x { overflow-x: auto; }
+  footer { margin-top: 30px; color: var(--muted); font-size: 0.8rem; text-align: center; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <span class="issue-chip"><a href="https://github.com/damdam6/vocabulary-study/issues/57">#57</a></span><span class="type-chip">기능 개선</span>
+    <h1>단어 등록 검증 계층 정합화 — Worker 100건 한도·범위·성조 재검증 + 한자 범위 통일</h1>
+    <div class="meta">
+      <span><b>damdam6/vocabulary-study</b></span>
+      <span>브랜치 <b><code>feat/57-registration-validation-parity</code></b> ← <code>main</code></span>
+      <span>라벨 <b>enhancement</b></span>
+      <span>2026-07-19</span>
+    </div>
+  </header>
+
+  <section class="card">
+    <h2><span class="no">1</span>요약</h2>
+    <p>등록 검증 계층 3곳에서 스펙(PRD §7.3, 플랜 §3·§6)과 코드 간 드리프트가 확인됐다. (1) Worker가 <code>words</code> 배열 100건 상한을 검사하지 않고, (2) 한자 유니코드 범위·병음 성조 부호 형식을 재검증하지 않아 클라이언트를 우회한 요청이 그대로 시트에 쓰이며, (3) <code>schema_check.py</code>의 한자 허용 범위가 클라이언트보다 넓어(CJK 확장 A 포함) 세 검증기 간 정의가 어긋나 있다. 이번 작업은 Worker 재검증을 스펙 수준으로 보강하고 한자 범위를 기본 블록(U+4E00–U+9FFF)으로 통일해, 플랜 §2가 명시한 신뢰 경계 원칙("2·3단계가 각각 재검증")을 코드에 맞춘다.</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">2</span>현황 분석</h2>
+    <p>등록 파이프라인은 3단계다: ① 추출(claude.ai, <code>docs/registration-kit/schema_check.py</code>로 자체 검증) → ② 등록 화면(<code>src/lib/registerValidation.ts</code> + <code>pinyinValidation.ts</code>) → ③ Worker(<code>worker/routes/register.ts</code> + <code>worker/lib/register.ts</code>). 플랜 §2는 "1단계 출력은 신뢰하지 않는다 — 2단계와 3단계가 각각 재검증"한다고 명시한다.</p>
+    <ul>
+      <li>Worker 재검증(<code>worker/lib/register.ts:13-38</code> <code>parseRegisterWords</code>)은 현재 배열 비어있지 않음(14행), 항목이 object인지, hanzi/pinyin/meaning 세 필드가 트림 후 빈 문자열이 아닌지, 배열 내 한자 중복(31-34행)만 검사한다. 배열 길이 상한, 한자 유니코드 범위, 병음 형식 검사는 전혀 없다.</li>
+      <li>등록 화면(<code>src/lib/registerValidation.ts:31</code>)의 <code>HANZI_RE = /^[一-鿿]+$/u</code>는 실측 확인 결과 정확히 U+4E00–U+9FFF(기본 블록)와 일치한다 — 클라이언트는 이미 스펙대로다. 병음 형식은 <code>pinyinValidation.ts</code>의 <code>isPinyinMatch</code>(pinyin-pro 기반 한자-병음 의미 일치)가 대신한다 — 후보가 항상 성조 부호를 포함하므로 무성조·숫자성조 입력은 후보와 매치되지 않아 부수효과로 걸러진다.</li>
+      <li>이 두 검증은 클라이언트에서만 돈다. <code>worker/routes/register.ts</code>는 Bearer 인증만 통과하면 <code>POST /api/words/register</code>를 직접 호출하는 어떤 요청도 받아들인다 — 등록 화면을 거치지 않고 curl 등으로 직접 호출하면 한자 범위·성조 형식 검사를 완전히 우회한다.</li>
+      <li><code>docs/registration-kit/schema_check.py:30</code>의 <code>HANZI_RANGES = ((0x4E00, 0x9FFF), (0x3400, 0x4DBF))</code>는 CJK 확장 A(0x3400–0x4DBF)까지 허용한다. 이 검증기는 파이프라인 1단계(추출 직후, 사용자가 등록 화면에 도달하기도 전)에서 돈다 — 그래서 확장 A 문자가 섞인 배치도 여기서는 PASS로 통과했다가 2단계(클라이언트)에서야 비로소 막힌다.</li>
+      <li><code>words</code> 배열 길이 상한은 코드 어디에도 없다(<code>worker/routes/register.ts</code> 전체에 <code>.length</code> 상한 검사 없음). PRD §7.3은 "words 배열 최대 100건, 초과 시 400"을 명시하지만(<code>docs/PRD.md:226</code>), 대량 배열도 전부 파싱돼 한 번의 <code>updateValues</code> 호출(<code>worker/routes/register.ts:68-73</code>)로 시트에 append된다.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">3</span>원인 분석</h2>
+    <ul>
+      <li><b>① 100건 한도 미구현</b> — <code>parseRegisterWords</code>의 배열 단위 검사가 <code>raw.length === 0</code> 하나뿐이라 상한이 없다. PRD §7.3의 "words 최대 100건, 초과 시 400"이 코드로 옮겨지지 않은 단순 누락. 수정: <code>MAX_REGISTER_WORDS = 100</code> 상수를 두고 같은 위치(배열 단위 가드)에 상한 검사를 추가한다.</li>
+      <li><b>② Worker 재검증 깊이 부족</b> — <code>parseRegisterWords</code>는 구조(타입·공백·중복)만 보고, 플랜 §3이 요구하는 두 스키마 규칙(한자 유니코드 범위, 병음 성조 부호 형식 — 숫자 표기 불가)은 전혀 재검증하지 않는다. 이 두 규칙은 지금 클라이언트(<code>registerValidation.ts</code>·<code>pinyinValidation.ts</code>)와 1단계(<code>schema_check.py</code>)에만 있다. 플랜 §2 신뢰 경계 원칙상 Worker가 최종 쓰기 지점이므로 이 결여는 실질적 방어선 구멍이다.
+        <br>설계 선택: <code>schema_check.py</code>의 병음 형식 검사(숫자 거부·허용 문자 집합·성조 부호 존재 요구)를 라이브러리 없이 TS로 이식한다 — 이슈 본문이 명시한 대로 "병음-한자 일치(pinyin-pro)는 클라이언트 전용 유지, Worker에 라이브러리 도입하지 않음"이 전제이므로, Worker가 검사하는 것은 병음 문자열의 "형식"이지 한자와의 "의미적 일치"가 아니다. 기각한 대안: Worker에 pinyin-pro를 그대로 도입 — 이슈 본문에서 명시적으로 배제.</li>
+      <li><b>③ 한자 범위 정의 드리프트</b> — <code>schema_check.py</code>(1단계)만 CJK 확장 A를 추가로 허용해 클라이언트(2단계)보다 느슨하다. 결정(이슈 본문에 이미 명시): 기본 블록(U+4E00–U+9FFF)으로 통일 — 간체자는 전부 기본 블록 안에 있고, 확장 A는 고문헌·인명용 희귀 한자라 단어장에 등장하지 않는다. 좁은 쪽이 더 엄격한 방어선이므로 넓은 쪽(1단계)을 좁혀 맞춘다. 동시에 Worker(3단계)에도 같은 기본 블록 검사를 추가해야 세 검증기가 실제로 동일해진다.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">4</span>작업 단계</h2>
+    <ol class="steps">
+      <li class="done"><code>MAX_REGISTER_WORDS = 100</code>을 export하고, <code>parseRegisterWords</code>의 기존 배열 단위 가드(<code>raw.length === 0</code> 옆)에 상한 초과 시 <code>null</code> 반환을 추가한다.
+        <span class="files"><code>worker/lib/register.ts</code></span>
+        <span class="files outcome">완료 — 계획대로 구현.</span>
+      </li>
+      <li class="done"><code>src/lib/registerValidation.ts</code>의 <code>HANZI_RE</code>와 동일한 정규식을 Worker 쪽에 두고, <code>parseRegisterWords</code>의 항목 루프에서 트림된 <code>hanzi</code>가 이를 통과하지 못하면 <code>null</code>을 반환하도록 추가한다.
+        <span class="files"><code>worker/lib/register.ts</code> (참조: <code>src/lib/registerValidation.ts</code>)</span>
+        <span class="files outcome">완료 — 계획대로 구현.</span>
+      </li>
+      <li class="done"><code>schema_check.py</code>의 병음 성조 부호 형식 검사(숫자 거부·허용 문자 집합·성조 부호 존재 요구)를 순수 함수 <code>hasValidToneFormat</code>로 이식해 같은 루프에서 호출한다. 새 의존성 추가 없음.
+        <span class="files"><code>worker/lib/register.ts</code> (참조: <code>docs/registration-kit/schema_check.py</code>)</span>
+        <span class="files outcome">완료 — 계획대로 구현. pinyin-pro 등 새 의존성 없음.</span>
+      </li>
+      <li class="done">스키마 위반 시 반환하는 400 오류 메시지를 새 제약(한자 범위·성조 형식·100건 상한 포함)까지 정확히 반영하도록 갱신한다 — 등록 화면 오류 배너가 부정확한 사유를 보여주지 않도록.
+        <span class="files"><code>worker/routes/register.ts</code></span>
+        <span class="files outcome">완료 — 계획대로 구현.</span>
+      </li>
+      <li class="done">100건 경계(정확히 100건 통과 / 101건 거부), 한자 범위 밖(확장 A 문자·비한자 혼입), 병음 형식(숫자 성조·무성조·허용 외 문자) 각각에 대한 단위 테스트를 기존 파일의 <code>describe</code> 스타일대로 추가한다.
+        <span class="files"><code>worker/lib/register.test.ts</code></span>
+        <span class="files outcome">완료 — 8개 케이스 추가, 통과.</span>
+      </li>
+      <li class="done"><code>POST /api/words/register</code> 엔드투엔드로 같은 세 시나리오(100건 초과, 한자 범위 밖, 숫자 성조)가 400을 반환하는지 통합 테스트를 추가한다.
+        <span class="files"><code>worker/routes/register.test.ts</code></span>
+        <span class="files outcome">완료 — 3개 케이스 추가, 통과.</span>
+      </li>
+      <li class="done"><code>HANZI_RANGES</code>에서 CJK 확장 A 튜플을 제거해 기본 블록만 남기고, 설명 주석을 갱신한다. 수정 후 확장 A 문자 샘플로 수동 실행해 FAIL 확인.
+        <span class="files"><code>docs/registration-kit/schema_check.py</code></span>
+        <span class="files outcome">완료 — U+3400(㐀) 샘플 FAIL, 기본 블록 샘플 PASS 수동 확인.</span>
+      </li>
+      <li class="done">§3 필드 규칙 문장에 한자 유니코드 범위 결정(기본 블록 U+4E00–U+9FFF, 확장 A 제외 — 이슈 #57)을 명시해, 세 검증기가 실제로 가리키는 원본 문장을 남긴다.
+        <span class="files"><code>docs/plans/word-registration-system.md</code></span>
+        <span class="files outcome">완료 — 계획대로 구현.</span>
+      </li>
+      <li class="done"><code>HANZI_RE</code> 위에 플랜 §3을 가리키는 참조 주석 한 줄을 추가한다(값 변경 없음) — 세 구현 모두 참조 주석을 남긴다는 이슈 요구를 대칭적으로 충족.
+        <span class="files"><code>src/lib/registerValidation.ts</code></span>
+        <span class="files outcome">완료 — 계획대로 구현.</span>
+      </li>
+      <li class="done"><code>npm test</code>·<code>npm run lint</code>를 리포 루트에서 실행하고, <code>python3 docs/registration-kit/schema_check.py</code>를 확장 A 포함 샘플/기본 블록 정상 샘플 각각에 수동으로 돌려 FAIL/PASS를 확인한다.
+        <span class="files">검증 전용 — 코드 변경 없음</span>
+        <span class="files outcome">완료 — vitest 168/168, oxlint 0 issue, tsc -b 0 error, schema_check.py 수동 확인 통과.</span>
+      </li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">5</span>리스크</h2>
+    <div class="scroll-x">
+    <table>
+      <thead><tr><th>리스크</th><th>영향</th><th>완화책</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>새 Worker 검증이 실제 정상 등록 입력을 오탐 차단</td>
+          <td>등록 화면에서 원인 불명 400 오류 노출</td>
+          <td>기존 <code>routes/register.test.ts</code> 픽스처(经济/jīngjì 등 실사용 사례)로 회귀 확인, 정규식·문자 집합은 이미 검증된 <code>schema_check.py</code>·클라이언트 로직을 그대로 이식</td>
+        </tr>
+        <tr>
+          <td>클라이언트(pinyin-pro 의미 일치)와 Worker(정규식 형식 검사)의 판정 기준 불일치로, 클라이언트는 통과시켰는데 Worker가 막는 케이스 발생</td>
+          <td>등록 화면에서 정상 통과된 행이 제출 시점에 실패</td>
+          <td>Worker는 "형식"만 재검증(성조 부호 존재·숫자 표기 여부)하고 "한자-병음 의미적 일치"는 검사하지 않도록 스코프를 의도적으로 좁힘 — 클라이언트가 이미 허용한 정상 형식 병음이면 Worker 형식 검사도 통과</td>
+        </tr>
+        <tr>
+          <td>100건 상한이 실사용 대량 붙여넣기 패턴을 방해</td>
+          <td>사용자가 나눠서 여러 번 제출해야 함</td>
+          <td>PRD §7.3에 이미 명시된 기존 스펙 — 새 제약이 아님. 등록 화면 UX(예: 분할 안내) 변경은 이슈 범위 밖</td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">6</span>테스트 계획</h2>
+    <ul>
+      <li><code>npm test</code>(vitest) 전체 통과 — <code>worker/lib/register.test.ts</code>·<code>worker/routes/register.test.ts</code> 신규·기존 케이스 모두 포함.</li>
+      <li>신규: <code>words</code> 정확히 100건 → 통과, 101건 → 400 (lib 단위 테스트 + route 통합 테스트).</li>
+      <li>신규: 한자에 CJK 확장 A 문자(예: U+3400) 포함 → 400.</li>
+      <li>신규: 병음이 숫자 성조 표기(예: <code>jing1ji4</code>) → 400.</li>
+      <li>신규: 병음에 성조 부호가 전혀 없음(예: <code>jingji</code>) → 400.</li>
+      <li>회귀: 기존 정상 등록 케이스(经济/jīngjì, 严重/yánzhòng, 教育/jiàoyù 등, <code>routes/register.test.ts</code> 기존 픽스처) 계속 정상 동작 — 탭 중복 스킵, createTab, 탭 이름 트림 케이스 포함.</li>
+      <li>수동: <code>python3 docs/registration-kit/schema_check.py</code>를 확장 A 문자 포함 샘플에 돌려 FAIL, 기본 블록 정상 샘플에 돌려 PASS 확인.</li>
+      <li><code>npm run lint</code>(oxlint) 통과.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">7</span>완료 조건</h2>
+    <ul class="done-list">
+      <li><code>words</code> 101건 이상 요청 시 400, 정확히 100건은 통과 (lib·route 테스트로 확인)</li>
+      <li>Worker가 한자 유니코드 범위(U+4E00–U+9FFF) 밖 문자·숫자 성조 표기 병음을 포함한 요청을 400으로 거부 (테스트로 확인)</li>
+      <li><code>schema_check.py</code>의 한자 범위가 U+4E00–U+9FFF로 좁혀지고, CJK 확장 A 문자 포함 입력이 FAIL로 거부됨을 수동 확인</li>
+      <li>세 검증기(<code>schema_check.py</code>·<code>registerValidation.ts</code>·<code>worker/lib/register.ts</code>)의 한자 범위·병음 성조 규칙이 동일 — 각 구현에 플랜 §3을 가리키는 참조 주석 유지</li>
+      <li>기존 등록 정상 케이스(<code>routes/register.test.ts</code> 기존 픽스처) 회귀 없이 통과</li>
+    </ul>
+  </section>
+
+  <footer>issue-plan · <a href="https://github.com/damdam6/vocabulary-study/issues/57">#57</a> · 2026-07-19</footer>
+</main>
+</body>
+</html>
