@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 vi.mock("../lib/google-auth.ts", () => ({ getAccessToken: async () => "test-token" }));
 
 import worker from "../index.ts";
+import { MAX_REGISTER_WORDS } from "../lib/register.ts";
 
 const PASSWORD = "test-password";
 type WorkerRequest = Parameters<typeof worker.fetch>[0];
@@ -147,6 +148,35 @@ describe("POST /api/words/register", () => {
       registerRequest({ tab: "HSK6급", words: [{ hanzi: "经济", pinyin: "jīngjì" }] }),
       env,
     );
+    expect(res.status).toBe(400);
+  });
+
+  it("한자가 유니코드 범위(U+4E00–U+9FFF) 밖이면 400", async () => {
+    stubSheetsFetch(baseState());
+    const res = await worker.fetch(
+      registerRequest({ tab: "HSK6급", words: [{ hanzi: "㐀", pinyin: "jīngjì", meaning: "경제" }] }),
+      env,
+    );
+    expect(res.status).toBe(400);
+  });
+
+  it("병음이 숫자 성조 표기면 400", async () => {
+    stubSheetsFetch(baseState());
+    const res = await worker.fetch(
+      registerRequest({ tab: "HSK6급", words: [{ hanzi: "严重", pinyin: "yan2zhong4", meaning: "심각하다" }] }),
+      env,
+    );
+    expect(res.status).toBe(400);
+  });
+
+  it("words가 100건을 초과하면 400", async () => {
+    stubSheetsFetch(baseState());
+    const words = Array.from({ length: MAX_REGISTER_WORDS + 1 }, () => ({
+      hanzi: "经济",
+      pinyin: "jīngjì",
+      meaning: "경제",
+    }));
+    const res = await worker.fetch(registerRequest({ tab: "HSK6급", words }), env);
     expect(res.status).toBe(400);
   });
 

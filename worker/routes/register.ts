@@ -7,7 +7,7 @@
 
 import { addSheet, getValues, updateValues } from "../lib/sheets.ts";
 import { getWordTabTitles } from "../lib/words.ts";
-import { normalizeTabName, parseRegisterWords, partitionByExisting } from "../lib/register.ts";
+import { MAX_REGISTER_WORDS, normalizeTabName, parseRegisterWords, partitionByExisting } from "../lib/register.ts";
 
 export async function handleWordsRegister(request: Request, env: Env): Promise<Response> {
   let body: unknown;
@@ -33,7 +33,12 @@ export async function handleWordsRegister(request: Request, env: Env): Promise<R
   const words = parseRegisterWords(rawWords);
   if (!words) {
     return Response.json(
-      { error: "words[]는 hanzi/pinyin/meaning(공백 아닌 문자열, 배열 내 한자 중복 금지)이 필요합니다" },
+      {
+        error:
+          "words[]는 hanzi/pinyin/meaning(공백 아닌 문자열, 배열 내 한자 중복 금지), " +
+          "한자는 유니코드 U+4E00–U+9FFF, 병음은 성조 부호 필수(숫자 표기 금지)여야 하며 " +
+          `최대 ${MAX_REGISTER_WORDS}건까지 등록할 수 있습니다`,
+      },
       { status: 400 },
     );
   }

@@ -28,6 +28,8 @@ export type RegisterValidationResult =
   | { ok: false; error: string }
   | { ok: true; rows: ValidatedRow[] };
 
+// 한자 유니코드 범위(플랜 §3, 기본 블록만 허용) — worker/lib/register.ts HANZI_RE와
+// 동일해야 드리프트가 없다(#57). CJK 확장 A(U+3400–)는 의도적으로 제외.
 const HANZI_RE = /^[一-鿿]+$/u;
 
 function stringField(obj: unknown, key: string): string {
