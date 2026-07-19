@@ -905,6 +905,21 @@ button {
   resize: vertical;
 }
 
+.register-confirm-button {
+  align-self: flex-start;
+  border: none;
+  border-radius: 12px;
+  padding: 10px 20px;
+  background: var(--accent);
+  color: var(--text);
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.register-confirm-button:disabled {
+  opacity: 0.5;
+}
+
 .register-hint {
   margin: 0;
   font-size: 12px;

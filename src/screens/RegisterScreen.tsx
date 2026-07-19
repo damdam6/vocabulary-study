@@ -1,11 +1,14 @@
-// 단어 등록 화면 (#49, 단어 등록 시스템 플랜 §5). 붙여넣기 → 실시간 기계 검토
-// (JSON/스키마/pinyin-pro/시트 중복) → 검증 테이블 → 탭 선택/생성 → (중복 있으면
-// 명시적 확인) → 제출(#48) → 결과 순으로 진행한다. React.lazy로 지연 로딩되므로
-// (App.tsx) pinyin-pro는 이 화면에 진입할 때만 받는다.
+// 단어 등록 화면 (#49, 단어 등록 시스템 플랜 §5). 붙여넣기 → "확인" 클릭 시
+// 기계 검토(JSON/스키마/pinyin-pro/시트 중복) → 검증 테이블 → 탭 선택/생성 →
+// (중복 있으면 명시적 확인) → 제출(#48) → 결과 순으로 진행한다. React.lazy로
+// 지연 로딩되므로(App.tsx) pinyin-pro는 이 화면에 진입할 때만 받는다.
 //
-// 검토는 버튼 없이 붙여넣는 즉시 반영된다 — 붙여넣기는 한 번의 onChange로
-// 텍스트 전체가 들어오는 원자적 이벤트라 "입력 중 깜빡이는 오류" 문제가 없다.
-// 탭 선택을 바꾸면 텍스트는 그대로 둔 채 분류(특히 중복)만 즉시 다시 계산된다.
+// 검토는 텍스트 입력만으로는 실행되지 않는다(#55) — 붙여넣기/타이핑 중에는
+// 결과가 없고, textarea 아래 "확인" 버튼을 눌러야 그 시점의 텍스트로 검증이
+// 실행된다. 확인 이후 텍스트를 다시 수정하면(`confirmedText`와 `text`가
+// 달라지면) 이전 결과는 무효화되고 재확인 전까지 제출할 수 없다. 탭 선택을
+// 바꾸는 것은 이 게이트 밖이라 텍스트는 그대로 둔 채 분류(특히 중복)만 즉시
+// 다시 계산된다.
 //
 // 제출 대상은 valid+duplicate 행 전체다 — blocked 행만 제외한다. 시트 내 중복의
 // 최종 스킵 판단은 Worker(#48) 책임(플랜 §2 신뢰 경계)이라, 여기서 표시한
@@ -47,6 +50,7 @@ function RegisterScreen({ onGoHome }: RegisterScreenProps) {
   const [selectedTab, setSelectedTab] = useState(NEW_TAB_VALUE)
   const [newTabName, setNewTabName] = useState('')
   const [text, setText] = useState('')
+  const [confirmedText, setConfirmedText] = useState<string | null>(null)
   const [acknowledgedDuplicateKey, setAcknowledgedDuplicateKey] = useState<string | null>(null)
 
   const [submitPhase, setSubmitPhase] = useState<SubmitPhase>('idle')
@@ -107,9 +111,14 @@ function RegisterScreen({ onGoHome }: RegisterScreenProps) {
     [allWords, effectiveTab],
   )
 
+  const isDirty = confirmedText !== null && text !== confirmedText
+
   const parseResult = useMemo(
-    () => (text.trim() === '' ? null : validateRegistrationInput(text, existingHanziInTab)),
-    [text, existingHanziInTab],
+    () =>
+      confirmedText === null || confirmedText.trim() === ''
+        ? null
+        : validateRegistrationInput(confirmedText, existingHanziInTab),
+    [confirmedText, existingHanziInTab],
   )
 
   const duplicateRows = parseResult?.ok ? parseResult.rows.filter((row) => row.status === 'duplicate') : []
@@ -126,10 +135,15 @@ function RegisterScreen({ onGoHome }: RegisterScreenProps) {
 
   const canSubmit =
     submitPhase === 'idle' &&
+    !isDirty &&
     parseResult?.ok === true &&
     submittableRows.length > 0 &&
     (!isNewTab || newTabError === null) &&
     duplicatesAcknowledged
+
+  const handleConfirm = () => {
+    setConfirmedText(text)
+  }
 
   const handleSubmit = () => {
     if (!canSubmit) return
@@ -218,6 +232,14 @@ function RegisterScreen({ onGoHome }: RegisterScreenProps) {
           autoCorrect="off"
           autoCapitalize="off"
         />
+        <button
+          type="button"
+          className="register-confirm-button"
+          disabled={text.trim() === ''}
+          onClick={handleConfirm}
+        >
+          확인
+        </button>
       </div>
 
       <div className="register-field">
@@ -255,9 +277,11 @@ function RegisterScreen({ onGoHome }: RegisterScreenProps) {
         )}
       </div>
 
-      {parseResult && !parseResult.ok && <p className="register-error">{parseResult.error}</p>}
+      {isDirty && <p className="register-hint">텍스트가 수정되었습니다 — 다시 확인해 주세요.</p>}
 
-      {parseResult?.ok && (
+      {!isDirty && parseResult && !parseResult.ok && <p className="register-error">{parseResult.error}</p>}
+
+      {!isDirty && parseResult?.ok && (
         <>
           <RegisterTable rows={parseResult.rows} />
           <p className="register-summary">
