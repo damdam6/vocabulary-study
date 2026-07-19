@@ -5,6 +5,7 @@ import {
   advance,
   applyWordUpdate,
   currentQuestion,
+  gradeMode2,
   isDone,
   recordAnswer,
   startSession,
@@ -39,6 +40,33 @@ function sessionAt(questions: SessionQuestion<WordEntry>[], pos = 0): StudySessi
   }
   return state;
 }
+
+describe("gradeMode2 — PRD §5.2 채점 규칙", () => {
+  it("정확 일치는 정답", () => {
+    expect(gradeMode2("经济", "经济")).toEqual({ correct: true, answer: "经济" });
+  });
+
+  it("앞뒤 공백은 트림 후 판정하고 트림된 내 답을 돌려준다", () => {
+    expect(gradeMode2("  经济 ", "经济")).toEqual({ correct: true, answer: "经济" });
+  });
+
+  it("빈 입력·공백만 입력은 오답", () => {
+    expect(gradeMode2("", "经济")).toEqual({ correct: false, answer: "" });
+    expect(gradeMode2("   ", "经济")).toEqual({ correct: false, answer: "" });
+  });
+
+  it("병음 입력은 오답", () => {
+    expect(gradeMode2("jīngjì", "经济").correct).toBe(false);
+  });
+
+  it("부분 일치는 오답", () => {
+    expect(gradeMode2("经", "经济").correct).toBe(false);
+  });
+
+  it("이체자(번체) 입력은 오답 — A열 표기와 자소까지 같아야 한다", () => {
+    expect(gradeMode2("經濟", "经济").correct).toBe(false);
+  });
+});
 
 describe("startSession / currentQuestion / isDone", () => {
   it("모든 문제를 requeued=false로 감싸고 집계를 0에서 시작한다", () => {

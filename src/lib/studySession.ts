@@ -28,6 +28,16 @@ export type RecordEffect =
   | { kind: "review-fail"; question: StudyQuestion }
   | { kind: "none" };
 
+/**
+ * PRD §5.2 모드 2 채점: 트림한 입력이 A열 한자와 정확 일치해야만 정답 — 병음
+ * 입력·부분 일치·이체자는 모두 오답, 빈 입력도 오답. 트림된 입력을 함께 돌려주는
+ * 것은 오답 결과 화면의 "내 답" 표시(§4.3)가 같은 값을 쓰기 때문.
+ */
+export function gradeMode2(input: string, hanzi: string): { correct: boolean; answer: string } {
+  const answer = input.trim();
+  return { correct: answer !== "" && answer === hanzi, answer };
+}
+
 export function startSession(questions: readonly SessionQuestion<WordEntry>[]): StudySessionState {
   return {
     queue: questions.map((question) => ({ ...question, requeued: false })),

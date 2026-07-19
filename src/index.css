@@ -322,7 +322,8 @@ button {
   color: var(--red);
 }
 
-/* 모드 카드 플레이스홀더 최소 스타일 — 실제 카드 UI(§4.2/§4.3)는 #16/#17에서 교체 */
+/* 모드 카드 공통 + 모드2 §4.3 확정(#17). 모드1 카드 연출(§4.2: 3D 플립·원형 O/X)은
+   #16에서 교체 — 그때까지 공용 기본값(한자 44px·병음 20px·뜻 23px)은 모드1 뒷면 몫. */
 .mode-area {
   flex: 1;
   display: flex;
@@ -330,6 +331,15 @@ button {
   gap: 14px;
   margin-top: 16px;
   min-height: 0;
+}
+
+/* §4.3 모드2 간격 — 목업 기준 카드-입력란 18px(gap 12 + 카드 margin 6), 폼 내부 12px */
+.mode-area--m2 {
+  gap: 12px;
+}
+
+.mode-area--m2 .mode-card {
+  margin-bottom: 6px;
 }
 
 .mode-card {
@@ -371,15 +381,43 @@ button {
   text-wrap: pretty;
 }
 
+/* §4.3 모드2 출제 화면 뜻 카드 27px */
+.mode-card-meaning--question {
+  font-size: 27px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
 .mode-card-hint {
   font-size: 13px;
   color: var(--text-faint);
+}
+
+/* §4.3 모드2 오답 결과 화면 — 카드 fadeup 등장, 정답 한자 50px·병음 19px·뜻 21px.
+   결과 카드 스코프로만 오버라이드해 공용 기본값(#16 몫)을 건드리지 않는다. */
+.mode-card--result {
+  gap: 11px;
+  animation: fadeup 0.3s ease;
+}
+
+.mode-card--result .mode-card-hanzi {
+  font-size: 50px;
+  margin-top: 4px;
+}
+
+.mode-card--result .mode-card-pinyin {
+  font-size: 19px;
+}
+
+.mode-card--result .mode-card-meaning {
+  font-size: 21px;
 }
 
 .mode-result-title {
   font-size: 19px;
   font-weight: 700;
   color: var(--red);
+  animation: shake 0.4s ease;
 }
 
 .mode-my-answer {
