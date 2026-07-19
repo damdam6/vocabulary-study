@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>#44 학습 중 단어 세션 출제를 단어당 1문제로 변경 — 작업 플랜</title>
+<style>
+  :root {
+    --bg: #f7f7f8; --card: #ffffff; --ink: #1c1c1e; --muted: #6e6e73;
+    --line: #e3e3e6; --accent: #3b6ef5; --accent-soft: #e8eefe;
+    --ok: #2e8b57; --warn: #b25e09; --code-bg: #f0f0f2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161618; --card: #202024; --ink: #ececf0; --muted: #98989f;
+      --line: #333338; --accent: #7a9bff; --accent-soft: #26304a;
+      --ok: #58c088; --warn: #e0a35c; --code-bg: #2a2a2f;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 40px 20px 80px; background: var(--bg); color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+                 "Segoe UI", "Noto Sans KR", sans-serif;
+    line-height: 1.65;
+  }
+  main { max-width: 860px; margin: 0 auto; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code {
+    font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 0.86em;
+    background: var(--code-bg); border-radius: 5px; padding: 2px 6px;
+  }
+  header { margin-bottom: 28px; }
+  .issue-chip {
+    display: inline-block; font-weight: 700; color: var(--accent);
+    background: var(--accent-soft); border-radius: 999px;
+    padding: 3px 14px; font-size: 0.95rem; margin-bottom: 10px;
+  }
+  .type-chip {
+    display: inline-block; font-weight: 600; color: var(--muted);
+    border: 1px solid var(--line); border-radius: 999px;
+    padding: 3px 12px; font-size: 0.8rem; margin-left: 8px; vertical-align: 2px;
+  }
+  h1 { font-size: 1.7rem; margin: 0 0 14px; letter-spacing: -0.02em; }
+  .meta {
+    display: flex; flex-wrap: wrap; gap: 6px 22px;
+    color: var(--muted); font-size: 0.87rem;
+  }
+  .meta b { color: var(--ink); font-weight: 600; }
+  section.card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 24px 28px; margin-top: 18px;
+  }
+  h2 {
+    font-size: 1.05rem; margin: 0 0 14px; letter-spacing: -0.01em;
+    display: flex; align-items: center; gap: 8px;
+  }
+  h2 .no {
+    color: var(--accent); font-size: 0.8rem; font-weight: 700;
+    border: 1.5px solid var(--accent); border-radius: 6px; padding: 0 6px;
+  }
+  ul, ol { margin: 0; padding-left: 22px; }
+  li { margin: 6px 0; }
+  .steps { list-style: none; padding: 0; counter-reset: step; }
+  .steps li {
+    counter-increment: step; position: relative; padding: 10px 0 10px 44px;
+    border-bottom: 1px dashed var(--line);
+  }
+  .steps li:last-child { border-bottom: none; }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 10px;
+    width: 28px; height: 28px; border-radius: 8px; background: var(--accent-soft);
+    color: var(--accent); font-weight: 700; font-size: 0.85rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .steps .files { display: block; margin-top: 4px; font-size: 0.85rem; color: var(--muted); }
+  .steps li.done::before { content: "✓"; background: var(--ok); color: #fff; }
+  .steps li.done { color: var(--muted); }
+  .steps li.done code { color: var(--ink); }
+  .note { display: block; margin-top: 4px; font-size: 0.85rem; color: var(--ok); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 0.82rem; }
+  .done-list { list-style: none; padding: 0; }
+  .done-list li { padding-left: 30px; position: relative; }
+  .done-list li::before {
+    content: ""; position: absolute; left: 2px; top: 7px; width: 15px; height: 15px;
+    border: 2px solid var(--ok); border-radius: 5px;
+  }
+  .scroll-x { overflow-x: auto; }
+  footer { margin-top: 30px; color: var(--muted); font-size: 0.8rem; text-align: center; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <span class="issue-chip"><a href="https://github.com/damdam6/vocabulary-study/issues/44">#44</a></span><span class="type-chip">기능 개선</span>
+    <h1>학습 중 단어 세션 출제를 단어당 1문제로 변경 — 모드1·모드2 중복 출제 제거</h1>
+    <div class="meta">
+      <span><b>damdam6/vocabulary-study</b></span>
+      <span>브랜치 <b><code>feat/44-one-question-per-word</code></b> ← <code>main</code></span>
+      <span>라벨 <b>enhancement</b></span>
+      <span>2026-07-19</span>
+    </div>
+  </header>
+
+  <section class="card">
+    <h2><span class="no">1</span>요약</h2>
+    <p>현재 세션 큐는 학습 중 단어마다 모드1(D&lt;3)·모드2(E&lt;3) 문제를 각각 후보로 넣어 단어당 최대 2문제가 같은 세션에 출제된다. 소유자 결정(2026-07-19)에 따라 <b>한 세션에서 한 단어는 한 모드로만 출제</b>되도록 바꾼다: 둘 다 미달이면 모드를 무작위로 하나 선택(복습 문제와 동일한 방식), 한쪽만 미달이면 그 모드로 출제. 홈 화면의 "오늘 세션 · n문제" 산식도 단어당 1문제 기준으로 맞추고, PRD·디자인 PRD의 해당 절을 갱신한다. 부수 효과로 초기 큐에 같은 단어가 두 번 들어갈 수 없게 되므로, 인접 중복 분산 로직은 죽은 코드가 되어 제거한다.</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">2</span>현황 분석</h2>
+    <p>세션 큐 구성과 홈 집계는 모두 클라이언트 순수 모듈이다 (PRD §7.3). 변경 표면은 lib 2개 + 테스트 2개 + 문서 2개로 닫힌다.</p>
+    <ul>
+      <li><b>큐 구성</b> — <code>src/lib/sessionQueue.ts:56-64</code>: 학습 중 단어를 총 정답 수 내림차순으로 돌며 <code>m1&lt;3</code>이면 m1 문제, <code>m2&lt;3</code>이면 m2 문제를 <b>각각</b> 후보에 추가한다. 신규 단어(0/0)는 후보 2개 → 48단어 시트에서 후보 96개, 상한 60에 걸려 세션이 60문제가 된다.</li>
+      <li><b>홈 산식</b> — <code>src/lib/homeStats.ts:30-31</code>: 같은 규칙으로 <code>learningCandidates</code>를 단어당 1~2개 센다. <code>sessionCount = min(60, min(복습대기,60) + learningCandidates)</code> (<code>homeStats.ts:43</code>).</li>
+      <li><b>상태 판정</b> — <code>src/lib/wordState.ts:36-38</code>: <code>m1&lt;3 || m2&lt;3</code>이면 무조건 <code>learning</code>. 즉 학습 중 단어는 항상 최소 한 모드가 미달이므로, 단어당 1문제 규칙에서는 <b>학습 중 후보 수 = 학습 중 단어 수</b>가 된다.</li>
+      <li><b>모드 무작위 선례</b> — 복습 문제는 이미 <code>randomMode(rng)</code>(<code>sessionQueue.ts:93-95</code>, <code>rng()&lt;0.5 → m1</code>)로 모드를 정한다. 학습 중 양쪽 미달도 같은 함수를 재사용하면 된다.</li>
+      <li><b>인접 분산</b> — <code>sessionQueue.ts:105-143</code>(<code>wordKey</code>·<code>disperseAdjacentDuplicates</code>·<code>trySwap</code>·<code>pairOk</code>)과 <code>QueueWord</code>의 <code>tab+hanzi</code> 요구(<code>sessionQueue.ts:24</code>)는 "단어당 2문제"가 만들던 인접 중복을 풀기 위한 장치다. 상태는 상호 배타(<code>getWordState</code>가 단일 상태 반환)라 복습·학습 양쪽에 같은 단어가 들어갈 수 없고, 단어당 1문제가 되면 초기 큐에 중복 자체가 불가능해져 전부 죽은 코드가 된다.</li>
+      <li><b>오답 재삽입은 무관</b> — <code>src/lib/studySession.ts:82-87</code>: 학습 중 오답 시 같은 문제를 큐 뒤에 1회 재삽입하는 것은 세션 진행 중 로직으로, 이번 변경(초기 큐 구성)과 독립적이다. 이슈도 유지를 명시했다.</li>
+      <li><b>소비처</b> — <code>src/screens/HomeScreen.tsx:74</code>(<code>buildSessionQueue</code>)·<code>:37</code>(<code>computeHomeStats</code>)뿐. 시그니처가 유지되므로 화면 코드는 변경 없다.</li>
+      <li><b>문서</b> — <code>docs/PRD.md:136-141</code>(§6.1 큐 구성), <code>docs/PRD.md:259-274</code>(§12 결정 이력 표), <code>docs/design-prd.md:75</code>(§3 세션 수 산식)이 옛 규칙을 명시하고 있다.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">3</span>설계</h2>
+    <ul>
+      <li><b>모드 선택 규칙 (이슈 기본안 채택)</b>: 학습 중 단어당 문제 1개 —
+        <ul>
+          <li><code>m1&lt;3 &amp;&amp; m2≥3</code> → <code>m1</code> / <code>m1≥3 &amp;&amp; m2&lt;3</code> → <code>m2</code> (기존과 동일)</li>
+          <li>둘 다 미달 → <code>randomMode(rng)</code>로 무작위 선택 — 복습 문제 모드 선택과 같은 함수·같은 확률(50:50). 이슈 코멘트에 다른 규칙 확정이 없으므로 기본안 그대로 간다.</li>
+        </ul>
+      </li>
+      <li><b>홈 산식 단순화</b>: 학습 중 단어는 정의상 후보가 정확히 1개이므로 <code>learningCandidates</code> 카운터를 없애고 <code>sessionCount = min(60, min(reviewDue,60) + learning)</code>으로 쓴다. 큐 산식과의 동치가 코드에서 자명해진다.</li>
+      <li><b>죽은 분산 로직 제거</b>: 초기 큐에 같은 단어 중복이 불가능해지므로 <code>disperseAdjacentDuplicates</code> 일가를 제거하고 <code>QueueWord</code>의 <code>tab+hanzi</code> 요구도 걷어낸다. <i>방어적으로 남겨두는 안은 기각</i> — 도달 불가 코드는 "중복이 있을 수 있다"는 거짓 신호를 주고, 유일성은 테스트로 고정하는 편이 명확하다. (제네릭 제약은 <code>WordProgress</code>로 좁아지며 호출부는 <code>WordEntry</code>라 그대로 호환.)</li>
+      <li><b>rng 호출 순서</b>: 복습 모드 → 학습 중 모드(양쪽 미달 단어만) → 셔플 순서로 소비된다. 시드 고정 테스트는 이 순서 전제로 다시 짠다.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">4</span>작업 단계</h2>
+    <ol class="steps">
+      <li class="done">큐 구성 변경: 학습 중 후보 루프를 단어당 1문제로 — 한쪽 미달은 그 모드, 양쪽 미달은 <code>randomMode(rng)</code>. 상단 doc 코멘트(§6.1 서술)와 "후보 1~2개" 코멘트를 새 규칙으로 갱신.
+        <span class="files"><code>src/lib/sessionQueue.ts:26-29, 55-64</code></span>
+      </li>
+      <li class="done">죽은 코드 제거: <code>wordKey</code>·<code>disperseAdjacentDuplicates</code>·<code>trySwap</code>·<code>pairOk</code> 삭제, <code>buildSessionQueue</code>의 분산 호출 제거, <code>QueueWord</code> 타입(tab+hanzi 요구) 제거 후 제네릭을 <code>WordProgress</code> 제약으로 단순화.
+        <span class="files"><code>src/lib/sessionQueue.ts:23-24, 71, 105-143</code></span>
+      </li>
+      <li class="done">큐 테스트 재작성: ① "단어당 최대 2문제" 테스트를 모드 선택 규칙 테스트로 교체 — 한쪽 미달(갑 3,1→m2 / 을 0,4→m1) + 양쪽 미달을 상수 rng(<code>()=&gt;0</code>→m1, <code>()=&gt;0.7</code>→m2)로 고정. ② 동률 정렬 테스트를 후보 수 절반에 맞게 재구성(예: 고득점 59 + 동률 2 → 61후보에서 컷). ③ 분산 테스트 2건을 "큐에 같은 단어(tab+hanzi)가 두 번 없다" 유일성 테스트(시드 다수)로 교체. ④ 신규 시나리오: 신규 단어 48개(0/0) → 큐 길이 48. ⑤ 상한 테스트(복습30+학습40)는 코멘트만 갱신(후보 80→40, 단언은 유효).
+        <span class="files"><code>src/lib/sessionQueue.test.ts</code></span>
+      </li>
+      <li class="done">홈 산식 변경: <code>learningCandidates</code> 카운터 제거, <code>sessionCount = min(60, min(reviewDue,60) + learning)</code>. <code>HomeStats.sessionCount</code> doc 코멘트의 산식 표기 갱신.
+        <span class="files"><code>src/lib/homeStats.ts:16, 24, 30-31, 43</code></span>
+      </li>
+      <li class="done">홈 산식 테스트 갱신: 혼합 케이스 기대값 6→5, 신규 단어 48개 → <code>sessionCount 48</code> 케이스 추가 (큐 테스트 ④와 같은 시나리오로 산식·큐 일치를 양쪽에서 고정).
+        <span class="files"><code>src/lib/homeStats.test.ts</code></span>
+      </li>
+      <li class="done">문서 갱신: PRD §6.1 2항을 "단어당 1문제 — D&lt;3만: 모드1 / E&lt;3만: 모드2 / 둘 다: 무작위"로, 3항에서 "같은 단어 인접 분산" 문구 제거(초기 큐 중복 불가). §12 결정 이력 표에 소유자 결정(2026-07-19, 단어당 1문제·양쪽 미달 시 무작위, #44) 행 추가. design-prd §3 산식을 <code>min(60, min(복습대기,60) + 학습중 단어 수)</code>로 갱신.
+        <span class="files"><code>docs/PRD.md:136-141, 263-274</code>, <code>docs/design-prd.md:75</code></span>
+      </li>
+      <li class="done">검증 후 커밋·PR: <code>npm test</code>(vitest)·<code>tsc</code> 통과 확인 → 레포 스타일 커밋(기능/테스트/문서) → push → <code>Closes #44</code> PR.
+        <span class="files"><code>package.json</code> scripts 기준</span>
+        <span class="note">✓ vitest 89개·tsc -b·oxlint 전부 통과. 계획 대비 이탈 없음 — 이 플랜 커밋 직후 push·PR 오픈.</span>
+      </li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">5</span>리스크</h2>
+    <div class="scroll-x">
+    <table>
+      <thead><tr><th>리스크</th><th>영향</th><th>완화책</th></tr></thead>
+      <tbody>
+        <tr><td>세션당 노출량 감소 — 신규 단어의 모드별 졸업(각 3회)까지 필요한 세션 수 증가</td><td>학습 속도 체감 변화</td><td>이슈에 명시된 소유자 결정 사항 — 의도된 트레이드오프. PRD §12에 결정 근거를 기록해 추적 가능하게 함</td></tr>
+        <tr><td>rng 소비 순서 변경으로 시드 고정 테스트가 옛 큐 배열을 전제로 깨질 수 있음</td><td>테스트 오탐/누락</td><td>기대값을 배열 하드코딩 대신 성질(길이·유일성·모드 규칙) 단언으로 재작성</td></tr>
+        <tr><td>분산 로직 제거가 §6.2 오답 재삽입과 얽힌다는 오해</td><td>리뷰 혼선</td><td>재삽입은 <code>studySession.ts</code> 소관으로 초기 큐와 무관 — 커밋 메시지·PR 본문에 명시</td></tr>
+        <tr><td><code>QueueWord</code> 제약 완화가 다른 소비처를 깨뜨릴 가능성</td><td>타입 에러</td><td>소비처는 <code>HomeScreen.tsx:74</code> 단일, 전달 타입 <code>WordEntry</code>는 상위 호환 — <code>tsc</code>로 확인</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">6</span>테스트 계획</h2>
+    <ul>
+      <li><code>npm test</code> — vitest 전체 (sessionQueue·homeStats 재작성분 + 기존 studySession·wordState 등 회귀).</li>
+      <li>핵심 신규 단언: 신규 단어 48개(0/0) 시트 → <code>buildSessionQueue</code> 길이 48 <b>및</b> <code>computeHomeStats().sessionCount === 48</code> (이슈 완료 조건 1).</li>
+      <li>유일성: 다양한 시드·구성(복습+학습 혼합 포함)에서 큐에 같은 <code>tab+hanzi</code>가 2번 들어가지 않음 (완료 조건 2).</li>
+      <li>모드 선택 규칙: 한쪽 미달 → 해당 모드 고정, 양쪽 미달 → 상수 rng로 m1/m2 양 갈래 고정 (완료 조건 3).</li>
+      <li>기존 회귀: 복습 60개 컷·nextReview null 최우선·복습 예약 제외·60문제 상한·빈 입력 — 시드/기대값만 조정, 성질은 동일.</li>
+      <li>타입 검증: <code>tsc --noEmit</code> (프로젝트 빌드 스크립트 기준) — <code>QueueWord</code> 제거 후 소비처 호환 확인.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">7</span>완료 조건</h2>
+    <ul class="done-list">
+      <li>신규 단어만 있는 시트(48단어)에서 홈 세션 수·실제 큐 길이가 48로 일치 — 양쪽 테스트로 고정</li>
+      <li>같은 세션 큐에 동일 단어가 두 번 들어가지 않음 (오답 재삽입 제외) — 유일성 테스트로 고정</li>
+      <li>양쪽 미달 단어의 모드 선택 규칙(무작위 50:50, 복습과 동일 방식)이 테스트로 고정됨</li>
+      <li>PRD §6.1·§12, design-prd §3이 새 규칙으로 갱신됨</li>
+      <li>vitest 전체·타입체크 통과, <code>Closes #44</code> PR 오픈</li>
+    </ul>
+  </section>
+
+  <footer>issue-plan · <a href="https://github.com/damdam6/vocabulary-study/issues/44">#44</a> · 2026-07-19</footer>
+</main>
+</body>
+</html>
