@@ -24,6 +24,7 @@
 // 정확도에 영향이 없다.
 import { useEffect, useMemo, useState } from 'react'
 import RegisterTable from './RegisterTable.tsx'
+import Dropdown from '../components/Dropdown.tsx'
 import type { WordEntry } from '../lib/api.ts'
 import { fetchWords } from '../lib/wordsApi.ts'
 import { fetchTabs, registerWords, type RegisterResult } from '../lib/registerApi.ts'
@@ -105,6 +106,11 @@ function RegisterScreen({ onGoHome }: RegisterScreenProps) {
   const isNewTab = selectedTab === NEW_TAB_VALUE
   const effectiveTab = isNewTab ? newTabName.trim() : selectedTab
   const newTabError = isNewTab ? validateNewTabName(newTabName) : null
+
+  const tabOptions = useMemo(
+    () => [...tabs.map((tab) => ({ value: tab, label: tab })), { value: NEW_TAB_VALUE, label: '+ 새 탭' }],
+    [tabs],
+  )
 
   const existingHanziInTab = useMemo(
     () => new Set(allWords.filter((word) => word.tab === effectiveTab).map((word) => word.hanzi)),
@@ -246,19 +252,7 @@ function RegisterScreen({ onGoHome }: RegisterScreenProps) {
         <label className="register-field-label" htmlFor="register-tab-select">
           등록할 탭
         </label>
-        <select
-          id="register-tab-select"
-          className="register-select"
-          value={selectedTab}
-          onChange={(event) => setSelectedTab(event.target.value)}
-        >
-          {tabs.map((tab) => (
-            <option key={tab} value={tab}>
-              {tab}
-            </option>
-          ))}
-          <option value={NEW_TAB_VALUE}>+ 새 탭</option>
-        </select>
+        <Dropdown id="register-tab-select" value={selectedTab} options={tabOptions} onChange={setSelectedTab} />
         {tabsStatus === 'error' && (
           <p className="register-hint">탭 목록을 불러오지 못했습니다 — 새 탭 이름을 직접 입력하세요.</p>
         )}

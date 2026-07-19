@@ -932,7 +932,6 @@ button {
   color: var(--red);
 }
 
-.register-select,
 .register-new-tab-input {
   height: 48px;
   border-radius: 12px;
@@ -941,6 +940,90 @@ button {
   color: var(--text);
   font-size: 15px;
   padding: 0 14px;
+}
+
+/* 커스텀 드롭다운 (#56) — 리스트박스 버튼 패턴, design-prd §1 토큰 기반 */
+.dropdown {
+  position: relative;
+}
+
+.dropdown-trigger {
+  width: 100%;
+  height: 48px;
+  border-radius: 12px;
+  border: 1px solid var(--border-input);
+  background: var(--bg-panel);
+  color: var(--text);
+  font-size: 15px;
+  font-family: inherit;
+  padding: 0 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  text-align: left;
+}
+.dropdown-trigger:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+}
+
+.dropdown-trigger-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dropdown-chevron {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid var(--text-muted);
+  border-bottom: 2px solid var(--text-muted);
+  transform: rotate(45deg);
+  transition: transform 0.15s ease;
+}
+.dropdown-chevron--open {
+  transform: rotate(-135deg);
+}
+
+.dropdown-panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 20;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  max-height: 264px;
+  overflow-y: auto;
+  border-radius: 14px;
+  border: 1px solid var(--border-card);
+  background: var(--bg-card);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
+  animation: fadeup 0.15s ease;
+  outline: none;
+}
+
+.dropdown-option {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  border-radius: 10px;
+  color: var(--text);
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.dropdown-option--active {
+  background: var(--bg-panel);
+}
+
+.dropdown-option--selected {
+  color: var(--accent-light);
+  font-weight: 600;
 }
 
 .register-table-wrap {
