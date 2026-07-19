@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { MAX_REGISTER_WORDS, normalizeTabName, parseRegisterWords, partitionByExisting } from "./register.ts";
+import { HANZI_RE, MAX_REGISTER_WORDS, normalizeTabName, parseRegisterWords, partitionByExisting } from "./register.ts";
+// worker/lib과 src/lib은 별도 tsconfig 프로젝트(tsconfig.worker.json/tsconfig.app.json)라 TS import로
+// 직접 비교할 수 없다 — vite/client가 제공하는 ?raw로 소스를 문자열째 읽어 리터럴 일치를 확인한다.
+import clientRegisterValidationSource from "../../src/lib/registerValidation.ts?raw";
 
 describe("parseRegisterWords", () => {
   it("정상 배열은 트림된 형태로 통과한다", () => {
@@ -73,6 +76,12 @@ describe("parseRegisterWords", () => {
 
   it("병음에 허용되지 않는 문자가 섞이면 null", () => {
     expect(parseRegisterWords([{ hanzi: "经济", pinyin: "jīngjì!", meaning: "경제" }])).toBeNull();
+  });
+});
+
+describe("HANZI_RE", () => {
+  it("src/lib/registerValidation.ts의 HANZI_RE와 동일한 정규식 리터럴을 쓴다(#57 드리프트 예방)", () => {
+    expect(clientRegisterValidationSource).toContain(`const HANZI_RE = ${HANZI_RE.toString()};`);
   });
 });
 

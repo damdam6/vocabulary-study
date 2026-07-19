@@ -16,7 +16,7 @@ export const MAX_REGISTER_WORDS = 100;
  * 한자 유니코드 범위(플랜 §3, 기본 블록만 허용) — src/lib/registerValidation.ts의 HANZI_RE와
  * 동일해야 드리프트가 없다(#57). CJK 확장 A(U+3400–)는 의도적으로 제외.
  */
-const HANZI_RE = /^[一-鿿]+$/u;
+export const HANZI_RE = /^[一-鿿]+$/u;
 
 /**
  * 병음 성조 부호 형식(플랜 §3 "성조 부호 필수, 숫자 표기 불가") — docs/registration-kit/schema_check.py의
@@ -26,7 +26,7 @@ const HANZI_RE = /^[一-鿿]+$/u;
 const TONED_VOWELS = "āáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜ";
 // 표준 병음은 'v'를 쓰지 않는다 — ü의 키보드 대체 문자일 뿐이라 스키마가 ü 표기를 요구한다.
 const ALLOWED_PINYIN_CHARS = new Set(`abcdefghijklmnopqrstuwxyzü'’ ${TONED_VOWELS}`);
-const TONE_MARK_RE = new RegExp(`[${TONED_VOWELS}]`);
+const TONE_MARK_RE = new RegExp(`[${TONED_VOWELS}]`, "u");
 
 function hasValidToneFormat(pinyin: string): boolean {
   const lower = pinyin.toLowerCase();
