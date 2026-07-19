@@ -24,10 +24,14 @@ import json
 import re
 import sys
 
-# CJK Unified Ideographs + Extension A. Wider extensions are intentionally
-# excluded: HSK/textbook vocabulary never needs them, and a hit outside these
-# ranges almost always means an OCR artifact or a traditional-only variant.
-HANZI_RANGES = ((0x4E00, 0x9FFF), (0x3400, 0x4DBF))
+# CJK Unified Ideographs, basic block only — matches src/lib/registerValidation.ts
+# HANZI_RE and worker/lib/register.ts HANZI_RE (schema source: word-registration-system.md
+# §3, no-drift fix #57). Extension A (U+3400-U+4DBF) is deliberately excluded even
+# though it used to be allowed here: simplified characters are entirely within the
+# basic block, and Extension A covers rare historical/name characters that never
+# appear in HSK/textbook vocabulary — a hit there almost always means an OCR
+# artifact or a traditional-only variant, not a real word.
+HANZI_RANGES = ((0x4E00, 0x9FFF),)
 
 TONED_VOWELS = "āáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜ"
 # Standard pinyin never uses the letter 'v' — it is a keyboard stand-in for
