@@ -6,7 +6,9 @@
  */
 export function hanziFontSize(hanzi: string): 84 | 64 | 52 {
   // String.length는 서로게이트 쌍(확장 한자)을 2로 세므로 코드포인트 기준으로 센다.
-  const count = Array.from(hanzi).length;
+  // 문자열 이터레이터로 직접 세어 Array.from의 중간 배열 할당을 피한다.
+  let count = 0;
+  for (const _ of hanzi) count += 1;
   if (count <= 2) return 84;
   if (count === 3) return 64;
   return 52;
