@@ -1,0 +1,81 @@
+name: Smoke Test
+
+# 빌드·배포는 Cloudflare Workers Builds(대시보드 Git 연결)가 담당한다.
+# Workers Builds에는 배포 후 검증 훅이 없으므로, #23(배포 직후 인증 우회) 회귀
+# 안전망인 미인증 401 검사를 시크릿 0개 워크플로우로 분리해 여기 남긴다.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  # 연속 머지 시 이전 스모크를 취소해 최신 커밋만 검증
+  group: smoke-production
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      # 프로덕션 workers.dev URL — 공개 값이라 시크릿이 아니다. 워커 이름/서브도메인이
+      # 바뀌면 이 값만 고치거나 리포 변수(vars.PRODUCTION_URL)로 대체하면 된다.
+      URL: https://vocabulary-study.dambi626626.workers.dev
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 새 배포 반영 대기 후 정적 자산·인증 검증
+        run: |
+          set -eu
+
+          # 미인증 /api/words 401 응답에도 X-Worker-Version이 실려 온다(worker/index.ts).
+          # 시크릿 없이 '지금 서빙 중인 배포 버전'을 읽을 수 있는 근거.
+          ver() {
+            curl -sS -D - -o /dev/null --max-time 10 "$URL/api/words" 2>/dev/null \
+              | tr -d '\r' | awk -F': ' 'tolower($1)=="x-worker-version"{print $2}'
+          }
+
+          # 베이스라인: 프로덕션은 항상 버전 헤더를 반환하므로 몇 번 재시도해 확보한다.
+          BASELINE=""
+          for _ in 1 2 3 4 5; do
+            BASELINE=$(ver || true)
+            [ -n "$BASELINE" ] && break
+            sleep 3
+          done
+          [ -n "$BASELINE" ] || { echo "::error::프로덕션 버전 헤더를 읽지 못했습니다"; exit 1; }
+          echo "baseline version: $BASELINE"
+
+          # Cloudflare Workers Builds는 이 push로 '독립' 트리거돼 빌드·배포 중이며 완료
+          # 순서 보장이 없다. 구버전도 이미 200/401을 반환하므로, 새 배포가 반영되기
+          # 전에 단언하면 구버전 상대로 오탐(false green)한다. 버전이 바뀔 때까지 기다린다.
+          # (버전이 끝내 안 바뀌면 = CF 빌드 실패/지연 → 타임아웃으로 red)
+          echo "== 새 배포(버전 변경) 대기 (최대 8분) =="
+          NEW=""
+          for i in $(seq 1 48); do   # 48 × 10s = 8분
+            sleep 10
+            CUR=$(ver || true)
+            if [ -n "$CUR" ] && [ "$CUR" != "$BASELINE" ]; then
+              NEW=$CUR
+              echo "새 배포 감지: $NEW (${i}회차)"
+              break
+            fi
+            echo "  대기 중… 현재=${CUR:-<none>} (${i}/48)"
+          done
+          [ -n "$NEW" ] || { echo "::error::8분 내 새 배포가 감지되지 않았습니다 — CF 빌드 실패/지연 의심"; exit 1; }
+
+          # 새 배포 반영 후: 정적 자산(200)과 미인증 /api/* 가드(401)를 단언.
+          echo "== 정적 자산 200 =="
+          curl -sf --retry 3 --retry-delay 5 -o /dev/null "$URL"
+
+          echo "== 미인증 /api/words 401 =="
+          code=$(curl -s --retry 3 --retry-delay 5 -o /dev/null -w '%{http_code}' "$URL/api/words")
+          [ "$code" = "401" ] || { echo "::error::/api/words 기대 401, 실제 $code"; exit 1; }
+
+      # 전파 윈도우 동안 wrong/none 토큰이 401을 '유지'하는지 반복 감시한다(#23의 실제
+      # 회귀 시나리오, 응답별 버전 로깅 포함). SMOKE_PASSWORD 미설정 → 401 경로만
+      # 검사하므로 시크릿이 필요 없다.
+      - name: 인증 우회 전파 윈도우 감시
+        run: bash scripts/deploy-auth-smoke.sh "$URL" 60
