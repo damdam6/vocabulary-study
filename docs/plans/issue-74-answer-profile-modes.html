@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>#74 POST /api/answer 프로필 대응 — 비활성 모드 400 + 졸업 판정 활성 모드 집합(M) 파라미터화 — 작업 플랜</title>
+<style>
+  :root {
+    --bg: #f7f7f8; --card: #ffffff; --ink: #1c1c1e; --muted: #6e6e73;
+    --line: #e3e3e6; --accent: #3b6ef5; --accent-soft: #e8eefe;
+    --ok: #2e8b57; --warn: #b25e09; --code-bg: #f0f0f2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161618; --card: #202024; --ink: #ececf0; --muted: #98989f;
+      --line: #333338; --accent: #7a9bff; --accent-soft: #26304a;
+      --ok: #58c088; --warn: #e0a35c; --code-bg: #2a2a2f;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 40px 20px 80px; background: var(--bg); color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+                 "Segoe UI", "Noto Sans KR", sans-serif;
+    line-height: 1.65;
+  }
+  main { max-width: 860px; margin: 0 auto; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code {
+    font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 0.86em;
+    background: var(--code-bg); border-radius: 5px; padding: 2px 6px;
+  }
+  header { margin-bottom: 28px; }
+  .issue-chip {
+    display: inline-block; font-weight: 700; color: var(--accent);
+    background: var(--accent-soft); border-radius: 999px;
+    padding: 3px 14px; font-size: 0.95rem; margin-bottom: 10px;
+  }
+  .type-chip {
+    display: inline-block; font-weight: 600; color: var(--muted);
+    border: 1px solid var(--line); border-radius: 999px;
+    padding: 3px 12px; font-size: 0.8rem; margin-left: 8px; vertical-align: 2px;
+  }
+  h1 { font-size: 1.7rem; margin: 0 0 14px; letter-spacing: -0.02em; }
+  .meta {
+    display: flex; flex-wrap: wrap; gap: 6px 22px;
+    color: var(--muted); font-size: 0.87rem;
+  }
+  .meta b { color: var(--ink); font-weight: 600; }
+  section.card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 24px 28px; margin-top: 18px;
+  }
+  h2 {
+    font-size: 1.05rem; margin: 0 0 14px; letter-spacing: -0.01em;
+    display: flex; align-items: center; gap: 8px;
+  }
+  h2 .no {
+    color: var(--accent); font-size: 0.8rem; font-weight: 700;
+    border: 1.5px solid var(--accent); border-radius: 6px; padding: 0 6px;
+  }
+  ul, ol { margin: 0; padding-left: 22px; }
+  li { margin: 6px 0; }
+  .steps { list-style: none; padding: 0; counter-reset: step; }
+  .steps li {
+    counter-increment: step; position: relative; padding: 10px 0 10px 44px;
+    border-bottom: 1px dashed var(--line);
+  }
+  .steps li:last-child { border-bottom: none; }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 10px;
+    width: 28px; height: 28px; border-radius: 8px; background: var(--accent-soft);
+    color: var(--accent); font-weight: 700; font-size: 0.85rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .steps li.done { opacity: 0.65; }
+  .steps li.done::before { content: "✓"; background: var(--ok); color: #fff; }
+  .steps .files { display: block; margin-top: 4px; font-size: 0.85rem; color: var(--muted); }
+  .steps .note { display: block; margin-top: 6px; font-size: 0.85rem; color: var(--warn); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 0.82rem; }
+  .done-list { list-style: none; padding: 0; }
+  .done-list li { padding-left: 30px; position: relative; }
+  .done-list li::before {
+    content: ""; position: absolute; left: 2px; top: 7px; width: 15px; height: 15px;
+    border: 2px solid var(--ok); border-radius: 5px;
+  }
+  .scroll-x { overflow-x: auto; }
+  footer { margin-top: 30px; color: var(--muted); font-size: 0.8rem; text-align: center; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <span class="issue-chip"><a href="https://github.com/damdam6/vocabulary-study/issues/74">#74</a></span><span class="type-chip">기능 개선</span>
+    <h1>POST /api/answer 프로필 대응 — 비활성 모드 400 + 졸업 판정 활성 모드 집합(M) 파라미터화</h1>
+    <div class="meta">
+      <span><b>damdam6/vocabulary-study</b></span>
+      <span>브랜치 <b><code>feat/74-answer-profile-modes</code></b> ← <code>main</code></span>
+      <span>라벨 <b>enhancement</b></span>
+      <span>2026-07-27</span>
+    </div>
+  </header>
+
+  <section class="card">
+    <h2><span class="no">1</span>요약</h2>
+    <p>
+      <code>computeAnswerUpdate</code>의 졸업 판정이 <code>m1 &gt;= 3 &amp;&amp; m2 &gt;= 3</code>으로
+      하드코딩돼 있어, 단일 모드 프로필(M={m1} 등)에서 비활성 모드 카운트 때문에 영원히 졸업하지 못한다.
+      또한 <code>POST /api/answer</code> 라우트는 요청 <code>mode</code>가 프로필의 활성 모드 집합에
+      속하는지 전혀 검사하지 않는다. 이번 작업은 <code>computeAnswerUpdate</code>에 활성 모드 집합
+      <code>modes</code> 인자를 추가해 졸업 판정을 M 기준으로 일반화하고, 라우트에 "mode ∉
+      profile.modes → 400, 시트 쓰기 없음" 방어선을 배선한다. M={m1,m2}일 때는 인자 추가만으로 기존
+      동작이 완전히 보존돼야 한다.
+    </p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">2</span>현황 분석</h2>
+    <p>
+      <code>worker/lib/answer.ts:53-74</code>의 <code>computeAnswerUpdate(current, mode, isReview, now)</code>는
+      순수 계산 함수(시트 I/O 없음)로, <code>wasGraduated</code>/<code>justGraduated</code>를
+      <code>current.m1 &gt;= 3 &amp;&amp; current.m2 &gt;= 3</code>으로 하드코딩 판정한다(<code>worker/lib/answer.ts:59,68</code>).
+      복습(<code>isReview</code>) 분기는 졸업 여부와 무관하게 간격 사다리(<code>nextLadderInterval</code>)만
+      적용하므로 이번 변경의 영향 밖이다.
+    </p>
+    <p>
+      <code>worker/routes/answer.ts:38-92</code>의 <code>handleAnswerPost</code>는 요청 바디를
+      <code>parseAnswerRequest</code>로 파싱한 뒤(<code>mode</code>는 <code>"m1"|"m2"</code>인지만 확인,
+      <code>worker/routes/answer.ts:32</code>) 곧바로 <code>findRowNumber</code>로 시트를 조회한다 —
+      프로필의 활성 모드 집합과의 교차 검증이 전혀 없다. 시그니처에 <code>profile: Profile</code>이 이미
+      들어와 있으므로(<code>worker/routes/answer.ts:38-42</code>, #73에서 배선 완료)
+      <code>profile.modes</code>는 이미 핸들러 안에서 접근 가능하다.
+    </p>
+    <p>
+      <code>worker/lib/profiles.ts:9,22</code>에 <code>QuizMode = "m1" | "m2"</code>와
+      <code>Profile.modes: QuizMode[]</code>가 이미 정의돼 있다 — <code>answer.ts</code>의
+      <code>AnswerMode</code>(<code>worker/lib/answer.ts:9</code>)와 구조적으로 동일한 타입이라 별도
+      import 없이 구조적 호환이 된다.
+    </p>
+    <p>
+      같은 파라미터화 패턴이 이미 클라이언트 쪽에서 두 번 적용됐다:
+      <code>src/lib/wordState.ts:40</code>의 <code>getWordState(word, today, modes)</code>는
+      <code>modes.some((mode) =&gt; word[mode] &lt; 3)</code>로 "학습 중"을 판정하고(#75),
+      <code>src/lib/sessionQueue.ts</code>의 <code>buildSessionQueue</code>는 출제 모드를 M으로
+      제한한다(#76). 두 커밋 모두 <code>it.each</code>로 "M={m1,m2} 기존 동작 보존" /
+      "M={m1}" / "M={m2}" 세 <code>describe</code> 블록을 나누는 테스트 스타일을 확립했다
+      (<code>src/lib/wordState.test.ts:6-45</code>) — 이번 작업의 <code>worker/lib/answer.test.ts</code>도
+      같은 스타일을 따른다.
+    </p>
+    <p>
+      <code>worker/lib/answer.ts</code>·<code>worker/routes/answer.ts</code>에는 현재 자동 테스트가
+      전혀 없다(#8 구현 당시 임시 <code>_test</code> 탭으로 실제 시트에 수동 왕복 검증만 했다 — 커밋
+      8b87fa8 메시지). 반면 같은 성격의 파서/라우트 파일(<code>worker/lib/profiles.test.ts</code>,
+      <code>worker/routes/register.test.ts</code>, <code>worker/index.profiles.test.ts</code>)은
+      vitest로 자동화돼 있다. 이번 이슈는 졸업 판정처럼 회귀 위험이 큰 로직을 건드리므로, 기존
+      관례(수동 검증)보다 최근 M-파라미터화 이슈들의 관례(자동 테스트 신설)를 따르는 것이 안전하다.
+    </p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">3</span>설계</h2>
+    <p>
+      <b>채택</b>: <code>computeAnswerUpdate</code>에 5번째 인자 <code>modes: AnswerMode[]</code>를
+      추가하고, <code>wasGraduated</code>/<code>justGraduated</code> 계산을 <code>current.m1 &gt;= 3 &amp;&amp;
+      current.m2 &gt;= 3</code> 하드코딩 대신 로컬 헬퍼 <code>graduated(m1, m2) =&gt; modes.every((m) =&gt;
+      (m === "m1" ? m1 : m2) &gt;= 3)</code>로 대체한다. <code>modes=["m1","m2"]</code>를 넘기면 산술적으로
+      기존 식과 완전히 동일해 회귀가 없다. <code>MODE_COLUMN</code>·간격 사다리·G열 append 로직은 건드리지
+      않는다.
+    </p>
+    <p>
+      <b>기각</b>: <code>Record&lt;AnswerMode, boolean&gt;</code> 형태의 맵을 만들어 순회하는 방식 —
+      모드가 2개뿐인 현재 도메인에서 삼항 분기보다 코드가 늘어나고 가독성 이득이 없다. 별도 타입
+      <code>QuizMode</code>를 <code>answer.ts</code>에 import하는 방식도 검토했으나, <code>AnswerMode</code>와
+      구조적으로 동일한 유니언이라(둘 다 <code>"m1" | "m2"</code>) TypeScript가 구조적 타이핑으로
+      <code>profile.modes</code>(<code>QuizMode[]</code>)를 <code>AnswerMode[]</code> 매개변수에 그대로
+      전달받을 수 있다 — 불필요한 교차 모듈 import를 만들지 않는다.
+    </p>
+    <p>
+      <b>라우트 400 검사 위치</b>: <code>parseAnswerRequest</code> 성공 직후, <code>findRowNumber</code>
+      호출(첫 시트 I/O) 이전에 <code>if (!profile.modes.includes(answer.mode))</code> 가드를 둔다 — 완료
+      조건이 요구하는 "시트 쓰기 없음"을 넘어 어떤 시트 호출도 만들지 않아 더 강한 보장이면서 구현도
+      더 단순하다.
+    </p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">4</span>작업 단계</h2>
+    <ol class="steps">
+      <li class="done">
+        <code>computeAnswerUpdate</code>에 <code>modes: AnswerMode[]</code> 인자를 추가하고, 졸업 판정을
+        로컬 <code>graduated()</code> 헬퍼로 교체한다. JSDoc 주석에 M 기준 판정임을 한 줄 추가한다.
+        <span class="files"><code>worker/lib/answer.ts</code></span>
+      </li>
+      <li class="done">
+        <code>worker/lib/answer.test.ts</code> 신설 — <code>describe</code> 3블록(M={m1,m2} 기존 동작
+        보존 / M={m1} / M={m2}), <code>it.each</code>로 학습 중·첫 졸업(경계값 포함)·복습 사다리 진행·
+        비졸업 정답(F열 미변경, <code>nextReviewChanged: false</code>) 케이스를 검증한다. M={m1} 블록은
+        "E열 값과 무관하게 D열 3회째 졸업"을, M={m2} 블록은 대칭 케이스를 명시적으로 포함한다.
+        <span class="files"><code>worker/lib/answer.test.ts</code></span>
+      </li>
+      <li class="done">
+        <code>handleAnswerPost</code>에 <code>profile.modes.includes(answer.mode)</code> 가드를
+        <code>findRowNumber</code> 호출 이전에 추가 — 불일치 시 <code>400</code>과 함께 어떤 시트 호출도
+        만들지 않고 즉시 반환한다. <code>computeAnswerUpdate</code> 호출부에 <code>profile.modes</code>를
+        전달하도록 갱신한다.
+        <span class="files"><code>worker/routes/answer.ts</code></span>
+      </li>
+      <li class="done">
+        <code>worker/routes/answer.test.ts</code> 신설 — <code>register.test.ts</code>와 동일한 방식으로
+        <code>google-auth.ts</code>를 모킹하고 Sheets API를 흉내 내는 <code>stubSheetsFetch</code>를
+        작성한다(단, <code>answer.ts</code>가 쓰는 <code>A2:A</code>/<code>{row}:{row}</code> GET 범위와
+        <code>/values:batchUpdate</code> POST 범위 어휘에 맞춘 새 구현). <code>PROFILES</code> 2프로필
+        (M={m1} 단일 프로필 + M={m1,m2} 프로필)로 다음을 검증한다: (a) M={m1} 프로필에 <code>mode:
+        "m2"</code> 요청 → <code>400</code>, batchUpdate 호출 0회, (b) M={m1} 프로필에서 D열 3번째 정답 →
+        <code>200</code> + F열 <code>내일|1</code> 기록, (c) M={m1,m2} 프로필의 학습 중·졸업·복습·G열
+        append가 응답 단어 객체 형태까지 포함해 회귀 없이 통과.
+        <span class="files"><code>worker/routes/answer.test.ts</code></span>
+      </li>
+      <li class="done">
+        <code>npm test</code>(vitest 전체)와 <code>npm run build</code>(tsc 타입체크 포함)를 실행해
+        회귀가 없는지 확인한다.
+        <span class="note">전체 246개 테스트(23 파일) 통과, tsc/vite 빌드 성공, oxlint 클린.</span>
+      </li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">5</span>리스크</h2>
+    <div class="scroll-x">
+    <table>
+      <thead><tr><th>리스크</th><th>영향</th><th>완화책</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>졸업 판정 리팩토링이 M={m1,m2} 기존 동작을 미묘하게 바꿈</td>
+          <td>이미 졸업한 단어의 F열이 잘못 갱신되거나 정상 학습자의 졸업이 지연됨</td>
+          <td><code>graduated()</code>가 <code>m1&gt;=3 &amp;&amp; m2&gt;=3</code>과 산술적으로 동치임을
+            단위 테스트의 "M={m1,m2} 기존 동작 보존" 블록으로 고정</td>
+        </tr>
+        <tr>
+          <td>400 가드 위치가 늦어 비활성 모드 요청도 시트를 읽어버림</td>
+          <td>완료 조건("시트 쓰기 없음")은 지키지만 불필요한 Sheets API 호출 낭비</td>
+          <td>가드를 <code>findRowNumber</code> 호출보다 먼저 배치 — 읽기까지 포함해 0회 호출 보장,
+            라우트 테스트에서 batchUpdate/GET 모두 0회임을 확인</td>
+        </tr>
+        <tr>
+          <td>라우트 테스트용 Sheets 목이 실제 <code>batchUpdateValues</code>의 URL/바디 형태
+            (<code>/values:batchUpdate</code>, <code>data: [{range: "'tab'!D3", values}]</code>)와
+            어긋나면 테스트가 거짓 통과함</td>
+          <td>회귀를 못 잡는 테스트</td>
+          <td>구현 중 <code>worker/lib/sheets.ts</code>의 <code>batchUpdateValues</code>·<code>encodeRange</code>·
+            <code>fullRange</code> 실제 구현을 그대로 따라 목을 작성하고, 목이 파싱한 range를 상태에
+            반영한 뒤 응답 바디로 재확인</td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">6</span>테스트 계획</h2>
+    <ul>
+      <li><code>npm test</code> — 신설 <code>worker/lib/answer.test.ts</code>·<code>worker/routes/answer.test.ts</code> 포함 전체 vitest 스위트 통과.</li>
+      <li>M={m1,m2}에서 학습 중(둘 다 &lt;3)·첫 졸업(경계값 3)·비졸업 재정답(<code>nextReviewChanged: false</code>)·복습 사다리(1→3→7→14→30, 30 유지) — 기존 하드코딩 로직과 동일한 결과인지 확인.</li>
+      <li>M={m1} 단위 테스트 — D열이 0→3으로 오를 때 E열 값(0/임의값)과 무관하게 졸업(F열 <code>내일|1</code>), D열이 여전히 3 미만이면 E열이 이미 ≥3이어도 미졸업.</li>
+      <li>M={m2} 단위 테스트 — 위와 대칭.</li>
+      <li>라우트 테스트 — M={m1} 프로필에 <code>mode:"m2"</code> POST → <code>400</code> + Sheets fetch 목의 GET/batchUpdate 호출 0회.</li>
+      <li>라우트 테스트 — 활성 모드 요청은 <code>200</code> + 응답 바디가 <code>WordEntry</code> 형태(<code>tab, hanzi, pinyin, meaning, m1, m2, nextReview, interval</code>) 그대로 유지.</li>
+      <li><code>npm run build</code> — <code>tsc -b</code> 타입체크 통과(시그니처 변경으로 인한 호출부 타입 오류 없음).</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">7</span>완료 조건</h2>
+    <ul class="done-list">
+      <li>M={m1} 프로필에서 D열 3번째 정답 시 졸업 — F열 <code>내일|1</code> 기록 (E열 값과 무관)</li>
+      <li>M={m2} 프로필 대칭 케이스 확인</li>
+      <li>M={m1} 프로필에 m2 answer 요청 → 400, 시트 쓰기 없음</li>
+      <li>M={m1,m2}에서 기존 졸업·복습·append 케이스가 modes 인자 추가만으로 회귀 없이 통과</li>
+      <li>응답 형태(갱신된 단어 객체) 불변</li>
+    </ul>
+  </section>
+
+  <footer>issue-plan · <a href="https://github.com/damdam6/vocabulary-study/issues/74">#74</a> · 2026-07-27</footer>
+</main>
+</body>
+</html>
