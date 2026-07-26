@@ -3,6 +3,6 @@
 import { getWordTabTitles } from "../lib/words.ts";
 
 export async function handleGetTabs(env: Env): Promise<Response> {
-  const tabs = await getWordTabTitles(env);
+  const tabs = await getWordTabTitles(env, env.SHEET_ID);
   return Response.json({ tabs });
 }

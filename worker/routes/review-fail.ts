@@ -36,7 +36,7 @@ export async function handleReviewFail(env: Env, request: Request): Promise<Resp
     return Response.json({ error: "tab, hanzi(문자열) 필요" }, { status: 400 });
   }
 
-  const found = await findWordRow(env, body.tab, body.hanzi);
+  const found = await findWordRow(env, env.SHEET_ID, body.tab, body.hanzi);
   if (!found) {
     return new Response(null, { status: 404 });
   }
@@ -46,7 +46,7 @@ export async function handleReviewFail(env: Env, request: Request): Promise<Resp
   const newInterval = stepBack(entry.interval ?? 1);
   const newDate = addSeoulDays(new Date(), newInterval);
 
-  await updateValues(env, body.tab, `F${rowNumber}:F${rowNumber}`, [[`${newDate}|${newInterval}`]]);
+  await updateValues(env, env.SHEET_ID, body.tab, `F${rowNumber}:F${rowNumber}`, [[`${newDate}|${newInterval}`]]);
 
   return Response.json({ ...entry, nextReview: newDate, interval: newInterval });
 }

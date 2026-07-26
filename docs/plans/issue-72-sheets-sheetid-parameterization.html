@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>#72 Sheets 접근 sheetId 파라미터화 — 작업 플랜</title>
+<style>
+  :root {
+    --bg: #f7f7f8; --card: #ffffff; --ink: #1c1c1e; --muted: #6e6e73;
+    --line: #e3e3e6; --accent: #3b6ef5; --accent-soft: #e8eefe;
+    --ok: #2e8b57; --warn: #b25e09; --code-bg: #f0f0f2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161618; --card: #202024; --ink: #ececf0; --muted: #98989f;
+      --line: #333338; --accent: #7a9bff; --accent-soft: #26304a;
+      --ok: #58c088; --warn: #e0a35c; --code-bg: #2a2a2f;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 40px 20px 80px; background: var(--bg); color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+                 "Segoe UI", "Noto Sans KR", sans-serif;
+    line-height: 1.65;
+  }
+  main { max-width: 860px; margin: 0 auto; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code {
+    font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 0.86em;
+    background: var(--code-bg); border-radius: 5px; padding: 2px 6px;
+  }
+  header { margin-bottom: 28px; }
+  .issue-chip {
+    display: inline-block; font-weight: 700; color: var(--accent);
+    background: var(--accent-soft); border-radius: 999px;
+    padding: 3px 14px; font-size: 0.95rem; margin-bottom: 10px;
+  }
+  .type-chip {
+    display: inline-block; font-weight: 600; color: var(--muted);
+    border: 1px solid var(--line); border-radius: 999px;
+    padding: 3px 12px; font-size: 0.8rem; margin-left: 8px; vertical-align: 2px;
+  }
+  h1 { font-size: 1.7rem; margin: 0 0 14px; letter-spacing: -0.02em; }
+  .meta {
+    display: flex; flex-wrap: wrap; gap: 6px 22px;
+    color: var(--muted); font-size: 0.87rem;
+  }
+  .meta b { color: var(--ink); font-weight: 600; }
+  section.card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 24px 28px; margin-top: 18px;
+  }
+  h2 {
+    font-size: 1.05rem; margin: 0 0 14px; letter-spacing: -0.01em;
+    display: flex; align-items: center; gap: 8px;
+  }
+  h2 .no {
+    color: var(--accent); font-size: 0.8rem; font-weight: 700;
+    border: 1.5px solid var(--accent); border-radius: 6px; padding: 0 6px;
+  }
+  ul, ol { margin: 0; padding-left: 22px; }
+  li { margin: 6px 0; }
+  .steps { list-style: none; padding: 0; counter-reset: step; }
+  .steps li {
+    counter-increment: step; position: relative; padding: 10px 0 10px 44px;
+    border-bottom: 1px dashed var(--line);
+  }
+  .steps li:last-child { border-bottom: none; }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 10px;
+    width: 28px; height: 28px; border-radius: 8px; background: var(--accent-soft);
+    color: var(--accent); font-weight: 700; font-size: 0.85rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .steps li.done::before { content: "✓"; background: var(--ok); color: #fff; }
+  .steps li.done { color: var(--muted); }
+  .steps .files { display: block; margin-top: 4px; font-size: 0.85rem; color: var(--muted); }
+  .steps .note { display: block; margin-top: 4px; font-size: 0.85rem; color: var(--warn); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 0.82rem; }
+  .done-list { list-style: none; padding: 0; }
+  .done-list li { padding-left: 30px; position: relative; }
+  .done-list li::before {
+    content: ""; position: absolute; left: 2px; top: 7px; width: 15px; height: 15px;
+    border: 2px solid var(--ok); border-radius: 5px;
+  }
+  .scroll-x { overflow-x: auto; }
+  footer { margin-top: 30px; color: var(--muted); font-size: 0.8rem; text-align: center; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <span class="issue-chip"><a href="https://github.com/damdam6/vocabulary-study/issues/72">#72</a></span><span class="type-chip">리팩토링 (동작 불변)</span>
+    <h1>Sheets 접근 sheetId 파라미터화 — env.SHEET_ID 직접 참조 제거</h1>
+    <div class="meta">
+      <span><b>damdam6/vocabulary-study</b></span>
+      <span>브랜치 <b><code>feat/72-sheets-sheetid-parameterization</code></b> ← <code>main</code></span>
+      <span>라벨 <b>enhancement</b></span>
+      <span>2026-07-26</span>
+    </div>
+  </header>
+
+  <section class="card">
+    <h2><span class="no">1</span>요약</h2>
+    <p>
+      멀티 프로필 범용화(PRD-general §5·§6, <code>docs/plans/service-generalization.md</code> 작업 2 전반부)의
+      선행 작업. <code>worker/lib/sheets.ts</code>의 모든 Sheets API 래퍼와 <code>worker/lib/words.ts</code>의
+      헬퍼가 URL 조립에 <code>env.SHEET_ID</code>를 암묵적으로 읽는 대신 <code>sheetId</code>를 명시 인자로
+      받도록 바꾼다. 토큰 발급(<code>google-auth.ts</code>)은 프로필 공용이므로 env를 그대로 쓴다. 이 이슈
+      범위에서 모든 호출부는 <code>env.SHEET_ID</code>를 그대로 넘겨 관측 가능한 동작 변화는 없다 —
+      프로필의 sheetId 주입은 후속 이슈(#70·#71 계열).
+    </p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">2</span>현황 분석</h2>
+    <p><b>sheets.ts</b> — 전 함수가 내부 <code>sheetsFetch</code>를 거치고, 이 함수가 URL을 직접 조립한다:</p>
+    <ul>
+      <li><code>worker/lib/sheets.ts:128</code> — <code>sheetsFetch</code>가 <code>fetch(`${API_BASE}/${env.SHEET_ID}${path}`, ...)</code>로 시트 ID를 URL에 하드코딩.</li>
+      <li>공개 함수 6개가 전부 <code>env</code>만 받고 그대로 <code>sheetsFetch</code>에 전달: <code>getValues</code>(<code>sheets.ts:39</code>), <code>getSheetTitles</code>(<code>:46</code>), <code>addSheet</code>(<code>:56</code>), <code>updateValues</code>(<code>:63</code>), <code>batchUpdateValues</code>(<code>:82</code>), <code>appendValues</code>(<code>:95</code>).</li>
+    </ul>
+    <p><b>words.ts</b> — sheets.ts 함수를 감싸는 3개 헬퍼가 env만 전달:</p>
+    <ul>
+      <li><code>getWordTabTitles</code>(<code>worker/lib/words.ts:12</code>) → <code>getSheetTitles(env)</code></li>
+      <li><code>findWordRow</code>(<code>:51</code>) → <code>getValues(env, tab, WORD_ROW_RANGE)</code></li>
+      <li><code>findRowNumber</code>(<code>:73</code>) → <code>getValues(env, tab, "A2:A")</code></li>
+      <li><code>parseWordRow</code>는 순수 파서라 env를 아예 쓰지 않음 — 변경 불필요.</li>
+    </ul>
+    <p><b>호출부(라우트) 13곳</b> — 전부 <code>env</code>만 넘기고 있어, 파라미터화 후에는 <code>env.SHEET_ID</code>를 명시 인자로 추가 주입해야 한다:</p>
+    <ul>
+      <li><code>worker/routes/words.ts:11,14</code> — <code>getWordTabTitles(env)</code>, <code>getValues(env, tab, WORD_ROW_RANGE)</code></li>
+      <li><code>worker/routes/review-fail.ts:39,49</code> — <code>findWordRow(env, body.tab, body.hanzi)</code>, <code>updateValues(env, body.tab, ...)</code></li>
+      <li><code>worker/routes/register.ts:46,60,61,62,68,77</code> — <code>getWordTabTitles</code>·<code>getValues</code>·<code>addSheet</code>·<code>updateValues</code> 6회 호출</li>
+      <li><code>worker/routes/tabs.ts:6</code> — <code>getWordTabTitles(env)</code></li>
+      <li><code>worker/routes/answer.ts:54,59,74</code> — <code>findRowNumber</code>·<code>getValues</code>·<code>batchUpdateValues</code></li>
+    </ul>
+    <p><b>테스트</b> — <code>worker/routes/register.test.ts</code>·<code>tabs.test.ts</code>는 <code>env = { APP_PASSWORD, SHEET_ID }</code>를 만들어 <code>worker.fetch(req, env)</code>로 라우트 전체를 통과시키고 전역 <code>fetch</code>를 모킹한다 — sheets.ts/words.ts 함수를 직접 호출하지 않으므로, 호출부 시그니처만 맞추면 테스트 코드 자체는 변경 불필요(회귀만 확인).</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">3</span>설계</h2>
+    <p><b>채택</b>: <code>sheetId: string</code>을 모든 함수에 <b>두 번째 위치 인자</b>로 추가 — <code>(env, sheetId, ...나머지)</code>. <code>env</code>는 자리를 유지(토큰 발급용), <code>sheetId</code>가 그 뒤를 잇는다. 근원은 <code>sheetsFetch(env, sheetId, method, path, body?)</code>이고 6개 공개 함수가 각자 받은 <code>sheetId</code>를 그대로 전파한다. words.ts의 3개 헬퍼도 동일하게 <code>sheetId</code>를 받아 sheets.ts 호출에 전파한다.</p>
+    <p>호출부는 이 이슈에서 전부 <code>env.SHEET_ID</code>를 그대로 새 인자 자리에 주입한다 — 동작 불변.</p>
+    <p><b>기각한 대안</b>:</p>
+    <ul>
+      <li>env 변조(<code>{ ...env, SHEET_ID: profile.sheetId }</code> 재주입) — service-generalization.md §비교표에서도 기각: 타입이 거짓말을 하고("env인데 사실 다른 시트"), 프로필 격리를 "sheetId가 항상 명시 인자"라는 정적 보장으로 검증할 수 없게 됨.</li>
+      <li>프로필 바인딩 클래스/컨텍스트 객체로 sheetId를 감싸기 — 현재 규모(순수 함수 9개)에 과한 추상화. 이슈 범위(동작 불변, 단독 머지)를 넘어서는 설계 결정이라 후속 프로필 스레딩 이슈로 미룸.</li>
+      <li><code>sheetId</code>를 첫 인자로 두고 <code>env</code>를 뒤로 — env가 여전히 토큰 발급의 1차 의존성이고, 기존 코드베이스 전반에서 env-first 관례를 따르는 함수가 많아 시그니처 훑어보기 일관성을 위해 기각.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">4</span>작업 단계</h2>
+    <ol class="steps">
+      <li class="done">
+        <code>sheetsFetch</code> 시그니처에 <code>sheetId: string</code>을 두 번째 인자로 추가하고, URL 조립을 <code>env.SHEET_ID</code>에서 <code>sheetId</code>로 변경.
+        <span class="files"><code>worker/lib/sheets.ts:121-140</code></span>
+      </li>
+      <li class="done">
+        공개 함수 6개(<code>getValues</code>·<code>getSheetTitles</code>·<code>addSheet</code>·<code>updateValues</code>·<code>batchUpdateValues</code>·<code>appendValues</code>) 각각에 <code>sheetId: string</code> 두 번째 인자를 추가하고 내부 <code>sheetsFetch</code> 호출에 전파. <code>env.SHEET_ID</code> 직접 참조가 파일에 남지 않는지 확인.
+        <span class="files"><code>worker/lib/sheets.ts:39-108</code></span>
+      </li>
+      <li class="done">
+        <code>getWordTabTitles</code>·<code>findWordRow</code>·<code>findRowNumber</code>에 <code>sheetId: string</code> 인자를 추가하고 각각의 sheets.ts 호출(<code>getSheetTitles</code>·<code>getValues</code>)에 전파. <code>parseWordRow</code>·<code>parseNextReview</code>는 손대지 않음.
+        <span class="files"><code>worker/lib/words.ts:12-15</code>, <code>:51-67</code>, <code>:73-86</code></span>
+      </li>
+      <li class="done">
+        <code>worker/routes/words.ts</code> 호출부 2곳에 <code>env.SHEET_ID</code>를 새 인자로 주입.
+        <span class="files"><code>worker/routes/words.ts:11</code>, <code>:14</code></span>
+      </li>
+      <li class="done">
+        <code>worker/routes/review-fail.ts</code> 호출부 2곳(<code>findWordRow</code>·<code>updateValues</code>)에 <code>env.SHEET_ID</code> 주입.
+        <span class="files"><code>worker/routes/review-fail.ts:39</code>, <code>:49</code></span>
+      </li>
+      <li class="done">
+        <code>worker/routes/register.ts</code> 호출부 6곳(<code>getWordTabTitles</code>·<code>getValues</code>×2·<code>addSheet</code>·<code>updateValues</code>×2)에 <code>env.SHEET_ID</code> 주입.
+        <span class="files"><code>worker/routes/register.ts:46</code>, <code>:60-62</code>, <code>:68</code>, <code>:77</code></span>
+      </li>
+      <li class="done">
+        <code>worker/routes/tabs.ts</code>의 <code>getWordTabTitles</code> 호출에 <code>env.SHEET_ID</code> 주입.
+        <span class="files"><code>worker/routes/tabs.ts:6</code></span>
+      </li>
+      <li class="done">
+        <code>worker/routes/answer.ts</code> 호출부 3곳(<code>findRowNumber</code>·<code>getValues</code>·<code>batchUpdateValues</code>)에 <code>env.SHEET_ID</code> 주입.
+        <span class="files"><code>worker/routes/answer.ts:54</code>, <code>:59</code>, <code>:74</code></span>
+      </li>
+      <li class="done">
+        <code>grep -rn "env\.SHEET_ID" worker/lib/sheets.ts worker/lib/words.ts</code>로 두 파일에 직접 참조가 남지 않았는지 확인 (완료 조건 1).
+        <span class="files"><code>worker/lib/sheets.ts</code>, <code>worker/lib/words.ts</code></span>
+      </li>
+      <li class="done">
+        전체 테스트(<code>npm run test</code>)·lint(<code>npm run lint</code>)·타입 체크(<code>tsc -b</code>) 실행, 회귀 없음 확인.
+        <span class="files"><code>worker/index.test.ts</code>, <code>worker/routes/register.test.ts</code>, <code>worker/routes/tabs.test.ts</code>, <code>worker/lib/register.test.ts</code></span>
+      </li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">5</span>리스크</h2>
+    <div class="scroll-x">
+    <table>
+      <thead><tr><th>리스크</th><th>영향</th><th>완화책</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>호출부 13곳 중 하나라도 <code>sheetId</code> 주입을 빠뜨림</td>
+          <td>해당 경로만 <code>undefined</code> sheetId로 API 호출 → 400, 발견이 늦을 수 있음</td>
+          <td>TypeScript가 필수 인자 누락을 컴파일 타임에 잡음(선택 인자로 만들지 않음) + 8단계 grep으로 이중 확인</td>
+        </tr>
+        <tr>
+          <td>인자 순서 변경(<code>env, sheetId, ...</code>)이 기존 호출부와 안 맞아 타입 에러가 대량 발생</td>
+          <td>1회성 리팩토링 범위가 커 보일 수 있음</td>
+          <td>실제로는 각 호출부가 인자 하나만 추가하는 기계적 변경 — 컴파일러가 안 맞는 곳을 전부 지목해줌</td>
+        </tr>
+        <tr>
+          <td>동작 변화 없음이 전제인데 테스트가 sheetId 값 자체를 검증하지 않아 회귀를 놓칠 가능성</td>
+          <td>낮음 — 이번 이슈에서 sheetId 값은 항상 <code>env.SHEET_ID</code>로 동일</td>
+          <td>기존 테스트가 통과하면 모킹된 fetch가 받는 URL도 기존과 동일 (sheetId 값 자체가 안 바뀜)</td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">6</span>테스트 계획</h2>
+    <ul>
+      <li><code>npm run test</code> — 전체 vitest 스위트(<code>worker/index.test.ts</code>, <code>worker/routes/register.test.ts</code>, <code>worker/routes/tabs.test.ts</code>, <code>worker/lib/register.test.ts</code>)가 기존과 동일하게 통과. 라우트 핸들러 경유 테스트라 시그니처 변경이 잘못되면 즉시 실패로 드러남.</li>
+      <li><code>npm run lint</code> — oxlint 통과, 사용하지 않는 인자·미사용 import 없음.</li>
+      <li><code>tsc -b</code> (또는 <code>npm run build</code>의 타입 체크 단계) — 새 필수 인자 <code>sheetId</code>가 호출부 13곳에 정확히 주입됐는지 컴파일러가 검증.</li>
+      <li><code>grep -rn "env\.SHEET_ID" worker/lib/sheets.ts worker/lib/words.ts</code> — 결과 없음 확인 (완료 조건 1의 직접 근거).</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">7</span>완료 조건</h2>
+    <ul class="done-list">
+      <li>sheets.ts·words.ts에 <code>env.SHEET_ID</code> 직접 참조 잔재 없음 (grep 확인)</li>
+      <li>기존 전체 테스트가 회귀 없이 통과 (동작 불변 증명)</li>
+      <li><code>npm run lint</code>·타입 체크 통과</li>
+    </ul>
+  </section>
+
+  <footer>issue-plan · <a href="https://github.com/damdam6/vocabulary-study/issues/72">#72</a> · 2026-07-26</footer>
+</main>
+</body>
+</html>
