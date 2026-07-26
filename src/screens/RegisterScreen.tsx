@@ -63,7 +63,7 @@ function RegisterScreen({ onGoHome }: RegisterScreenProps) {
     const controller = new AbortController()
     setWordsStatus('loading')
     fetchWords(controller.signal)
-      .then((words) => {
+      .then(({ words }) => {
         if (cancelled) return
         setAllWords(words)
         setWordsStatus('ready')

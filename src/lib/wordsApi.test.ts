@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { WordEntry } from "./api";
+import type { PublicProfile, WordEntry } from "./api";
 import { fetchWords } from "./wordsApi";
 
 // vitest는 node 환경이라 localStorage/fetch가 없다 — 전역에 스텁을 주입한다.
@@ -31,15 +31,24 @@ const WORD: WordEntry = {
   interval: 7,
 };
 
+const PROFILE: PublicProfile = {
+  id: "zh",
+  name: "중국어 단어",
+  modes: ["m1", "m2"],
+  contentType: "zh",
+};
+
 describe("fetchWords", () => {
-  it("GET /api/words를 apiFetch 경유(Authorization 첨부)로 호출하고 words 배열을 반환한다", async () => {
+  it("GET /api/words를 apiFetch 경유(Authorization 첨부)로 호출하고 {profile, words}를 반환한다", async () => {
     localStorage.setItem("app-password", "secret");
     const fetchMock = vi
       .fn()
-      .mockResolvedValue(Response.json({ fetchedAt: "2026-07-18 09:00", words: [WORD] }));
+      .mockResolvedValue(
+        Response.json({ fetchedAt: "2026-07-18 09:00", words: [WORD], profile: PROFILE }),
+      );
     vi.stubGlobal("fetch", fetchMock);
 
-    await expect(fetchWords()).resolves.toEqual([WORD]);
+    await expect(fetchWords()).resolves.toEqual({ words: [WORD], profile: PROFILE });
 
     const [path, init] = fetchMock.mock.calls[0] as [string, RequestInit];
     expect(path).toBe("/api/words");
@@ -47,7 +56,7 @@ describe("fetchWords", () => {
   });
 
   it("AbortSignal을 fetch에 전달한다", async () => {
-    const fetchMock = vi.fn().mockResolvedValue(Response.json({ words: [] }));
+    const fetchMock = vi.fn().mockResolvedValue(Response.json({ words: [], profile: PROFILE }));
     vi.stubGlobal("fetch", fetchMock);
     const controller = new AbortController();
 

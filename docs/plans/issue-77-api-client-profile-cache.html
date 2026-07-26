@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>#77 API 클라이언트 프로필 수신·저장 — verifyPassword·fetchWords 확장 + 프로필 캐시 — 작업 플랜</title>
+<style>
+  :root {
+    --bg: #f7f7f8; --card: #ffffff; --ink: #1c1c1e; --muted: #6e6e73;
+    --line: #e3e3e6; --accent: #3b6ef5; --accent-soft: #e8eefe;
+    --ok: #2e8b57; --warn: #b25e09; --code-bg: #f0f0f2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161618; --card: #202024; --ink: #ececf0; --muted: #98989f;
+      --line: #333338; --accent: #7a9bff; --accent-soft: #26304a;
+      --ok: #58c088; --warn: #e0a35c; --code-bg: #2a2a2f;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 40px 20px 80px; background: var(--bg); color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+                 "Segoe UI", "Noto Sans KR", sans-serif;
+    line-height: 1.65;
+  }
+  main { max-width: 860px; margin: 0 auto; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code {
+    font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 0.86em;
+    background: var(--code-bg); border-radius: 5px; padding: 2px 6px;
+  }
+  header { margin-bottom: 28px; }
+  .issue-chip {
+    display: inline-block; font-weight: 700; color: var(--accent);
+    background: var(--accent-soft); border-radius: 999px;
+    padding: 3px 14px; font-size: 0.95rem; margin-bottom: 10px;
+  }
+  .type-chip {
+    display: inline-block; font-weight: 600; color: var(--muted);
+    border: 1px solid var(--line); border-radius: 999px;
+    padding: 3px 12px; font-size: 0.8rem; margin-left: 8px; vertical-align: 2px;
+  }
+  h1 { font-size: 1.7rem; margin: 0 0 14px; letter-spacing: -0.02em; }
+  .meta {
+    display: flex; flex-wrap: wrap; gap: 6px 22px;
+    color: var(--muted); font-size: 0.87rem;
+  }
+  .meta b { color: var(--ink); font-weight: 600; }
+  section.card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 24px 28px; margin-top: 18px;
+  }
+  h2 {
+    font-size: 1.05rem; margin: 0 0 14px; letter-spacing: -0.01em;
+    display: flex; align-items: center; gap: 8px;
+  }
+  h2 .no {
+    color: var(--accent); font-size: 0.8rem; font-weight: 700;
+    border: 1.5px solid var(--accent); border-radius: 6px; padding: 0 6px;
+  }
+  ul, ol { margin: 0; padding-left: 22px; }
+  li { margin: 6px 0; }
+  .steps { list-style: none; padding: 0; counter-reset: step; }
+  .steps li {
+    counter-increment: step; position: relative; padding: 10px 0 10px 44px;
+    border-bottom: 1px dashed var(--line);
+  }
+  .steps li:last-child { border-bottom: none; }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 10px;
+    width: 28px; height: 28px; border-radius: 8px; background: var(--accent-soft);
+    color: var(--accent); font-weight: 700; font-size: 0.85rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .steps.done li::before { content: "✓"; }
+  .steps .files { display: block; margin-top: 4px; font-size: 0.85rem; color: var(--muted); }
+  .steps .note { display: block; margin-top: 4px; font-size: 0.85rem; color: var(--warn); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 0.82rem; }
+  .done-list { list-style: none; padding: 0; }
+  .done-list li { padding-left: 30px; position: relative; }
+  .done-list li::before {
+    content: ""; position: absolute; left: 2px; top: 7px; width: 15px; height: 15px;
+    border: 2px solid var(--ok); border-radius: 5px;
+  }
+  .scroll-x { overflow-x: auto; }
+  footer { margin-top: 30px; color: var(--muted); font-size: 0.8rem; text-align: center; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <span class="issue-chip"><a href="https://github.com/damdam6/vocabulary-study/issues/77">#77</a></span><span class="type-chip">기능 개선</span>
+    <h1>API 클라이언트 프로필 수신·저장 — verifyPassword·fetchWords 확장 + 프로필 캐시</h1>
+    <div class="meta">
+      <span><b>damdam6/vocabulary-study</b></span>
+      <span>브랜치 <b><code>feat/77-api-client-profile-cache</code></b> ← <code>main</code></span>
+      <span>라벨 <b>enhancement</b></span>
+      <span>2026-07-27</span>
+    </div>
+  </header>
+
+  <section class="card">
+    <h2><span class="no">1</span>요약</h2>
+    <p>
+      서버 쪽 프로필 해석(#71)과 응답 배선(#73)은 이미 완료돼, <code>GET /api/health</code>·<code>GET /api/words</code> 모두
+      공개 프로필 블록(<code>{ id, name, modes, contentType }</code>)을 반환한다. 이 이슈는 그 서버 계약을 클라이언트
+      API 계층(<code>src/lib/api.ts</code>·<code>src/lib/wordsApi.ts</code>)이 실제로 수신하고, localStorage에
+      저장/조회/삭제할 수 있는 헬퍼를 갖추는 "전반부"다. <code>verifyPassword</code>는 성공 시 profile을 함께 반환하고,
+      <code>fetchWords</code>는 <code>{ profile, words }</code>를 반환하도록 확장하며, <code>clearPassword</code>(401
+      처리 경로 포함)는 프로필 캐시도 함께 지운다. 화면이 이 값을 실제로 저장·표시·연결하는 배선(로그인 저장, 홈
+      프로필명/전환 링크, modes 연결)은 후속 이슈 #78의 범위이므로, 이번 작업은 기존 소비처가 새 반환 형태로
+      컴파일·테스트를 통과하는 선까지만 다룬다.
+    </p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">2</span>현황 분석</h2>
+    <ul>
+      <li><code>src/lib/api.ts:61</code> <code>VerifyResult = "ok" | "invalid" | "error"</code> — 상태 문자열만 반환,
+        <code>verifyPassword</code>(<code>api.ts:68-77</code>)는 <code>/api/health</code> 응답 바디를 전혀 읽지 않는다.</li>
+      <li><code>src/lib/wordsApi.ts:11-16</code> <code>fetchWords</code>는 응답을 <code>{ words: WordEntry[] }</code>로
+        캐스팅해 <code>words</code> 배열만 반환하고 <code>profile</code>·<code>fetchedAt</code>은 버린다.</li>
+      <li>localStorage에는 <code>app-password</code>(<code>api.ts:9</code>)와 재시도 큐 키뿐 — 프로필 캐시 저장소가
+        없다.</li>
+      <li>서버 계약은 이미 확정·구현됨: <code>worker/index.ts:35-38</code>의 <code>/api/health</code>가
+        <code>{ ok, time, version, profile: toPublicProfile(profile) }</code>를, <code>worker/routes/words.ts:26-32</code>의
+        <code>/api/words</code>가 <code>{ fetchedAt, words, profile }</code>를 반환한다. <code>worker/lib/profiles.ts:28</code>의
+        <code>PublicProfile = Pick&lt;Profile, "id"|"name"|"modes"|"contentType"&gt;</code>가 <code>sheetId</code>·
+        <code>password</code> 제외를 서버 쪽에서 이미 강제한다.</li>
+      <li><code>tsconfig.app.json</code>이 <code>src</code>만 포함해 클라이언트가 worker 타입을 import할 수 없다
+        (<code>api.ts:83-86</code>의 <code>WordEntry</code> 미러 주석과 같은 이유) — <code>PublicProfile</code>도
+        클라이언트 쪽에 별도 미러 타입이 필요하다.</li>
+      <li>소비처 3곳: <code>src/screens/LoginScreen.tsx:20-27</code>(<code>verifyPassword</code> 결과를 문자열
+        비교로 분기), <code>src/screens/HomeScreen.tsx:34-40</code>·<code>src/screens/RegisterScreen.tsx:65-70</code>
+        (<code>fetchWords</code>를 배열로 직접 소비).</li>
+      <li><code>HomeScreen.tsx:38,76</code>에 이미 "#78(화면 프로필 배선) 전까지 고정 주입" 주석이 있어, profile.modes를
+        실제 화면 로직에 연결하는 일은 이 이슈 범위가 아님이 코드에도 명시돼 있다.</li>
+      <li>의존 이슈 #71·#73 모두 closed — 서버 계약이 확정된 상태에서 진행 가능.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">3</span>설계</h2>
+    <ul>
+      <li><code>VerifyResult</code>를 판별 유니온
+        <code>{ status: "ok", profile: PublicProfile } | { status: "invalid" } | { status: "error" }</code>로 확장한다
+        — 기존 3분기 흐름은 그대로 두면서 성공 케이스에만 profile을 싣는다. 대안으로 <code>{ result, profile? }</code>
+        형태(optional 필드)도 고려했으나, 판별 유니온 쪽이 <code>result.status === "ok"</code> 좁히기로 profile 존재를
+        타입 레벨에서 보장해 더 안전하다.</li>
+      <li>프로필 캐시 헬퍼는 비밀번호 헬퍼와 이름 대구를 맞춘다: <code>getStoredProfile</code>/<code>saveProfile</code>/
+        <code>clearProfile</code>, 키는 <code>vocab-study:profile</code>(PRD §7 확정값). <code>getStoredProfile</code>은
+        손상된 JSON을 만나면 예외 대신 <code>null</code>로 폴백한다.</li>
+      <li><code>clearPassword</code> 내부에서 <code>clearProfile</code>을 호출한다 — 401 처리 경로(<code>apiFetch</code>)가
+        <code>clearPassword</code> 하나만 호출하므로, 이 한 곳만 고치면 "비밀번호 삭제 시 프로필도 함께 삭제" 불변식이
+        모든 호출 경로(직접 호출 + 401 경로)에 자동 적용된다.</li>
+      <li><code>fetchWords</code> 반환 타입을 <code>{ profile: PublicProfile; words: WordEntry[] }</code>로 확장한다.
+        <code>fetchedAt</code>은 클라이언트가 쓰는 곳이 없어(grep 확인) 이번 범위에 포함하지 않는다 — PRD가 요구하는
+        불변식은 "words 항목 형태"뿐이다.</li>
+      <li>화면 쪽은 새 반환 형태로 컴파일·테스트를 통과시키는 최소 수정만 한다: <code>LoginScreen</code>은
+        <code>result.status</code> 분기로 전환만 하고, <code>HomeScreen</code>·<code>RegisterScreen</code>은
+        <code>fetched.words</code> 구조분해만 한다. <code>saveProfile</code>을 실제로 호출해 로그인 저장·홈 캐시
+        갱신을 배선하는 일은 하지 않는다 — 그 화면 배선은 #78의 산출물이다.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">4</span>작업 단계</h2>
+    <ol class="steps done">
+      <li>클라이언트 미러 타입 <code>PublicProfile</code>·<code>ContentType</code>과 프로필 캐시 헬퍼
+        (<code>getStoredProfile</code>/<code>saveProfile</code>/<code>clearProfile</code>, 키
+        <code>vocab-study:profile</code>) 신설
+        <span class="files"><code>src/lib/api.ts</code></span>
+      </li>
+      <li><code>clearPassword</code>가 <code>clearProfile</code>도 호출하도록 수정 — 401 경로에 자동 적용
+        <span class="files"><code>src/lib/api.ts</code></span>
+      </li>
+      <li><code>VerifyResult</code>를 판별 유니온으로 변경하고, <code>verifyPassword</code>가 200 응답 바디의
+        <code>profile</code>을 파싱해 <code>{ status: "ok", profile }</code>로 반환하도록 수정
+        <span class="files"><code>src/lib/api.ts</code></span>
+      </li>
+      <li><code>fetchWords</code> 반환 타입을 <code>{ profile, words }</code>로 확장
+        <span class="files"><code>src/lib/wordsApi.ts</code></span>
+        <span class="note">실행 중 보강: 응답 전체를 그대로 캐스팅하지 않고 <code>{ profile, words }</code>만
+          골라 반환하도록 했다 — 안 그러면 서버가 함께 보내는 <code>fetchedAt</code>이 반환값에 섞여 타입이
+          약속하는 형태와 실제 런타임 값이 어긋난다.</span>
+      </li>
+      <li>소비처 컴파일 갱신: <code>LoginScreen</code>은 <code>result.status</code> 분기, <code>HomeScreen</code>·
+        <code>RegisterScreen</code>은 <code>fetched.words</code> 구조분해로 전환
+        <span class="files"><code>src/screens/LoginScreen.tsx</code>, <code>src/screens/HomeScreen.tsx</code>, <code>src/screens/RegisterScreen.tsx</code></span>
+      </li>
+      <li>테스트 갱신·추가: <code>verifyPassword</code> 3분기(ok/invalid/error) + profile 페이로드, 프로필 캐시 헬퍼
+        왕복, <code>clearPassword</code> 연쇄 삭제(직접 호출 + 401 경로), <code>fetchWords</code> 신 반환 형태
+        <span class="files"><code>src/lib/api.test.ts</code>, <code>src/lib/wordsApi.test.ts</code></span>
+      </li>
+      <li><code>npm test</code>·<code>npm run lint</code>·<code>tsc -b</code> 전체 통과 확인 (229 tests passed, lint clean, 빌드 통과)
+        <span class="files">(전체)</span>
+      </li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">5</span>리스크</h2>
+    <div class="scroll-x">
+    <table>
+      <thead><tr><th>리스크</th><th>영향</th><th>완화책</th></tr></thead>
+      <tbody>
+        <tr><td><code>VerifyResult</code> 형태 변경이 LoginScreen 외 다른 호출부를 놓침</td>
+          <td>타입 에러로 빌드 실패</td>
+          <td>grep으로 <code>verifyPassword</code>·<code>VerifyResult</code> 전수 확인 완료(LoginScreen 유일)</td></tr>
+        <tr><td>손상된 프로필 캐시(수동 편집·구버전 잔여값) JSON 파싱 실패</td>
+          <td><code>getStoredProfile</code> 예외 전파 시 화면 크래시</td>
+          <td>try/catch로 파싱 실패 시 <code>null</code> 폴백</td></tr>
+        <tr><td><code>fetchWords</code> 반환 형태 변경이 기존 테스트 목 데이터와 어긋남</td>
+          <td>기존 테스트 실패</td>
+          <td><code>wordsApi.test.ts</code> 목 응답에 <code>profile</code> 필드 추가로 갱신</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">6</span>테스트 계획</h2>
+    <ul>
+      <li><code>verifyPassword</code>: 200 응답(<code>profile</code> 필드 포함 모킹) → <code>{status:"ok",profile}</code>,
+        401 → <code>{status:"invalid"}</code>, 500 → <code>{status:"error"}</code>, 네트워크 예외 →
+        <code>{status:"error"}</code>.</li>
+      <li>프로필 캐시 헬퍼: 저장 → 조회 → 삭제 왕복이 성립한다.</li>
+      <li><code>clearPassword</code> 직접 호출 시, 그리고 <code>apiFetch</code>의 401 경로를 통했을 때 모두 비밀번호와
+        프로필 캐시가 함께 삭제된다.</li>
+      <li><code>verifyPassword</code>가 반환하는 profile에 <code>sheetId</code>·<code>password</code> 키가 없음을
+        확인한다(타입 정의 + 목 응답 검증).</li>
+      <li><code>fetchWords</code>가 <code>{ profile, words }</code> 형태를 그대로 반환한다(AbortSignal 전달, 비정상
+        응답 throw 등 기존 케이스는 유지).</li>
+      <li><code>npm test</code> 전체·<code>npm run lint</code> 통과.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">7</span>완료 조건</h2>
+    <ul class="done-list">
+      <li>verifyPassword 성공 시 profile 반환 (fetch 모킹 테스트)</li>
+      <li>401 처리 시(apiFetch 경로 포함) 비밀번호+프로필 캐시 동시 삭제</li>
+      <li>fetchWords 반환 형태가 <code>{ profile, words }</code>로 갱신되고 기존 소비처(LoginScreen, HomeScreen,
+        RegisterScreen) 컴파일·테스트 통과</li>
+      <li>저장되는 profile에 sheetId/password 없음</li>
+      <li><code>npm test</code>·<code>npm run lint</code> 통과</li>
+    </ul>
+  </section>
+
+  <footer>issue-plan · <a href="https://github.com/damdam6/vocabulary-study/issues/77">#77</a> · 2026-07-27</footer>
+</main>
+</body>
+</html>

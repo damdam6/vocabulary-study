@@ -19,12 +19,12 @@ function LoginScreen({ onLogin }: LoginScreenProps) {
     if (status === 'verifying') return
     setStatus('verifying')
     const result = await verifyPassword(password)
-    if (result === 'ok') {
+    if (result.status === 'ok') {
       savePassword(password)
       onLogin()
       return
     }
-    setStatus(result)
+    setStatus(result.status)
   }
 
   return (
