@@ -2,13 +2,17 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   apiFetch,
   clearPassword,
+  clearProfile,
   getStoredPassword,
+  getStoredProfile,
   postAnswer,
   postReviewFail,
+  saveProfile,
   savePassword,
   setApiSuccessHandler,
   setUnauthorizedHandler,
   verifyPassword,
+  type PublicProfile,
   type WordEntry,
 } from "./api";
 
@@ -32,6 +36,13 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
+const PROFILE: PublicProfile = {
+  id: "zh",
+  name: "중국어 단어",
+  modes: ["m1", "m2"],
+  contentType: "zh",
+};
+
 describe("저장소 헬퍼", () => {
   it("저장 → 조회 → 삭제가 왕복한다", () => {
     expect(getStoredPassword()).toBeNull();
@@ -39,6 +50,31 @@ describe("저장소 헬퍼", () => {
     expect(getStoredPassword()).toBe("secret");
     clearPassword();
     expect(getStoredPassword()).toBeNull();
+  });
+
+  it("clearPassword는 프로필 캐시도 함께 지운다", () => {
+    savePassword("secret");
+    saveProfile(PROFILE);
+    clearPassword();
+    expect(getStoredPassword()).toBeNull();
+    expect(getStoredProfile()).toBeNull();
+  });
+});
+
+describe("프로필 캐시 헬퍼", () => {
+  it("저장 → 조회 → 삭제가 왕복하고, sheetId/password를 싣지 않는다", () => {
+    expect(getStoredProfile()).toBeNull();
+    saveProfile(PROFILE);
+    expect(getStoredProfile()).toEqual(PROFILE);
+    expect(getStoredProfile()).not.toHaveProperty("sheetId");
+    expect(getStoredProfile()).not.toHaveProperty("password");
+    clearProfile();
+    expect(getStoredProfile()).toBeNull();
+  });
+
+  it("손상된 캐시 값은 조회 시 null로 폴백한다", () => {
+    localStorage.setItem("vocab-study:profile", "{invalid json");
+    expect(getStoredProfile()).toBeNull();
   });
 });
 
@@ -83,8 +119,9 @@ describe("apiFetch", () => {
     expect(new Headers(init.headers).get("Authorization")).toBeNull();
   });
 
-  it("401 수신 시 저장값을 지우고 unauthorized 핸들러를 호출한 뒤 응답을 반환한다", async () => {
+  it("401 수신 시 저장값과 프로필 캐시를 지우고 unauthorized 핸들러를 호출한 뒤 응답을 반환한다", async () => {
     savePassword("stale");
+    saveProfile(PROFILE);
     const handler = vi.fn();
     setUnauthorizedHandler(handler);
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(null, { status: 401 })));
@@ -93,6 +130,7 @@ describe("apiFetch", () => {
 
     expect(response.status).toBe(401);
     expect(getStoredPassword()).toBeNull();
+    expect(getStoredProfile()).toBeNull();
     expect(handler).toHaveBeenCalledTimes(1);
   });
 
@@ -135,30 +173,42 @@ describe("apiFetch", () => {
 });
 
 describe("verifyPassword", () => {
-  it("200이면 'ok' — 후보 값을 Bearer로 /api/health에 보낸다", async () => {
-    const fetchMock = vi.fn().mockResolvedValue(new Response("{}", { status: 200 }));
+  it("200이면 {status:'ok', profile} — 후보 값을 Bearer로 /api/health에 보내고 응답의 profile을 반환한다", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(Response.json({ ok: true, profile: PROFILE }));
     vi.stubGlobal("fetch", fetchMock);
 
-    await expect(verifyPassword("candidate")).resolves.toBe("ok");
+    await expect(verifyPassword("candidate")).resolves.toEqual({ status: "ok", profile: PROFILE });
 
     const [path, init] = fetchMock.mock.calls[0] as [string, RequestInit];
     expect(path).toBe("/api/health");
     expect(new Headers(init.headers).get("Authorization")).toBe("Bearer candidate");
   });
 
-  it("401이면 'invalid'", async () => {
+  it("200 응답의 profile에는 sheetId/password가 없다", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(Response.json({ ok: true, profile: PROFILE })));
+
+    const result = await verifyPassword("candidate");
+
+    expect(result.status).toBe("ok");
+    if (result.status === "ok") {
+      expect(result.profile).not.toHaveProperty("sheetId");
+      expect(result.profile).not.toHaveProperty("password");
+    }
+  });
+
+  it("401이면 {status:'invalid'}", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(null, { status: 401 })));
-    await expect(verifyPassword("wrong")).resolves.toBe("invalid");
+    await expect(verifyPassword("wrong")).resolves.toEqual({ status: "invalid" });
   });
 
-  it("500 등 그 외 상태면 'error'", async () => {
+  it("500 등 그 외 상태면 {status:'error'}", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(null, { status: 500 })));
-    await expect(verifyPassword("any")).resolves.toBe("error");
+    await expect(verifyPassword("any")).resolves.toEqual({ status: "error" });
   });
 
-  it("네트워크 예외면 'error'", async () => {
+  it("네트워크 예외면 {status:'error'}", async () => {
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new TypeError("Failed to fetch")));
-    await expect(verifyPassword("any")).resolves.toBe("error");
+    await expect(verifyPassword("any")).resolves.toEqual({ status: "error" });
   });
 });
 
