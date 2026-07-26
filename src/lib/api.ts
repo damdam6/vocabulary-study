@@ -16,8 +16,44 @@ export function savePassword(password: string): void {
   localStorage.setItem(STORAGE_KEY, password);
 }
 
+/** 비밀번호와 프로필 캐시를 함께 지운다 — 401 경로(apiFetch)를 포함한 모든 호출부가 이 한 곳을 거친다. */
 export function clearPassword(): void {
   localStorage.removeItem(STORAGE_KEY);
+  clearProfile();
+}
+
+const PROFILE_STORAGE_KEY = "vocab-study:profile";
+
+/**
+ * `/api/health`·`/api/words` 응답의 공개 프로필 블록 (PRD-general §5.2).
+ * worker/lib/profiles.ts의 PublicProfile과 같은 형태지만, tsconfig.app.json이 src만
+ * 포함해 worker 타입을 import할 수 없어 클라이언트 쪽 계약 미러로 둔다.
+ */
+export type ContentType = "zh" | "generic";
+
+export interface PublicProfile {
+  id: string;
+  name: string;
+  modes: QuizMode[];
+  contentType: ContentType;
+}
+
+export function getStoredProfile(): PublicProfile | null {
+  const raw = localStorage.getItem(PROFILE_STORAGE_KEY);
+  if (raw === null) return null;
+  try {
+    return JSON.parse(raw) as PublicProfile;
+  } catch {
+    return null;
+  }
+}
+
+export function saveProfile(profile: PublicProfile): void {
+  localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile));
+}
+
+export function clearProfile(): void {
+  localStorage.removeItem(PROFILE_STORAGE_KEY);
 }
 
 let unauthorizedHandler: (() => void) | null = null;
@@ -58,23 +94,30 @@ export async function apiFetch(path: string, init: RequestInit = {}): Promise<Re
   return response;
 }
 
-export type VerifyResult = "ok" | "invalid" | "error";
+export type VerifyResult =
+  | { status: "ok"; profile: PublicProfile }
+  | { status: "invalid" }
+  | { status: "error" };
 
 /**
  * 후보 비밀번호를 Bearer로 GET /api/health 호출해 검증한다 (design-prd §2).
  * 아직 저장 전 값이므로 apiFetch를 경유하지 않는다. 401(오답)과 네트워크·서버
- * 오류를 구분해 반환한다 — 일시 장애를 오답으로 표시하지 않기 위함.
+ * 오류를 구분해 반환한다 — 일시 장애를 오답으로 표시하지 않기 위함. 성공 시
+ * 응답에 실린 profile을 함께 반환한다(PRD-general §5.2) — 저장은 호출부 책임(#78).
  */
 export async function verifyPassword(candidate: string): Promise<VerifyResult> {
   try {
     const response = await fetch("/api/health", {
       headers: { Authorization: `Bearer ${candidate}` },
     });
-    if (response.ok) return "ok";
-    if (response.status === 401) return "invalid";
-    return "error";
+    if (response.ok) {
+      const data = (await response.json()) as { profile: PublicProfile };
+      return { status: "ok", profile: data.profile };
+    }
+    if (response.status === 401) return { status: "invalid" };
+    return { status: "error" };
   } catch {
-    return "error";
+    return { status: "error" };
   }
 }
 
