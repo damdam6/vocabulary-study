@@ -196,6 +196,11 @@ describe("verifyPassword", () => {
     }
   });
 
+  it("200 응답인데 profile이 없으면 'error' — 서버 계약 위반을 성공으로 오인하지 않는다", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(Response.json({ ok: true })));
+    await expect(verifyPassword("candidate")).resolves.toEqual({ status: "error" });
+  });
+
   it("401이면 {status:'invalid'}", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(null, { status: 401 })));
     await expect(verifyPassword("wrong")).resolves.toEqual({ status: "invalid" });

@@ -111,7 +111,8 @@ export async function verifyPassword(candidate: string): Promise<VerifyResult> {
       headers: { Authorization: `Bearer ${candidate}` },
     });
     if (response.ok) {
-      const data = (await response.json()) as { profile: PublicProfile };
+      const data = (await response.json()) as { profile?: PublicProfile };
+      if (!data.profile) return { status: "error" };
       return { status: "ok", profile: data.profile };
     }
     if (response.status === 401) return { status: "invalid" };
