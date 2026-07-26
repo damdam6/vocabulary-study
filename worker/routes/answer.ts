@@ -12,6 +12,7 @@ import {
   MODE_COLUMN,
   type AnswerMode,
 } from "../lib/answer.ts";
+import type { Profile } from "../lib/profiles.ts";
 
 interface AnswerRequest {
   tab: string;
@@ -34,7 +35,11 @@ function parseAnswerRequest(body: unknown): AnswerRequest | null {
   return { tab, hanzi, mode, timestamp, isReview };
 }
 
-export async function handleAnswerPost(request: Request, env: Env): Promise<Response> {
+export async function handleAnswerPost(
+  request: Request,
+  env: Env,
+  profile: Profile,
+): Promise<Response> {
   let body: unknown;
   try {
     body = await request.json();
@@ -51,12 +56,12 @@ export async function handleAnswerPost(request: Request, env: Env): Promise<Resp
   }
 
   // 행 번호는 캐시하지 않고 매 요청마다 탭 이름 + A열 한자로 재탐색한다 (PRD 4.2).
-  const rowNumber = await findRowNumber(env, env.SHEET_ID, answer.tab, answer.hanzi);
+  const rowNumber = await findRowNumber(env, profile.sheetId, answer.tab, answer.hanzi);
   if (rowNumber === null) {
     return Response.json({ error: "word not found" }, { status: 404 });
   }
 
-  const [row = []] = await getValues(env, env.SHEET_ID, answer.tab, `${rowNumber}:${rowNumber}`);
+  const [row = []] = await getValues(env, profile.sheetId, answer.tab, `${rowNumber}:${rowNumber}`);
   const current = parseWordRow(answer.tab, row);
   const update = computeAnswerUpdate(current, answer.mode, answer.isReview, new Date());
 
@@ -71,7 +76,7 @@ export async function handleAnswerPost(request: Request, env: Env): Promise<Resp
   if (update.nextReviewChanged) {
     writes.push({ range: `F${rowNumber}`, values: [[`${update.nextReview}|${update.interval}`]] });
   }
-  await batchUpdateValues(env, env.SHEET_ID, answer.tab, writes);
+  await batchUpdateValues(env, profile.sheetId, answer.tab, writes);
 
   const updated: WordEntry = {
     tab: answer.tab,
