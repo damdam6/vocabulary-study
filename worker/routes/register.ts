@@ -43,7 +43,7 @@ export async function handleWordsRegister(request: Request, env: Env): Promise<R
     );
   }
 
-  const wordTabs = await getWordTabTitles(env);
+  const wordTabs = await getWordTabTitles(env, env.SHEET_ID);
   const targetTab = tabResult.name;
   let created = false;
 
@@ -57,15 +57,15 @@ export async function handleWordsRegister(request: Request, env: Env): Promise<R
     if (wordTabs.length === 0) {
       return Response.json({ error: "헤더를 복사할 기존 탭이 없습니다" }, { status: 400 });
     }
-    const [headerRow] = await getValues(env, wordTabs[0], "1:1");
-    await addSheet(env, targetTab);
-    await updateValues(env, targetTab, "A1", [headerRow ?? []]);
+    const [headerRow] = await getValues(env, env.SHEET_ID, wordTabs[0], "1:1");
+    await addSheet(env, env.SHEET_ID, targetTab);
+    await updateValues(env, env.SHEET_ID, targetTab, "A1", [headerRow ?? []]);
     created = true;
   }
 
   // 행 번호를 캐시하지 않고 매 요청 재탐색한다(PRD 4.2) — 이미 중복 검사용으로 읽은 A2:A 결과를
   // 그대로 다음 빈 행 계산에 재사용해 A·B·C열에만 명시적 range로 쓴다(D열 이후 불가침).
-  const existingRows = await getValues(env, targetTab, "A2:A");
+  const existingRows = await getValues(env, env.SHEET_ID, targetTab, "A2:A");
   const existingHanzi = existingRows.map((row) => row[0]).filter((v): v is string => !!v);
 
   const { toAdd, skipped } = partitionByExisting(words, existingHanzi);
@@ -74,7 +74,7 @@ export async function handleWordsRegister(request: Request, env: Env): Promise<R
     const nextRow = existingRows.length + 2;
     const lastRow = nextRow + toAdd.length - 1;
     const values = toAdd.map((w) => [w.hanzi, w.pinyin, w.meaning]);
-    await updateValues(env, targetTab, `A${nextRow}:C${lastRow}`, values);
+    await updateValues(env, env.SHEET_ID, targetTab, `A${nextRow}:C${lastRow}`, values);
   }
 
   return Response.json({ tab: targetTab, created, added: toAdd, skipped });

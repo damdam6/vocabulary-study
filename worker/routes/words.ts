@@ -8,10 +8,10 @@ import { getValues } from "../lib/sheets.ts";
 import { getWordTabTitles, parseWordRow, WORD_ROW_RANGE, type WordEntry } from "../lib/words.ts";
 
 export async function handleGetWords(env: Env): Promise<Response> {
-  const wordTabs = await getWordTabTitles(env);
+  const wordTabs = await getWordTabTitles(env, env.SHEET_ID);
 
   const rowsByTab = await Promise.all(
-    wordTabs.map((tab) => getValues(env, tab, WORD_ROW_RANGE)),
+    wordTabs.map((tab) => getValues(env, env.SHEET_ID, tab, WORD_ROW_RANGE)),
   );
 
   const words: WordEntry[] = [];
