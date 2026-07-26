@@ -24,6 +24,22 @@ export interface Profile {
   contentType: ContentType;
 }
 
+/** API 응답에 싣는 공개 프로필 블록 (PRD-general §5.2) — health가 쓰고, words가 후속 이슈에서 재사용. */
+export type PublicProfile = Pick<Profile, "id" | "name" | "modes" | "contentType">;
+
+/**
+ * 응답용 공개 필드만 추린다 — `sheetId`·`password`는 어떤 API 응답에도 싣지 않는다는
+ * 불변식(§5.2)을 이 한 곳에서 보장한다. modes는 복사해 캐시된 프로필과의 참조 공유를 끊는다.
+ */
+export function toPublicProfile(profile: Profile): PublicProfile {
+  return {
+    id: profile.id,
+    name: profile.name,
+    modes: [...profile.modes],
+    contentType: profile.contentType,
+  };
+}
+
 /**
  * 이 모듈이 읽는 env 조각. 생성 파일(worker-configuration.d.ts)에는 `PROFILES` 시크릿이
  * 아직 없으므로(미설정 상태에서는 `wrangler types`가 만들지 않음) 필요한 필드만 구조적으로

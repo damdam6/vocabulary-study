@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getProfiles, parseProfiles, ProfileConfigError } from "./profiles.ts";
+import { getProfiles, parseProfiles, ProfileConfigError, toPublicProfile } from "./profiles.ts";
 
 function makeProfile(overrides: Record<string, unknown> = {}): Record<string, unknown> {
   return {
@@ -147,6 +147,29 @@ describe("parseProfiles — 폴백 합성 (PROFILES 미설정)", () => {
 
   it("SHEET_ID만 없어도 ProfileConfigError", () => {
     expect(() => parseProfiles({ APP_PASSWORD: "legacy-pw" })).toThrow(ProfileConfigError);
+  });
+});
+
+describe("toPublicProfile", () => {
+  it("공개 4필드만 남긴다 — sheetId·password는 키 자체가 없다", () => {
+    const [profile] = parseProfiles(envWith([makeProfile()]));
+    const publicBlock = toPublicProfile(profile);
+    // toEqual은 여분 키도 불일치로 잡는다 — 4필드 외 아무것도 없음을 고정.
+    expect(publicBlock).toEqual({
+      id: "zh",
+      name: "중국어 단어",
+      modes: ["m1", "m2"],
+      contentType: "zh",
+    });
+    expect(Object.keys(publicBlock)).not.toContain("sheetId");
+    expect(Object.keys(publicBlock)).not.toContain("password");
+  });
+
+  it("modes를 복사해 원본 프로필과 참조를 공유하지 않는다", () => {
+    const [profile] = parseProfiles(envWith([makeProfile()]));
+    const publicBlock = toPublicProfile(profile);
+    expect(publicBlock.modes).not.toBe(profile.modes);
+    expect(publicBlock.modes).toEqual(profile.modes);
   });
 });
 
