@@ -66,7 +66,11 @@ function stubSheetsFetch(): { urls: string[] } {
       if (url.includes("?fields=")) {
         return Response.json({ sheets: sheet.titles.map((title) => ({ properties: { title } })) });
       }
-      const decoded = decodeURIComponent(url.split("/values/")[1].split("?")[0]);
+      const valuesPath = url.split("/values/")[1];
+      if (!valuesPath) {
+        throw new Error(`unhandled mock request: ${url}`);
+      }
+      const decoded = decodeURIComponent(valuesPath.split("?")[0]);
       const tab = decoded.slice(1, decoded.indexOf("!") - 1);
       return Response.json({ values: sheet.rows[tab] ?? [] });
     }),
