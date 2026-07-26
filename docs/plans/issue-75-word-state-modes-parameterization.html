@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>#75 클라이언트 상태 판정 M 파라미터화 — wordState·homeStats에 modes 인자 — 작업 플랜</title>
+<style>
+  :root {
+    --bg: #f7f7f8; --card: #ffffff; --ink: #1c1c1e; --muted: #6e6e73;
+    --line: #e3e3e6; --accent: #3b6ef5; --accent-soft: #e8eefe;
+    --ok: #2e8b57; --warn: #b25e09; --code-bg: #f0f0f2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161618; --card: #202024; --ink: #ececf0; --muted: #98989f;
+      --line: #333338; --accent: #7a9bff; --accent-soft: #26304a;
+      --ok: #58c088; --warn: #e0a35c; --code-bg: #2a2a2f;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 40px 20px 80px; background: var(--bg); color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+                 "Segoe UI", "Noto Sans KR", sans-serif;
+    line-height: 1.65;
+  }
+  main { max-width: 860px; margin: 0 auto; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code {
+    font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 0.86em;
+    background: var(--code-bg); border-radius: 5px; padding: 2px 6px;
+  }
+  header { margin-bottom: 28px; }
+  .issue-chip {
+    display: inline-block; font-weight: 700; color: var(--accent);
+    background: var(--accent-soft); border-radius: 999px;
+    padding: 3px 14px; font-size: 0.95rem; margin-bottom: 10px;
+  }
+  .type-chip {
+    display: inline-block; font-weight: 600; color: var(--muted);
+    border: 1px solid var(--line); border-radius: 999px;
+    padding: 3px 12px; font-size: 0.8rem; margin-left: 8px; vertical-align: 2px;
+  }
+  h1 { font-size: 1.7rem; margin: 0 0 14px; letter-spacing: -0.02em; }
+  .meta {
+    display: flex; flex-wrap: wrap; gap: 6px 22px;
+    color: var(--muted); font-size: 0.87rem;
+  }
+  .meta b { color: var(--ink); font-weight: 600; }
+  section.card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 24px 28px; margin-top: 18px;
+  }
+  h2 {
+    font-size: 1.05rem; margin: 0 0 14px; letter-spacing: -0.01em;
+    display: flex; align-items: center; gap: 8px;
+  }
+  h2 .no {
+    color: var(--accent); font-size: 0.8rem; font-weight: 700;
+    border: 1.5px solid var(--accent); border-radius: 6px; padding: 0 6px;
+  }
+  ul, ol { margin: 0; padding-left: 22px; }
+  li { margin: 6px 0; }
+  .steps { list-style: none; padding: 0; counter-reset: step; }
+  .steps li {
+    counter-increment: step; position: relative; padding: 10px 0 10px 44px;
+    border-bottom: 1px dashed var(--line);
+  }
+  .steps li:last-child { border-bottom: none; }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 10px;
+    width: 28px; height: 28px; border-radius: 8px; background: var(--accent-soft);
+    color: var(--accent); font-weight: 700; font-size: 0.85rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .steps li.done::before { content: "✓"; background: var(--ok); color: #fff; }
+  .steps li.done .st { text-decoration: line-through; text-decoration-color: var(--muted); }
+  .steps .files { display: block; margin-top: 4px; font-size: 0.85rem; color: var(--muted); }
+  .steps .note { display: block; margin-top: 4px; font-size: 0.85rem; color: var(--ok); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 0.82rem; }
+  .done-list { list-style: none; padding: 0; }
+  .done-list li { padding-left: 30px; position: relative; }
+  .done-list li::before {
+    content: ""; position: absolute; left: 2px; top: 7px; width: 15px; height: 15px;
+    border: 2px solid var(--ok); border-radius: 5px;
+  }
+  .scroll-x { overflow-x: auto; }
+  footer { margin-top: 30px; color: var(--muted); font-size: 0.8rem; text-align: center; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <span class="issue-chip"><a href="https://github.com/damdam6/vocabulary-study/issues/75">#75</a></span><span class="type-chip">기능 개선</span>
+    <h1>클라이언트 상태 판정 M 파라미터화 — wordState·homeStats에 modes 인자</h1>
+    <div class="meta">
+      <span><b>damdam6/vocabulary-study</b></span>
+      <span>브랜치 <b><code>feat/75-word-state-modes-parameterization</code></b> ← <code>main</code></span>
+      <span>라벨 <b>enhancement</b></span>
+      <span>2026-07-26</span>
+    </div>
+  </header>
+
+  <section class="card">
+    <h2><span class="no">1</span>요약</h2>
+    <p>
+      <code>getWordState</code>·<code>computeHomeStats</code>는 현재 모드가 항상 m1·m2 둘이라고
+      하드코딩돼 있다. PRD-general §4.1은 상태 판정을 "활성 모드 집합 M" 기준으로 일반화하므로,
+      두 함수에 <code>modes</code> 인자를 추가해 M 기준 판정으로 바꾼다. 이번 이슈에서 호출부는
+      전부 <code>["m1","m2"]</code> 고정 주입으로 유지해 동작을 보존한다 — 실제 프로필
+      <code>modes</code> 연결은 #78(화면 프로필 배선), <code>buildSessionQueue</code> 자체의
+      출제 모드 제한은 #76(세션 큐 M 파라미터화)이 각각 후속으로 다룬다.
+    </p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">2</span>현황 분석</h2>
+    <ul>
+      <li><code>src/lib/wordState.ts:36-51</code> <code>getWordState(word, today)</code> — <code>word.m1 &lt; 3 || word.m2 &lt; 3</code>이면 <code>learning</code>. 둘 다 ≥3인데 <code>nextReview</code>가 <code>null</code>이면(데이터 이상) <code>reviewDue</code>로 취급하는 자가치유 규칙, <code>nextReview &lt;= today</code>면 <code>reviewDue</code> 아니면 <code>reviewScheduled</code>.</li>
+      <li><code>src/lib/homeStats.ts:20-42</code> <code>computeHomeStats(words, today)</code> — 각 단어에 <code>getWordState</code>를 호출해 세 상태로 분류·집계할 뿐, 자체 판정 로직은 없다.</li>
+      <li>호출부는 세 곳: <code>src/screens/HomeScreen.tsx:38</code> <code>computeHomeStats(fetched, getSeoulToday())</code>, 같은 파일 <code>:75</code> <code>buildSessionQueue(words, getSeoulToday())</code>가 내부적으로 <code>src/lib/sessionQueue.ts:39</code> <code>getWordState(word, today)</code>를 직접 호출한다.</li>
+      <li><code>sessionQueue.ts</code>는 <code>QuizMode = "m1" | "m2"</code>(<code>:13</code>)와 <code>randomMode</code>/<code>learningMode</code>(<code>:84-97</code>)가 이미 두 모드를 하드코딩하고 있다. 이 로직 자체(출제 모드를 M으로 제한)는 이슈 #76 범위 — 이 이슈에서는 <code>getWordState</code> 호출 시그니처를 맞추는 최소 변경만 한다.</li>
+      <li>테스트는 <code>src/lib/wordState.test.ts</code>(7 케이스, <code>it.each</code>)와 <code>src/lib/homeStats.test.ts</code>(4 케이스) — 둘 다 현재 <code>modes</code> 없이 호출한다.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">3</span>설계</h2>
+    <ul>
+      <li><b>채택</b>: <code>wordState.ts</code>에 <code>export type Mode = "m1" | "m2"</code>를 새로 정의하고, <code>getWordState(word, today, modes: readonly Mode[])</code>로 확장한다. 판정은 <code>modes.some((m) => word[m] &lt; 3)</code>이면 <code>learning</code> — PRD §4.1 "M의 어느 한 모드라도 카운트 &lt; 3"과 정확히 대응. 나머지(<code>nextReview</code> 비교, 데이터 이상 자가치유)는 그대로 둔다 — 이미 M 기준으로 맞는 로직이라 손댈 필요가 없다(§4.3에서도 이 자가치유 경로를 그대로 재사용한다고 명시).</li>
+      <li><code>Mode</code>를 <code>sessionQueue.ts</code>의 <code>QuizMode</code>와 통합하지 않는다: <code>sessionQueue.ts</code>가 이미 <code>wordState.ts</code>를 import하므로 반대 방향 import는 순환 참조가 된다. 두 타입은 구조적으로 동일한 리터럴 유니온이라 별도 정의로도 인터페이스가 어긋나지 않는다. <code>QuizMode</code> 자체의 정리는 #76이 다룰 문제.</li>
+      <li><code>computeHomeStats(words, today, modes: readonly Mode[])</code>는 자체 판정 없이 <code>getWordState(word, today, modes)</code>에 그대로 전달만 한다(이슈 문구 "modes 전달만"과 일치).</li>
+      <li>호출부(<code>HomeScreen.tsx</code>, <code>sessionQueue.ts</code>)는 인라인 배열 리터럴 <code>["m1", "m2"]</code>를 그대로 전달한다 — 컨텍스트 타이핑으로 <code>readonly Mode[]</code>에 맞춰 리터럴 타입이 좁혀지므로 <code>as const</code>가 필요 없다. 각 호출부에 후속 이슈(#76/#78) 참조 주석을 남겨 "고정 주입은 임시"임을 코드에서 바로 알 수 있게 한다.</li>
+      <li><b>기각</b>: 모드를 전역 설정/React 컨텍스트로 주입 — PRD-general 결정 이력("학습 로직 전달 방식")에서 이미 순수 함수 인자 방식으로 확정했다(테스트 오염 방지, lib의 React 비의존 구조 보존). 재론하지 않는다.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">4</span>작업 단계</h2>
+    <ol class="steps">
+      <li class="done"><span class="st"><code>Mode</code> 타입 추가 + <code>getWordState</code>에 <code>modes</code> 인자 추가, 판정 로직을 <code>modes.some(...)</code> 기반으로 교체, JSDoc을 M 기준 설명으로 갱신.</span>
+        <span class="files"><code>src/lib/wordState.ts</code></span>
+      </li>
+      <li class="done"><span class="st"><code>computeHomeStats</code>에 <code>modes</code> 인자 추가해 <code>getWordState</code> 호출에 전달, JSDoc 갱신.</span>
+        <span class="files"><code>src/lib/homeStats.ts</code></span>
+      </li>
+      <li class="done"><span class="st"><code>getWordState</code> 호출부에 <code>["m1", "m2"]</code> 고정 전달(동작 불변) + #76 참조 주석.</span>
+        <span class="files"><code>src/lib/sessionQueue.ts</code></span>
+      </li>
+      <li class="done"><span class="st"><code>computeHomeStats</code> 호출부에 <code>["m1", "m2"]</code> 고정 전달(동작 불변) + #78 참조 주석.</span>
+        <span class="files"><code>src/screens/HomeScreen.tsx</code></span>
+      </li>
+      <li class="done"><span class="st">기존 7개 케이스에 <code>modes: ["m1","m2"]</code> 추가(인자 추가만으로 통과 = 동작 보존 증명) + M={m1}/{m2} 각각 학습 중·복습 대기(경계값: 단일 모드 3회 도달, nextReview null/오늘)·복습 예약 케이스 + 모드 축소 재해석 엣지(m1≥3·m2&lt;3, nextReview null, M={m1} → reviewDue) 케이스 추가.</span>
+        <span class="files"><code>src/lib/wordState.test.ts</code></span>
+      </li>
+      <li class="done"><span class="st">기존 4개 케이스에 <code>modes: ["m1","m2"]</code> 추가 + <code>modes</code> 전달이 실제로 판정에 반영되는지 확인하는 케이스 1건(M={m1}에서만 졸업하는 단어로 홈 집계가 달라짐) 추가.</span>
+        <span class="files"><code>src/lib/homeStats.test.ts</code></span>
+      </li>
+      <li class="done"><span class="st"><code>npm test</code>·<code>npm run lint</code> 실행해 그린 확인.</span>
+        <span class="files">전체 스위트</span>
+      </li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">5</span>리스크</h2>
+    <div class="scroll-x">
+    <table>
+      <thead><tr><th>리스크</th><th>영향</th><th>완화책</th></tr></thead>
+      <tbody>
+        <tr><td><code>sessionQueue.ts</code>의 고정 주입이 #76의 진짜 M 연결과 헷갈릴 수 있음</td><td>#76 작업자가 이미 연결된 것으로 착각</td><td>호출부에 "#76에서 실제 M으로 교체" 주석 명시</td></tr>
+        <tr><td><code>word[mode]</code> 동적 인덱싱과 <code>WordProgress</code> 필드 불일치</td><td>타입 에러 또는 런타임 <code>undefined</code> 비교</td><td><code>Mode</code>를 <code>WordProgress</code>의 수치 필드 키(<code>"m1"|"m2"</code>)와 동일하게 정의 — 컴파일러가 보증</td></tr>
+        <tr><td><code>modes</code> 빈 배열 입력 시 <code>.some()</code>이 항상 false → 즉시 졸업 취급</td><td>비정상 프로필 구성에서 오판정</td><td>클라이언트에서 별도 검증하지 않음 — 프로필 구성 검증은 Worker <code>profiles.ts</code>(#70) 책임, PRD도 여기서 방어를 요구하지 않음</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">6</span>테스트 계획</h2>
+    <ul>
+      <li><code>npm test</code> — <code>wordState.test.ts</code> 확장 케이스(3 구성 × 3 상태 + 경계값 + 모드 축소 엣지) 전부 통과, <code>homeStats.test.ts</code> 확장 케이스 통과, 나머지 스위트(<code>sessionQueue.test.ts</code> 등) 회귀 없이 그대로 통과.</li>
+      <li><code>npm run lint</code>(oxlint) 통과.</li>
+      <li>수동 확인: 순수 함수 시그니처 변경 + 호출부 고정 주입이라 UI 동작은 불변 — 별도 브라우저 확인 없이 테스트로 충분.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">7</span>완료 조건</h2>
+    <ul class="done-list">
+      <li>{m1} / {m2} / {m1,m2} 세 구성 × 세 상태 판정 테스트 통과 (경계값: 단일 모드 3회 도달, nextReview null/오늘)</li>
+      <li>모드 축소 재해석 엣지(§4.3): m1≥3·m2&lt;3 단어가 M={m1}·F열 빈칸에서 복습 대기로 분류되는 테스트 통과</li>
+      <li>M={m1,m2}에서 기존 테스트가 인자 추가만으로 전부 통과 (동작 보존 증명)</li>
+      <li><code>npm test</code>·<code>npm run lint</code> 통과</li>
+    </ul>
+  </section>
+
+  <footer>issue-plan · <a href="https://github.com/damdam6/vocabulary-study/issues/75">#75</a> · 2026-07-26</footer>
+</main>
+</body>
+</html>

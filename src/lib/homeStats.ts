@@ -1,10 +1,11 @@
 /**
- * design-prd §3 홈 화면 현황 카드·세션 수 집계. getWordState(§5.1)로 단어를
- * 분류한 뒤, 기능 PRD §6.1 큐 산식과 동일한 "오늘 세션 문제 수"를 계산한다.
+ * design-prd §3 홈 화면 현황 카드·세션 수 집계. getWordState(PRD-general §4.1)로
+ * 단어를 분류한 뒤, 기능 PRD §6.1 큐 산식과 동일한 "오늘 세션 문제 수"를 계산한다.
+ * modes는 getWordState에 그대로 전달만 한다 — 판정 로직은 여기 두지 않는다.
  * 실제 큐 구성(#14)은 이 이슈 범위 밖 — 여기서는 문제 수만 센다.
  */
 
-import { getWordState, type WordProgress } from "./wordState.ts";
+import { getWordState, type Mode, type WordProgress } from "./wordState.ts";
 
 const SESSION_CAP = 60;
 
@@ -17,13 +18,13 @@ export interface HomeStats {
   sessionCount: number;
 }
 
-export function computeHomeStats(words: WordProgress[], today: string): HomeStats {
+export function computeHomeStats(words: WordProgress[], today: string, modes: readonly Mode[]): HomeStats {
   let reviewDue = 0;
   let reviewScheduled = 0;
   let learning = 0;
 
   for (const word of words) {
-    const state = getWordState(word, today);
+    const state = getWordState(word, today, modes);
     if (state === "learning") {
       learning += 1;
     } else if (state === "reviewDue") {

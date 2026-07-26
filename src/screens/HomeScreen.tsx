@@ -35,7 +35,8 @@ function HomeScreen({ onStart, onNavigateRegister }: HomeScreenProps) {
       .then((fetched) => {
         if (cancelled) return;
         setWords(fetched);
-        setStats(computeHomeStats(fetched, getSeoulToday()));
+        // #78(화면 프로필 배선) 전까지 고정 주입 — 실제 profile.modes 연결은 그 이슈에서.
+        setStats(computeHomeStats(fetched, getSeoulToday(), ["m1", "m2"]));
         setStatus("ready");
       })
       .catch((err: unknown) => {
