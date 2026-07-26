@@ -9,8 +9,8 @@ import { getSheetTitles, getValues, SheetsApiError } from "./sheets.ts";
 export const WORD_ROW_RANGE = "A2:F";
 
 /** `_` 접두 탭(학습 제외)을 뺀 탭 제목 목록. GET /api/words·GET /api/tabs·등록 시 헤더 원본 탭 선택이 공유한다. */
-export async function getWordTabTitles(env: Env): Promise<string[]> {
-  const titles = await getSheetTitles(env);
+export async function getWordTabTitles(env: Env, sheetId: string): Promise<string[]> {
+  const titles = await getSheetTitles(env, sheetId);
   return titles.filter((title) => !title.startsWith("_"));
 }
 
@@ -48,10 +48,15 @@ export interface FoundWordRow {
 
 // 행 번호를 캐시하지 않고 쓰기 시점마다 재탐색한다(PRD 4.2 — 사용자가 시트를 정렬/삽입할 수 있음).
 /** 탭+A열 한자로 행을 찾아 시트 행 번호(헤더 오프셋 +2)와 정규화된 단어를 함께 반환한다. 없으면 null. */
-export async function findWordRow(env: Env, tab: string, hanzi: string): Promise<FoundWordRow | null> {
+export async function findWordRow(
+  env: Env,
+  sheetId: string,
+  tab: string,
+  hanzi: string,
+): Promise<FoundWordRow | null> {
   let rows: string[][];
   try {
-    rows = await getValues(env, tab, WORD_ROW_RANGE);
+    rows = await getValues(env, sheetId, tab, WORD_ROW_RANGE);
   } catch (err) {
     // 존재하지 않는 탭을 조회하면 Sheets API가 400(Unable to parse range)을 던진다 — "찾지 못함"으로 취급한다.
     if (err instanceof SheetsApiError && err.status === 400) {
@@ -70,10 +75,15 @@ export async function findWordRow(env: Env, tab: string, hanzi: string): Promise
  * 탭 이름 + A열 한자로 행 번호를 캐시 없이 재탐색한다 (PRD 4.2 — 사용자가 시트를
  * 정렬·삽입할 수 있어 행 번호를 저장해두면 안 된다). 없으면 null.
  */
-export async function findRowNumber(env: Env, tab: string, hanzi: string): Promise<number | null> {
+export async function findRowNumber(
+  env: Env,
+  sheetId: string,
+  tab: string,
+  hanzi: string,
+): Promise<number | null> {
   let column: string[][];
   try {
-    column = await getValues(env, tab, "A2:A");
+    column = await getValues(env, sheetId, tab, "A2:A");
   } catch (err) {
     // 존재하지 않는 탭을 조회하면 Sheets API가 400(Unable to parse range)을 던진다 — "찾지 못함"으로 취급한다.
     if (err instanceof SheetsApiError && err.status === 400) {

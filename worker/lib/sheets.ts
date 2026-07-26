@@ -36,15 +36,20 @@ export interface BatchUpdateResult {
 }
 
 /** 지정 범위의 값을 읽는다. 빈 범위는 빈 배열. 뒤쪽 빈 셀은 API가 생략하므로 행 길이가 다를 수 있다. */
-export async function getValues(env: Env, tab: string, range: string): Promise<string[][]> {
-  const res = await sheetsFetch(env, "GET", `/values/${encodeRange(tab, range)}`);
+export async function getValues(
+  env: Env,
+  sheetId: string,
+  tab: string,
+  range: string,
+): Promise<string[][]> {
+  const res = await sheetsFetch(env, sheetId, "GET", `/values/${encodeRange(tab, range)}`);
   const body = (await res.json()) as { values?: string[][] };
   return body.values ?? [];
 }
 
 /** 스프레드시트의 모든 탭 제목을 순서대로 반환한다. */
-export async function getSheetTitles(env: Env): Promise<string[]> {
-  const res = await sheetsFetch(env, "GET", "?fields=sheets.properties.title");
+export async function getSheetTitles(env: Env, sheetId: string): Promise<string[]> {
+  const res = await sheetsFetch(env, sheetId, "GET", "?fields=sheets.properties.title");
   const body = (await res.json()) as { sheets?: { properties?: { title?: string } }[] };
   return (body.sheets ?? [])
     .map((sheet) => sheet.properties?.title)
@@ -53,8 +58,8 @@ export async function getSheetTitles(env: Env): Promise<string[]> {
 
 // 값(`/values:batchUpdate`)이 아니라 스프레드시트 구조 자체(탭 추가)를 바꾸는 별도 엔드포인트.
 /** 새 탭을 생성한다. 등록 API의 `createTab` 처리(플랜 §6)가 사용한다. */
-export async function addSheet(env: Env, title: string): Promise<void> {
-  await sheetsFetch(env, "POST", ":batchUpdate", {
+export async function addSheet(env: Env, sheetId: string, title: string): Promise<void> {
+  await sheetsFetch(env, sheetId, "POST", ":batchUpdate", {
     requests: [{ addSheet: { properties: { title } } }],
   });
 }
@@ -62,12 +67,14 @@ export async function addSheet(env: Env, title: string): Promise<void> {
 /** 지정 범위에 값을 덮어쓴다. RAW: 문자열을 그대로 저장 (PRD의 `날짜|간격` 같은 텍스트 계약 보호). */
 export async function updateValues(
   env: Env,
+  sheetId: string,
   tab: string,
   range: string,
   values: (string | number)[][],
 ): Promise<UpdateResult> {
   const res = await sheetsFetch(
     env,
+    sheetId,
     "PUT",
     `/values/${encodeRange(tab, range)}?valueInputOption=RAW`,
     { values },
@@ -81,10 +88,11 @@ export async function updateValues(
  */
 export async function batchUpdateValues(
   env: Env,
+  sheetId: string,
   tab: string,
   updates: { range: string; values: (string | number)[][] }[],
 ): Promise<BatchUpdateResult> {
-  const res = await sheetsFetch(env, "POST", "/values:batchUpdate", {
+  const res = await sheetsFetch(env, sheetId, "POST", "/values:batchUpdate", {
     valueInputOption: "RAW",
     data: updates.map(({ range, values }) => ({ range: fullRange(tab, range), values })),
   });
@@ -94,12 +102,14 @@ export async function batchUpdateValues(
 /** 지정 범위가 속한 표의 마지막 행 뒤에 새 행(들)을 추가한다. */
 export async function appendValues(
   env: Env,
+  sheetId: string,
   tab: string,
   range: string,
   values: (string | number)[][],
 ): Promise<AppendResult> {
   const res = await sheetsFetch(
     env,
+    sheetId,
     "POST",
     `/values/${encodeRange(tab, range)}:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`,
     { values },
@@ -120,12 +130,13 @@ function encodeRange(tab: string, range: string): string {
 
 async function sheetsFetch(
   env: Env,
+  sheetId: string,
   method: string,
   path: string,
   body?: unknown,
 ): Promise<Response> {
   const token = await getAccessToken(env);
-  const res = await fetch(`${API_BASE}/${env.SHEET_ID}${path}`, {
+  const res = await fetch(`${API_BASE}/${sheetId}${path}`, {
     method,
     headers: {
       authorization: `Bearer ${token}`,
