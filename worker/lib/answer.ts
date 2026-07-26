@@ -49,14 +49,20 @@ export interface AnswerUpdate {
   nextReviewChanged: boolean;
 }
 
-/** 정답 1건을 반영한 새 상태를 계산한다. */
+/** 활성 모드 집합 M(PRD-general §4.1) 기준 졸업 판정 — M의 모든 모드가 3 이상이면 졸업. */
+function graduated(m1: number, m2: number, modes: AnswerMode[]): boolean {
+  return modes.every((mode) => (mode === "m1" ? m1 : m2) >= 3);
+}
+
+/** 정답 1건을 반영한 새 상태를 계산한다. 졸업 판정은 활성 모드 집합 `modes`(M) 기준. */
 export function computeAnswerUpdate(
   current: Pick<WordEntry, "m1" | "m2" | "nextReview" | "interval">,
   mode: AnswerMode,
   isReview: boolean,
   now: Date,
+  modes: AnswerMode[],
 ): AnswerUpdate {
-  const wasGraduated = current.m1 >= 3 && current.m2 >= 3;
+  const wasGraduated = graduated(current.m1, current.m2, modes);
   const m1 = mode === "m1" ? current.m1 + 1 : current.m1;
   const m2 = mode === "m2" ? current.m2 + 1 : current.m2;
 
@@ -65,7 +71,7 @@ export function computeAnswerUpdate(
     return { m1, m2, nextReview: addSeoulDays(now, interval), interval, nextReviewChanged: true };
   }
 
-  const justGraduated = !wasGraduated && m1 >= 3 && m2 >= 3;
+  const justGraduated = !wasGraduated && graduated(m1, m2, modes);
   if (justGraduated) {
     return { m1, m2, nextReview: addSeoulDays(now, 1), interval: 1, nextReviewChanged: true };
   }
