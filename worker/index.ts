@@ -3,7 +3,8 @@ import { handleGetWords } from "./routes/words.ts";
 import { handleReviewFail } from "./routes/review-fail.ts";
 import { handleGetTabs } from "./routes/tabs.ts";
 import { handleWordsRegister } from "./routes/register.ts";
-import { isAuthorized } from "./lib/auth.ts";
+import { resolveProfile } from "./lib/auth.ts";
+import { ProfileConfigError, toPublicProfile, type Profile } from "./lib/profiles.ts";
 
 export default {
   async fetch(request, env) {
@@ -11,18 +12,34 @@ export default {
     // 배포 전파 윈도우(신/구 버전 혼재) 중 어떤 버전이 응답했는지 식별하기 위해 노출 (#23)
     const version = env.CF_VERSION_METADATA?.id ?? "unknown";
 
-    if (url.pathname.startsWith("/api/") && !(await isAuthorized(request, env))) {
-      return new Response(null, {
-        status: 401,
-        headers: { "WWW-Authenticate": "Bearer", "X-Worker-Version": version },
-      });
-    }
+    if (url.pathname.startsWith("/api/")) {
+      let profile: Profile | null;
+      try {
+        profile = await resolveProfile(request, env);
+      } catch (err) {
+        if (!(err instanceof ProfileConfigError)) {
+          throw err;
+        }
+        // 설정 오류는 비밀번호 불일치(401)와 구분해 500으로 — 설정 사고를 관측 가능하게 (#71)
+        console.error("[profiles]", err);
+        return Response.json(
+          { error: "invalid profile configuration" },
+          { status: 500, headers: { "X-Worker-Version": version } },
+        );
+      }
+      if (!profile) {
+        return new Response(null, {
+          status: 401,
+          headers: { "WWW-Authenticate": "Bearer", "X-Worker-Version": version },
+        });
+      }
 
-    if (url.pathname === "/api/health") {
-      return Response.json(
-        { ok: true, time: new Date().toISOString(), version },
-        { headers: { "X-Worker-Version": version } },
-      );
+      if (url.pathname === "/api/health") {
+        return Response.json(
+          { ok: true, time: new Date().toISOString(), version, profile: toPublicProfile(profile) },
+          { headers: { "X-Worker-Version": version } },
+        );
+      }
     }
 
     if (url.pathname === "/api/words" && request.method === "GET") {
