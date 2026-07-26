@@ -55,6 +55,12 @@ export async function handleAnswerPost(
     );
   }
 
+  // 비활성 모드 열은 어떤 경로로도 쓰지 않는다는 불변식의 서버 측 강제 (PRD-general §4.1·§5.2).
+  // 시트 조회 이전에 걸러 정상 클라이언트가 만들지 않는 요청에 대한 방어선을 최소 비용으로 세운다.
+  if (!profile.modes.includes(answer.mode)) {
+    return Response.json({ error: "이 프로필에서 비활성화된 모드입니다" }, { status: 400 });
+  }
+
   // 행 번호는 캐시하지 않고 매 요청마다 탭 이름 + A열 한자로 재탐색한다 (PRD 4.2).
   const rowNumber = await findRowNumber(env, profile.sheetId, answer.tab, answer.hanzi);
   if (rowNumber === null) {
@@ -63,7 +69,7 @@ export async function handleAnswerPost(
 
   const [row = []] = await getValues(env, profile.sheetId, answer.tab, `${rowNumber}:${rowNumber}`);
   const current = parseWordRow(answer.tab, row);
-  const update = computeAnswerUpdate(current, answer.mode, answer.isReview, new Date());
+  const update = computeAnswerUpdate(current, answer.mode, answer.isReview, new Date(), profile.modes);
 
   // 카운트·F열·타임스탬프는 정답 1건의 한 단위이므로 한 요청으로 묶어 쓴다.
   // 부분 실패로 카운트만 반영된 채 남으면 재시도 큐(PRD 10) 재전송 시 이중 증가한다.
