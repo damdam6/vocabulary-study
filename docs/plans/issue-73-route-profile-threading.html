@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>#73 전 라우트 프로필 스레딩 — 작업 플랜</title>
+<style>
+  :root {
+    --bg: #f7f7f8; --card: #ffffff; --ink: #1c1c1e; --muted: #6e6e73;
+    --line: #e3e3e6; --accent: #3b6ef5; --accent-soft: #e8eefe;
+    --ok: #2e8b57; --warn: #b25e09; --code-bg: #f0f0f2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161618; --card: #202024; --ink: #ececf0; --muted: #98989f;
+      --line: #333338; --accent: #7a9bff; --accent-soft: #26304a;
+      --ok: #58c088; --warn: #e0a35c; --code-bg: #2a2a2f;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 40px 20px 80px; background: var(--bg); color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+                 "Segoe UI", "Noto Sans KR", sans-serif;
+    line-height: 1.65;
+  }
+  main { max-width: 860px; margin: 0 auto; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code {
+    font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 0.86em;
+    background: var(--code-bg); border-radius: 5px; padding: 2px 6px;
+  }
+  header { margin-bottom: 28px; }
+  .issue-chip {
+    display: inline-block; font-weight: 700; color: var(--accent);
+    background: var(--accent-soft); border-radius: 999px;
+    padding: 3px 14px; font-size: 0.95rem; margin-bottom: 10px;
+  }
+  .type-chip {
+    display: inline-block; font-weight: 600; color: var(--muted);
+    border: 1px solid var(--line); border-radius: 999px;
+    padding: 3px 12px; font-size: 0.8rem; margin-left: 8px; vertical-align: 2px;
+  }
+  h1 { font-size: 1.7rem; margin: 0 0 14px; letter-spacing: -0.02em; }
+  .meta {
+    display: flex; flex-wrap: wrap; gap: 6px 22px;
+    color: var(--muted); font-size: 0.87rem;
+  }
+  .meta b { color: var(--ink); font-weight: 600; }
+  section.card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 24px 28px; margin-top: 18px;
+  }
+  h2 {
+    font-size: 1.05rem; margin: 0 0 14px; letter-spacing: -0.01em;
+    display: flex; align-items: center; gap: 8px;
+  }
+  h2 .no {
+    color: var(--accent); font-size: 0.8rem; font-weight: 700;
+    border: 1.5px solid var(--accent); border-radius: 6px; padding: 0 6px;
+  }
+  ul, ol { margin: 0; padding-left: 22px; }
+  li { margin: 6px 0; }
+  .steps { list-style: none; padding: 0; counter-reset: step; }
+  .steps li {
+    counter-increment: step; position: relative; padding: 10px 0 10px 44px;
+    border-bottom: 1px dashed var(--line);
+  }
+  .steps li:last-child { border-bottom: none; }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 10px;
+    width: 28px; height: 28px; border-radius: 8px; background: var(--accent-soft);
+    color: var(--accent); font-weight: 700; font-size: 0.85rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .steps li.done::before { content: "✓"; background: var(--ok); color: #fff; }
+  .steps .files { display: block; margin-top: 4px; font-size: 0.85rem; color: var(--muted); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 0.82rem; }
+  .done-list { list-style: none; padding: 0; }
+  .done-list li { padding-left: 30px; position: relative; }
+  .done-list li::before {
+    content: ""; position: absolute; left: 2px; top: 7px; width: 15px; height: 15px;
+    border: 2px solid var(--ok); border-radius: 5px;
+  }
+  .scroll-x { overflow-x: auto; }
+  footer { margin-top: 30px; color: var(--muted); font-size: 0.8rem; text-align: center; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <span class="issue-chip"><a href="https://github.com/damdam6/vocabulary-study/issues/73">#73</a></span><span class="type-chip">기능 개선</span>
+    <h1>전 라우트 프로필 스레딩 — profile.sheetId 적용 + GET /api/words 응답 profile 블록</h1>
+    <div class="meta">
+      <span><b>damdam6/vocabulary-study</b></span>
+      <span>브랜치 <b><code>feat/73-route-profile-threading</code></b> ← <code>main</code></span>
+      <span>라벨 <b>enhancement</b></span>
+      <span>2026-07-27</span>
+    </div>
+  </header>
+
+  <section class="card">
+    <h2><span class="no">1</span>요약</h2>
+    <p>#71에서 인증이 프로필 해석(<code>resolveProfile</code>)으로 전환됐지만, 해석된 프로필은 아직 <code>/api/health</code> 응답에만 쓰이고 5개 라우트는 여전히 <code>env.SHEET_ID</code>를 직접 참조한다. 이번 작업은 <code>index.ts</code>의 라우트 디스패치를 인증 블록 안으로 옮겨 프로필을 전 핸들러에 전달하고(통일 시그니처 <code>(request, env, profile)</code>), 모든 Sheets 호출을 <code>profile.sheetId</code>로 전환하며, <code>GET /api/words</code> 응답 최상위에 공개 <code>profile</code> 블록을 추가한다. answer의 모드 검증·졸업 판정 M화는 별도 이슈로 여기서는 스레딩만 한다.</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">2</span>현황 분석</h2>
+    <ul>
+      <li><b>프로필이 블록 스코프에 갇혀 있음</b>: <code>worker/index.ts:16-43</code>에서 <code>resolveProfile</code> 결과가 <code>/api/*</code> 인증 게이트와 <code>/api/health</code>(39행)에만 쓰이고, 라우트 디스패치(45~88행)는 그 블록 <em>밖</em>이라 프로필에 접근할 수 없다.</li>
+      <li><b>라우트별 <code>env.SHEET_ID</code> 직접 참조 14곳</b>: <code>worker/routes/words.ts:11,14</code> · <code>answer.ts:54,59,74</code> · <code>review-fail.ts:39,49</code> · <code>tabs.ts:6</code> · <code>register.ts:46,60,61,62,68,77</code>. lib 계층은 #72에서 이미 <code>sheetId</code> 파라미터화 완료(<code>lib/sheets.ts</code>, <code>lib/words.ts</code>의 <code>getWordTabTitles</code>/<code>findWordRow</code>/<code>findRowNumber</code>) — 남은 참조는 전부 라우트의 주입부다. <code>lib/profiles.ts:101-114</code>의 폴백 합성만 정당한 참조로 남는다.</li>
+      <li><b>시그니처 불일치</b>: <code>handleGetWords(env)</code> · <code>handleAnswerPost(request, env)</code> · <code>handleReviewFail(env, request)</code>(역순!) · <code>handleGetTabs(env)</code> · <code>handleWordsRegister(request, env)</code>.</li>
+      <li><b>공개 프로필 블록 준비 완료</b>: <code>worker/lib/profiles.ts:34</code>의 <code>toPublicProfile</code>이 <code>sheetId</code>·<code>password</code> 제외 불변식을 이미 한곳에서 보장하고 health가 사용 중 — words가 그대로 재사용하면 된다.</li>
+      <li><b>클라이언트 영향 없음</b>: <code>src/lib/wordsApi.ts:15</code>는 <code>data.words</code>만 파싱하므로 최상위 <code>profile</code> 추가는 무해. <code>profile.modes</code> 소비는 후속 이슈.</li>
+      <li><b>테스트 규약</b>: <code>getProfiles</code>·다이제스트 캐시가 isolate 수명 동안 첫 구성을 고정하므로 "테스트 파일 = isolate = 프로필 구성 1개" 규약(<code>index.test.ts</code> 폴백 · <code>index.profiles.test.ts</code> 2프로필 · <code>index.config-error.test.ts</code> 오류). 라우트 테스트(<code>tabs.test.ts</code>·<code>register.test.ts</code>)는 <code>worker.fetch</code> 통합 스타일 + fetch 스텁 + <code>google-auth</code> 모킹.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">3</span>설계</h2>
+    <ul>
+      <li><b>디스패치 재배치</b>: 전 라우트가 <code>/api/*</code>이므로 라우트 디스패치를 인증 블록 안(401/500/health 처리 뒤)으로 이동한다. 비-API 경로의 최종 404는 그대로. 처리 순서(설정 오류 500 → 401 → health → 라우트)는 불변 — 기존 테스트가 이 순서를 고정하고 있다.</li>
+      <li><b>통일 시그니처</b>: 5개 핸들러 모두 <code>(request, env, profile)</code>. <code>request</code>를 안 쓰는 words/tabs는 <code>tsconfig.node.json</code>의 <code>noUnusedParameters</code> 때문에 <code>_request</code>로 받는다.</li>
+      <li><b>words 응답</b>: <code>{ fetchedAt, words, profile: toPublicProfile(profile) }</code> — <code>words</code> 항목 형태 불변, <code>sheetId</code>·<code>password</code> 미포함은 <code>toPublicProfile</code>이 보장.</li>
+      <li><b>격리 테스트 설계</b>: 새 파일 <code>worker/index.sheet-isolation.test.ts</code>(파일=isolate 규약)에 2프로필 구성(sheet-a/sheet-b)을 두고, sheetId별 상태를 가진 fetch 스텁이 <em>모든 호출 URL을 기록</em>한다. 프로필 A 요청 후 기록된 URL 전수가 <code>/spreadsheets/sheet-a</code>만 가리키는지 검증 — PRD-general §6 "모든 Sheets 호출 경로가 인증된 프로필의 sheetId만 쓰는지"의 직접 검증.</li>
+      <li><b>비채택 대안</b>: 핸들러가 <code>profile.sheetId</code>만 받는 방안은 words의 profile 블록·후속 이슈(answer 모드 검증, 재시도 큐 태깅)가 전체 프로필을 요구해 기각. 라우트 밖 <code>profile</code> 변수 호이스팅은 non-null 단언이 필요해져 기각(블록 내 이동이 타입 안전).</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">4</span>작업 단계</h2>
+    <ol class="steps">
+      <li class="done" id="step-1">라우트 디스패치를 <code>/api/*</code> 인증 블록 안으로 이동하고 각 핸들러에 <code>profile</code> 전달 — 처리 순서(500→401→health→라우트)와 비-API 404 불변
+        <span class="files"><code>worker/index.ts</code></span>
+      </li>
+      <li class="done" id="step-2">words: 시그니처 <code>(_request, env, profile)</code> + <code>profile.sheetId</code> 전환 + 응답 최상위 <code>profile: toPublicProfile(profile)</code> 추가
+        <span class="files"><code>worker/routes/words.ts</code></span>
+      </li>
+      <li class="done" id="step-3">answer: 시그니처 <code>(request, env, profile)</code> + <code>profile.sheetId</code> 전환 (모드 검증은 후속 이슈 — 스레딩만)
+        <span class="files"><code>worker/routes/answer.ts</code></span>
+      </li>
+      <li class="done" id="step-4">review-fail: <code>(env, request)</code> → <code>(request, env, profile)</code> 역순 정리 + <code>profile.sheetId</code> 전환
+        <span class="files"><code>worker/routes/review-fail.ts</code></span>
+      </li>
+      <li class="done" id="step-5">tabs: 시그니처 <code>(_request, env, profile)</code> + <code>profile.sheetId</code> 전환
+        <span class="files"><code>worker/routes/tabs.ts</code></span>
+      </li>
+      <li class="done" id="step-6">register: 시그니처 <code>(request, env, profile)</code> + <code>profile.sheetId</code> 전환 (6곳)
+        <span class="files"><code>worker/routes/register.ts</code></span>
+      </li>
+      <li class="done" id="step-7">신규 테스트: 2프로필 fetch 스텁(URL 전수 기록)으로 격리·프로필별 words/tabs 데이터·words profile 블록 형태(sheetId/password 부재) 검증
+        <span class="files"><code>worker/index.sheet-isolation.test.ts</code></span>
+      </li>
+      <li class="done" id="step-8">전체 검증: <code>npm test</code>(기존 폴백 경로 회귀 포함) + <code>npm run build</code>(tsc -b) + <code>npm run lint</code>
+        <span class="files">전체</span>
+      </li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">5</span>리스크</h2>
+    <div class="scroll-x">
+    <table>
+      <thead><tr><th>리스크</th><th>영향</th><th>완화책</th></tr></thead>
+      <tbody>
+        <tr><td>디스패치 재배치 중 처리 순서(500→401→health) 변경</td><td>설정 오류가 401로 위장되거나 미인증 라우트 접근</td><td>순서를 고정한 기존 3개 index 테스트 스위트가 회귀를 즉시 잡음 — 블록 구조만 옮기고 조건 로직은 손대지 않음</td></tr>
+        <tr><td><code>getProfiles</code> isolate 캐시로 신규 테스트가 타 파일 구성에 오염</td><td>격리 테스트 헛통과/헛실패</td><td>새 구성은 새 파일(<code>index.sheet-isolation.test.ts</code>)로 격리, 파일 내 단일 PROFILES 값 유지 (기존 규약 준수)</td></tr>
+        <tr><td>words 응답에 <code>profile</code> 추가가 클라이언트 파싱을 깨뜨림</td><td>홈/학습 화면 로드 실패</td><td><code>src/lib/wordsApi.ts:15</code>가 <code>data.words</code>만 읽는 것을 확인 완료 — 추가 필드는 무시됨</td></tr>
+        <tr><td><code>noUnusedParameters</code>로 미사용 <code>request</code> 컴파일 오류</td><td>빌드 실패</td><td>words/tabs는 <code>_request</code>로 수신 (TS 언더스코어 관례)</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">6</span>테스트 계획</h2>
+    <ul>
+      <li><b>신규·격리</b>: 2프로필 구성에서 프로필 A 비밀번호로 <code>GET /api/words</code> 호출 → 기록된 <em>모든</em> fetch URL이 <code>/spreadsheets/sheet-a</code>를 가리키고 <code>sheet-b</code> 문자열이 어디에도 없음</li>
+      <li><b>신규·프로필별 데이터</b>: 같은 구성에서 words가 A 비밀번호→A 시트 단어, B 비밀번호→B 시트 단어를 반환. <code>GET /api/tabs</code>도 프로필별 탭 목록(+<code>_</code> 접두 제외) 반환</li>
+      <li><b>신규·profile 블록</b>: words 응답 최상위 <code>profile</code>이 <code>{ id, name, modes, contentType }</code> 정확히 일치, 응답 전문에 <code>sheetId</code>/<code>password</code>/실제 시트 ID/비밀번호 문자열 부재, <code>fetchedAt</code>·<code>words</code> 형태 불변</li>
+      <li><b>회귀</b>: 기존 스위트 전부 무수정 통과 — <code>index.test.ts</code>(폴백 인증·health), <code>index.profiles.test.ts</code>(2프로필 해석), <code>index.config-error.test.ts</code>(설정 오류 500), <code>routes/tabs.test.ts</code>·<code>routes/register.test.ts</code>(폴백 단일 프로필 경로의 실동작)</li>
+      <li><b>정적 검증</b>: <code>npm run build</code>(tsc -b 포함)와 <code>npm run lint</code>(oxlint) 통과, <code>worker/routes/</code>·<code>worker/lib/</code>에 <code>env.SHEET_ID</code> 참조 0건 확인(<code>lib/profiles.ts</code> 폴백 합성 제외)</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">7</span>완료 조건</h2>
+    <ul class="done-list">
+      <li><b>격리 테스트</b>: 프로필 A 비밀번호 요청이 A의 sheetId로만 Sheets API를 호출 (mock fetch URL 전수 검증)</li>
+      <li>프로필 2개 구성에서 words/tabs가 각자 시트의 데이터를 반환</li>
+      <li>words 응답 profile 블록 형태 확인 — <code>{ id, name, modes, contentType }</code>, sheetId/password 미포함</li>
+      <li>기존 라우트 테스트가 폴백 단일 프로필 경로로 회귀 없이 통과</li>
+      <li>라우트·lib 어디에도 <code>env.SHEET_ID</code> 직접 참조 잔재 0 (폴백 합성 <code>lib/profiles.ts</code> 제외)</li>
+    </ul>
+  </section>
+
+  <footer>issue-plan · <a href="https://github.com/damdam6/vocabulary-study/issues/73">#73</a> · 2026-07-27</footer>
+</main>
+</body>
+</html>
