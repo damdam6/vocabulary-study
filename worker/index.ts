@@ -12,6 +12,7 @@ export default {
     // 배포 전파 윈도우(신/구 버전 혼재) 중 어떤 버전이 응답했는지 식별하기 위해 노출 (#23)
     const version = env.CF_VERSION_METADATA?.id ?? "unknown";
 
+    // 라우트 디스패치는 인증 블록 안 — 해석된 프로필이 모든 핸들러의 시트 대상을 결정한다 (PRD-general §5.2).
     if (url.pathname.startsWith("/api/")) {
       let profile: Profile | null;
       try {
@@ -40,50 +41,50 @@ export default {
           { headers: { "X-Worker-Version": version } },
         );
       }
-    }
 
-    if (url.pathname === "/api/words" && request.method === "GET") {
-      try {
-        return await handleGetWords(env);
-      } catch (err) {
-        console.error("[GET /api/words]", err);
-        return Response.json({ error: "failed to load words" }, { status: 500 });
+      if (url.pathname === "/api/words" && request.method === "GET") {
+        try {
+          return await handleGetWords(request, env, profile);
+        } catch (err) {
+          console.error("[GET /api/words]", err);
+          return Response.json({ error: "failed to load words" }, { status: 500 });
+        }
       }
-    }
 
-    if (url.pathname === "/api/answer" && request.method === "POST") {
-      try {
-        return await handleAnswerPost(request, env);
-      } catch (err) {
-        console.error("[POST /api/answer]", err);
-        return Response.json({ error: "failed to record answer" }, { status: 500 });
+      if (url.pathname === "/api/answer" && request.method === "POST") {
+        try {
+          return await handleAnswerPost(request, env, profile);
+        } catch (err) {
+          console.error("[POST /api/answer]", err);
+          return Response.json({ error: "failed to record answer" }, { status: 500 });
+        }
       }
-    }
 
-    if (url.pathname === "/api/review-fail" && request.method === "POST") {
-      try {
-        return await handleReviewFail(env, request);
-      } catch (err) {
-        console.error("[POST /api/review-fail]", err);
-        return Response.json({ error: "failed to update review interval" }, { status: 500 });
+      if (url.pathname === "/api/review-fail" && request.method === "POST") {
+        try {
+          return await handleReviewFail(request, env, profile);
+        } catch (err) {
+          console.error("[POST /api/review-fail]", err);
+          return Response.json({ error: "failed to update review interval" }, { status: 500 });
+        }
       }
-    }
 
-    if (url.pathname === "/api/tabs" && request.method === "GET") {
-      try {
-        return await handleGetTabs(env);
-      } catch (err) {
-        console.error("[GET /api/tabs]", err);
-        return Response.json({ error: "failed to load tabs" }, { status: 500 });
+      if (url.pathname === "/api/tabs" && request.method === "GET") {
+        try {
+          return await handleGetTabs(request, env, profile);
+        } catch (err) {
+          console.error("[GET /api/tabs]", err);
+          return Response.json({ error: "failed to load tabs" }, { status: 500 });
+        }
       }
-    }
 
-    if (url.pathname === "/api/words/register" && request.method === "POST") {
-      try {
-        return await handleWordsRegister(request, env);
-      } catch (err) {
-        console.error("[POST /api/words/register]", err);
-        return Response.json({ error: "failed to register words" }, { status: 500 });
+      if (url.pathname === "/api/words/register" && request.method === "POST") {
+        try {
+          return await handleWordsRegister(request, env, profile);
+        } catch (err) {
+          console.error("[POST /api/words/register]", err);
+          return Response.json({ error: "failed to register words" }, { status: 500 });
+        }
       }
     }
 

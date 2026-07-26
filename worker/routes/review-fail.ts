@@ -7,6 +7,7 @@ import { addSeoulDays } from "../lib/time.ts";
 import { updateValues } from "../lib/sheets.ts";
 import { findWordRow } from "../lib/words.ts";
 import { stepBack } from "../lib/interval.ts";
+import type { Profile } from "../lib/profiles.ts";
 
 interface ReviewFailBody {
   tab: string;
@@ -24,7 +25,11 @@ function parseReviewFailBody(value: unknown): ReviewFailBody | null {
   return { tab, hanzi };
 }
 
-export async function handleReviewFail(env: Env, request: Request): Promise<Response> {
+export async function handleReviewFail(
+  request: Request,
+  env: Env,
+  profile: Profile,
+): Promise<Response> {
   let json: unknown;
   try {
     json = await request.json();
@@ -36,7 +41,7 @@ export async function handleReviewFail(env: Env, request: Request): Promise<Resp
     return Response.json({ error: "tab, hanzi(문자열) 필요" }, { status: 400 });
   }
 
-  const found = await findWordRow(env, env.SHEET_ID, body.tab, body.hanzi);
+  const found = await findWordRow(env, profile.sheetId, body.tab, body.hanzi);
   if (!found) {
     return new Response(null, { status: 404 });
   }
@@ -46,7 +51,7 @@ export async function handleReviewFail(env: Env, request: Request): Promise<Resp
   const newInterval = stepBack(entry.interval ?? 1);
   const newDate = addSeoulDays(new Date(), newInterval);
 
-  await updateValues(env, env.SHEET_ID, body.tab, `F${rowNumber}:F${rowNumber}`, [[`${newDate}|${newInterval}`]]);
+  await updateValues(env, profile.sheetId, body.tab, `F${rowNumber}:F${rowNumber}`, [[`${newDate}|${newInterval}`]]);
 
   return Response.json({ ...entry, nextReview: newDate, interval: newInterval });
 }
