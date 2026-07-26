@@ -73,7 +73,8 @@ function HomeScreen({ onStart, onNavigateRegister }: HomeScreenProps) {
 
   const handleStart = () => {
     // canStart(sessionCount>0)와 같은 단어 집합·같은 산식이므로 빈 큐가 나올 수 없다
-    onStart(buildSessionQueue(words, getSeoulToday()));
+    // #78(화면 프로필 배선) 전까지 고정 주입 — 실제 profile.modes 연결은 그 이슈에서.
+    onStart(buildSessionQueue(words, getSeoulToday(), ["m1", "m2"]));
   };
 
   return (
