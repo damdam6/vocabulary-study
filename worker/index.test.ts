@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import worker from "./index.ts";
+import { healthRequest, makeEnv, makeRequest } from "./test-utils.ts";
 
 // 폴백 프로필 경로(#70 — PROFILES 미설정, APP_PASSWORD+SHEET_ID 합성) 스위트.
 // 인증 검사가 /api/health 분기보다 앞선다는 순서 고정(#23)도 여기서 유지한다.
@@ -10,23 +11,7 @@ import worker from "./index.ts";
 const PASSWORD = "test-password";
 const SHEET_ID = "test-sheet-id";
 
-const env = {
-  APP_PASSWORD: PASSWORD,
-  SHEET_ID,
-  CF_VERSION_METADATA: { id: "v-test", tag: "", timestamp: "" },
-} as unknown as Env;
-
-// new Request()는 Request<unknown, CfProperties>를 만들지만 핸들러는 수신 요청 타입
-// (IncomingRequestCfProperties)을 기대한다 — 테스트에서는 cf를 쓰지 않으므로 캐스트.
-type WorkerRequest = Parameters<typeof worker.fetch>[0];
-
-function makeRequest(path: string, headers?: Record<string, string>): WorkerRequest {
-  return new Request(`https://example.com${path}`, { headers }) as WorkerRequest;
-}
-
-function healthRequest(headers?: Record<string, string>): WorkerRequest {
-  return makeRequest("/api/health", headers);
-}
+const env = makeEnv({ APP_PASSWORD: PASSWORD, SHEET_ID });
 
 describe("/api/* 인증 게이트", () => {
   it("Authorization 헤더가 없으면 401", async () => {
@@ -103,7 +88,11 @@ describe("401 응답의 버전 관측성", () => {
   });
 
   it("CF_VERSION_METADATA 바인딩이 없으면 'unknown'으로 폴백", async () => {
-    const noVersionEnv = { APP_PASSWORD: PASSWORD, SHEET_ID } as unknown as Env;
+    const noVersionEnv = makeEnv({
+      APP_PASSWORD: PASSWORD,
+      SHEET_ID,
+      CF_VERSION_METADATA: undefined,
+    });
     const res = await worker.fetch(healthRequest(), noVersionEnv);
     expect(res.status).toBe(401);
     expect(res.headers.get("X-Worker-Version")).toBe("unknown");

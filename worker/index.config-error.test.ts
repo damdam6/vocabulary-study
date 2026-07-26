@@ -1,24 +1,12 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import worker from "./index.ts";
+import { healthRequest, makeEnv, makeRequest } from "./test-utils.ts";
 
 // 프로필 설정 오류 → /api/* 500 계약 스위트 (#71). getProfiles는 실패를 캐시하지
 // 않으므로(매 호출 재파싱·재던짐 — fail closed) 여러 깨진 구성을 한 파일에서 검증할
 // 수 있다. 단, 성공하는 구성을 하나라도 넣으면 그 결과가 isolate 캐시에 고정돼 이후
 // 테스트가 헛통과한다 — 이 파일에는 정상 구성을 두지 않는다(정상 경로는
 // index.test.ts·index.profiles.test.ts).
-
-type WorkerRequest = Parameters<typeof worker.fetch>[0];
-
-function healthRequest(headers?: Record<string, string>): WorkerRequest {
-  return new Request("https://example.com/api/health", { headers }) as WorkerRequest;
-}
-
-function makeEnv(vars: Record<string, unknown>): Env {
-  return {
-    CF_VERSION_METADATA: { id: "v-test", tag: "", timestamp: "" },
-    ...vars,
-  } as unknown as Env;
-}
 
 function spyConsoleError() {
   return vi.spyOn(console, "error").mockImplementation(() => {});
@@ -77,9 +65,7 @@ describe("프로필 설정 오류 → /api/* 500 (401 아님)", () => {
   it("/api/health 외의 /api/* 경로도 500", async () => {
     spyConsoleError();
     const res = await worker.fetch(
-      new Request("https://example.com/api/words", {
-        headers: { Authorization: "Bearer any-token" },
-      }) as WorkerRequest,
+      makeRequest("/api/words", { Authorization: "Bearer any-token" }),
       makeEnv({ PROFILES: "[{broken" }),
     );
     expect(res.status).toBe(500);

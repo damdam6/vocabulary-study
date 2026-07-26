@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import worker from "./index.ts";
+import { healthRequest, makeEnv } from "./test-utils.ts";
 
 // PROFILES 2프로필 구성의 비밀번호 → 프로필 해석 스위트 (#71, PRD-general §6).
 // getProfiles·다이제스트 캐시가 isolate 수명 동안 첫 성공 구성을 고정하므로 모든
@@ -24,18 +25,7 @@ const PROFILES = [
   },
 ];
 
-const env = {
-  PROFILES: JSON.stringify(PROFILES),
-  CF_VERSION_METADATA: { id: "v-test", tag: "", timestamp: "" },
-} as unknown as Env;
-
-// new Request()는 Request<unknown, CfProperties>를 만들지만 핸들러는 수신 요청 타입
-// (IncomingRequestCfProperties)을 기대한다 — 테스트에서는 cf를 쓰지 않으므로 캐스트.
-type WorkerRequest = Parameters<typeof worker.fetch>[0];
-
-function healthRequest(headers?: Record<string, string>): WorkerRequest {
-  return new Request("https://example.com/api/health", { headers }) as WorkerRequest;
-}
+const env = makeEnv({ PROFILES: JSON.stringify(PROFILES) });
 
 interface HealthBody {
   ok: boolean;
