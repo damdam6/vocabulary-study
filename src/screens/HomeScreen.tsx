@@ -32,7 +32,7 @@ function HomeScreen({ onStart, onNavigateRegister }: HomeScreenProps) {
     const controller = new AbortController();
     setStatus("loading");
     fetchWords(controller.signal)
-      .then((fetched) => {
+      .then(({ words: fetched }) => {
         if (cancelled) return;
         setWords(fetched);
         // #78(화면 프로필 배선) 전까지 고정 주입 — 실제 profile.modes 연결은 그 이슈에서.
