@@ -15,7 +15,7 @@ describe("computeHomeStats", () => {
       { m1: 0, m2: 0, nextReview: null }, // learning (둘 다 미달이어도 단어당 1문제, #44)
     ];
 
-    const stats = computeHomeStats(words, today);
+    const stats = computeHomeStats(words, today, ["m1", "m2"]);
 
     expect(stats.reviewDue).toBe(2);
     expect(stats.learning).toBe(3);
@@ -32,7 +32,7 @@ describe("computeHomeStats", () => {
       nextReview: null,
     }));
 
-    const stats = computeHomeStats(words, today);
+    const stats = computeHomeStats(words, today, ["m1", "m2"]);
 
     expect(stats.learning).toBe(48);
     expect(stats.sessionCount).toBe(48);
@@ -46,14 +46,29 @@ describe("computeHomeStats", () => {
     }));
     const learningWords: WordProgress[] = [{ m1: 0, m2: 0, nextReview: null }];
 
-    const stats = computeHomeStats([...reviewDueWords, ...learningWords], today);
+    const stats = computeHomeStats([...reviewDueWords, ...learningWords], today, ["m1", "m2"]);
 
     expect(stats.reviewDue).toBe(70);
     expect(stats.sessionCount).toBe(60);
   });
 
   it("단어가 없으면 모든 값이 0이다", () => {
-    const stats = computeHomeStats([], today);
+    const stats = computeHomeStats([], today, ["m1", "m2"]);
     expect(stats).toEqual({ reviewDue: 0, learning: 0, graduated: 0, sessionCount: 0 });
+  });
+
+  it("modes가 판정에 반영된다 — M={m1}이면 m2 미달 단어도 M 기준으로 졸업 취급된다", () => {
+    const words: WordProgress[] = [
+      { m1: 3, m2: 0, nextReview: "2026-07-19" }, // M={m1,m2}면 학습 중, M={m1}이면 복습 대기
+      { m1: 0, m2: 3, nextReview: null }, // M={m1}이면 m1<3이라 여전히 학습 중
+    ];
+
+    const statsFullModes = computeHomeStats(words, today, ["m1", "m2"]);
+    expect(statsFullModes.learning).toBe(2);
+    expect(statsFullModes.reviewDue).toBe(0);
+
+    const statsSingleMode = computeHomeStats(words, today, ["m1"]);
+    expect(statsSingleMode.reviewDue).toBe(1);
+    expect(statsSingleMode.learning).toBe(1);
   });
 });
