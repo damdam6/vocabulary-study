@@ -36,7 +36,9 @@ export function buildSessionQueue<T extends WordProgress>(
   const reviewDue: T[] = [];
   const learning: T[] = [];
   for (const word of words) {
-    const state = getWordState(word, today);
+    // #76(세션 큐 M 파라미터화) 전까지 고정 주입 — 이 함수의 출제 모드(randomMode·
+    // learningMode)는 여전히 m1·m2 하드코딩이라 여기서만 M을 앞당겨 연결해도 의미가 없다.
+    const state = getWordState(word, today, ["m1", "m2"]);
     if (state === "reviewDue") {
       reviewDue.push(word);
     } else if (state === "learning") {
