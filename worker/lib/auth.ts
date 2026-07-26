@@ -23,8 +23,8 @@ export async function resolveProfile(request: Request, env: Env): Promise<Profil
     return null;
   }
   const token = header.substring("Bearer ".length);
-  const tokenDigest = await sha256(token);
-  const digests = await profileDigests(profiles);
+  // 토큰 다이제스트와 프로필 다이제스트(캐시 미스 시)는 서로 독립이므로 병렬 계산한다.
+  const [tokenDigest, digests] = await Promise.all([sha256(token), profileDigests(profiles)]);
   for (let i = 0; i < profiles.length; i++) {
     if (timingSafeEqual(tokenDigest, digests[i])) {
       return profiles[i];
