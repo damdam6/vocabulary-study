@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { buildSessionQueue, SESSION_CAP, type SessionQuestion } from "./sessionQueue.ts";
 
 const today = "2026-07-20";
+const M = ["m1", "m2"] as const;
 
 interface TestWord {
   tab: string;
@@ -54,7 +55,7 @@ describe("buildSessionQueue — 복습 대기 선별", () => {
       const date = day > 31 ? `2026-06-${String(day - 31).padStart(2, "0")}` : `2026-05-${String(day).padStart(2, "0")}`;
       return reviewWord(`복${i}`, date);
     });
-    const queue = buildSessionQueue(words, today, mulberry32(1));
+    const queue = buildSessionQueue(words, today, M, mulberry32(1));
 
     expect(queue).toHaveLength(SESSION_CAP);
     expect(hanziSet(queue).has("복0")).toBe(false); // 가장 최신 복습일(6/30)만 잘린다
@@ -68,7 +69,7 @@ describe("buildSessionQueue — 복습 대기 선별", () => {
       reviewWord(`복${i}`, `2026-06-${String((i % 28) + 1).padStart(2, "0")}`),
     );
     const anomaly = reviewWord("이상", null);
-    const queue = buildSessionQueue([...dated, anomaly], today, mulberry32(1));
+    const queue = buildSessionQueue([...dated, anomaly], today, M, mulberry32(1));
 
     expect(queue).toHaveLength(SESSION_CAP);
     expect(hanziSet(queue).has("이상")).toBe(true);
@@ -76,10 +77,10 @@ describe("buildSessionQueue — 복습 대기 선별", () => {
 
   it("복습 단어는 단어당 1문제이고 모드는 rng로 정해진다", () => {
     const words = [reviewWord("경제", "2026-07-19")];
-    expect(buildSessionQueue(words, today, () => 0)).toEqual([
+    expect(buildSessionQueue(words, today, M, () => 0)).toEqual([
       { word: words[0], mode: "m1", isReview: true },
     ]);
-    expect(buildSessionQueue(words, today, () => 0.7)).toEqual([
+    expect(buildSessionQueue(words, today, M, () => 0.7)).toEqual([
       { word: words[0], mode: "m2", isReview: true },
     ]);
   });
@@ -92,7 +93,7 @@ describe("buildSessionQueue — 학습 중 채우기", () => {
     const high = Array.from({ length: 59 }, (_, i) => learningWord(`학${i}`, 2, i % 3));
     const tieFirst = learningWord("동앞", 0, 0);
     const tieSecond = learningWord("동뒤", 0, 0);
-    const queue = buildSessionQueue([tieSecond, ...high, tieFirst], today, mulberry32(2));
+    const queue = buildSessionQueue([tieSecond, ...high, tieFirst], today, M, mulberry32(2));
     // 입력(시트) 순서상 "동뒤"가 "동앞"보다 앞이므로, 동률에서는 "동뒤"가 이긴다
 
     expect(queue).toHaveLength(SESSION_CAP);
@@ -104,6 +105,7 @@ describe("buildSessionQueue — 학습 중 채우기", () => {
     const queue = buildSessionQueue(
       [learningWord("갑", 3, 1), learningWord("을", 0, 4)],
       today,
+      M,
       mulberry32(3),
     );
 
@@ -114,17 +116,17 @@ describe("buildSessionQueue — 학습 중 채우기", () => {
 
   it("양쪽 모드가 모두 미달이어도 1문제만 내고 모드는 rng로 정해진다 (#44)", () => {
     const words = [learningWord("병", 1, 2)];
-    expect(buildSessionQueue(words, today, () => 0)).toEqual([
+    expect(buildSessionQueue(words, today, M, () => 0)).toEqual([
       { word: words[0], mode: "m1", isReview: false },
     ]);
-    expect(buildSessionQueue(words, today, () => 0.7)).toEqual([
+    expect(buildSessionQueue(words, today, M, () => 0.7)).toEqual([
       { word: words[0], mode: "m2", isReview: false },
     ]);
   });
 
   it("신규 단어만 48개면 홈 산식과 같은 48문제가 나온다 (#44)", () => {
     const words = Array.from({ length: 48 }, (_, i) => learningWord(`신${i}`, 0, 0));
-    const queue = buildSessionQueue(words, today, mulberry32(8));
+    const queue = buildSessionQueue(words, today, M, mulberry32(8));
 
     expect(queue).toHaveLength(48);
     expect(hanziSet(queue).size).toBe(48); // 단어당 1문제
@@ -135,7 +137,7 @@ describe("buildSessionQueue — 상한·제외·경계", () => {
   it("복습 30 + 학습 40이면 전체 60문제 상한을 지킨다", () => {
     const reviews = Array.from({ length: 30 }, (_, i) => reviewWord(`복${i}`, "2026-07-01"));
     const learnings = Array.from({ length: 40 }, (_, i) => learningWord(`학${i}`, i % 3, 0));
-    const queue = buildSessionQueue([...reviews, ...learnings], today, mulberry32(4));
+    const queue = buildSessionQueue([...reviews, ...learnings], today, M, mulberry32(4));
 
     expect(queue).toHaveLength(SESSION_CAP);
     expect(queue.filter((q) => q.isReview)).toHaveLength(30);
@@ -146,6 +148,7 @@ describe("buildSessionQueue — 상한·제외·경계", () => {
     const queue = buildSessionQueue(
       [reviewWord("예약", "2026-07-21"), reviewWord("대기", "2026-07-20")],
       today,
+      M,
       mulberry32(5),
     );
 
@@ -154,7 +157,7 @@ describe("buildSessionQueue — 상한·제외·경계", () => {
   });
 
   it("빈 입력이면 빈 큐를 돌려준다", () => {
-    expect(buildSessionQueue([], today, mulberry32(6))).toEqual([]);
+    expect(buildSessionQueue([], today, M, mulberry32(6))).toEqual([]);
   });
 });
 
@@ -164,7 +167,7 @@ describe("buildSessionQueue — 단어 유일성 (#44)", () => {
     const learnings = Array.from({ length: 12 }, (_, i) => learningWord(`학${i}`, 0, 0));
     const reviews = Array.from({ length: 6 }, (_, i) => reviewWord(`복${i}`, "2026-07-01"));
     for (let seed = 1; seed <= 20; seed++) {
-      const queue = buildSessionQueue([...learnings, ...reviews], today, mulberry32(seed));
+      const queue = buildSessionQueue([...learnings, ...reviews], today, M, mulberry32(seed));
       expect(queue).toHaveLength(18);
       expect(new Set(wordKeys(queue)).size).toBe(queue.length);
     }
@@ -173,9 +176,48 @@ describe("buildSessionQueue — 단어 유일성 (#44)", () => {
   it("탭이 다르면 같은 한자라도 다른 단어로 취급해 각각 1문제씩 낸다", () => {
     const a = { ...learningWord("经济", 0, 0), tab: "HSK4" };
     const b = { ...learningWord("经济", 0, 0), tab: "HSK6" };
-    const queue = buildSessionQueue([a, b], today, mulberry32(7));
+    const queue = buildSessionQueue([a, b], today, M, mulberry32(7));
 
     expect(queue).toHaveLength(2);
     expect(queue.filter((q) => q.word.tab === "HSK4")).toHaveLength(1);
+  });
+});
+
+describe("buildSessionQueue — M 파라미터화 (#76)", () => {
+  it("M={m1}이면 복습·학습 중 문제가 전부 m1이다", () => {
+    // m2:0인 채로 m1만 3 이상이면 M={m1} 기준으로 졸업(복습 대기) — 상태 분류도 M을 탄다(#75)
+    const reviewing = reviewWord("복", "2026-07-19");
+    reviewing.m2 = 0;
+    const learning1 = learningWord("학1", 0, 0); // 양쪽 다 미달 — M={m1}이면 m1만 후보
+    const learning2 = learningWord("학2", 0, 4); // m2는 M 밖 — m1만 보고 미달 판정
+    const queue = buildSessionQueue([reviewing, learning1, learning2], today, ["m1"], mulberry32(9));
+
+    expect(queue.length).toBeGreaterThan(0);
+    expect(queue.every((q) => q.mode === "m1")).toBe(true);
+    expect(queue.some((q) => q.isReview)).toBe(true);
+    expect(queue.some((q) => !q.isReview)).toBe(true);
+  });
+
+  it("M={m2}이면 복습·학습 중 문제가 전부 m2다 (대칭 케이스)", () => {
+    const reviewing = reviewWord("복", "2026-07-19");
+    reviewing.m1 = 0;
+    const learning1 = learningWord("학1", 0, 0);
+    const learning2 = learningWord("학2", 4, 0);
+    const queue = buildSessionQueue([reviewing, learning1, learning2], today, ["m2"], mulberry32(10));
+
+    expect(queue.length).toBeGreaterThan(0);
+    expect(queue.every((q) => q.mode === "m2")).toBe(true);
+    expect(queue.some((q) => q.isReview)).toBe(true);
+    expect(queue.some((q) => !q.isReview)).toBe(true);
+  });
+
+  it("M이 1개뿐이면 복습 문제도 rng 값과 무관하게 항상 그 모드다", () => {
+    const words = [reviewWord("복", "2026-07-19")];
+    expect(buildSessionQueue(words, today, ["m2"], () => 0)).toEqual([
+      { word: words[0], mode: "m2", isReview: true },
+    ]);
+    expect(buildSessionQueue(words, today, ["m2"], () => 0.99)).toEqual([
+      { word: words[0], mode: "m2", isReview: true },
+    ]);
   });
 });

@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>#76 세션 큐 M 파라미터화 — buildSessionQueue 출제 모드를 활성 모드로 제한 — 작업 플랜</title>
+<style>
+  :root {
+    --bg: #f7f7f8; --card: #ffffff; --ink: #1c1c1e; --muted: #6e6e73;
+    --line: #e3e3e6; --accent: #3b6ef5; --accent-soft: #e8eefe;
+    --ok: #2e8b57; --warn: #b25e09; --code-bg: #f0f0f2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161618; --card: #202024; --ink: #ececf0; --muted: #98989f;
+      --line: #333338; --accent: #7a9bff; --accent-soft: #26304a;
+      --ok: #58c088; --warn: #e0a35c; --code-bg: #2a2a2f;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 40px 20px 80px; background: var(--bg); color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+                 "Segoe UI", "Noto Sans KR", sans-serif;
+    line-height: 1.65;
+  }
+  main { max-width: 860px; margin: 0 auto; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code {
+    font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 0.86em;
+    background: var(--code-bg); border-radius: 5px; padding: 2px 6px;
+  }
+  header { margin-bottom: 28px; }
+  .issue-chip {
+    display: inline-block; font-weight: 700; color: var(--accent);
+    background: var(--accent-soft); border-radius: 999px;
+    padding: 3px 14px; font-size: 0.95rem; margin-bottom: 10px;
+  }
+  .type-chip {
+    display: inline-block; font-weight: 600; color: var(--muted);
+    border: 1px solid var(--line); border-radius: 999px;
+    padding: 3px 12px; font-size: 0.8rem; margin-left: 8px; vertical-align: 2px;
+  }
+  h1 { font-size: 1.7rem; margin: 0 0 14px; letter-spacing: -0.02em; }
+  .meta {
+    display: flex; flex-wrap: wrap; gap: 6px 22px;
+    color: var(--muted); font-size: 0.87rem;
+  }
+  .meta b { color: var(--ink); font-weight: 600; }
+  section.card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 24px 28px; margin-top: 18px;
+  }
+  h2 {
+    font-size: 1.05rem; margin: 0 0 14px; letter-spacing: -0.01em;
+    display: flex; align-items: center; gap: 8px;
+  }
+  h2 .no {
+    color: var(--accent); font-size: 0.8rem; font-weight: 700;
+    border: 1.5px solid var(--accent); border-radius: 6px; padding: 0 6px;
+  }
+  ul, ol { margin: 0; padding-left: 22px; }
+  li { margin: 6px 0; }
+  .steps { list-style: none; padding: 0; counter-reset: step; }
+  .steps li {
+    counter-increment: step; position: relative; padding: 10px 0 10px 44px;
+    border-bottom: 1px dashed var(--line);
+  }
+  .steps li:last-child { border-bottom: none; }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 10px;
+    width: 28px; height: 28px; border-radius: 8px; background: var(--accent-soft);
+    color: var(--accent); font-weight: 700; font-size: 0.85rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .steps li.done::before { content: "✓"; background: var(--ok); color: #fff; }
+  .steps li.done .st { text-decoration: line-through; text-decoration-color: var(--muted); }
+  .steps .files { display: block; margin-top: 4px; font-size: 0.85rem; color: var(--muted); }
+  .steps .note { display: block; margin-top: 4px; font-size: 0.85rem; color: var(--ok); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 0.82rem; }
+  .done-list { list-style: none; padding: 0; }
+  .done-list li { padding-left: 30px; position: relative; }
+  .done-list li::before {
+    content: ""; position: absolute; left: 2px; top: 7px; width: 15px; height: 15px;
+    border: 2px solid var(--ok); border-radius: 5px;
+  }
+  .scroll-x { overflow-x: auto; }
+  footer { margin-top: 30px; color: var(--muted); font-size: 0.8rem; text-align: center; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <span class="issue-chip"><a href="https://github.com/damdam6/vocabulary-study/issues/76">#76</a></span><span class="type-chip">기능 개선</span>
+    <h1>세션 큐 M 파라미터화 — buildSessionQueue 출제 모드를 활성 모드로 제한</h1>
+    <div class="meta">
+      <span><b>damdam6/vocabulary-study</b></span>
+      <span>브랜치 <b><code>feat/76-session-queue-modes-parameterization</code></b> ← <code>main</code></span>
+      <span>라벨 <b>enhancement</b></span>
+      <span>2026-07-26</span>
+    </div>
+  </header>
+
+  <section class="card">
+    <h2><span class="no">1</span>요약</h2>
+    <p>
+      #75가 <code>getWordState(word, today, modes)</code>로 상태 판정을 M 기준으로 일반화했지만,
+      <code>buildSessionQueue</code>는 여전히 <code>["m1","m2"]</code>를 하드코딩해 호출하고
+      출제 모드 선택(<code>randomMode</code>·<code>learningMode</code>)도 m1/m2 두 모드
+      50:50·미달 규칙을 고정 코드로 갖고 있다. 이 이슈는 <code>buildSessionQueue</code>에
+      <code>modes</code> 인자를 추가해 상태 판정과 출제 모드 선택 양쪽을 M 기준으로 바꾼다.
+      복습 우선·오래된 순 컷·정답 수 정렬·60문제 상한·전체 셔플·단어당 1문제 규칙은 그대로
+      둔다. 호출부(<code>HomeScreen.tsx</code>)는 이번에도 <code>["m1","m2"]</code> 고정
+      주입을 유지한다 — 실제 프로필 연결은 화면 배선 이슈(#78) 몫이다.
+    </p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">2</span>현황 분석</h2>
+    <ul>
+      <li><code>src/lib/sessionQueue.ts:31-58</code> <code>buildSessionQueue(words, today, rng = Math.random)</code> — 현재 시그니처는 <code>modes</code>가 없다. <code>:41</code>에서 <code>getWordState(word, today, ["m1", "m2"])</code>를 고정 호출하며, 이 줄 위 주석(<code>:39-40</code>)이 "#76 전까지 고정 주입"이라 명시하고 있어 이 이슈가 그 주석을 해소해야 한다.</li>
+      <li><code>randomMode(rng)</code>(<code>:78-80</code>) — <code>rng() &lt; 0.5 ? "m1" : "m2"</code> 하드코딩. 복습 문제(<code>:47</code>)와 학습 중 양쪽 미달(<code>:88</code>)에서 재사용된다.</li>
+      <li><code>learningMode(word, rng)</code>(<code>:83-91</code>) — <code>word.m1 &gt;= 3</code>이면 <code>"m2"</code>, <code>word.m2 &gt;= 3</code>이면 <code>"m1"</code>, 둘 다 미달이면 <code>randomMode(rng)</code>. M 밖의 모드를 참조할 일은 없지만(학습 중 단어는 정의상 M 어느 한 모드가 미달), 로직 자체가 m1/m2 두 값만 안다.</li>
+      <li><code>QuizMode = "m1" | "m2"</code>(<code>:13</code>)는 <code>wordState.ts</code>의 <code>Mode</code>(#75에서 도입)와 구조적으로 동일한 리터럴 유니온이지만 별도 정의 — #75 계획서가 순환 참조 회피를 위해 의도적으로 분리한 결정이라 그대로 둔다.</li>
+      <li>호출부는 한 곳: <code>src/screens/HomeScreen.tsx:76</code> <code>buildSessionQueue(words, getSeoulToday())</code> — <code>rng</code> 인자 없이 기본값(<code>Math.random</code>) 사용. <code>modes</code>를 추가하면 이 호출도 <code>["m1", "m2"]</code>를 명시해야 시그니처가 맞는다(이슈 문구 "호출부는 고정 주입 유지"와 일치).</li>
+      <li><code>src/lib/sessionQueue.test.ts</code> 12개 케이스, 전부 <code>buildSessionQueue(words, today, rngOrNone)</code> 3-인자 이하 호출 — <code>modes</code>를 3번째 위치 인자로 끼워 넣으면 전부 시그니처가 깨진다(완료 조건의 "인자 추가만으로 통과"가 요구하는 지점).</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">3</span>설계</h2>
+    <ul>
+      <li><b>채택 — 시그니처</b>: <code>buildSessionQueue&lt;T&gt;(words, today, modes: readonly Mode[], rng: () =&gt; number = Math.random)</code>. 이슈 본문이 명시한 인자 순서(<code>words, today, modes, rng</code>)를 그대로 따르고, <code>rng</code>는 계속 마지막·기본값 유지 — 테스트에서 <code>modes</code>만 바뀌고 시드는 그대로인 케이스가 많다.</li>
+      <li><code>getWordState</code> 호출(<code>:41</code>)을 <code>getWordState(word, today, modes)</code>로 바꾸고, "#76 전까지 고정 주입" 주석은 이 이슈가 그 자체이므로 제거한다.</li>
+      <li><b>채택 — randomMode</b>: <code>randomMode(modes: readonly QuizMode[], rng)</code>로 일반화 — <code>modes[Math.floor(rng() * modes.length)]</code>. <code>modes.length === 1</code>이면 <code>rng</code> 값과 무관하게 항상 그 모드. <code>modes.length === 2</code>일 때 기존 임계값 동작과 동치인지 확인: <code>rng() &lt; 0.5</code>면 <code>floor(rng()*2) === 0</code> → <code>modes[0]</code>("m1"), <code>rng() &gt;= 0.5</code>면 <code>floor(rng()*2) === 1</code> → <code>modes[1]</code>("m2") — 기존 <code>rng()&lt;0.5?"m1":"m2"</code>와 모든 입력에서 동일한 결과(경계 <code>rng()===0.5</code> 포함, 둘 다 "m2"). 기존 테스트가 쓰는 시드(mulberry32)·상수 rng(<code>()=&gt;0</code>, <code>()=&gt;0.7</code>) 전부 이 등가성으로 값이 보존된다.</li>
+      <li><b>채택 — learningMode</b>: <code>learningMode(word, modes: readonly QuizMode[], rng)</code> — <code>modes.filter((m) =&gt; word[m] &lt; 3)</code>로 미달 모드 집합(<code>under</code>)을 구한다. <code>getWordState</code>가 이미 "learning"으로 분류한 단어만 이 함수에 들어오므로 <code>under</code>는 항상 비어있지 않다(PRD-general §4.1과 동일 전제). <code>under.length === 1</code>이면 그 모드, 아니면 <code>randomMode(under, rng)</code> — 이슈 문구 "미달 모드에서 선택 — 하나면 그 모드, 복수면 무작위"와 정확히 대응. M={m1,m2}일 때 <code>under</code>는 항상 <code>modes</code>와 같은 집합이라(두 모드 다 M의 전부) 기존 동작과 동일하다.</li>
+      <li>학습 중 정렬(<code>:53</code> <code>b.m1+b.m2-(a.m1+a.m2)</code>)·복습 정렬(<code>compareNextReview</code>)·60문제 상한·셔플은 M과 무관한 로직이라 손대지 않는다 — 완료 조건의 "회귀 없음" 항목.</li>
+      <li><b>기각</b>: <code>randomMode</code>/<code>learningMode</code>를 <code>modes.length</code> 특수 케이스(1개/2개)로 분기 — 배열 인덱싱 한 줄로 모든 길이(1개는 물론 향후 M이 3모드 이상으로 커져도)를 동일하게 처리할 수 있어 특수 분기가 불필요한 복잡도만 추가한다.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">4</span>작업 단계</h2>
+    <ol class="steps">
+      <li class="done"><span class="st"><code>buildSessionQueue</code>에 <code>modes</code> 인자 추가(<code>words, today, modes, rng</code> 순), <code>getWordState</code> 호출에 전달, "#76 전까지" 주석 제거하고 JSDoc을 M 기준 설명으로 갱신. <code>randomMode</code>를 <code>(modes, rng)</code> 시그니처로 일반화(배열 인덱싱), <code>learningMode</code>를 <code>(word, modes, rng)</code>로 일반화(미달 모드 필터 + 단일/복수 분기)해 두 호출부(복습·학습 중)를 갱신.</span>
+        <span class="files"><code>src/lib/sessionQueue.ts</code></span>
+      </li>
+      <li class="done"><span class="st"><code>HomeScreen.tsx</code> 호출부에 <code>["m1", "m2"]</code> 3번째 인자로 추가(동작 불변) + #78 참조 주석(이미 <code>computeHomeStats</code> 호출에 있는 것과 같은 패턴).</span>
+        <span class="files"><code>src/screens/HomeScreen.tsx</code></span>
+      </li>
+      <li class="done"><span class="st">기존 12개 케이스 전부에 <code>modes: ["m1", "m2"]</code>를 3번째 위치 인자로 추가(인자 추가만으로 통과 = 동작 보존 증명, rng 호출 인자는 4번째로 밀림).</span>
+        <span class="files"><code>src/lib/sessionQueue.test.ts</code></span>
+      </li>
+      <li class="done"><span class="st">M={m1} 케이스 추가: 복습 대기 단어(M={m1} 기준 졸업, m2는 M 밖이라 무시) + 학습 중 단어 2개(양쪽 미달/한쪽 미달이지만 미달 모드가 M 밖)를 섞어 시드 고정 rng로 <code>buildSessionQueue</code> 호출 → 전체 문제의 <code>mode</code>가 전부 <code>"m1"</code>인지 검증. M={m2} 대칭 케이스도 같은 구조로 추가.</span>
+        <span class="files"><code>src/lib/sessionQueue.test.ts</code></span>
+      </li>
+      <li class="done"><span class="st">계획 대비 범위 조정: "양쪽 미달 시 무작위 등가성"은 3단계에서 기존 <code>()=&gt;0</code>/<code>()=&gt;0.7</code> 케이스가 <code>modes</code> 인자만 추가된 채 그대로 통과해 이미 증명됐으므로 별도 케이스를 추가하지 않았다. 대신 <code>randomMode</code> 일반화의 또 다른 축인 "M이 1개면 rng 무관하게 항상 그 모드"를 복습 문제 경로로 직접 검증하는 케이스를 추가했다.</span>
+        <span class="files"><code>src/lib/sessionQueue.test.ts</code></span>
+      </li>
+      <li class="done"><span class="st"><code>npm test</code>(184 passed)·<code>npm run lint</code>(oxlint, clean)·<code>npx tsc -b</code> 실행해 그린 확인. 나머지 스위트(<code>homeStats.test.ts</code>·<code>wordState.test.ts</code> 등) 회귀 없이 통과.</span>
+        <span class="files">전체 스위트</span>
+      </li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">5</span>리스크</h2>
+    <div class="scroll-x">
+    <table>
+      <thead><tr><th>리스크</th><th>영향</th><th>완화책</th></tr></thead>
+      <tbody>
+        <tr><td><code>randomMode</code> 배열 인덱싱화가 기존 50:50 임계값과 미묘하게 어긋남(부동소수점 경계)</td><td>기존 시드 테스트의 모드 배정이 바뀌어 회귀로 오검출</td><td>3단계에서 <code>modes:["m1","m2"]</code>만 추가하고 기대값은 그대로 두어 자동으로 등가성 검증 — 어긋나면 테스트가 즉시 빨강</td></tr>
+        <tr><td><code>learningMode</code>의 <code>under</code>가 비어있는 상태로 호출되는 경로가 생김(방어 코드 없음)</td><td><code>randomMode([], rng)</code>가 <code>undefined</code> 반환</td><td>호출 경로가 <code>getWordState</code>의 "learning" 분류를 통과한 단어로만 한정되어 있어 <code>under</code>는 항상 비지 않음 — 설계 §3에 근거 명시, 별도 런타임 가드 불필요(PRD도 요구하지 않음)</td></tr>
+        <tr><td>M이 1개일 때 학습 중 정렬·60상한·셔플 등 M-무관 로직에 부작용</td><td>기대치 못한 순서/개수 회귀</td><td>4단계 테스트에서 M={m1} 전용으로 상한·정렬 규칙까지 함께 검증(기존 케이스 구조 재사용)</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">6</span>테스트 계획</h2>
+    <ul>
+      <li><code>npm test</code> — <code>sessionQueue.test.ts</code> 기존 12케이스(인자 추가만으로 통과) + M={m1}/{m2} 신규 케이스(복습·학습 중 전부 단일 모드) + randomMode 등가성 케이스, 전부 통과.</li>
+      <li><code>homeStats.test.ts</code>·<code>wordState.test.ts</code> 등 나머지 스위트 회귀 없이 그대로 통과 (이 이슈는 <code>sessionQueue.ts</code>만 건드림).</li>
+      <li><code>npm run lint</code>(oxlint) 통과.</li>
+      <li>수동 확인: 호출부(<code>HomeScreen.tsx</code>)는 여전히 <code>["m1","m2"]</code> 고정 주입이라 UI 동작 불변 — 테스트로 충분, 별도 브라우저 확인 불필요.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">7</span>완료 조건</h2>
+    <ul class="done-list">
+      <li>M={m1}: 복습·학습 중 문제가 전부 m1 (시드 고정 rng 테스트)</li>
+      <li>M={m2}: 대칭 케이스 — 전부 m2</li>
+      <li>M={m1,m2}: 기존 테스트가 인자 추가만으로 통과 (동작 보존 증명)</li>
+      <li>60 상한·복습 우선·정렬·셔플·단어당 1문제 회귀 없음</li>
+      <li><code>npm test</code>·<code>npm run lint</code> 통과</li>
+    </ul>
+  </section>
+
+  <footer>issue-plan · <a href="https://github.com/damdam6/vocabulary-study/issues/76">#76</a> · 2026-07-26</footer>
+</main>
+</body>
+</html>

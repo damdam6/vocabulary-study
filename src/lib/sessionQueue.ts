@@ -1,11 +1,12 @@
 /**
  * PRD §6.1: 학습 세션 큐 구성. §7.3에 따라 큐 구성은 클라이언트 책임이므로
  * 여기(src/lib)에 둔다. 상태 분류는 wordState의 getWordState를 재사용하고,
+ * 출제 모드도 그 활성 모드 집합 M(PRD-general §4.2) 안에서만 선택한다.
  * "시트 상 순서"는 GET /api/words가 시트 행 순서 그대로 반환하므로 입력 배열
  * 순서를 그대로 쓴다 (동률 정렬은 stable sort로 이 순서를 보존).
  */
 
-import { getWordState, type WordProgress } from "./wordState.ts";
+import { getWordState, type Mode, type WordProgress } from "./wordState.ts";
 
 /** PRD §6.1: 세션 전체 상한. §6.2의 오답 재삽입 상한도 같은 값을 쓴다(#15). */
 export const SESSION_CAP = 60;
@@ -21,24 +22,25 @@ export interface SessionQuestion<T> {
 }
 
 /**
- * PRD §6.1의 세션 큐를 만든다. ① 복습 대기 전부(복습일 오래된 순 최대 60개,
- * 단어당 1문제·모드 무작위) → ② 남은 슬롯에 학습 중 단어(총 정답 수 내림차순,
- * 단어당 1문제 — 한쪽만 미달이면 그 모드, 둘 다 미달이면 모드 무작위, #44) →
- * ③ 전체 셔플. 상태가 상호 배타라 같은 단어는 큐에 최대 한 번 들어간다.
+ * PRD-general §4.2의 세션 큐를 만든다. ① 복습 대기 전부(복습일 오래된 순 최대 60개,
+ * 단어당 1문제·모드는 M 중 무작위) → ② 남은 슬롯에 학습 중 단어(총 정답 수 내림차순,
+ * 단어당 1문제 — M 중 미달 모드가 하나면 그 모드, 복수면 그중 무작위, #44/#76) →
+ * ③ 전체 셔플. 상태가 상호 배타라 같은 단어는 큐에 최대 한 번 들어간다. 상태 분류는
+ * getWordState(word, today, modes)를 그대로 재사용한다(#75).
  *
+ * modes는 활성 모드 집합 M — 복습·학습 중 모두 이 집합 안에서만 출제한다.
  * rng는 [0,1) 난수 생성기 — 테스트에서 시드 고정용으로 주입한다.
  */
 export function buildSessionQueue<T extends WordProgress>(
   words: readonly T[],
   today: string,
+  modes: readonly Mode[],
   rng: () => number = Math.random,
 ): SessionQuestion<T>[] {
   const reviewDue: T[] = [];
   const learning: T[] = [];
   for (const word of words) {
-    // #76(세션 큐 M 파라미터화) 전까지 고정 주입 — 이 함수의 출제 모드(randomMode·
-    // learningMode)는 여전히 m1·m2 하드코딩이라 여기서만 M을 앞당겨 연결해도 의미가 없다.
-    const state = getWordState(word, today, ["m1", "m2"]);
+    const state = getWordState(word, today, modes);
     if (state === "reviewDue") {
       reviewDue.push(word);
     } else if (state === "learning") {
@@ -50,12 +52,12 @@ export function buildSessionQueue<T extends WordProgress>(
   const reviewQuestions: SessionQuestion<T>[] = reviewDue
     .toSorted((a, b) => compareNextReview(a.nextReview, b.nextReview))
     .slice(0, SESSION_CAP)
-    .map((word) => ({ word, mode: randomMode(rng), isReview: true }));
+    .map((word) => ({ word, mode: randomMode(modes, rng), isReview: true }));
 
-  // 학습 중 단어는 정의상 m1<3 또는 m2<3 — 미달인 모드로 단어당 1문제만 낸다(#44).
+  // 학습 중 단어는 정의상 M 중 최소 한 모드가 미달 — 미달인 모드로 단어당 1문제만 낸다(#44/#76).
   const learningQuestions: SessionQuestion<T>[] = learning
     .toSorted((a, b) => b.m1 + b.m2 - (a.m1 + a.m2))
-    .map((word) => ({ word, mode: learningMode(word, rng), isReview: false }));
+    .map((word) => ({ word, mode: learningMode(word, modes, rng), isReview: false }));
 
   const queue = [
     ...reviewQuestions,
@@ -83,19 +85,15 @@ function compareNextReview(a: string | null, b: string | null): number {
   return a < b ? -1 : 1;
 }
 
-function randomMode(rng: () => number): QuizMode {
-  return rng() < 0.5 ? "m1" : "m2";
+/** modes 중 무작위 하나. modes가 1개면 그 값이 항상 나온다. */
+function randomMode(modes: readonly QuizMode[], rng: () => number): QuizMode {
+  return modes[Math.floor(rng() * modes.length)];
 }
 
-/** 학습 중 단어의 출제 모드. 한쪽만 미달이면 그 모드, 둘 다 미달이면 복습과 같은 방식의 무작위(#44). */
-function learningMode(word: WordProgress, rng: () => number): QuizMode {
-  if (word.m1 >= 3) {
-    return "m2";
-  }
-  if (word.m2 >= 3) {
-    return "m1";
-  }
-  return randomMode(rng);
+/** 학습 중 단어의 출제 모드. M 중 미달(<3) 모드가 하나면 그 모드, 복수면 그중 무작위(#44/#76). */
+function learningMode(word: WordProgress, modes: readonly QuizMode[], rng: () => number): QuizMode {
+  const under = modes.filter((mode) => word[mode] < 3);
+  return under.length === 1 ? under[0] : randomMode(under, rng);
 }
 
 /** Fisher–Yates 제자리 셔플. */
