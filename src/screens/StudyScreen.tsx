@@ -7,7 +7,7 @@
 import { useRef, useState } from 'react'
 import Mode1Card from './Mode1Card.tsx'
 import Mode2Card from './Mode2Card.tsx'
-import { postAnswer, postReviewFail, type AnswerRecord, type WordEntry } from '../lib/api.ts'
+import { postAnswer, postReviewFail, type AnswerRecord, type ContentType, type WordEntry } from '../lib/api.ts'
 import { enqueueAnswer, enqueueReviewFail } from '../lib/retryQueue.ts'
 import type { SessionQuestion } from '../lib/sessionQueue.ts'
 import {
@@ -29,6 +29,8 @@ export interface SessionResult {
 
 interface StudyScreenProps {
   queue: SessionQuestion<WordEntry>[]
+  /** 프로필 콘텐츠 타입(#78) — 전달만 준비, 실제 렌더링 분기(칩 문구·한자 표시 등)는 후속 이슈. */
+  contentType: ContentType
   onExit: () => void
   onComplete: (result: SessionResult) => void
 }
@@ -39,7 +41,7 @@ interface Feedback {
   seq: number
 }
 
-function StudyScreen({ queue, onExit, onComplete }: StudyScreenProps) {
+function StudyScreen({ queue, contentType, onExit, onComplete }: StudyScreenProps) {
   const [session, setSession] = useState<StudySessionState>(() => startSession(queue))
   const [feedback, setFeedback] = useState<Feedback | null>(null)
   // 마지막 문제의 판정 피드백이 화면 전환으로 유실되지 않도록, 오버레이가 재생 중일
@@ -113,7 +115,7 @@ function StudyScreen({ queue, onExit, onComplete }: StudyScreenProps) {
 
   return (
     <>
-      <div className="study">
+      <div className="study" data-content-type={contentType}>
         <header className="study-header">
           {/* §4.1: 종료는 확인 다이얼로그 없이 즉시 홈 복귀 — 기록은 문제 단위로 이미 반영됨(§6.2) */}
           <button type="button" className="study-exit" onClick={onExit}>

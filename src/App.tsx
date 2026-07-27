@@ -3,7 +3,14 @@ import LoginScreen from './screens/LoginScreen.tsx'
 import HomeScreen from './screens/HomeScreen.tsx'
 import StudyScreen, { type SessionResult } from './screens/StudyScreen.tsx'
 import DoneScreen from './screens/DoneScreen.tsx'
-import { getStoredPassword, setApiSuccessHandler, setUnauthorizedHandler, type WordEntry } from './lib/api.ts'
+import {
+  clearPassword,
+  getStoredPassword,
+  getStoredProfile,
+  setApiSuccessHandler,
+  setUnauthorizedHandler,
+  type WordEntry,
+} from './lib/api.ts'
 import { flushRetryQueue } from './lib/retryQueue.ts'
 import type { SessionQuestion } from './lib/sessionQueue.ts'
 
@@ -44,15 +51,30 @@ function App() {
     setScreen('done')
   }
 
+  // v1엔 로그아웃이 없어, 프로필 전환은 저장값을 지우고 다시 로그인하는 경로뿐이다 (#78)
+  const switchProfile = () => {
+    clearPassword()
+    setScreen('login')
+  }
+
   return (
     <div className="app-frame">
       <div className="app-column">
         {screen === 'login' && <LoginScreen onLogin={() => setScreen('home')} />}
         {screen === 'home' && (
-          <HomeScreen onStart={startSession} onNavigateRegister={() => setScreen('register')} />
+          <HomeScreen
+            onStart={startSession}
+            onNavigateRegister={() => setScreen('register')}
+            onSwitchProfile={switchProfile}
+          />
         )}
         {screen === 'study' && (
-          <StudyScreen queue={sessionQueue} onExit={() => setScreen('home')} onComplete={completeSession} />
+          <StudyScreen
+            queue={sessionQueue}
+            contentType={getStoredProfile()?.contentType ?? 'zh'}
+            onExit={() => setScreen('home')}
+            onComplete={completeSession}
+          />
         )}
         {screen === 'done' && (
           <DoneScreen
