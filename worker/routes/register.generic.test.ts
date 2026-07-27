@@ -299,6 +299,35 @@ describe("POST /api/words/register — generic 프로필", () => {
     ]);
   });
 
+  it("수식 모양 표제어(=/+ 시작)도 정화 없이 원문 그대로, valueInputOption=RAW로만 쓴다", async () => {
+    const { putCalls, urls } = stubSheetsFetch(baseSheets());
+
+    const res = await worker.fetch(
+      registerRequest("pw-en", {
+        tab: "표현",
+        words: [{ hanzi: '=HYPERLINK("https://evil.example")', pinyin: "+주의", meaning: "수식 아님" }],
+      }),
+      env,
+    );
+
+    expect(res.status).toBe(200);
+    // RAW라서 시트가 값을 파싱하지 않는다(sheets.ts updateValues) — 수식 인젝션 방어는 이 계약이
+    // 담당하므로, 저장 값은 이스케이프·정화 없이 원문 그대로여야 한다.
+    expect(putCalls).toEqual([
+      {
+        sheetId: "sheet-en",
+        tab: "표현",
+        range: "A3:C3",
+        values: [['=HYPERLINK("https://evil.example")', "+주의", "수식 아님"]],
+      },
+    ]);
+    const putUrls = urls.filter((u) => u.includes("valueInputOption"));
+    expect(putUrls.length).toBeGreaterThan(0);
+    for (const url of putUrls) {
+      expect(url).toContain("valueInputOption=RAW");
+    }
+  });
+
   it("모든 Sheets 호출이 인증 프로필의 sheetId로만 나간다 (시트 격리)", async () => {
     const { urls } = stubSheetsFetch(baseSheets());
 
