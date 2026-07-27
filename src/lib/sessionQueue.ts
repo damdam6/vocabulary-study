@@ -22,7 +22,7 @@ export interface SessionQuestion<T> {
 }
 
 /**
- * PRD-general §4.2의 세션 큐를 만든다. ① 복습 대기 전부(복습일 오래된 순 최대 60개,
+ * PRD-general §4.2의 세션 큐를 만든다. ① 복습 대기 전부(복습일 오래된 순 최대 limit개,
  * 단어당 1문제·모드는 M 중 무작위) → ② 남은 슬롯에 학습 중 단어(총 정답 수 내림차순,
  * 단어당 1문제 — M 중 미달 모드가 하나면 그 모드, 복수면 그중 무작위, #44/#76) →
  * ③ 전체 셔플. 상태가 상호 배타라 같은 단어는 큐에 최대 한 번 들어간다. 상태 분류는
@@ -30,12 +30,15 @@ export interface SessionQuestion<T> {
  *
  * modes는 활성 모드 집합 M — 복습·학습 중 모두 이 집합 안에서만 출제한다.
  * rng는 [0,1) 난수 생성기 — 테스트에서 시드 고정용으로 주입한다.
+ * limit은 복습 대기 컷·세션 총 상한에 같이 쓰는 시트별 세션 문제 수(세션 설정 플랜
+ * §3.2) — 기본값은 SESSION_CAP(60)이라 인자를 생략하면 기존 동작과 같다.
  */
 export function buildSessionQueue<T extends WordProgress>(
   words: readonly T[],
   today: string,
   modes: readonly Mode[],
   rng: () => number = Math.random,
+  limit: number = SESSION_CAP,
 ): SessionQuestion<T>[] {
   const reviewDue: T[] = [];
   const learning: T[] = [];
@@ -51,7 +54,7 @@ export function buildSessionQueue<T extends WordProgress>(
 
   const reviewQuestions: SessionQuestion<T>[] = reviewDue
     .toSorted((a, b) => compareNextReview(a.nextReview, b.nextReview))
-    .slice(0, SESSION_CAP)
+    .slice(0, limit)
     .map((word) => ({ word, mode: randomMode(modes, rng), isReview: true }));
 
   // 학습 중 단어는 정의상 M 중 최소 한 모드가 미달 — 미달인 모드로 단어당 1문제만 낸다(#44/#76).
@@ -61,7 +64,7 @@ export function buildSessionQueue<T extends WordProgress>(
 
   const queue = [
     ...reviewQuestions,
-    ...learningQuestions.slice(0, SESSION_CAP - reviewQuestions.length),
+    ...learningQuestions.slice(0, limit - reviewQuestions.length),
   ];
   shuffle(queue, rng);
   return queue;
