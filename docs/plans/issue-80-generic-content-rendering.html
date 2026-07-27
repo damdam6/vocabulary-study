@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>#80 generic 콘텐츠 렌더링 — 학습 화면 zh/generic 분기 — 작업 플랜</title>
+<style>
+  :root {
+    --bg: #f7f7f8; --card: #ffffff; --ink: #1c1c1e; --muted: #6e6e73;
+    --line: #e3e3e6; --accent: #3b6ef5; --accent-soft: #e8eefe;
+    --ok: #2e8b57; --warn: #b25e09; --code-bg: #f0f0f2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161618; --card: #202024; --ink: #ececf0; --muted: #98989f;
+      --line: #333338; --accent: #7a9bff; --accent-soft: #26304a;
+      --ok: #58c088; --warn: #e0a35c; --code-bg: #2a2a2f;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 40px 20px 80px; background: var(--bg); color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+                 "Segoe UI", "Noto Sans KR", sans-serif;
+    line-height: 1.65;
+  }
+  main { max-width: 860px; margin: 0 auto; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code {
+    font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 0.86em;
+    background: var(--code-bg); border-radius: 5px; padding: 2px 6px;
+  }
+  header { margin-bottom: 28px; }
+  .issue-chip {
+    display: inline-block; font-weight: 700; color: var(--accent);
+    background: var(--accent-soft); border-radius: 999px;
+    padding: 3px 14px; font-size: 0.95rem; margin-bottom: 10px;
+  }
+  .type-chip {
+    display: inline-block; font-weight: 600; color: var(--muted);
+    border: 1px solid var(--line); border-radius: 999px;
+    padding: 3px 12px; font-size: 0.8rem; margin-left: 8px; vertical-align: 2px;
+  }
+  h1 { font-size: 1.7rem; margin: 0 0 14px; letter-spacing: -0.02em; }
+  .meta {
+    display: flex; flex-wrap: wrap; gap: 6px 22px;
+    color: var(--muted); font-size: 0.87rem;
+  }
+  .meta b { color: var(--ink); font-weight: 600; }
+  section.card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 24px 28px; margin-top: 18px;
+  }
+  h2 {
+    font-size: 1.05rem; margin: 0 0 14px; letter-spacing: -0.01em;
+    display: flex; align-items: center; gap: 8px;
+  }
+  h2 .no {
+    color: var(--accent); font-size: 0.8rem; font-weight: 700;
+    border: 1.5px solid var(--accent); border-radius: 6px; padding: 0 6px;
+  }
+  ul, ol { margin: 0; padding-left: 22px; }
+  li { margin: 6px 0; }
+  .steps { list-style: none; padding: 0; counter-reset: step; }
+  .steps li {
+    counter-increment: step; position: relative; padding: 10px 0 10px 44px;
+    border-bottom: 1px dashed var(--line);
+  }
+  .steps li:last-child { border-bottom: none; }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 10px;
+    width: 28px; height: 28px; border-radius: 8px; background: var(--accent-soft);
+    color: var(--accent); font-weight: 700; font-size: 0.85rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .steps .files { display: block; margin-top: 4px; font-size: 0.85rem; color: var(--muted); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 0.82rem; }
+  .done-list { list-style: none; padding: 0; }
+  .done-list li { padding-left: 30px; position: relative; }
+  .done-list li::before {
+    content: ""; position: absolute; left: 2px; top: 7px; width: 15px; height: 15px;
+    border: 2px solid var(--ok); border-radius: 5px;
+  }
+  .done-list li.done::before { background: var(--ok); }
+  .scroll-x { overflow-x: auto; }
+  footer { margin-top: 30px; color: var(--muted); font-size: 0.8rem; text-align: center; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <span class="issue-chip"><a href="https://github.com/damdam6/vocabulary-study/issues/80">#80</a></span><span class="type-chip">기능 개선</span>
+    <h1>generic 콘텐츠 렌더링 — 학습 화면 zh/generic 분기 + 보조 표기(B열) 빈칸 숨김 + design-prd §4 개정</h1>
+    <div class="meta">
+      <span><b>damdam6/vocabulary-study</b></span>
+      <span>브랜치 <b><code>feat/80-generic-content-rendering</code></b> ← <code>main</code></span>
+      <span>라벨 <b>enhancement</b></span>
+      <span>2026-07-27</span>
+    </div>
+  </header>
+
+  <section class="card">
+    <h2><span class="no">1</span>요약</h2>
+    <p>#78에서 <code>contentType</code>(<code>"zh" | "generic"</code>)이 프로필 → App → StudyScreen까지는 배선됐지만, 실제 렌더링 분기는 아직 없다 — <code>StudyScreen.tsx:118</code>은 <code>data-content-type</code> 속성만 부여할 뿐이고 <code>Mode1Card</code>/<code>Mode2Card</code>는 <code>contentType</code> prop 자체를 받지 않는다. 이 이슈는 그 마지막 배선을 완성한다: <code>lang="zh-Hans"</code>·한자 글자수 적응 크기·모드2 입력란의 중국어 속성·모드 칩 문구를 <code>contentType === 'zh'</code>일 때만 적용하고, <code>generic</code>은 중립 렌더링(고정 크기·속성 미부여·중립 문구)으로 분기한다. 아울러 B열(보조 표기, 코드상 <code>word.pinyin</code>) 빈칸 시 그 줄을 숨기는 규칙을 콘텐츠 타입 무관 공통으로 적용한다. 진행/채점 로직(<code>studySession.ts</code>)은 손대지 않는다.</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">2</span>현황 분석</h2>
+    <p><b>zh 하드코딩 지점 (전부 렌더링 계층, 3개 파일):</b></p>
+    <ul>
+      <li><code>src/screens/Mode1Card.tsx:29</code> — 앞면 한자: <code>lang="zh-Hans"</code> + <code>hanziFontSize(word.hanzi)</code>(<code>src/lib/hanziSize.ts:7</code>, 84/64/52px 3단 스케일, 앞면 유일 호출부)로 클래스 <code>flip-hanzi--{px}</code> 결정.</li>
+      <li><code>src/screens/Mode1Card.tsx:35-37</code> — 뒷면: 한자(<code>lang="zh-Hans"</code>, 고정 44px), 병음(<code>word.pinyin</code>, 항상 렌더링), 뜻.</li>
+      <li><code>src/screens/Mode2Card.tsx:39-46</code> — 모드2 오답 결과 화면: 한자(<code>lang="zh-Hans"</code>, 고정 50px), 병음(항상 렌더링), 뜻, "내 답"(<code>&lt;s lang="zh-Hans"&gt;</code>).</li>
+      <li><code>src/screens/Mode2Card.tsx:59</code> — 힌트 문구 <code>"이 뜻의 한자를 입력하세요"</code> — 이슈 완료 조건엔 명시 안 됐지만 동일 범주의 zh 하드코딩(하단 3 참고).</li>
+      <li><code>src/screens/Mode2Card.tsx:61-74</code> — 입력란: <code>lang="zh-Hans"</code>, <code>placeholder="汉字"</code>. (<code>autoComplete/autoCorrect/autoCapitalize off</code>·<code>spellCheck=false</code>·<code>enterKeyHint="done"</code>는 IME 언어와 무관한 범용 입력 품질 속성이라 유지.)</li>
+      <li><code>src/screens/StudyScreen.tsx:134</code> — 모드 칩: <code>question.mode === 'm1' ? '한자 → 뜻' : '뜻 → 한자'</code>, 문자열 리터럴 유일 발생 지점.</li>
+    </ul>
+    <p><b>B열(보조 표기) 데이터:</b> <code>WordEntry.pinyin: string</code>(<code>src/lib/api.ts:134</code>, worker 쪽 <code>worker/lib/words.ts:30-35</code>에서 시트 B열을 <code>pinyin: pinyin ?? ""</code>로 파싱). 빈칸은 <code>null</code>이 아니라 <code>""</code>로 들어오므로 숨김 조건은 <code>word.pinyin !== ''</code>. 항상 렌더링되는 지점은 <code>Mode1Card.tsx:36</code>과 <code>Mode2Card.tsx:40</code> 두 곳뿐.</p>
+    <p><b>contentType 배선 현황(#78):</b> <code>App.tsx:74</code>가 <code>getStoredProfile()?.contentType ?? 'zh'</code>로 <code>StudyScreen</code>에 전달, <code>StudyScreen.tsx:32</code> prop 선언 주석에 "실제 렌더링 분기…는 후속 이슈"라고 명시돼 있다(= 이 이슈). <code>Mode1Card</code>/<code>Mode2Card</code>는 아직 <code>contentType</code> prop이 없다 — 이번에 추가해야 한다. <code>HomeScreen.tsx:141</code>의 <code>profile?.contentType === "zh" &amp;&amp;</code> 분기가 이미 이 저장소의 zh/generic 분기 관례다.</p>
+    <p><b>테스트 하네스 제약:</b> <code>vitest.config.ts</code>는 순수 node 환경이고 React 컴포넌트 테스트 설정(jsdom·RTL)이 이 저장소에 전혀 없다(<code>hanziSize.ts:2-5</code> 주석이 같은 이유로 스케일 로직을 lib로 뽑았다고 명시). 새 테스트 인프라 도입은 이 이슈 범위 밖이므로, 텍스트/속성 결정 로직만 <code>hanziSize.ts</code>와 같은 패턴으로 lib 순수 함수로 뽑아 vitest로 고정하고, JSX 배선 자체는 수동(dev 서버) 확인으로 보완한다.</p>
+    <p><code>src/lib/studySession.ts</code> 전체 확인 결과 <code>lang</code>/한자 크기/병음 렌더링/칩 문구 관련 코드가 전혀 없음을 확인 — 진행·채점 로직은 이 변경의 영향권 밖이다.</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">3</span>설계</h2>
+    <ul>
+      <li><b>필드명은 그대로 둔다.</b> <code>WordEntry.hanzi/pinyin</code>을 <code>headword/secondary</code> 등으로 리네이밍하는 건 worker 파서·시트 계약·다수 파일에 번지는 별도 리팩토링이며 이슈 완료 조건에도 없다 — 이번 변경은 순수 렌더링 분기다.</li>
+      <li><b>결정 로직은 <code>src/lib/contentLabels.ts</code>로 분리</b> (신규) — <code>modeChipLabel</code>·<code>headwordLang</code>·<code>mode2Hint</code>·<code>mode2Placeholder</code> 4개 순수 함수. <code>hanziSize.ts</code>와 동일한 이유(테스트 하네스 없이도 vitest로 분기를 고정)로 화면 컴포넌트에 인라인 삼항 대신 이 방식을 택한다. 앞면 CSS 클래스 선택("어떤 사이즈 클래스를 쓸지")은 사소한 문자열 조립이라 <code>Mode1Card</code> 안에 인라인으로 남긴다(<code>hanziFontSize</code> 호출 자체는 zh 분기일 때만).</li>
+      <li><b>"미적용"은 속성 자체를 생략</b>한다는 뜻으로 해석한다(이슈 완료 조건 문구 그대로) — generic일 때 <code>lang</code>/<code>placeholder</code>는 대체 문자열을 넣는 게 아니라 <code>undefined</code>로 둬 React가 속성을 렌더링하지 않게 한다.</li>
+      <li><b>모드2 힌트 문구("이 뜻의 한자를 입력하세요")도 분기 대상에 포함</b>한다 — 이슈 완료 조건엔 없지만 완전히 같은 범주의 zh 하드코딩이라, 빼면 generic 프로필에서 "한자를 입력하세요"라는 명백히 틀린 문구가 남아 이슈의 근본 취지(§7 "generic은 일반 텍스트로 표시")를 어긴다. 완료 조건에 항목을 추가해 추적한다.</li>
+      <li><b>generic 앞면 크기</b>: 글자 수 적응 스케일은 "zh 전용 유지"(이슈 본문 명시)이므로 generic은 고정 크기 CSS 클래스 <code>.flip-hanzi--generic</code>(48px, <code>letter-spacing: normal</code> — 한자 전용 자간 0.04em은 라틴 문자에 불필요)를 신설한다. 대안으로 84/64/52 스케일을 generic에도 그대로 쓰는 안을 검토했으나, "영어 표현" 같은 긴 구는 84px에서 카드 밖으로 넘칠 위험이 커 기각 — 고정값이 더 안전하고 단순하다. 긴 텍스트 대비 <code>overflow-wrap: break-word</code>를 <code>.flip-hanzi</code> 공통 규칙에 추가(zh 짧은 한자엔 시각적 영향 없음).</li>
+      <li><b>모드2 입력란 placeholder</b>: generic은 <code>undefined</code>(placeholder 없음) — 힌트 문구가 이미 안내하므로 대체 placeholder를 새로 지어내지 않는다(이슈에 없는 문구를 임의로 확정하지 않기 위함).</li>
+      <li><b>B열 빈칸 숨김</b>은 콘텐츠 타입과 무관한 공통 규칙이라 <code>contentLabels.ts</code>가 아니라 각 컴포넌트에 <code>{word.pinyin !== '' &amp;&amp; (...)}</code> 인라인 가드로 둔다 — <code>Mode2Card.tsx:42</code>의 기존 <code>wrongAnswer !== ''</code> 가드와 동일 관용구라 일관성이 있다.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">4</span>작업 단계</h2>
+    <ol class="steps">
+      <li>완료 — zh/generic 렌더링 분기 순수 함수 신설 — <code>modeChipLabel(contentType, mode)</code>("한자 → 뜻"/"뜻 → 한자" ↔ "단어 → 뜻"/"뜻 → 단어"), <code>headwordLang(contentType)</code>(zh만 <code>"zh-Hans"</code>, 그 외 <code>undefined</code>), <code>mode2Hint(contentType)</code>, <code>mode2Placeholder(contentType)</code>(zh만 <code>"汉字"</code>, 그 외 <code>undefined</code>). 4개 조합 전부 vitest로 커버.
+        <span class="files"><code>src/lib/contentLabels.ts</code>, <code>src/lib/contentLabels.test.ts</code></span>
+      </li>
+      <li>완료 — <code>Mode1Card</code>에 <code>contentType: ContentType</code> prop 추가. 앞면: <code>lang={headwordLang(contentType)}</code>, 크기 클래스는 <code>contentType === 'zh' ? \`flip-hanzi--${hanziFontSize(word.hanzi)}\` : 'flip-hanzi--generic'</code>. 뒷면: 한자 <code>lang</code>을 <code>headwordLang(contentType)</code>로 교체, 병음 줄을 <code>word.pinyin !== ''</code> 가드로 감싼다.
+        <span class="files"><code>src/screens/Mode1Card.tsx</code></span>
+      </li>
+      <li>완료 — <code>Mode2Card</code>에 <code>contentType: ContentType</code> prop 추가. 결과 화면: 한자·"내 답" <code>&lt;s&gt;</code>의 <code>lang</code>을 <code>headwordLang(contentType)</code>로, 병음 줄을 <code>word.pinyin !== ''</code> 가드로 감싼다. 출제 화면: 힌트 문구를 <code>mode2Hint(contentType)</code>로, 입력란 <code>lang</code>/<code>placeholder</code>를 <code>headwordLang(contentType)</code>/<code>mode2Placeholder(contentType)</code>로 교체(IME 품질 속성 4종은 유지).
+        <span class="files"><code>src/screens/Mode2Card.tsx</code></span>
+      </li>
+      <li>완료 — <code>StudyScreen</code>의 모드 칩 문구를 <code>modeChipLabel(contentType, question.mode)</code> 호출로 교체하고, <code>Mode1Card</code>/<code>Mode2Card</code> 렌더링에 <code>contentType</code> prop을 추가로 넘긴다. 기존 <code>data-content-type</code> 속성은 유지(회귀 없이 그대로 둠).
+        <span class="files"><code>src/screens/StudyScreen.tsx</code></span>
+      </li>
+      <li>완료 — <code>.flip-hanzi--generic</code>(48px, <code>letter-spacing: normal</code>) 신규 규칙 추가 + <code>.flip-hanzi</code> 공통 규칙에 <code>overflow-wrap: break-word</code> 추가(긴 generic 텍스트 카드 오버플로 방지, zh엔 시각 변화 없음).
+        <span class="files"><code>src/index.css</code></span>
+      </li>
+      <li>완료 — <code>docs/design-prd.md</code> §4 개정: §1.2의 "한자 표시 요소는 항상 <code>lang="zh-Hans"</code>" 문장을 zh 전용으로 한정, §4.1 모드 칩 문구를 zh/generic 분기로 수정, §4.2·§4.3에 B열 빈칸 숨김 규칙과 zh 전용 항목(크기 스케일·입력란 속성·힌트 문구) 표기 추가, 신설 §4.6 "콘텐츠 타입 분기 정리"에 zh/generic 차이를 표로 요약, §10 이슈 매핑에 #80 행 추가.
+        <span class="files"><code>docs/design-prd.md</code></span>
+      </li>
+      <li>완료(부분) — <code>npm test</code>·<code>npm run lint</code>·<code>tsc -b</code> 전부 통과 확인. <code>npm run dev</code> 수동 확인은 <b>미실시</b> — <code>generic</code> 프로필을 실제로 재현하려면 두 번째 구글 스프레드시트 + <code>PROFILES</code> 시크릿 갱신이 필요해 이 워크트리 세션 범위를 벗어난다(리스크 1 참고). 대신 <code>contentLabels.test.ts</code>로 문구/속성 분기를, 타입 체크로 prop 배선을 고정했다.
+        <span class="files">— (검증 단계, 파일 변경 없음)</span>
+      </li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">5</span>리스크</h2>
+    <div class="scroll-x">
+    <table>
+      <thead><tr><th>리스크</th><th>영향</th><th>완화책</th></tr></thead>
+      <tbody>
+        <tr><td>컴포넌트 테스트 하네스 부재로 실제 JSX 분기(속성 렌더링 자체)는 자동 테스트로 못 잡음</td><td>회귀를 vitest만으로 100% 보장 못함</td><td>텍스트/속성 결정 로직은 <code>contentLabels.ts</code> 유닛 테스트로 고정하고, JSX 배선은 <code>npm run dev</code> 수동 확인(zh·generic 양쪽)으로 보완</td></tr>
+        <tr><td>generic 앞면 고정 크기(48px) 값은 이번 구현에서 처음 확정하는 디자인 결정</td><td>소유자가 다른 값을 원할 수 있음</td><td>단일 CSS 규칙이라 조정 비용 낮음, design-prd에 결정 근거 명시</td></tr>
+        <tr><td>모드2 힌트 문구 변경은 완료 조건에 없던 범위 확장</td><td>범위 외 변경으로 보일 수 있음</td><td>현황 분석·설계에서 근거 명시, 완료 조건에 별도 항목으로 추가해 추적</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">6</span>테스트 계획</h2>
+    <ul>
+      <li><code>npm test</code> — 신규 <code>src/lib/contentLabels.test.ts</code>(zh/generic × mode1/mode2 조합의 칩 문구·lang·힌트·placeholder 전부 검증) + 기존 전체 스위트 그린 확인, 특히 <code>hanziSize.test.ts</code>·<code>studySession.test.ts</code> 회귀 없음.</li>
+      <li><code>npm run lint</code> 통과.</li>
+      <li>수동(<code>npm run dev</code>): zh 프로필로 로그인 → 모드1/모드2 화면이 기존과 동일(한자 크기·lang·칩 문구·placeholder "汉字"·힌트 문구 불변) 확인.</li>
+      <li>수동: <code>localStorage</code>의 <code>vocab-study:profile</code>을 <code>contentType: "generic"</code>으로 바꾸거나 테스트용 generic 프로필로 전환 → lang 속성 없음(devtools로 확인)·고정 48px 크기·중립 칩 문구("단어 → 뜻"/"뜻 → 단어")·중립 힌트 문구·placeholder 없음 확인.</li>
+      <li>수동: B열이 빈 단어로 모드1 카드를 뒤집어 뒷면에 병음 줄이 아예 DOM에 없는지(빈 줄이 아니라 요소 자체 부재), 모드2에서 같은 단어로 오답 처리해 결과 화면에서도 동일한지 확인 — zh·generic 양쪽에서.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">7</span>완료 조건</h2>
+    <ul class="done-list">
+      <li class="done">zh 프로필 렌더링이 기존과 동일 (회귀 없음) — lang·한자 크기 스케일·칩 문구·placeholder·힌트 문구 전부 불변. <i>코드 리뷰·타입체크로 확인, 실 브라우저 수동 확인은 미실시(§5 리스크1)</i></li>
+      <li class="done">generic 프로필에서 lang·모드2 placeholder·한자 크기 스케일 미적용(속성/스케일 생략), 고정 크기로 표시</li>
+      <li class="done">generic 프로필의 모드 칩 문구가 "단어 → 뜻"/"뜻 → 단어"로 중립화</li>
+      <li class="done">generic 프로필의 모드2 힌트 문구도 중립화(이슈 체크리스트엔 없으나 동일 범주라 포함 — §3 설계 참고)</li>
+      <li class="done">B열(보조 표기) 빈칸 행에서 보조 표기 줄이 모드1 카드 뒷면·모드2 오답 결과 화면 모두 미표시 (zh 프로필에서도 동일)</li>
+      <li class="done"><code>studySession.ts</code> 등 진행·채점 로직 변경 없음</li>
+      <li class="done"><code>docs/design-prd.md</code> §4 개정 (zh/generic 분기·generic 크기 규칙·B열 숨김 규칙 명문화 + §10 이슈 매핑 추가)</li>
+      <li class="done"><code>npm test</code>·<code>npm run lint</code> 통과 (259 테스트 그린, lint 클린, <code>tsc -b</code> 클린)</li>
+    </ul>
+  </section>
+
+  <footer>issue-plan · <a href="https://github.com/damdam6/vocabulary-study/issues/80">#80</a> · 2026-07-27</footer>
+</main>
+</body>
+</html>

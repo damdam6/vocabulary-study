@@ -7,6 +7,7 @@
 import { useRef, useState } from 'react'
 import Mode1Card from './Mode1Card.tsx'
 import Mode2Card from './Mode2Card.tsx'
+import { modeChipLabel } from '../lib/contentLabels.ts'
 import { postAnswer, postReviewFail, type AnswerRecord, type ContentType, type WordEntry } from '../lib/api.ts'
 import { enqueueAnswer, enqueueReviewFail } from '../lib/retryQueue.ts'
 import type { SessionQuestion } from '../lib/sessionQueue.ts'
@@ -29,7 +30,7 @@ export interface SessionResult {
 
 interface StudyScreenProps {
   queue: SessionQuestion<WordEntry>[]
-  /** 프로필 콘텐츠 타입(#78) — 전달만 준비, 실제 렌더링 분기(칩 문구·한자 표시 등)는 후속 이슈. */
+  /** 프로필 콘텐츠 타입(#78) — 칩 문구·lang·크기 스케일 등 렌더링 분기에 쓰인다(#80). */
   contentType: ContentType
   onExit: () => void
   onComplete: (result: SessionResult) => void
@@ -131,14 +132,15 @@ function StudyScreen({ queue, contentType, onExit, onComplete }: StudyScreenProp
           <>
             <div className="study-chips">
               {question.isReview && <span className="study-chip study-chip--review">복습</span>}
-              <span className="study-chip">{question.mode === 'm1' ? '한자 → 뜻' : '뜻 → 한자'}</span>
+              <span className="study-chip">{modeChipLabel(contentType, question.mode)}</span>
             </div>
             {question.mode === 'm1' ? (
-              <Mode1Card key={session.pos} question={question} onJudged={handleJudged} />
+              <Mode1Card key={session.pos} question={question} contentType={contentType} onJudged={handleJudged} />
             ) : (
               <Mode2Card
                 key={session.pos}
                 question={question}
+                contentType={contentType}
                 onJudged={handleJudged}
                 onProceed={handleProceed}
               />

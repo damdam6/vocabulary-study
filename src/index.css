@@ -481,9 +481,10 @@ button {
 .flip-hanzi {
   font-weight: 500;
   letter-spacing: 0.04em;
+  overflow-wrap: break-word;
 }
 
-/* §1.2 글자 수 적응 크기 — 클래스 선택은 hanziFontSize(src/lib/hanziSize.ts) */
+/* §1.2 글자 수 적응 크기(zh 전용) — 클래스 선택은 hanziFontSize(src/lib/hanziSize.ts) */
 .flip-hanzi--84 {
   font-size: 84px;
 }
@@ -494,6 +495,12 @@ button {
 
 .flip-hanzi--52 {
   font-size: 52px;
+}
+
+/* §4.6 generic 콘텐츠 고정 크기 — 글자 수 스케일 미적용, 라틴 자간은 기본값 */
+.flip-hanzi--generic {
+  font-size: 48px;
+  letter-spacing: normal;
 }
 
 .flip-hint {

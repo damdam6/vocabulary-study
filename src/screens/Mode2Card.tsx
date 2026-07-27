@@ -5,19 +5,23 @@
 //     "다음" 버튼에서 onProceed를 호출해야 셸이 진행한다.
 //   - 셸이 문제마다 key를 바꿔 리마운트하므로 내부 상태는 초기화를 신경 쓰지 않는다.
 import { useState, type FormEvent } from 'react'
+import { headwordLang, mode2Hint, mode2Placeholder } from '../lib/contentLabels.ts'
 import { gradeMode2, type StudyQuestion } from '../lib/studySession.ts'
+import type { ContentType } from '../lib/api.ts'
 
 interface Mode2CardProps {
   question: StudyQuestion
+  contentType: ContentType
   onJudged: (correct: boolean) => void
   onProceed: () => void
 }
 
-function Mode2Card({ question, onJudged, onProceed }: Mode2CardProps) {
+function Mode2Card({ question, contentType, onJudged, onProceed }: Mode2CardProps) {
   const [value, setValue] = useState('')
   // null이 아니면 오답 결과 화면 표시 중 — 값은 트림된 내 답(빈 입력 오답이면 '')
   const [wrongAnswer, setWrongAnswer] = useState<string | null>(null)
   const { word } = question
+  const lang = headwordLang(contentType)
 
   const submit = (event: FormEvent) => {
     event.preventDefault()
@@ -36,12 +40,12 @@ function Mode2Card({ question, onJudged, onProceed }: Mode2CardProps) {
       <div className="mode-area mode-area--m2">
         <div className="mode-card mode-card--result">
           <span className="mode-result-title">오답</span>
-          <span lang="zh-Hans" className="mode-card-hanzi">{word.hanzi}</span>
-          <span className="mode-card-pinyin">{word.pinyin}</span>
+          <span lang={lang} className="mode-card-hanzi">{word.hanzi}</span>
+          {word.pinyin && <span className="mode-card-pinyin">{word.pinyin}</span>}
           <span className="mode-card-meaning">{word.meaning}</span>
           {wrongAnswer !== '' && (
             <span className="mode-my-answer">
-              내 답: <s lang="zh-Hans">{wrongAnswer}</s>
+              내 답: <s lang={lang}>{wrongAnswer}</s>
             </span>
           )}
         </div>
@@ -56,13 +60,13 @@ function Mode2Card({ question, onJudged, onProceed }: Mode2CardProps) {
     <form className="mode-area mode-area--m2" onSubmit={submit}>
       <div className="mode-card">
         <span className="mode-card-meaning mode-card-meaning--question">{word.meaning}</span>
-        <span className="mode-card-hint">이 뜻의 한자를 입력하세요</span>
+        <span className="mode-card-hint">{mode2Hint(contentType)}</span>
       </div>
       <input
         className="mode-input"
         type="text"
-        lang="zh-Hans"
-        placeholder="汉字"
+        lang={lang}
+        placeholder={mode2Placeholder(contentType)}
         value={value}
         onChange={(event) => setValue(event.target.value)}
         autoFocus
