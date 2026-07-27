@@ -1,13 +1,15 @@
 /**
  * POST /api/words/register — 단어 등록 시스템 플랜(`docs/plans/word-registration-system.md`) §6,
- * 3단계(저장). 클라이언트가 보낸 단어 배열을 재검증하고, 탭 내 중복 한자는 스킵, 신규 단어만
- * 마지막 데이터 행 아래 A·B·C열에 append-only로 기록한다(D열 이후 절대 불가침).
- * createTab이면 기존 단어 탭의 헤더 행을 복사해 새 탭을 생성한다 — 탭 생성은 이 시점에만(빈 탭 방지).
+ * 3단계(저장). 클라이언트가 보낸 단어 배열을 인증 프로필의 contentType으로 재검증하고
+ * (등록 일반화 플랜 `docs/plans/registration-generalization.md` §3.2·§3.3), 탭 내 중복 A열 값은
+ * 스킵, 신규 단어만 마지막 데이터 행 아래 A·B·C열에 append-only로 기록한다(D열 이후 절대 불가침).
+ * createTab이면 기존 단어 탭의 헤더 행을 복사해 새 탭을 생성하고, 학습 대상 탭이 0개면
+ * contentType별 기본 헤더로 첫 탭을 부트스트랩한다(§3.3) — 탭 생성은 이 시점에만(빈 탭 방지).
  */
 
 import { addSheet, getValues, updateValues } from "../lib/sheets.ts";
 import { getWordTabTitles } from "../lib/words.ts";
-import { MAX_REGISTER_WORDS, normalizeTabName, parseRegisterWords, partitionByExisting } from "../lib/register.ts";
+import { DEFAULT_TAB_HEADERS, MAX_REGISTER_WORDS, normalizeTabName, parseRegisterWords, partitionByExisting } from "../lib/register.ts";
 import type { Profile } from "../lib/profiles.ts";
 
 export async function handleWordsRegister(
@@ -35,17 +37,18 @@ export async function handleWordsRegister(
     return Response.json({ error: tabResult.error }, { status: 400 });
   }
 
-  const words = parseRegisterWords(rawWords);
+  const words = parseRegisterWords(rawWords, profile.contentType);
   if (!words) {
-    return Response.json(
-      {
-        error:
-          "words[]는 hanzi/pinyin/meaning(공백 아닌 문자열, 배열 내 한자 중복 금지), " +
+    // 400 문구는 contentType별로 정확하게 — zh 문구는 현행 그대로 유지한다(§3.3).
+    const error =
+      profile.contentType === "generic"
+        ? "words[]는 hanzi(표제어)/pinyin(보조 표기)/meaning(뜻) 필드가 필요합니다 — " +
+          "표제어·뜻은 공백 아닌 문자열, 보조 표기는 문자열(빈칸 허용), 배열 내 표제어 중복 금지이며 " +
+          `최대 ${MAX_REGISTER_WORDS}건까지 등록할 수 있습니다`
+        : "words[]는 hanzi/pinyin/meaning(공백 아닌 문자열, 배열 내 한자 중복 금지), " +
           "한자는 유니코드 U+4E00–U+9FFF, 병음은 성조 부호 필수(숫자 표기 금지)여야 하며 " +
-          `최대 ${MAX_REGISTER_WORDS}건까지 등록할 수 있습니다`,
-      },
-      { status: 400 },
-    );
+          `최대 ${MAX_REGISTER_WORDS}건까지 등록할 수 있습니다`;
+    return Response.json({ error }, { status: 400 });
   }
 
   const wordTabs = await getWordTabTitles(env, profile.sheetId);
@@ -59,12 +62,14 @@ export async function handleWordsRegister(
         { status: 400 },
       );
     }
-    if (wordTabs.length === 0) {
-      return Response.json({ error: "헤더를 복사할 기존 탭이 없습니다" }, { status: 400 });
-    }
-    const [headerRow] = await getValues(env, profile.sheetId, wordTabs[0], "1:1");
+    // 탭 0개 부트스트랩(§3.3): 복사할 헤더 원본 탭이 없으면 contentType별 기본 헤더로 첫 탭을
+    // 만든다 — 새 스프레드시트 온보딩을 막던 기존 400("헤더를 복사할 기존 탭이 없습니다") 대체.
+    const headerRow =
+      wordTabs.length === 0
+        ? DEFAULT_TAB_HEADERS[profile.contentType]
+        : ((await getValues(env, profile.sheetId, wordTabs[0], "1:1"))[0] ?? []);
     await addSheet(env, profile.sheetId, targetTab);
-    await updateValues(env, profile.sheetId, targetTab, "A1", [headerRow ?? []]);
+    await updateValues(env, profile.sheetId, targetTab, "A1", [headerRow]);
     created = true;
   }
 
