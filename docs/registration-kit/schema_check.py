@@ -1,20 +1,37 @@
 #!/usr/bin/env python3
 """Schema validator for the vocaStudy word-extraction output.
 
-Schema source of truth: docs/plans/word-registration-system.md §3 (this repo).
-Any change to the schema must land there first; this file follows it.
+One file, two schemas — the top-level "contentType" field picks which. The
+same copy is uploaded to every extraction-kit project (one prompt per
+language, one shared validator), because the schemas are content-neutral
+while only the prompts are language-specific.
+
+Schema sources of truth (this repo). Any change lands there first; this file
+follows it:
+
+    zh       docs/plans/word-registration-system.md §3
+    generic  docs/plans/registration-generalization.md §3.1
 
 Expected input (JSON, via file argument or stdin):
 
-    {
-      "version": 1,
-      "words": [
-        { "hanzi": "经济", "pinyin": "jīngjì", "meaning": "경제" }
-      ]
-    }
+    {                                     {
+      "version": 1,                         "version": 1,
+      "words": [                            "contentType": "generic",
+        { "hanzi": "经济",                   "words": [
+          "pinyin": "jīngjì",                 { "term": "take off",
+          "meaning": "경제" }                    "note": "구동사",
+      ]                                           "meaning": "이륙하다" }
+    }                                         ]
+                                          }
 
-Checks: required fields, hanzi Unicode range, pinyin tone-mark format
+"contentType" absent means "zh": the Chinese kit predates the field and its
+output must keep validating exactly as before.
+
+Checks, zh: required fields, hanzi Unicode range, pinyin tone-mark format
 (numeric tones rejected), duplicate hanzi within the array.
+Checks, generic: term/meaning non-blank, note optional, no extra fields,
+duplicate term within the array. No language-specific checks — a generic
+term is free text.
 
 Runs on the Python standard library only, so it works as-is in the
 claude.ai code-execution sandbox. Exit code 0 = PASS, 1 = FAIL.
@@ -44,7 +61,7 @@ def is_hanzi(ch):
     return any(lo <= ord(ch) <= hi for lo, hi in HANZI_RANGES)
 
 
-def check_word(i, word, seen_hanzi, errors):
+def check_word_zh(i, word, seen_hanzi, errors):
     def err(msg):
         errors.append("words[%d]%s: %s" % (i, label, msg))
 
@@ -94,6 +111,68 @@ def check_word(i, word, seen_hanzi, errors):
         seen_hanzi[hanzi] = i
 
 
+def check_word_generic(i, word, seen_terms, errors):
+    def err(msg):
+        errors.append("words[%d]%s: %s" % (i, label, msg))
+
+    if not isinstance(word, dict):
+        label = ""
+        err("entry must be an object")
+        return
+
+    term = word.get("term")
+    label = " (%s)" % term if isinstance(term, str) and term.strip() else ""
+
+    # Report everything wrong with this entry in one pass rather than bailing
+    # at the first missing field: pasting a zh payload under
+    # contentType "generic" is the mistake this kit exists to catch, and it
+    # shows up as a missing 'term' *and* an unexpected 'hanzi'. Seeing both at
+    # once names the actual problem — one at a time reads like two unrelated
+    # typos and costs an extra validator round-trip.
+    missing = []
+    for field in ("term", "meaning"):
+        value = word.get(field)
+        if not isinstance(value, str) or not value.strip():
+            err("field '%s' is missing, not a string, or empty" % field)
+            missing.append(field)
+
+    # 'note' carries column B, which is optional for generic content
+    # (registration-generalization.md §3.1) — an omitted or empty note is a
+    # blank B cell, which the study screen hides. Only the type is checked.
+    if "note" in word and not isinstance(word["note"], str):
+        err("field 'note' must be a string when present (got %r) — omit it "
+            "for a blank column B" % word["note"])
+
+    extra = sorted(set(word) - {"term", "note", "meaning"})
+    if extra:
+        err("unexpected field(s): %s" % ", ".join(extra))
+
+    # The duplicate check below is the only one that needs a usable term.
+    if missing:
+        return
+
+    # Registration trims before writing and rejects duplicates on the trimmed
+    # value (worker/lib/register.ts), so compare trimmed here too. The zh path
+    # compares raw, which is equivalent there: whitespace can never survive
+    # the hanzi range check. Case is significant, matching the sheet-level
+    # duplicate rule (registration-generalization.md §3.2).
+    key = term.strip()
+    if key in seen_terms:
+        err("duplicate term within this batch (first at words[%d])"
+            % seen_terms[key])
+    else:
+        seen_terms[key] = i
+
+
+def resolve_checker(content_type):
+    """Map the top-level contentType to its per-entry checker, None if unknown."""
+    if content_type == "zh":
+        return check_word_zh
+    if content_type == "generic":
+        return check_word_generic
+    return None
+
+
 def strip_code_fence(text):
     text = text.strip()
     match = re.match(r"^```[a-zA-Z]*\n(.*)\n```$", text, re.DOTALL)
@@ -120,15 +199,21 @@ def main():
         if data.get("version") != 1:
             errors.append("'version' must be the number 1 (got %r)"
                           % data.get("version"))
+        # Absent field = zh (back-compat with the Chinese kit's output).
+        content_type = data.get("contentType", "zh")
+        check_word = resolve_checker(content_type)
+        if check_word is None:
+            errors.append("'contentType' must be \"zh\", \"generic\", or "
+                          "absent (got %r)" % content_type)
         words = data.get("words")
         if not isinstance(words, list):
             errors.append("'words' must be an array")
         elif not words:
             errors.append("'words' is empty — nothing to register")
-        else:
-            seen_hanzi = {}
+        elif check_word is not None:
+            seen = {}
             for i, word in enumerate(words):
-                check_word(i, word, seen_hanzi, errors)
+                check_word(i, word, seen, errors)
 
     if errors:
         for e in errors:

@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>#94 등록 일반화 — 영어 추출 킷 신설 + schema_check 두 스키마 겸용 + 등록 문서 개정 — 작업 플랜</title>
+<style>
+  :root {
+    --bg: #f7f7f8; --card: #ffffff; --ink: #1c1c1e; --muted: #6e6e73;
+    --line: #e3e3e6; --accent: #3b6ef5; --accent-soft: #e8eefe;
+    --ok: #2e8b57; --warn: #b25e09; --code-bg: #f0f0f2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161618; --card: #202024; --ink: #ececf0; --muted: #98989f;
+      --line: #333338; --accent: #7a9bff; --accent-soft: #26304a;
+      --ok: #58c088; --warn: #e0a35c; --code-bg: #2a2a2f;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 40px 20px 80px; background: var(--bg); color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+                 "Segoe UI", "Noto Sans KR", sans-serif;
+    line-height: 1.65;
+  }
+  main { max-width: 860px; margin: 0 auto; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code {
+    font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 0.86em;
+    background: var(--code-bg); border-radius: 5px; padding: 2px 6px;
+  }
+  header { margin-bottom: 28px; }
+  .issue-chip {
+    display: inline-block; font-weight: 700; color: var(--accent);
+    background: var(--accent-soft); border-radius: 999px;
+    padding: 3px 14px; font-size: 0.95rem; margin-bottom: 10px;
+  }
+  .type-chip {
+    display: inline-block; font-weight: 600; color: var(--muted);
+    border: 1px solid var(--line); border-radius: 999px;
+    padding: 3px 12px; font-size: 0.8rem; margin-left: 8px; vertical-align: 2px;
+  }
+  h1 { font-size: 1.7rem; margin: 0 0 14px; letter-spacing: -0.02em; }
+  .meta {
+    display: flex; flex-wrap: wrap; gap: 6px 22px;
+    color: var(--muted); font-size: 0.87rem;
+  }
+  .meta b { color: var(--ink); font-weight: 600; }
+  section.card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 24px 28px; margin-top: 18px;
+  }
+  h2 {
+    font-size: 1.05rem; margin: 0 0 14px; letter-spacing: -0.01em;
+    display: flex; align-items: center; gap: 8px;
+  }
+  h2 .no {
+    color: var(--accent); font-size: 0.8rem; font-weight: 700;
+    border: 1.5px solid var(--accent); border-radius: 6px; padding: 0 6px;
+  }
+  ul, ol { margin: 0; padding-left: 22px; }
+  li { margin: 6px 0; }
+  .steps { list-style: none; padding: 0; counter-reset: step; }
+  .steps li {
+    counter-increment: step; position: relative; padding: 10px 0 10px 44px;
+    border-bottom: 1px dashed var(--line);
+  }
+  .steps li:last-child { border-bottom: none; }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 10px;
+    width: 28px; height: 28px; border-radius: 8px; background: var(--accent-soft);
+    color: var(--accent); font-weight: 700; font-size: 0.85rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .steps .files { display: block; margin-top: 4px; font-size: 0.85rem; color: var(--muted); }
+  .steps li.done::before { content: "✓"; background: var(--ok); color: #fff; }
+  .steps li.done { color: var(--muted); }
+  .steps li.done b { color: var(--ink); }
+  .note {
+    display: block; margin-top: 4px; font-size: 0.85rem; color: var(--warn);
+  }
+  table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 0.82rem; }
+  .done-list { list-style: none; padding: 0; }
+  .done-list li { padding-left: 30px; position: relative; }
+  .done-list li::before {
+    content: ""; position: absolute; left: 2px; top: 7px; width: 15px; height: 15px;
+    border: 2px solid var(--ok); border-radius: 5px;
+  }
+  .done-list li.done::before { background: var(--ok); }
+  .done-list li.done::after {
+    content: "✓"; position: absolute; left: 5px; top: 3px;
+    color: #fff; font-size: 0.75rem; font-weight: 700; line-height: 1.4;
+  }
+  .scroll-x { overflow-x: auto; }
+  footer { margin-top: 30px; color: var(--muted); font-size: 0.8rem; text-align: center; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <span class="issue-chip"><a href="https://github.com/damdam6/vocabulary-study/issues/94">#94</a></span><span class="type-chip">문서·킷 (코드 무변경)</span>
+    <h1>등록 일반화 — 영어 추출 킷 신설 + schema_check 두 스키마 겸용 + 등록 문서 개정</h1>
+    <div class="meta">
+      <span><b>damdam6/vocabulary-study</b></span>
+      <span>브랜치 <b><code>feat/94-en-extraction-kit-docs</code></b> ← <code>main</code></span>
+      <span>라벨 <b>documentation, enhancement</b></span>
+      <span>2026-07-27</span>
+    </div>
+  </header>
+
+  <section class="card">
+    <h2><span class="no">1</span>요약</h2>
+    <p>등록 일반화 플랜(<code>docs/plans/registration-generalization.md</code>) §5 <b>작업 A</b> — 킷·문서 담당. 영어 추출 킷 <code>en-extraction-prompt.md</code>를 신설해 "언어별 프롬프트" 패턴(플랜 §8 Q5)의 첫 사례를 만들고, <code>schema_check.py</code>를 최상위 <code>contentType</code> 필드로 zh·generic 두 스키마를 겸용 판별하도록 확장한다. 나머지는 문서 정합화 — 기존 zh 프롬프트에 sibling 포인터, PRD-general의 낡은 "generic 등록은 시트 직접 편집" 서술 개정, word-registration-system 머리에 스키마 원본 분담 포인터.</p>
+    <p><code>src/</code>·<code>worker/</code> 코드는 한 줄도 건드리지 않는다. 작업 B(Worker)·C(화면)와 의존 없이 병렬이며, 이 작업 단독 머지로 사용자 가시 변화는 없다(킷은 리포 밖 claude.ai 프로젝트에 수동 업로드되는 산출물).</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">2</span>현황 분석</h2>
+    <p><b>추출 킷은 중국어 전용 1벌뿐이다.</b> <code>docs/registration-kit/</code>에는 두 파일만 있다.</p>
+    <ul>
+      <li><code>docs/registration-kit/extraction-prompt.md:20</code> — 제목이 "Chinese Vocabulary Extractor". 규칙 절(<code>:29-48</code>)이 <code>hanzi</code>(간체 강제·번체 변환)·<code>pinyin</code>(성조 부호·다음자)·<code>meaning</code>(한국어)로 짜여 있고, 출력 스키마 블록(<code>:54-61</code>)은 <code>contentType</code> 없는 zh 형태다. 헤더 HTML 주석(<code>:1-18</code>)이 claude.ai 프로젝트 세팅 절차와 "스키마 원본 = word-registration-system §3"을 명시한다 — 신설 영어 킷이 그대로 따를 구조.</li>
+      <li><code>docs/registration-kit/schema_check.py</code> — zh 스키마 단일 검증기. <code>check_word()</code>(<code>:47-94</code>)가 <code>hanzi</code>/<code>pinyin</code>/<code>meaning</code> 3필드 필수(<code>:59-63</code>), 여분 필드 거부(<code>:65-67</code>), 한자 기본 블록 범위(<code>:69-72</code>, <code>HANZI_RANGES</code> <code>:34</code>), 성조 부호 형식(<code>:74-88</code>), 배치 내 <code>hanzi</code> 중복(<code>:90-94</code>)을 검사한다. <code>main()</code>(<code>:103-140</code>)은 <code>version == 1</code>과 <code>words</code> 배열만 최상위에서 보고, <b>최상위 여분 필드는 무시</b>한다 — 즉 지금도 <code>contentType</code>이 섞인 JSON은 조용히 zh로 검사된다.</li>
+    </ul>
+    <p><b>문서 3건이 플랜 확정(2026-07-27) 이전 상태로 남아 있다.</b></p>
+    <ul>
+      <li><code>docs/PRD-general.md:138</code> (§5.2) — <code>POST /api/words/register</code>를 "계약 불변이며 대상 스프레드시트만 프로필로 결정된다"로 분류. 플랜 §3.3이 와이어 형태는 유지하되 <b>Worker 검증을 <code>profile.contentType</code>으로 분기</b>하고 탭 0개 부트스트랩을 추가하기로 확정했으므로 "언급 없음 = 완전 불변"은 더 이상 사실이 아니다.</li>
+      <li><code>docs/PRD-general.md:166</code> (§7 단어 등록) — "<code>contentType: "zh"</code> 프로필에만 홈 진입 링크를 노출한다 … <code>generic</code> 프로필의 단어 추가는 구글 시트 직접 편집으로 한다 … 후속 플랜으로 분리한다". 플랜 §3.4·§9가 <b>전 프로필 노출</b>로 뒤집었다.</li>
+      <li><code>docs/PRD-general.md:193</code> (§10 Q4) — "등록 화면 자체의 일반화는 후속 플랜으로 분리". 그 후속 플랜이 2026-07-27 확정됐으므로 결론에 실행 사실과 포인터가 필요하다.</li>
+      <li><code>docs/PRD-general.md:217</code> (§11 결정 이력) — "<code>generic</code> 등록 = 시트 직접 편집, 등록 링크는 <code>zh</code> 전용" 행. §7을 고치면 이 행과 문서 내부에서 모순된다.</li>
+      <li><code>docs/plans/word-registration-system.md:33-47</code> (§3) — zh 스키마의 원본이지만 "generic 스키마는 다른 문서"라는 안내가 없다. 반대편(<code>registration-generalization.md:46</code>)은 이미 분담을 명시하고 있어 링크가 한쪽 방향으로만 걸려 있다.</li>
+    </ul>
+    <p><b>테스트 인프라:</b> 리포의 <code>npm test</code>는 vitest(TS)뿐이고 파이썬 테스트 하네스는 없다(<code>schema_check.py</code>가 리포 유일 <code>.py</code>). 검증기의 소비자는 claude.ai 코드 실행 샌드박스이므로 표준 라이브러리 전용 제약도 유지해야 한다(<code>schema_check.py:18-20</code>).</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">3</span>설계</h2>
+    <p><b>스키마 판별 규칙 (schema_check.py).</b> 최상위 <code>contentType</code>을 읽어 검사기를 고른다.</p>
+    <div class="scroll-x">
+    <table>
+      <thead><tr><th><code>contentType</code></th><th>동작</th><th>근거</th></tr></thead>
+      <tbody>
+        <tr><td>필드 없음</td><td>zh 검사 (현행 그대로)</td><td>기존 킷 출력 하위 호환 — 플랜 §3.1 "필드 없음 = zh"</td></tr>
+        <tr><td><code>"zh"</code></td><td>zh 검사</td><td>지금도 최상위 여분 필드는 무시돼 PASS하므로 명시 표기를 새로 막지 않는다 (zh 결과 불변)</td></tr>
+        <tr><td><code>"generic"</code></td><td>generic 검사</td><td>플랜 §3.1</td></tr>
+        <tr><td>그 외 값·비문자열</td><td>FAIL (알 수 없는 contentType)</td><td>zh도 generic도 아닌 문서를 조용히 zh로 검사하면 오독성 오류가 난다</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p><b>generic 항목 검사</b> (플랜 §3.1·§3.2): <code>term</code> 비공백 문자열(범위 제한 없음 — 공백·문장부호·한자 혼입 허용), <code>meaning</code> 비공백 문자열, <code>note</code>는 <b>선택</b>(생략 가능, 있으면 문자열이면 되고 빈 문자열도 허용 → B열 빈칸), <code>{term, note, meaning}</code> 외 여분 필드 거부, 배치 내 <code>term</code> 중복 거부. zh 전용 검사(한자 유니코드 범위·성조 부호)는 적용하지 않는다.</p>
+    <p>중복 판정은 <b>트림 후 비교</b>한다 — generic <code>term</code>은 공백을 포함하는 자유 텍스트라 앞뒤 공백 변형이 실제로 생기고, Worker가 <code>hanzi.trim()</code> 기준으로 배치 중복을 잡는다(<code>worker/lib/register.ts:60,67</code>). 대소문자는 구분한다(플랜 §8 Q4 — 시트 중복 판정과 같은 방침). zh 경로의 중복 비교는 손대지 않는다(한자에 공백이 못 들어와 트림 여부가 결과에 무관).</p>
+    <p><b>구조:</b> <code>check_word()</code>를 <code>check_word_zh()</code>로 개명하고 <code>check_word_generic()</code>을 추가, <code>main()</code>이 판별 후 디스패치한다. PASS/FAIL 출력 문자열과 종료 코드는 현행 유지 — zh 입력의 stdout이 한 글자도 달라지지 않게 해서 "zh 동작 불변"을 관측 가능한 형태로 보장한다. (검사한 스키마 이름을 PASS 줄에 덧붙이는 안은 <b>기각</b>: 유용성은 작은데 zh 출력이 바뀐다. 오배치는 어차피 FAIL로 잡힌다.)</p>
+    <p><b>영어 킷은 별도 파일, 검증기는 공용.</b> 프롬프트는 언어 의존(영어 숙어·구동사 인식, 발음기호 처리)이라 언어별로 분리하고, 스키마는 콘텐츠 중립(<code>term</code>/<code>note</code>/<code>meaning</code>)이라 검증기는 한 파일이 두 스키마를 겸한다 — 플랜 §8 Q5·§9의 소유자 확정. 운영상 claude.ai 프로젝트마다 프롬프트만 다르고 같은 <code>schema_check.py</code>를 올린다.</p>
+    <p><b>PRD-general 개정 원칙.</b> 개별 문장을 지우지 않고 <b>2026-07-27 개정 노트 + 플랜 포인터</b>를 붙여 결정이 바뀐 사실을 남긴다(§11 결정 이력이 존재하는 문서 관행). §11의 낡은 결정 행에도 "→ 2026-07-27 개정" 한 줄을 더한다 — 이슈 본문이 명시한 §5.2·§7·§10 Q4에는 없지만, 이 행을 그대로 두면 §7과 정면으로 모순되므로 같은 개정의 일부로 처리한다.</p>
+    <p><b>구현 상태 표기.</b> PRD는 확정된 사양을 서술하되, 링크 전 프로필 노출과 검증 분기는 아직 코드에 없다(플랜 §5 작업 B~D). 개정 노트에 "구현은 플랜 §5 작업 B~D"를 병기해 문서가 현실을 앞질러 거짓말하지 않게 한다.</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">4</span>작업 단계</h2>
+    <ol class="steps">
+      <li class="done"><b><code>en-extraction-prompt.md</code> 신설</b> — zh 킷과 동형 구조(헤더 HTML 주석에 claude.ai 프로젝트 세팅 절차·스키마 원본 = registration-generalization §3.1·sibling 포인터 / <code>#&nbsp;English Vocabulary Extractor</code> / 추출 규칙 / 출력 형식 / 자체 검증 / Never). 규칙은 영어 단어·표현·숙어 추출, <code>note</code>는 원문 근거 있을 때만(발음기호·품사 등), <code>meaning</code>은 한국어 간결, 배치 내 <code>term</code> 중복 금지, 출력은 <code>contentType: "generic"</code> JSON 코드블록 하나. 시트·자격증명 무지 원칙 유지.
+        <span class="files"><code>docs/registration-kit/en-extraction-prompt.md</code> (신규)</span>
+      </li>
+      <li class="done"><b><code>schema_check.py</code> 두 스키마 겸용 확장</b> — 모듈 docstring에 두 스키마와 각 원본 문서 표기, <code>check_word()</code> → <code>check_word_zh()</code> 개명, <code>check_word_generic()</code> 추가(§3 규칙), <code>main()</code>에 <code>contentType</code> 판별·디스패치·알 수 없는 값 FAIL. 표준 라이브러리 전용·종료 코드·출력 문자열 유지.
+        <span class="files"><code>docs/registration-kit/schema_check.py</code></span>
+        <span class="note">디스패치는 <code>resolve_checker()</code>로 분리했고, <code>contentType: null</code>(명시적 JSON null)도 "알 수 없는 값"으로 FAIL 처리한다 — <code>data.get("contentType", "zh")</code>가 키 부재와 null을 구분하기 때문.</span>
+      </li>
+      <li class="done"><b>검증 픽스처로 두 스키마 실행 확인</b> — zh PASS/FAIL 각 케이스(정상·한자 범위 위반·숫자 성조·중복)와 generic 케이스(정상·<code>note</code> 생략·<code>note</code> 빈 문자열·<code>term</code> 빈값·<code>meaning</code> 누락·<code>term</code> 중복·여분 필드·zh 규칙 미적용·알 수 없는 <code>contentType</code>)를 스크래치패드 픽스처로 돌려 기대 종료 코드와 메시지를 확인한다. 리포에 파이썬 테스트 하네스가 없고 킷은 claude.ai 프로젝트에 통째로 업로드되는 산출물이라 <b>픽스처는 커밋하지 않는다</b>(업로드 대상 오염 방지) — 실행 결과는 PR 본문에 남긴다.
+        <span class="files">스크래치패드 (커밋 없음)</span>
+        <span class="note">실행 결과: zh 픽스처 4종은 <code>origin/main</code> 버전과 stdout·종료 코드가 <b>완전 동일</b>(문자열 대조), generic 10종·디스패치 6종 전부 기대대로. 상세는 PR 본문.</span>
+      </li>
+      <li class="done"><b>zh 프롬프트에 sibling 포인터</b> — 본문 규칙은 한 글자도 건드리지 않고 헤더 HTML 주석에만 "영어 킷은 <code>en-extraction-prompt.md</code>, 검증기는 공용" 안내를 추가.
+        <span class="files"><code>docs/registration-kit/extraction-prompt.md</code></span>
+        <span class="note">첫 줄의 킷 설명도 <code>(Chinese)</code>로 한정했다 — 두 킷이 생긴 이상 "the kit"이라는 표현이 모호해서.</span>
+      </li>
+      <li class="done"><b>PRD-general 개정</b> — §5.2 register 계약 문구를 contentType 분기 반영으로 수정, §7 단어 등록 불릿을 전 프로필 노출·파이프라인 분기로 개정, §10 Q4 결론에 후속 플랜 확정·실행 사실 추가, §11 낡은 결정 행에 개정 표기. 각 지점에 2026-07-27 날짜와 <code>docs/plans/registration-generalization.md</code> 포인터.
+        <span class="files"><code>docs/PRD-general.md</code></span>
+        <span class="note">§5.2는 문구 수정이 아니라 <code>POST /api/words/register</code> 전용 불릿 신설로 처리했다 — "언급 없는 = 계약 불변" 목록에 남겨두면 §5.2만 읽은 사람이 검증 분기를 놓친다.</span>
+      </li>
+      <li class="done"><b>word-registration-system 머리 포인터</b> — 문서 상단(제목 아래 인용 블록)에 "스키마 원본 분담: zh = 이 문서 §3(불변), generic = registration-generalization §3.1" 안내 추가. §3 본문은 불변.
+        <span class="files"><code>docs/plans/word-registration-system.md</code></span>
+      </li>
+      <li class="done"><b>코드 무변경 확인 + 회귀</b> — <code>git diff --stat</code>으로 <code>src/</code>·<code>worker/</code> 변경 0 확인, <code>npm test</code>·<code>npm run build</code>·<code>npm run lint</code> 통과 확인(문서 변경이 빌드에 영향 없음을 증명).
+        <span class="files">저장소 전체</span>
+        <span class="note">결과: <code>git diff --name-only origin/main HEAD -- src worker</code> → 0건, vitest 24파일 272테스트 통과, build·lint exit 0.</span>
+      </li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">5</span>리스크</h2>
+    <div class="scroll-x">
+    <table>
+      <thead><tr><th>리스크</th><th>영향</th><th>완화책</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>zh 검사 경로에 회귀가 섞임</td>
+          <td>기존 중국어 킷 사용자가 조용히 깨진 JSON을 등록 화면까지 들고 감</td>
+          <td>zh 코드 경로는 개명 외 수정 금지, 출력 문자열·종료 코드 동일 유지. 3단계에서 zh 픽스처 4종을 확장 전후 동일 결과로 확인</td>
+        </tr>
+        <tr>
+          <td>파이썬 검증기가 커밋 시점 이후 클라·Worker 규칙과 어긋남(drift)</td>
+          <td>킷이 PASS한 JSON을 등록 화면이 거부 — #57에서 이미 겪은 실패 유형</td>
+          <td>generic 규칙을 플랜 §3.1·§3.2에서만 파생하고 파일 주석에 원본 참조 명시. 작업 B·C가 같은 원본을 참조하므로 셋이 한 문서를 향한다</td>
+        </tr>
+        <tr>
+          <td>PRD가 아직 없는 동작(전 프로필 링크 노출)을 현재형으로 서술</td>
+          <td>문서만 읽은 사람이 이미 배포된 기능으로 오인</td>
+          <td>개정 노트에 "구현은 플랜 §5 작업 B~D" 병기 (설계 §구현 상태 표기)</td>
+        </tr>
+        <tr>
+          <td>운영 반영 누락 — 킷 파일은 리포에 있어도 claude.ai 프로젝트는 수동 업로드</td>
+          <td>머지해도 실제 추출 채팅은 옛 검증기를 계속 씀</td>
+          <td>플랜 §7 운영 절차(영어 프로젝트 신설 + 중국어 프로젝트의 <code>schema_check.py</code> 교체)를 PR 본문에 후속 조치로 명시</td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">6</span>테스트 계획</h2>
+    <ul>
+      <li><b>zh 회귀 (결과 불변 증명)</b> — 확장 전 <code>schema_check.py</code>와 확장 후 파일에 같은 픽스처를 넣어 stdout·종료 코드가 동일한지 대조: ① 정상 zh JSON → <code>PASS: N word(s) validated.</code> / exit 0, ② <code>hanzi</code>에 라틴 문자 → 비CJK 오류 / exit 1, ③ <code>pinyin</code>이 <code>jing1ji4</code> → 숫자 성조 오류 / exit 1, ④ 같은 <code>hanzi</code> 2회 → 중복 오류 / exit 1.</li>
+      <li><b>generic PASS</b> — 플랜 §3.1 예시 JSON(<code>take off</code> + <code>note</code>, <code>run into</code> <code>note</code> 생략) → exit 0. <code>note: ""</code>(빈 문자열)도 exit 0.</li>
+      <li><b>generic FAIL</b> — <code>term</code> 공백만/누락, <code>meaning</code> 누락·빈값, 배치 내 <code>term</code> 중복(앞뒤 공백 변형 포함), <code>{term,note,meaning}</code> 외 여분 필드(<code>hanzi</code> 등), <code>version</code> ≠ 1, <code>words</code> 빈 배열 → 각각 exit 1 + 해당 행·사유가 메시지에 표시.</li>
+      <li><b>zh 규칙 미적용 확인</b> — generic JSON에 <code>term: "take off"</code>(공백·라틴), <code>note: "/teɪk ɒf/"</code>(성조 없음·특수문자) → PASS. 역으로 같은 값이 zh 스키마에 오면 FAIL.</li>
+      <li><b>스키마 판별</b> — <code>contentType</code> 없음 → zh 검사(generic 필드 JSON을 넣으면 <code>hanzi</code> 누락으로 FAIL), <code>contentType: "zh"</code> → zh 검사, <code>contentType: "en"</code>·숫자 → 알 수 없는 contentType FAIL.</li>
+      <li><b>코드 블록 래핑 내성</b> — generic JSON을 <code>```json … ```</code>으로 감싼 입력도 동일하게 PASS(<code>strip_code_fence</code> 경로가 두 스키마에 공통 적용되는지).</li>
+      <li><b>리포 회귀</b> — <code>npm test</code>(vitest 전량) · <code>npm run build</code> · <code>npm run lint</code> 통과, <code>git diff --stat origin/main</code>에 <code>src/</code>·<code>worker/</code> 항목 0건.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">7</span>완료 조건</h2>
+    <ul class="done-list">
+      <li class="done"><code>docs/registration-kit/en-extraction-prompt.md</code> 신규 — 플랜 §3.1 스키마 출력·<code>schema_check.py</code> 자체 검증 지시 포함, zh 킷과 동형 구조(헤더 주석·규칙·출력·자체 검증·Never)</li>
+      <li class="done"><code>schema_check.py</code>가 zh·generic 예시 JSON을 모두 정확히 PASS/FAIL — <code>contentType</code> 판별 동작, zh 경로 출력·종료 코드 불변</li>
+      <li class="done"><code>extraction-prompt.md</code> 헤더 주석에 영어 킷 sibling 포인터 (본문 규칙 불변)</li>
+      <li class="done"><code>PRD-general.md</code> §5.2·§7·§10 Q4에 2026-07-27 개정 노트와 플랜 포인터 반영 (+ §11 결정 행 개정 표기)</li>
+      <li class="done"><code>docs/plans/word-registration-system.md</code> 머리에 스키마 원본 분담 포인터 추가</li>
+      <li class="done"><code>src/</code>·<code>worker/</code> 코드 변경 0, <code>npm test</code>·<code>npm run build</code>·<code>npm run lint</code> 통과</li>
+    </ul>
+  </section>
+
+  <footer>issue-plan · <a href="https://github.com/damdam6/vocabulary-study/issues/94">#94</a> · 2026-07-27</footer>
+</main>
+</body>
+</html>

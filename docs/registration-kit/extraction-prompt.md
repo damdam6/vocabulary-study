@@ -1,5 +1,5 @@
 <!--
-  vocaStudy word-extraction kit — claude.ai project instructions.
+  vocaStudy word-extraction kit — claude.ai project instructions (Chinese).
 
   Setup (once):
     1. Create a claude.ai Project (e.g. "단어 추출").
@@ -12,9 +12,13 @@
   Sheet and holds no credentials. Registration happens by pasting the JSON
   into the vocaStudy "단어 등록" screen, which re-validates everything.
 
+  Sibling kits: en-extraction-prompt.md is the English (generic) kit. One
+  prompt per language, one shared validator — schema_check.py handles both
+  schemas, so every kit project uploads the same copy of it.
+
   Schema source of truth: docs/plans/word-registration-system.md §3 (this
-  repo). Any schema change lands there first; update this prompt and
-  schema_check.py to match.
+  repo) — the zh schema, unchanged by the generic one. Any schema change
+  lands there first; update this prompt and schema_check.py to match.
 -->
 
 # Chinese Vocabulary Extractor
