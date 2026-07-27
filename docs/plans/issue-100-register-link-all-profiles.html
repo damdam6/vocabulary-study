@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>#100 등록 일반화 — 등록 링크 전 프로필 노출 — 작업 플랜</title>
+<style>
+  :root {
+    --bg: #f7f7f8; --card: #ffffff; --ink: #1c1c1e; --muted: #6e6e73;
+    --line: #e3e3e6; --accent: #3b6ef5; --accent-soft: #e8eefe;
+    --ok: #2e8b57; --warn: #b25e09; --code-bg: #f0f0f2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161618; --card: #202024; --ink: #ececf0; --muted: #98989f;
+      --line: #333338; --accent: #7a9bff; --accent-soft: #26304a;
+      --ok: #58c088; --warn: #e0a35c; --code-bg: #2a2a2f;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 40px 20px 80px; background: var(--bg); color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+                 "Segoe UI", "Noto Sans KR", sans-serif;
+    line-height: 1.65;
+  }
+  main { max-width: 860px; margin: 0 auto; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code {
+    font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 0.86em;
+    background: var(--code-bg); border-radius: 5px; padding: 2px 6px;
+  }
+  header { margin-bottom: 28px; }
+  .issue-chip {
+    display: inline-block; font-weight: 700; color: var(--accent);
+    background: var(--accent-soft); border-radius: 999px;
+    padding: 3px 14px; font-size: 0.95rem; margin-bottom: 10px;
+  }
+  .type-chip {
+    display: inline-block; font-weight: 600; color: var(--muted);
+    border: 1px solid var(--line); border-radius: 999px;
+    padding: 3px 12px; font-size: 0.8rem; margin-left: 8px; vertical-align: 2px;
+  }
+  h1 { font-size: 1.7rem; margin: 0 0 14px; letter-spacing: -0.02em; }
+  .meta {
+    display: flex; flex-wrap: wrap; gap: 6px 22px;
+    color: var(--muted); font-size: 0.87rem;
+  }
+  .meta b { color: var(--ink); font-weight: 600; }
+  section.card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 24px 28px; margin-top: 18px;
+  }
+  h2 {
+    font-size: 1.05rem; margin: 0 0 14px; letter-spacing: -0.01em;
+    display: flex; align-items: center; gap: 8px;
+  }
+  h2 .no {
+    color: var(--accent); font-size: 0.8rem; font-weight: 700;
+    border: 1.5px solid var(--accent); border-radius: 6px; padding: 0 6px;
+  }
+  ul, ol { margin: 0; padding-left: 22px; }
+  li { margin: 6px 0; }
+  .steps { list-style: none; padding: 0; counter-reset: step; }
+  .steps li {
+    counter-increment: step; position: relative; padding: 10px 0 10px 44px;
+    border-bottom: 1px dashed var(--line);
+  }
+  .steps li:last-child { border-bottom: none; }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 10px;
+    width: 28px; height: 28px; border-radius: 8px; background: var(--accent-soft);
+    color: var(--accent); font-weight: 700; font-size: 0.85rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .steps .files { display: block; margin-top: 4px; font-size: 0.85rem; color: var(--muted); }
+  .steps .note { display: block; margin-top: 4px; font-size: 0.85rem; color: var(--warn); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 0.82rem; }
+  .done-list { list-style: none; padding: 0; }
+  .done-list li { padding-left: 30px; position: relative; }
+  .done-list li::before {
+    content: ""; position: absolute; left: 2px; top: 7px; width: 15px; height: 15px;
+    border: 2px solid var(--ok); border-radius: 5px;
+  }
+  .done-list li.checked::before { background: var(--ok); }
+  .scroll-x { overflow-x: auto; }
+  footer { margin-top: 30px; color: var(--muted); font-size: 0.8rem; text-align: center; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <span class="issue-chip"><a href="https://github.com/damdam6/vocabulary-study/issues/100">#100</a></span><span class="type-chip">기능 개선</span>
+    <h1>등록 일반화 — 등록 링크 전 프로필 노출 (zh 조건 제거) + design-prd §3·§6 개정</h1>
+    <div class="meta">
+      <span><b>damdam6/vocabulary-study</b></span>
+      <span>브랜치 <b><code>feat/100-register-link-all-profiles</code></b> ← <code>main</code></span>
+      <span>라벨 <b>enhancement</b></span>
+      <span>2026-07-28</span>
+    </div>
+  </header>
+
+  <section class="card">
+    <h2><span class="no">1</span>요약</h2>
+    <p>등록 일반화 플랜(<code>docs/plans/registration-generalization.md</code> §5 작업 D, 마지막 스위치)의 실행 이슈다.
+    선행 작업 A(#94)·B(#95)·C(#96)가 모두 머지되어 Worker와 등록 화면이 <code>generic</code> 콘텐츠를 처리할 수 있으므로,
+    이제 홈 화면의 "단어 등록 ›" 링크를 막고 있던 <code>contentType === "zh"</code> 조건만 제거하면 된다.
+    코드 변경은 <code>HomeScreen.tsx</code> 한 줄(조건 제거)뿐이고, 등록 화면·검증·Worker 로직은 건드리지 않는다.
+    나머지 작업은 <code>docs/design-prd.md</code> §3(홈 화면 등록 링크 서술)과 §6(등록 화면 contentType 분기 — #96에서
+    이미 구현됐지만 문서가 아직 zh 전제로 남아 있음)을 실제 구현에 맞게 개정하는 것이다.</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">2</span>현황 분석</h2>
+    <p><b>홈 화면 등록 링크 조건 (#78의 잔재)</b></p>
+    <ul>
+      <li><code>src/screens/HomeScreen.tsx:140-145</code> — 등록 링크가
+        <code>{profile?.contentType === "zh" && (&lt;button …&gt;단어 등록 ›&lt;/button&gt;)}</code>로 감싸여 있다.
+        주석(140행)도 "zh 프로필 전용(#78)"이라고 못 박아 두었다. 이 조건 하나가 generic 프로필의 등록 진입을 막는 유일한 지점이다.</li>
+      <li>이 블록은 <code>status</code>(loading/error/ready) 조건 밖에 있어 로딩·에러 상태와 무관하게 평가된다 —
+        조건을 제거해도 "오늘 학습 상태와 무관하게 항상 노출"이라는 기존 배치 규칙(§3 서술)은 그대로 유지된다.</li>
+      <li><code>profile</code> state는 <code>getStoredProfile()</code>(<code>src/lib/api.ts:41</code>)로 초기화되고,
+        <code>fetchWords()</code> 성공 시(<code>HomeScreen.tsx:37-43</code>)에만 갱신된다 — 조건 제거는 이 흐름에 영향 없다.</li>
+    </ul>
+    <p><b>등록 화면은 이미 generic을 처리한다 (#96, 문서만 안 따라감)</b></p>
+    <ul>
+      <li><code>src/lib/contentLabels.ts:33-43</code> — <code>registerTableHeaders(contentType)</code>는
+        zh일 때 <code>{headword:"한자", note:"병음", meaning:"뜻"}</code>, 그 외(generic)엔
+        <code>{headword:"표제어", note:"보조 표기", meaning:"뜻"}</code>를 반환한다.
+        <code>registerPlaceholder(contentType)</code>는 zh 전용 <code>hanzi/pinyin/meaning</code> JSON 예시와
+        generic 전용 <code>term/note/meaning</code>(+<code>"contentType":"generic"</code>) JSON 예시를 각각 반환한다.</li>
+      <li><code>src/screens/RegisterScreen.tsx:236</code>이 <code>registerPlaceholder(contentType)</code>를 textarea
+        placeholder로, <code>src/screens/RegisterTable.tsx:21-30</code>이 <code>registerTableHeaders(contentType)</code>를
+        테이블 헤더로 이미 사용 중이다 — §6 개정은 이 실제 동작을 문서화하는 것뿐, 코드 변경이 필요 없다.</li>
+      <li><code>src/App.tsx:88</code> — <code>RegisterScreen</code>은 <code>getStoredProfile()?.contentType ?? 'zh'</code>를
+        내려받는다. 등록 링크가 열린 뒤에도 이 배선은 변경 불필요.</li>
+    </ul>
+    <p><b>design-prd.md의 낡은 서술</b></p>
+    <ul>
+      <li><code>docs/design-prd.md:82</code> — "단어 등록 링크: <code>contentType: "zh"</code> 프로필에서만 노출.
+        <code>generic</code> 프로필은 숨김 (PRD-general §7 — 등록 파이프라인이 중국어 전제라 일반 콘텐츠엔 아직 미제공)."
+        → 선행 작업이 모두 머지된 지금 사실이 아니다.</li>
+      <li><code>docs/design-prd.md:83</code> — 프로필 전환 링크 위치 서술에 "(등록 링크가 숨겨진 프로필에서는 시작 버튼
+        바로 아래)"라는 분기 문구가 있다 — 등록 링크가 항상 노출되면 이 분기 자체가 없어져 정리가 필요하다.</li>
+      <li><code>docs/design-prd.md:143-156</code>(§6) — "근거 목업 없음 — 학습 플로우와 달리 이번에 신규 설계"라는 헤더 인용은
+        유지하되, 본문에 zh/generic 라벨·placeholder·테이블 헤더 분기가 전혀 서술돼 있지 않다(#96 구현 기준 미반영).</li>
+      <li><code>docs/design-prd.md:191-205</code>(§10 이슈 매핑) — #78 행이 "등록 링크 zh 조건부"라고 적어 두어 이번 변경과
+        모순된다.</li>
+    </ul>
+    <p><b>테스트 하네스 현황</b></p>
+    <ul>
+      <li>리포에 React 컴포넌트 테스트 하네스가 없다(<code>src/lib/contentLabels.ts:1-6</code> 주석이 이유를 명시 —
+        분기 로직을 lib로 뽑아 vitest로만 고정하는 관행). <code>HomeScreen</code> 전용 테스트 파일은 존재하지 않는다
+        (<code>src/lib/homeStats.test.ts</code>만 있음). 완료 조건의 "HomeScreen 관련 기존 테스트 통과"는 곧 전체
+        <code>npm test</code>(vitest run) 스위트가 계속 초록임을 뜻한다.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">3</span>설계</h2>
+    <p><b>선택한 설계</b>: 코드에서는 <code>HomeScreen.tsx</code>의 조건부(<code>profile?.contentType === "zh" &&</code>)를
+      제거하고 버튼을 무조건 렌더링한다 — 다른 렌더 조건(로딩/에러 무관 항상 노출)은 그대로 둔다. 이슈가 명시한 대로
+      등록 화면·검증·Worker 로직은 건드리지 않는다(이미 #96·#95에서 generic을 처리하도록 배선이 끝났다).</p>
+    <p>문서는 실제 구현(#96)을 뒤늦게 반영하는 것이므로, §6에 zh/generic 분기표를 신설해 §4.6과 같은 형식(표 + "미지정은
+      대체 문자열이 아니라 속성 자체를 생략한다는 뜻" 같은 원칙 서술)으로 정리한다 — 이 리포에서 이미 검증된 패턴을 §6에도
+      적용해 문서 스타일 일관성을 유지한다.</p>
+    <p><b>기각한 대안</b></p>
+    <ul>
+      <li>등록 링크 조건을 <code>profile?.contentType === "zh" || profile?.contentType === "generic"</code>처럼 명시적
+        화이트리스트로 남기는 안 — 세 번째 콘텐츠 타입이 추가될 때마다 또 고쳐야 해서 이슈가 요구한 "조건 제거"(전 프로필
+        노출)의 취지에 어긋난다. <code>ContentType</code>이 현재 <code>"zh" | "generic"</code> 두 값뿐이라 무조건 노출과
+        결과가 동일하면서 더 단순하다.</li>
+      <li>§6을 §4.6처럼 별도 하위 절(예: "6.1 콘텐츠 타입 분기 정리")로 쪼개는 안 — §6 전체가 아직 그리 길지 않고
+        분기 대상이 3개 항목(라벨·placeholder·테이블 헤더)뿐이라, 별도 소절 없이 표 하나로 §6 본문에 붙이는 편이
+        간결하다. §4.6은 zh/generic 차이가 §4.1~4.3 세 군데에 흩어져 있어 별도 정리 절이 필요했던 경우였다.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">4</span>작업 단계</h2>
+    <ol class="steps">
+      <li>홈 화면 등록 링크의 <code>contentType === "zh"</code> 조건을 제거하고 버튼을 무조건 렌더링한다. 위 주석
+        문구("zh 프로필 전용(#78)")도 "전 프로필 노출(#100)"로 갱신한다. <b>완료.</b>
+        <span class="files"><code>src/screens/HomeScreen.tsx</code></span>
+      </li>
+      <li>design-prd §3 "단어 등록 링크" 불릿을 "전 프로필 노출"로 개정하고, 개정 근거로 등록 일반화 플랜(§5 작업 D)과
+        선행 이슈 #94·#95·#96 포인터를 남긴다. "프로필 전환 링크" 불릿에서 "(등록 링크가 숨겨진 프로필에서는 시작 버튼
+        바로 아래)" 분기 문구를 제거한다(등록 링크가 항상 있으므로 위치가 고정됨). <b>완료.</b>
+        <span class="files"><code>docs/design-prd.md</code> (§3, 약 82-83행)</span>
+      </li>
+      <li>design-prd §6에 zh/generic 분기표를 신설한다 — <code>contentLabels.ts</code>의
+        <code>registerTableHeaders</code>(테이블 헤더: 한자/병음/뜻 ↔ 표제어/보조 표기/뜻)와
+        <code>registerPlaceholder</code>(textarea placeholder: zh는 hanzi/pinyin/meaning 예시,
+        generic은 <code>"contentType":"generic"</code> 포함 term/note/meaning 예시) 실제 반환값을 그대로 문서화한다.
+        #96 실구현 기준. <b>완료.</b>
+        <span class="files"><code>docs/design-prd.md</code> (§6, 약 143-156행)</span>
+      </li>
+      <li>design-prd §10 이슈 매핑 표에서 #78 행의 "등록 링크 zh 조건부" 문구를 정정하고, #100 행을 신설해 §3·§6
+        본문 수정 사실을 남긴다. <b>완료.</b>
+        <span class="files"><code>docs/design-prd.md</code> (§10, 약 191-205행)</span>
+      </li>
+      <li><code>npm test</code>(vitest run 전체 스위트)로 회귀가 없는지 확인하고, <code>npm run build</code>로
+        타입체크·번들이 깨지지 않는지 확인한다. 이어서 <code>npm run dev</code>로 브라우저에서 zh·generic 두 프로필
+        모두 등록 링크가 뜨는지 육안 확인한다(백엔드 로그인 없이도 <code>localStorage</code>의
+        <code>vocab-study:password</code>·<code>vocab-study:profile</code>을 직접 시딩하면 홈 화면까지 바로 진입 가능 —
+        §6 테스트 계획 참고). <b>완료</b> — vitest 309개 전체 통과, 빌드 통과, cmux 브라우저로 generic/zh 두 프로필 모두
+        홈 화면에서 "단어 등록 ›" 링크 노출 확인.
+        <span class="files"></span>
+      </li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">5</span>리스크</h2>
+    <div class="scroll-x">
+    <table>
+      <thead><tr><th>리스크</th><th>영향</th><th>완화책</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>실제 배포 환경에 generic 콘텐츠 프로필이 아직 없을 수 있음</td>
+          <td>이 이슈만으로는 눈에 보이는 사용자 영향 없음(로컬 검증만 가능)</td>
+          <td>플랜(§5)이 이미 "D 전까지는 어떤 머지도 사용자 가시 변화가 없다"고 명시 — 이 이슈부터가 그 스위치이며,
+            zh 프로필 동작이 그대로 보존되는지만 확인하면 충분하다</td>
+        </tr>
+        <tr>
+          <td>브라우저 수동 검증 시 <code>localStorage</code> 시딩값이 실제 로그인 응답 스키마(<code>PublicProfile</code>)와
+            어긋나면 다른 화면에서 오류가 날 수 있음</td>
+          <td>검증 절차 자체의 신뢰도 저하(실제 버그는 아님)</td>
+          <td><code>src/lib/api.ts</code>의 <code>PublicProfile</code> 타입·<code>saveProfile</code> 직렬화 형식을
+            그대로 따라 시딩하고, 홈 화면 등록 링크 노출 여부만 확인 대상으로 좁힌다</td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">6</span>테스트 계획</h2>
+    <ul>
+      <li><code>npm test</code> — 전체 vitest 스위트(<code>contentLabels.test.ts</code>·<code>registerValidation.test.ts</code>
+        포함)가 그대로 초록인지 확인. 이번 변경이 lib 로직을 건드리지 않으므로 회귀가 없어야 한다.</li>
+      <li><code>npm run build</code> — <code>tsc -b && vite build</code>로 타입체크와 번들링이 깨지지 않는지 확인.</li>
+      <li><code>npm run dev</code> 브라우저 수동 확인: devtools 콘솔에서
+        <code>localStorage.setItem('vocab-study:password','x')</code>와
+        <code>localStorage.setItem('vocab-study:profile', JSON.stringify({id:'t',name:'t',modes:['m1','m2'],contentType:'generic'}))</code>를
+        실행한 뒤 새로고침 → 홈 화면에 "단어 등록 ›" 링크가 뜨는지 확인(변경 전엔 숨겨졌던 케이스).
+        <code>contentType:'zh'</code>로 바꿔도 동일하게 노출되는지 재확인(기존 동작 불변 확인).</li>
+      <li>등록 화면 진입까지 클릭해 placeholder·테이블 헤더가 §6 개정 내용과 일치하는지(코드 변경 없는 부분이지만 문서·구현
+        일치 여부를 눈으로 재확인) 함께 본다.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">7</span>완료 조건</h2>
+    <ul class="done-list">
+      <li class="checked">generic 프로필 홈에서 "단어 등록 ›" 링크 노출, zh 프로필 동작 불변 — cmux 브라우저로 두 프로필 모두 확인</li>
+      <li class="checked">HomeScreen 관련 기존 테스트(전체 <code>npm test</code> 스위트) 통과 — 25개 파일 309개 테스트 전체 통과</li>
+      <li class="checked">design-prd §3·§6 개정(개정 반영 + registration-generalization 플랜 포인터 §10에 기록)</li>
+      <li class="checked"><code>worker/</code>·등록 화면 로직 변경 없음(문서·<code>HomeScreen.tsx</code> 조건 제거만)</li>
+    </ul>
+  </section>
+
+  <footer>issue-plan · <a href="https://github.com/damdam6/vocabulary-study/issues/100">#100</a> · 2026-07-28</footer>
+</main>
+</body>
+</html>
