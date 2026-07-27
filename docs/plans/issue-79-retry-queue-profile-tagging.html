@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>#79 재시도 큐 프로필 태깅 — 현재 프로필 필터 flush + 영구 실패(4xx) 폐기 — 작업 플랜</title>
+<style>
+  :root {
+    --bg: #f7f7f8; --card: #ffffff; --ink: #1c1c1e; --muted: #6e6e73;
+    --line: #e3e3e6; --accent: #3b6ef5; --accent-soft: #e8eefe;
+    --ok: #2e8b57; --warn: #b25e09; --code-bg: #f0f0f2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161618; --card: #202024; --ink: #ececf0; --muted: #98989f;
+      --line: #333338; --accent: #7a9bff; --accent-soft: #26304a;
+      --ok: #58c088; --warn: #e0a35c; --code-bg: #2a2a2f;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 40px 20px 80px; background: var(--bg); color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+                 "Segoe UI", "Noto Sans KR", sans-serif;
+    line-height: 1.65;
+  }
+  main { max-width: 860px; margin: 0 auto; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code {
+    font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 0.86em;
+    background: var(--code-bg); border-radius: 5px; padding: 2px 6px;
+  }
+  header { margin-bottom: 28px; }
+  .issue-chip {
+    display: inline-block; font-weight: 700; color: var(--accent);
+    background: var(--accent-soft); border-radius: 999px;
+    padding: 3px 14px; font-size: 0.95rem; margin-bottom: 10px;
+  }
+  .type-chip {
+    display: inline-block; font-weight: 600; color: var(--muted);
+    border: 1px solid var(--line); border-radius: 999px;
+    padding: 3px 12px; font-size: 0.8rem; margin-left: 8px; vertical-align: 2px;
+  }
+  h1 { font-size: 1.7rem; margin: 0 0 14px; letter-spacing: -0.02em; }
+  .meta {
+    display: flex; flex-wrap: wrap; gap: 6px 22px;
+    color: var(--muted); font-size: 0.87rem;
+  }
+  .meta b { color: var(--ink); font-weight: 600; }
+  section.card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 24px 28px; margin-top: 18px;
+  }
+  h2 {
+    font-size: 1.05rem; margin: 0 0 14px; letter-spacing: -0.01em;
+    display: flex; align-items: center; gap: 8px;
+  }
+  h2 .no {
+    color: var(--accent); font-size: 0.8rem; font-weight: 700;
+    border: 1.5px solid var(--accent); border-radius: 6px; padding: 0 6px;
+  }
+  ul, ol { margin: 0; padding-left: 22px; }
+  li { margin: 6px 0; }
+  .steps { list-style: none; padding: 0; counter-reset: step; }
+  .steps li {
+    counter-increment: step; position: relative; padding: 10px 0 10px 44px;
+    border-bottom: 1px dashed var(--line);
+  }
+  .steps li:last-child { border-bottom: none; }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 10px;
+    width: 28px; height: 28px; border-radius: 8px; background: var(--accent-soft);
+    color: var(--accent); font-weight: 700; font-size: 0.85rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .steps li.done::before { content: "✓"; background: var(--ok); color: #fff; }
+  .steps li.done { opacity: 0.7; }
+  .steps .files { display: block; margin-top: 4px; font-size: 0.85rem; color: var(--muted); }
+  .steps .note { display: block; margin-top: 4px; font-size: 0.85rem; color: var(--warn); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 0.82rem; }
+  .done-list { list-style: none; padding: 0; }
+  .done-list li { padding-left: 30px; position: relative; }
+  .done-list li::before {
+    content: ""; position: absolute; left: 2px; top: 7px; width: 15px; height: 15px;
+    border: 2px solid var(--ok); border-radius: 5px;
+  }
+  .scroll-x { overflow-x: auto; }
+  footer { margin-top: 30px; color: var(--muted); font-size: 0.8rem; text-align: center; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <span class="issue-chip"><a href="https://github.com/damdam6/vocabulary-study/issues/79">#79</a></span><span class="type-chip">기능 개선</span>
+    <h1>재시도 큐 프로필 태깅 — 현재 프로필 필터 flush + 영구 실패(4xx) 폐기</h1>
+    <div class="meta">
+      <span><b>damdam6/vocabulary-study</b></span>
+      <span>브랜치 <b><code>feat/79-retry-queue-profile-tagging</code></b> ← <code>main</code></span>
+      <span>라벨 <b>enhancement</b></span>
+      <span>2026-07-27</span>
+    </div>
+  </header>
+
+  <section class="card">
+    <h2><span class="no">1</span>요약</h2>
+    <p>재시도 큐(<code>src/lib/retryQueue.ts</code>) 엔트리에 적재 시점의 활성 프로필 id를 태깅하고, flush는 현재 로그인한 프로필의 항목만 FIFO로 전송하며 다른 프로필의 항목은 건드리지 않고 보존한다. 태그 없는 레거시 항목은 읽기 시점에 현재 프로필 소속으로 승격한다(#43의 무태그 kind 승격과 같은 접근). <code>src/lib/api.ts</code>의 <code>postAnswer</code>·<code>postReviewFail</code>은 상태 코드를 실은 <code>ApiError</code>를 던지도록 바꿔, flush가 <code>4xx</code>(영구 실패)는 그 항목만 폐기하고 다음 항목을 계속 전송하며, 네트워크 예외·<code>5xx</code>는 기존처럼 중단·잔여 유지로 분기하게 한다. 홈 미전송 인디케이터(<code>getRetryQueueLength</code>)도 현재 프로필 항목만 카운트하도록 맞춘다.</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">2</span>현황 분석</h2>
+    <p><code>src/lib/retryQueue.ts:21-23</code> <code>RetryQueueEntry</code>는 <code>{kind, record}</code>뿐 — 프로필 정보가 없다. <code>readQueue()</code>(<code>retryQueue.ts:31-44</code>)는 태그 없는 항목을 <code>{kind:"answer", record}</code>로 승격하는 #43 시절 로직만 있고 profileId 개념이 없다.</p>
+    <p><code>flushRetryQueue()</code>(<code>retryQueue.ts:86-115</code>)는 큐 전체를 프로필 구분 없이 FIFO로 순회하며, <code>catch</code> 블록 하나가 while 루프 전체를 감싸 첫 실패에서 무조건 중단한다 — 4xx(영구 실패)와 네트워크/5xx(일시 실패)를 구분하지 않아, 프로필 전환 후 이전 프로필 기록이 새 프로필 시트로 전송되면 <code>404</code>(단어 없음)로 큐 머리가 영구히 막히거나, 표제어가 우연히 같으면 다른 시트에 오기록된다.</p>
+    <p><code>enqueue()</code>(<code>retryQueue.ts:58-64</code>)는 인자로 받은 엔트리를 그대로 append — 활성 프로필을 조회하지 않는다. <code>getRetryQueueLength()</code>(<code>retryQueue.ts:54-56</code>)는 프로필 구분 없이 배열 길이를 그대로 반환해, 홈 인디케이터(<code>src/screens/HomeScreen.tsx:58,125-130</code>)가 다른 프로필의 미전송분까지 카운트한다.</p>
+    <p><code>src/lib/api.ts:156-166</code> <code>postAnswer</code>와 <code>:179-187</code> <code>postReviewFail</code>은 비정상 응답에 <code>new Error(...)</code>를 던져 상태 코드를 구분할 수 없다. 활성 프로필은 <code>getStoredProfile()</code>(<code>api.ts:41-49</code>)로 조회 가능 — <code>id</code> 필드를 포함한 <code>PublicProfile</code>(<code>api.ts:34-39</code>)이 로그인/단어 조회 응답에서 캐시된다(#78·#77 완료).</p>
+    <p>서버 측 4xx 근거: <code>worker/routes/answer.ts</code> 비활성 모드 <code>400</code>, 단어 없음 <code>404</code>; <code>worker/routes/review-fail.ts</code> 바디 파싱 실패 <code>400</code>, 단어 없음 <code>404</code> — 모두 재시도해도 영원히 같은 결과이므로 폐기 대상. Google Sheets API 오류 등은 잡히지 않는 예외나 <code>5xx</code>로 표면화되어 일시 실패로 취급해야 한다.</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">3</span>설계</h2>
+    <p><b>엔트리 태깅</b>: <code>RetryQueueEntry</code> 두 variant 모두에 <code>profileId?: string</code>를 추가한다. <code>enqueue()</code>가 <code>getStoredProfile()?.id</code>를 내부에서 조회해 새 엔트리에 태깅한다 — <code>enqueueAnswer</code>/<code>enqueueReviewFail</code> 외부 시그니처는 그대로 두어 <code>StudyScreen.tsx</code> 호출부를 건드리지 않는다(적재 시점에 활성 프로필을 알아내는 책임은 retryQueue 모듈 내부로 국한).</p>
+    <p><b>레거시 승격</b>: <code>readQueue(currentProfileId)</code>로 시그니처를 바꿔, <code>profileId</code>가 없는 엔트리를 <code>currentProfileId</code>로 채워 반환한다(#43의 <code>kind</code> 없는 항목 승격과 동일한 map 패턴). 승격은 읽기마다 재계산되지만, flush가 성공/폐기로 큐를 실제로 변경할 때 <code>saveQueue</code>로 영속화되므로 다음 읽기부터는 태깅된 상태로 고정된다. <code>getRetryQueueLength()</code>·<code>flushRetryQueue()</code> 모두 이 함수로 자기 프로필의 id를 넘겨 호출한다.</p>
+    <p><b>필터링 flush</b>: 큐를 인덱스로 순회하며 <code>entry.profileId !== profileId</code>인 항목은 건드리지 않고 인덱스만 증가시켜 넘어간다(다른 프로필 항목 보존). 일치하는 항목만 전송을 시도한다. await 도중 새 항목이 append될 수 있으므로(기존 로직과 같은 이유), 항목 제거 시마다 <code>readQueue(profileId)</code>로 재조회한 뒤 해당 인덱스를 제거하고 저장한다 — enqueue는 항상 뒤쪽에 append만 하므로 앞쪽 인덱스는 안정적이다.</p>
+    <p><b>실패 분류</b>: <code>api.ts</code>에 상태 코드를 담는 <code>ApiError extends Error</code>를 추가하고 <code>postAnswer</code>/<code>postReviewFail</code>이 이를 던지도록 바꾼다(에러 메시지 포맷은 유지 — 기존 <code>api.test.ts</code>의 <code>toThrow("404")</code> 스타일 검증과 호환). flush에서 <code>err instanceof ApiError && err.status >= 400 && err.status < 500</code>이면 해당 항목만 제거(폐기)하고 같은 인덱스에서 계속(다음 항목이 그 자리로 밀려옴); 그 외(네트워크 예외, 5xx)면 즉시 반환해 그 항목과 잔여를 큐에 그대로 유지 — 기존 "첫 실패 중단" 시맨틱을 실패 성격별로 정밀화한 것.</p>
+    <p><b>기각한 대안</b>: <code>enqueueAnswer</code>/<code>enqueueReviewFail</code>에 <code>profileId</code> 인자를 추가해 <code>StudyScreen.tsx</code>가 명시적으로 넘기는 방식 — <code>getStoredProfile()</code>이 이미 동기 조회 가능해 모듈 내부에서 해결 가능하므로, 호출부 3곳(App.tsx/StudyScreen.tsx/HomeScreen.tsx)을 건드리지 않는 현재 설계가 더 단순하다.</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">4</span>작업 단계</h2>
+    <ol class="steps">
+      <li class="done">api.ts에 상태 코드를 싣는 <code>ApiError</code> 클래스를 추가하고, <code>postAnswer</code>·<code>postReviewFail</code>이 <code>new Error(...)</code> 대신 <code>new ApiError(message, response.status)</code>를 던지도록 바꾼다. 메시지 포맷(<code>"POST /api/answer 실패 (${status})"</code>)은 그대로 유지한다.
+        <span class="files"><code>src/lib/api.ts</code></span>
+      </li>
+      <li class="done"><code>RetryQueueEntry</code> 두 variant에 <code>profileId?: string</code>를 추가한다.
+        <span class="files"><code>src/lib/retryQueue.ts</code></span>
+      </li>
+      <li class="done"><code>readQueue()</code>를 <code>readQueue(currentProfileId: string | undefined)</code>로 바꿔, kind 승격과 함께 <code>profileId</code>가 없는 엔트리를 <code>currentProfileId</code>로 채워 반환한다.
+        <span class="files"><code>src/lib/retryQueue.ts</code></span>
+      </li>
+      <li class="done"><code>enqueue()</code>가 <code>getStoredProfile()?.id</code>를 조회해 새 엔트리에 <code>profileId</code>를 태깅하고, <code>readQueue(profileId)</code>로 기존 큐를 읽어 append하도록 바꾼다. <code>enqueueAnswer</code>/<code>enqueueReviewFail</code> 시그니처는 유지.
+        <span class="files"><code>src/lib/retryQueue.ts</code></span>
+      </li>
+      <li class="done"><code>getRetryQueueLength()</code>가 <code>getStoredProfile()?.id</code>를 조회해 <code>readQueue(profileId)</code> 결과 중 <code>entry.profileId === profileId</code>인 것만 세도록 바꾼다(외부 시그니처는 인자 없이 유지).
+        <span class="files"><code>src/lib/retryQueue.ts</code></span>
+      </li>
+      <li class="done"><code>flushRetryQueue()</code>를 재작성: 활성 프로필 id를 조회하고, 인덱스 기반 순회로 프로필 불일치 항목은 건너뛰고(보존), 일치 항목만 전송 시도 — 성공/4xx 폐기는 해당 인덱스를 재조회 후 제거·저장하고 계속, 네트워크 예외·5xx는 즉시 반환해 중단·유지.
+        <span class="files"><code>src/lib/retryQueue.ts</code></span>
+      </li>
+      <li class="done">테스트 확장: (a) api.test.ts — <code>postAnswer</code>/<code>postReviewFail</code> 실패가 <code>ApiError</code> 인스턴스이고 <code>status</code>가 응답 상태 코드와 일치하는지, (b) retryQueue.test.ts — 프로필 태깅 적재, 프로필 불일치 항목 보존(현재 프로필만 전송), 무태그 레거시 항목 현재 프로필 승격, 4xx 폐기 후 다음 항목 계속 전송, 5xx·네트워크 예외 중단·유지(기존 회귀 포함), <code>getRetryQueueLength</code> 프로필 필터링.
+        <span class="files"><code>src/lib/api.test.ts</code>, <code>src/lib/retryQueue.test.ts</code></span>
+      </li>
+      <li class="done"><code>npm test</code>(vitest)와 <code>npm run build</code>(tsc -b + vite build)로 회귀·타입 검증.
+        <span class="files"></span>
+      </li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">5</span>리스크</h2>
+    <div class="scroll-x">
+    <table>
+      <thead><tr><th>리스크</th><th>영향</th><th>완화책</th></tr></thead>
+      <tbody>
+        <tr><td>레거시 승격이 "잘못된" 프로필로 배정될 가능성 — 무태그 시절 항목의 원 소속을 알 방법이 없음</td><td>드물게 다른 프로필 시트로 오기록될 수 있음(단일 프로필 운영 중이던 사용자 기준으로는 발생 안 함)</td><td>PRD-general §8이 명시한 기각 트레이드오프 — #43과 동일하게 "유실 방지 &gt; 완전 정확성" 우선. 다중 프로필 실사용 전 배포이므로 실질 영향 없음</td></tr>
+        <tr><td>flush 중 재조회(readQueue) 인덱스 정합성 — enqueue가 append 외 동작을 하게 되면 인덱스가 어긋날 수 있음</td><td>잘못된 항목 제거</td><td>enqueue는 항상 끝에 append만 함을 코드로 보장(현재도 동일 불변식에 의존) — 테스트로 "flush 중 새 항목 적재" 케이스 유지</td></tr>
+        <tr><td>ApiError 도입이 기존 <code>.rejects.toThrow("404")</code> 스타일 단언에 영향</td><td>기존 api.test.ts 깨짐</td><td>메시지 포맷 그대로 유지 + Error 상속이라 <code>toThrow</code> 매처 호환 확인</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">6</span>테스트 계획</h2>
+    <ul>
+      <li><code>npm test</code> 전체 통과 — 기존 retryQueue.test.ts 회귀 케이스(중간 실패 중단, 재진입 가드, flush 중 신규 적재, review-fail 혼재 등) 그대로 유지되는지.</li>
+      <li>신규: 프로필 A로 적재한 answer/review-fail 엔트리가 프로필 B 활성 상태에서 flush해도 큐에 남고 전송되지 않는지, B 소속 항목만 전송되는지.</li>
+      <li>신규: profileId 없는(레거시) 엔트리가 현재 활성 프로필로 승격되어 flush 시 전송·제거되는지.</li>
+      <li>신규: 400/404 응답(ApiError 4xx) 수신 시 해당 항목이 큐에서 제거되고 다음 항목이 계속 전송되는지.</li>
+      <li>신규: 500 응답·네트워크 예외(TypeError)에서는 그 항목과 잔여가 모두 보존되고 중단되는지(4xx와 구분).</li>
+      <li>신규: <code>getRetryQueueLength()</code>가 현재 활성 프로필 항목만(승격된 레거시 포함) 카운트하는지.</li>
+      <li><code>npm run build</code> — tsc 타입 검증(RetryQueueEntry profileId 추가·ApiError 도입에 따른 컴파일 오류 없는지).</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">7</span>완료 조건</h2>
+    <ul class="done-list">
+      <li>프로필 A에서 적재 → 프로필 B 로그인 후 flush 시 A 항목 보존·미전송, B 항목만 전송</li>
+      <li>4xx 응답 항목 폐기 후 다음 항목 계속 전송</li>
+      <li>네트워크 실패/5xx에서 중단·잔여 유지(기존 동작 보존)</li>
+      <li>무태그 레거시 항목이 현재 프로필로 승격되어 유실 없음</li>
+      <li>홈 인디케이터 카운트가 현재 프로필 기준</li>
+      <li>기존 재시도 큐 테스트 회귀 없음 — <code>npm test</code>·<code>npm run build</code> 모두 통과</li>
+    </ul>
+  </section>
+
+  <footer>issue-plan · <a href="https://github.com/damdam6/vocabulary-study/issues/79">#79</a> · 2026-07-27</footer>
+</main>
+</body>
+</html>

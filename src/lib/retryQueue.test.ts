@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { AnswerRecord, ReviewFailRecord } from "./api";
+import { saveProfile, type AnswerRecord, type PublicProfile, type ReviewFailRecord } from "./api";
 import {
   RETRY_QUEUE_CHANGED_EVENT,
   RETRY_QUEUE_STORAGE_KEY,
@@ -40,12 +40,12 @@ function reviewFailRecord(n: number): ReviewFailRecord {
   return { tab: "HSK6급", hanzi: `字${n}` };
 }
 
-function answerEntry(n: number, timestamp?: string): RetryQueueEntry {
-  return { kind: "answer", record: record(n, timestamp) };
+function answerEntry(n: number, timestamp?: string, profileId?: string): RetryQueueEntry {
+  return { kind: "answer", record: record(n, timestamp), ...(profileId !== undefined && { profileId }) };
 }
 
-function reviewFailEntry(n: number): RetryQueueEntry {
-  return { kind: "review-fail", record: reviewFailRecord(n) };
+function reviewFailEntry(n: number, profileId?: string): RetryQueueEntry {
+  return { kind: "review-fail", record: reviewFailRecord(n), ...(profileId !== undefined && { profileId }) };
 }
 
 function seedQueue(entries: RetryQueueEntry[]) {
@@ -54,6 +54,15 @@ function seedQueue(entries: RetryQueueEntry[]) {
 
 function storedQueue(): RetryQueueEntry[] {
   return JSON.parse(localStorage.getItem(RETRY_QUEUE_STORAGE_KEY) ?? "[]");
+}
+
+function profile(id: string): PublicProfile {
+  return { id, name: id, modes: ["m1"], contentType: "generic" };
+}
+
+/** 홈/StudyScreen이 로그인 시 저장해 두는 활성 프로필 캐시를 테스트에서 흉내낸다. */
+function activateProfile(id: string) {
+  saveProfile(profile(id));
 }
 
 const UPDATED_WORD = {
@@ -99,6 +108,14 @@ describe("enqueueAnswer", () => {
 
     expect(storedQueue()).toEqual([answerEntry(1), answerEntry(2)]);
   });
+
+  it("활성 프로필이 있으면 적재 시점의 profileId를 태깅한다(#79)", () => {
+    activateProfile("a");
+
+    enqueueAnswer(record(1));
+
+    expect(storedQueue()).toEqual([answerEntry(1, undefined, "a")]);
+  });
 });
 
 describe("enqueueReviewFail", () => {
@@ -117,6 +134,14 @@ describe("enqueueReviewFail", () => {
 
     expect(storedQueue()).toEqual([answerEntry(1), reviewFailEntry(2)]);
   });
+
+  it("활성 프로필이 있으면 적재 시점의 profileId를 태깅한다(#79)", () => {
+    activateProfile("b");
+
+    enqueueReviewFail(reviewFailRecord(1));
+
+    expect(storedQueue()).toEqual([reviewFailEntry(1, "b")]);
+  });
 });
 
 describe("getRetryQueueLength", () => {
@@ -126,6 +151,20 @@ describe("getRetryQueueLength", () => {
     expect(getRetryQueueLength()).toBe(0);
     seedQueue([answerEntry(1), reviewFailEntry(2)]);
     expect(getRetryQueueLength()).toBe(2);
+  });
+
+  it("다른 프로필 항목은 세지 않는다 — 홈 인디케이터는 현재 프로필 기준(#79)", () => {
+    seedQueue([answerEntry(1, undefined, "a"), answerEntry(2, undefined, "b"), reviewFailEntry(3, "a")]);
+    activateProfile("a");
+
+    expect(getRetryQueueLength()).toBe(2);
+  });
+
+  it("무태그 레거시 항목은 현재 프로필로 승격되어 카운트된다(#79)", () => {
+    seedQueue([answerEntry(1), answerEntry(2, undefined, "other")]);
+    activateProfile("a");
+
+    expect(getRetryQueueLength()).toBe(1);
   });
 });
 
@@ -268,5 +307,105 @@ describe("flushRetryQueue", () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(JSON.parse((fetchMock.mock.calls[1][1] as RequestInit).body as string)).toEqual(record(2));
     expect(storedQueue()).toEqual([]);
+  });
+});
+
+describe("flushRetryQueue — 프로필 필터링(#79)", () => {
+  it("다른 프로필 소속 항목은 건드리지 않고 보존하며, 현재 프로필 항목만 전송한다", async () => {
+    seedQueue([
+      answerEntry(1, undefined, "a"),
+      answerEntry(2, undefined, "b"),
+      answerEntry(3, undefined, "a"),
+    ]);
+    activateProfile("a");
+    const fetchMock = vi.fn().mockImplementation(() => Promise.resolve(Response.json(UPDATED_WORD)));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await flushRetryQueue();
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    const bodies = fetchMock.mock.calls.map(([, init]) => JSON.parse((init as RequestInit).body as string));
+    expect(bodies).toEqual([record(1), record(3)]);
+    // b 소속 항목은 원래 위치 그대로 유지 — 그 프로필로 재로그인하면 그때 전송된다
+    expect(storedQueue()).toEqual([answerEntry(2, undefined, "b")]);
+  });
+
+  it("무태그 레거시 항목은 현재 프로필로 승격되어 flush 대상에 포함된다", async () => {
+    seedQueue([answerEntry(1)]);
+    activateProfile("a");
+    const fetchMock = vi.fn().mockImplementation(() => Promise.resolve(Response.json(UPDATED_WORD)));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await flushRetryQueue();
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(storedQueue()).toEqual([]);
+  });
+
+  it("활성 프로필이 없으면 다른 프로필로 태깅된 항목은 건드리지 않는다", async () => {
+    seedQueue([answerEntry(1, undefined, "a")]);
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+
+    await flushRetryQueue();
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(storedQueue()).toEqual([answerEntry(1, undefined, "a")]);
+  });
+});
+
+describe("flushRetryQueue — 실패 분류: 4xx 폐기 vs 네트워크/5xx 중단(#79)", () => {
+  it("4xx 응답은 그 항목만 폐기하고 다음 항목을 계속 전송한다", async () => {
+    seedQueue([answerEntry(1), answerEntry(2), answerEntry(3)]);
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(new Response(null, { status: 404 }))
+      .mockResolvedValueOnce(Response.json(UPDATED_WORD))
+      .mockResolvedValueOnce(Response.json(UPDATED_WORD));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await flushRetryQueue();
+
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+    expect(storedQueue()).toEqual([]);
+  });
+
+  it("review-fail 4xx 응답도 폐기 후 다음 항목을 계속 전송한다", async () => {
+    seedQueue([reviewFailEntry(1), answerEntry(2)]);
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(new Response(null, { status: 400 }))
+      .mockResolvedValueOnce(Response.json(UPDATED_WORD));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await flushRetryQueue();
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(storedQueue()).toEqual([]);
+  });
+
+  it("5xx 응답은 4xx와 달리 폐기하지 않고 그 항목과 잔여를 유지한 채 중단한다", async () => {
+    seedQueue([answerEntry(1), answerEntry(2)]);
+    const fetchMock = vi.fn().mockResolvedValueOnce(new Response(null, { status: 503 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await flushRetryQueue();
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(storedQueue()).toEqual([answerEntry(1), answerEntry(2)]);
+  });
+
+  it("4xx 폐기와 5xx 중단이 섞이면 4xx만 버리고 5xx에서 멈춘다", async () => {
+    seedQueue([answerEntry(1), answerEntry(2), answerEntry(3)]);
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(new Response(null, { status: 404 })) // 1: 폐기
+      .mockResolvedValueOnce(new Response(null, { status: 500 })); // 2: 중단
+    vi.stubGlobal("fetch", fetchMock);
+
+    await flushRetryQueue();
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(storedQueue()).toEqual([answerEntry(2), answerEntry(3)]);
   });
 });
