@@ -47,11 +47,14 @@ function stringField(obj: unknown, key: string): string {
   return "";
 }
 
+/** hanzi/pinyin/meaning 운반자 자리마다 읽어올 소스 필드명. */
+type SourceFieldNames = Record<keyof ParsedWord, string>;
+
 /**
  * contentType별 붙여넣기 스키마의 소스 필드명 — zh: hanzi/pinyin/meaning,
  * generic: term/note/meaning → 운반자 자리로 매핑(등록 일반화 플랜 §3.1·§3.3).
  */
-const SOURCE_FIELDS: Record<ContentType, ParsedWord> = {
+const SOURCE_FIELDS: Record<ContentType, SourceFieldNames> = {
   zh: { hanzi: "hanzi", pinyin: "pinyin", meaning: "meaning" },
   generic: { hanzi: "term", pinyin: "note", meaning: "meaning" },
 };
