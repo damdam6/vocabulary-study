@@ -1,7 +1,11 @@
 /**
  * POST /api/words/register 재검증 로직 — 단어 등록 시스템 플랜(`docs/plans/word-registration-system.md`)
  * §3 스키마·§6 탭 이름 규칙을 Sheets 호출 없이 순수 함수로 검증한다.
+ * generic 분기·기본 헤더는 등록 일반화 플랜(`docs/plans/registration-generalization.md`) §3.2·§3.3이 원본 —
+ * 필드명은 contentType 무관 단일 형태(hanzi/pinyin/meaning = A/B/C열 운반자, §8 Q2).
  */
+
+import type { ContentType } from "./profiles.ts";
 
 export interface RegisterWord {
   hanzi: string;
@@ -41,9 +45,13 @@ function hasValidToneFormat(pinyin: string): boolean {
   return TONE_MARK_RE.test(lower);
 }
 
-/** words 배열을 플랜 §3 스키마로 재검증한다. 필드 누락·빈 문자열·타입 불일치·한자 유니코드 범위 밖·
- * 병음 성조 형식 위반·배열 내 한자 중복·100건 초과면 null. */
-export function parseRegisterWords(raw: unknown): RegisterWord[] | null {
+/** words 배열을 contentType별 스키마로 재검증한다(zh: 플랜 §3 · generic: 등록 일반화 플랜 §3.2).
+ * 공통 — 필드 누락·타입 불일치·배열 내 A열 값 중복(정확 일치, §8 Q4)·100건 초과면 null.
+ * zh — 세 필드 비공백 + 한자 유니코드 범위 + 병음 성조 형식(기존 동작 불변).
+ * generic — hanzi(표제어)·meaning(뜻) 비공백 자유 텍스트, pinyin(보조 표기)은 트림 후 빈 문자열
+ * 허용(→ B열 빈칸), 범위·성조 검사 없음. 기본값 "zh"는 프로필 contentType 생략 폴백(profiles.ts)과
+ * 같은 방향이라 미전달 호출이 엄격한 쪽으로 떨어진다. */
+export function parseRegisterWords(raw: unknown, contentType: ContentType = "zh"): RegisterWord[] | null {
   if (!Array.isArray(raw) || raw.length === 0 || raw.length > MAX_REGISTER_WORDS) {
     return null;
   }
@@ -58,10 +66,14 @@ export function parseRegisterWords(raw: unknown): RegisterWord[] | null {
       return null;
     }
     const word = { hanzi: hanzi.trim(), pinyin: pinyin.trim(), meaning: meaning.trim() };
-    if (!word.hanzi || !word.pinyin || !word.meaning) {
-      return null;
-    }
-    if (!HANZI_RE.test(word.hanzi) || !hasValidToneFormat(word.pinyin)) {
+    if (contentType === "zh") {
+      if (!word.hanzi || !word.pinyin || !word.meaning) {
+        return null;
+      }
+      if (!HANZI_RE.test(word.hanzi) || !hasValidToneFormat(word.pinyin)) {
+        return null;
+      }
+    } else if (!word.hanzi || !word.meaning) {
       return null;
     }
     if (seen.has(word.hanzi)) {
@@ -72,6 +84,14 @@ export function parseRegisterWords(raw: unknown): RegisterWord[] | null {
   }
   return words;
 }
+
+/** 탭 0개 부트스트랩(등록 일반화 플랜 §3.3)용 contentType별 기본 헤더 — A~F만, G열 이후는
+ * 타임스탬프 append 영역이라 헤더를 두지 않는다. 헤더 행은 표시용일 뿐(전 탭 1행 스킵)
+ * 파싱에는 영향이 없다. 문구는 기존 테스트 픽스처 관례의 번안. */
+export const DEFAULT_TAB_HEADERS: Record<ContentType, string[]> = {
+  zh: ["한자", "병음", "뜻", "모드1", "모드2", "복습"],
+  generic: ["표제어", "보조 표기", "뜻", "모드1", "모드2", "복습"],
+};
 
 export type TabNameResult = { name: string } | { error: string };
 

@@ -284,3 +284,56 @@ describe("POST /api/words/register", () => {
     expect(putCalls.some((c) => c.range === "A1")).toBe(false);
   });
 });
+
+// 탭 0개 부트스트랩(#95, 등록 일반화 플랜 §3.3) — 폴백 프로필은 contentType "zh"이므로
+// zh 기본 헤더(기존 픽스처 HEADER와 동일 문구)로 첫 탭이 만들어져야 한다.
+describe("POST /api/words/register — 탭 0개 부트스트랩", () => {
+  it("탭 0개 + createTab: true면 zh 기본 헤더로 첫 탭을 만들고 2행부터 등록한다", async () => {
+    const state: SheetsState = { titles: [], rows: {} };
+    const { putCalls } = stubSheetsFetch(state);
+
+    const res = await worker.fetch(
+      registerRequest({
+        tab: "첫탭",
+        createTab: true,
+        words: [{ hanzi: "教育", pinyin: "jiàoyù", meaning: "교육" }],
+      }),
+      env,
+    );
+
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { created: boolean };
+    expect(body.created).toBe(true);
+    expect(state.titles).toContain("첫탭");
+    expect(putCalls).toEqual([
+      { tab: "첫탭", range: "A1", values: [HEADER] },
+      { tab: "첫탭", range: "A2:C2", values: [["教育", "jiàoyù", "교육"]] },
+    ]);
+  });
+
+  it("_ 접두 탭만 있으면 학습 대상 0개로 보고 그 탭 헤더를 복사하지 않고 기본 헤더를 쓴다", async () => {
+    const state: SheetsState = { titles: ["_메모"], rows: { _메모: [["잡담"]] } };
+    const { putCalls } = stubSheetsFetch(state);
+
+    const res = await worker.fetch(
+      registerRequest({
+        tab: "첫탭",
+        createTab: true,
+        words: [{ hanzi: "教育", pinyin: "jiàoyù", meaning: "교육" }],
+      }),
+      env,
+    );
+
+    expect(res.status).toBe(200);
+    expect(putCalls[0]).toEqual({ tab: "첫탭", range: "A1", values: [HEADER] });
+  });
+
+  it("탭 0개여도 createTab이 없으면 여전히 400", async () => {
+    stubSheetsFetch({ titles: [], rows: {} });
+    const res = await worker.fetch(
+      registerRequest({ tab: "첫탭", words: [{ hanzi: "教育", pinyin: "jiàoyù", meaning: "교육" }] }),
+      env,
+    );
+    expect(res.status).toBe(400);
+  });
+});

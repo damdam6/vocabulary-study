@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { HANZI_RE, MAX_REGISTER_WORDS, normalizeTabName, parseRegisterWords, partitionByExisting } from "./register.ts";
+import { DEFAULT_TAB_HEADERS, HANZI_RE, MAX_REGISTER_WORDS, normalizeTabName, parseRegisterWords, partitionByExisting } from "./register.ts";
 // worker/lib과 src/lib은 별도 tsconfig 프로젝트(tsconfig.worker.json/tsconfig.app.json)라 TS import로
 // 직접 비교할 수 없다 — vite/client가 제공하는 ?raw로 소스를 문자열째 읽어 리터럴 일치를 확인한다.
 import clientRegisterValidationSource from "../../src/lib/registerValidation.ts?raw";
@@ -76,6 +76,74 @@ describe("parseRegisterWords", () => {
 
   it("병음에 허용되지 않는 문자가 섞이면 null", () => {
     expect(parseRegisterWords([{ hanzi: "经济", pinyin: "jīngjì!", meaning: "경제" }])).toBeNull();
+  });
+});
+
+describe("parseRegisterWords — generic (등록 일반화 플랜 §3.2)", () => {
+  it("A열 자유 텍스트(공백·문장부호·한자 혼입)와 B열 빈 문자열을 트림된 형태로 허용한다", () => {
+    const result = parseRegisterWords(
+      [
+        { hanzi: " take off ", pinyin: "", meaning: " 이륙하다 " },
+        { hanzi: "abc经!", pinyin: " 구동사 ", meaning: "예문" },
+      ],
+      "generic",
+    );
+    expect(result).toEqual([
+      { hanzi: "take off", pinyin: "", meaning: "이륙하다" },
+      { hanzi: "abc经!", pinyin: "구동사", meaning: "예문" },
+    ]);
+  });
+
+  it("zh 범위 밖 문자(U+3400 등)·무성조 병음도 통과한다 — zh 규칙 미적용", () => {
+    const result = parseRegisterWords([{ hanzi: "㐀", pinyin: "jingji", meaning: "뜻" }], "generic");
+    expect(result).toEqual([{ hanzi: "㐀", pinyin: "jingji", meaning: "뜻" }]);
+  });
+
+  it("pinyin 필드가 누락되거나 문자열이 아니면 null — 와이어 계약(§3.3)상 필드 자체는 필수", () => {
+    expect(parseRegisterWords([{ hanzi: "take off", meaning: "이륙하다" }], "generic")).toBeNull();
+    expect(parseRegisterWords([{ hanzi: "take off", pinyin: 1, meaning: "이륙하다" }], "generic")).toBeNull();
+  });
+
+  it("hanzi(표제어)가 트림 후 빈 문자열이면 null", () => {
+    expect(parseRegisterWords([{ hanzi: "  ", pinyin: "", meaning: "이륙하다" }], "generic")).toBeNull();
+  });
+
+  it("meaning이 트림 후 빈 문자열이면 null", () => {
+    expect(parseRegisterWords([{ hanzi: "take off", pinyin: "", meaning: " " }], "generic")).toBeNull();
+  });
+
+  it("배치 내 표제어 중복(정확 일치)은 null, 대소문자가 다르면 별개 표제어다(§8 Q4)", () => {
+    const dup = [
+      { hanzi: "take off", pinyin: "", meaning: "이륙하다" },
+      { hanzi: "take off", pinyin: "구동사", meaning: "벗다" },
+    ];
+    expect(parseRegisterWords(dup, "generic")).toBeNull();
+
+    const caseDiff = [
+      { hanzi: "take off", pinyin: "", meaning: "이륙하다" },
+      { hanzi: "Take off", pinyin: "", meaning: "이륙하다" },
+    ];
+    expect(parseRegisterWords(caseDiff, "generic")).toHaveLength(2);
+  });
+
+  it("정확히 100건이면 통과, 초과면 null", () => {
+    const make = (n: number) =>
+      Array.from({ length: n }, (_, i) => ({ hanzi: `expr ${i}`, pinyin: "", meaning: "뜻" }));
+    expect(parseRegisterWords(make(MAX_REGISTER_WORDS), "generic")).toHaveLength(MAX_REGISTER_WORDS);
+    expect(parseRegisterWords(make(MAX_REGISTER_WORDS + 1), "generic")).toBeNull();
+  });
+
+  it("generic 완화가 zh에 새지 않는다 — 명시적 'zh'는 자유 텍스트·빈 병음·무성조를 여전히 거부한다", () => {
+    expect(parseRegisterWords([{ hanzi: "take off", pinyin: "tā", meaning: "뜻" }], "zh")).toBeNull();
+    expect(parseRegisterWords([{ hanzi: "经济", pinyin: "", meaning: "경제" }], "zh")).toBeNull();
+    expect(parseRegisterWords([{ hanzi: "经济", pinyin: "jingji", meaning: "경제" }], "zh")).toBeNull();
+  });
+});
+
+describe("DEFAULT_TAB_HEADERS", () => {
+  it("contentType별 A~F 6열 헤더를 제공한다(등록 일반화 플랜 §3.3)", () => {
+    expect(DEFAULT_TAB_HEADERS.zh).toEqual(["한자", "병음", "뜻", "모드1", "모드2", "복습"]);
+    expect(DEFAULT_TAB_HEADERS.generic).toEqual(["표제어", "보조 표기", "뜻", "모드1", "모드2", "복습"]);
   });
 });
 
