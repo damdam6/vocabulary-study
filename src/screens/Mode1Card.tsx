@@ -4,17 +4,23 @@
 //   - 진행(다음 문제 전환·피드백 오버레이)은 셸 몫 — 이 컴포넌트는 대기 없이 끝난다.
 //   - 셸이 문제마다 key를 바꿔 리마운트하므로 내부 상태는 초기화를 신경 쓰지 않는다.
 import { useState } from 'react'
+import { headwordLang } from '../lib/contentLabels.ts'
 import { hanziFontSize } from '../lib/hanziSize.ts'
+import type { ContentType } from '../lib/api.ts'
 import type { StudyQuestion } from '../lib/studySession.ts'
 
 interface Mode1CardProps {
   question: StudyQuestion
+  contentType: ContentType
   onJudged: (correct: boolean) => void
 }
 
-function Mode1Card({ question, onJudged }: Mode1CardProps) {
+function Mode1Card({ question, contentType, onJudged }: Mode1CardProps) {
   const [revealed, setRevealed] = useState(false)
   const { word } = question
+  const lang = headwordLang(contentType)
+  // 글자 수 적응 스케일은 zh 전용(이슈 #80) — generic은 고정 클래스로 표시.
+  const frontSizeClass = contentType === 'zh' ? `flip-hanzi--${hanziFontSize(word.hanzi)}` : 'flip-hanzi--generic'
 
   return (
     <div className="mode-area">
@@ -26,14 +32,14 @@ function Mode1Card({ question, onJudged }: Mode1CardProps) {
           disabled={revealed}
         >
           <span className="flip-face">
-            <span lang="zh-Hans" className={`flip-hanzi flip-hanzi--${hanziFontSize(word.hanzi)}`}>
+            <span lang={lang} className={`flip-hanzi ${frontSizeClass}`}>
               {word.hanzi}
             </span>
             <span className="flip-hint">탭해서 뜻 보기</span>
           </span>
           <span className="flip-face flip-face--back">
-            <span lang="zh-Hans" className="mode-card-hanzi">{word.hanzi}</span>
-            <span className="mode-card-pinyin">{word.pinyin}</span>
+            <span lang={lang} className="mode-card-hanzi">{word.hanzi}</span>
+            {word.pinyin !== '' && <span className="mode-card-pinyin">{word.pinyin}</span>}
             <span className="mode-card-meaning">{word.meaning}</span>
           </span>
         </button>
