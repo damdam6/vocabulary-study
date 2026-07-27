@@ -692,9 +692,16 @@ button {
 }
 
 .home-title {
-  margin: 6px 0 24px;
+  margin: 6px 0 4px;
   font-size: 1.5rem;
   letter-spacing: -0.01em;
+}
+
+/* 프로필명 저강조 표기 (#78, design-prd §3) — "오늘의 학습" 타이틀 바로 아래 */
+.home-profile-name {
+  margin: 0 0 20px;
+  font-size: 0.8rem;
+  color: var(--text-muted);
 }
 
 .home-spacer {
@@ -832,8 +839,9 @@ button {
   cursor: default;
 }
 
-/* 홈 화면 등록 진입 링크 (#49) — "학습 시작" 아래 저강조 텍스트 링크 */
-.home-register-link {
+/* 홈 화면 등록 진입 링크 (#49, zh 프로필 전용 #78) · 프로필 전환 링크 (#78) — "학습 시작" 아래 저강조 텍스트 링크 */
+.home-register-link,
+.home-switch-profile-link {
   align-self: center;
   margin-top: 14px;
   border: none;
@@ -843,7 +851,9 @@ button {
 }
 
 .home-register-link:hover,
-.home-register-link:active {
+.home-register-link:active,
+.home-switch-profile-link:hover,
+.home-switch-profile-link:active {
   color: var(--accent-light);
 }
 
