@@ -25,12 +25,14 @@
 import { useEffect, useMemo, useState } from 'react'
 import RegisterTable from './RegisterTable.tsx'
 import Dropdown from '../components/Dropdown.tsx'
-import type { WordEntry } from '../lib/api.ts'
+import type { ContentType, WordEntry } from '../lib/api.ts'
+import { registerPlaceholder } from '../lib/contentLabels.ts'
 import { fetchWords } from '../lib/wordsApi.ts'
 import { fetchTabs, registerWords, type RegisterResult } from '../lib/registerApi.ts'
 import { validateNewTabName, validateRegistrationInput } from '../lib/registerValidation.ts'
 
 interface RegisterScreenProps {
+  contentType: ContentType
   onGoHome: () => void
 }
 
@@ -39,7 +41,7 @@ type SubmitPhase = 'idle' | 'submitting' | 'result'
 
 const NEW_TAB_VALUE = '__new__'
 
-function RegisterScreen({ onGoHome }: RegisterScreenProps) {
+function RegisterScreen({ contentType, onGoHome }: RegisterScreenProps) {
   const [wordsStatus, setWordsStatus] = useState<FetchStatus>('loading')
   const [wordsError, setWordsError] = useState('')
   const [allWords, setAllWords] = useState<WordEntry[]>([])
@@ -123,8 +125,8 @@ function RegisterScreen({ onGoHome }: RegisterScreenProps) {
     () =>
       confirmedText === null || confirmedText.trim() === ''
         ? null
-        : validateRegistrationInput(confirmedText, existingHanziInTab),
-    [confirmedText, existingHanziInTab],
+        : validateRegistrationInput(confirmedText, existingHanziInTab, contentType),
+    [confirmedText, existingHanziInTab, contentType],
   )
 
   const duplicateRows = parseResult?.ok ? parseResult.rows.filter((row) => row.status === 'duplicate') : []
@@ -231,7 +233,7 @@ function RegisterScreen({ onGoHome }: RegisterScreenProps) {
         <textarea
           id="register-textarea"
           className="register-textarea"
-          placeholder='{"version":1,"words":[{"hanzi":"经济","pinyin":"jīngjì","meaning":"경제"}]}'
+          placeholder={registerPlaceholder(contentType)}
           value={text}
           onChange={(event) => setText(event.target.value)}
           spellCheck={false}
@@ -277,7 +279,7 @@ function RegisterScreen({ onGoHome }: RegisterScreenProps) {
 
       {!isDirty && parseResult?.ok && (
         <>
-          <RegisterTable rows={parseResult.rows} />
+          <RegisterTable rows={parseResult.rows} contentType={contentType} />
           <p className="register-summary">
             정상 {validCount}건 · 오류 {blockedCount}건 · 중복 {duplicateRows.length}건
           </p>

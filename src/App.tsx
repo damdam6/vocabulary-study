@@ -85,7 +85,7 @@ function App() {
         )}
         {screen === 'register' && (
           <Suspense fallback={<div className="register-screen"><p className="register-hint">불러오는 중…</p></div>}>
-            <RegisterScreen onGoHome={() => setScreen('home')} />
+            <RegisterScreen contentType={getStoredProfile()?.contentType ?? 'zh'} onGoHome={() => setScreen('home')} />
           </Suspense>
         )}
       </div>

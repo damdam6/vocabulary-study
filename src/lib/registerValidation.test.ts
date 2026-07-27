@@ -3,8 +3,12 @@ import { validateNewTabName, validateRegistrationInput } from "./registerValidat
 
 const EMPTY = new Set<string>();
 
-function batch(words: unknown[], version: unknown = 1): string {
-  return JSON.stringify({ version, words });
+function batch(words: unknown[], version: unknown = 1, contentType?: string): string {
+  return JSON.stringify({ version, ...(contentType !== undefined ? { contentType } : {}), words });
+}
+
+function genericBatch(words: unknown[], version: unknown = 1): string {
+  return batch(words, version, "generic");
 }
 
 describe("validateRegistrationInput", () => {
@@ -137,6 +141,131 @@ describe("validateRegistrationInput", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.rows[0].status).toBe("blocked");
+  });
+});
+
+describe("validateRegistrationInput — generic contentType", () => {
+  it("note를 생략해도 valid — B열 빈칸 허용", () => {
+    const result = validateRegistrationInput(genericBatch([{ term: "run into", meaning: "우연히 만나다" }]), EMPTY, "generic");
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.rows).toEqual([
+      { hanzi: "run into", pinyin: "", meaning: "우연히 만나다", status: "valid", reasons: [] },
+    ]);
+  });
+
+  it("note가 빈 문자열이어도 valid — B열 빈칸 허용", () => {
+    const result = validateRegistrationInput(
+      genericBatch([{ term: "run into", note: "", meaning: "우연히 만나다" }]),
+      EMPTY,
+      "generic",
+    );
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.rows[0].status).toBe("valid");
+  });
+
+  it("term/note/meaning이 운반자 hanzi/pinyin/meaning 자리로 정확히 매핑된다", () => {
+    const result = validateRegistrationInput(
+      genericBatch([{ term: "take off", note: "구동사", meaning: "이륙하다" }]),
+      EMPTY,
+      "generic",
+    );
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.rows[0]).toEqual({
+      hanzi: "take off",
+      pinyin: "구동사",
+      meaning: "이륙하다",
+      status: "valid",
+      reasons: [],
+    });
+  });
+
+  it("term이 비어 있으면 blocked", () => {
+    const result = validateRegistrationInput(genericBatch([{ term: "", note: "", meaning: "이륙하다" }]), EMPTY, "generic");
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.rows[0].status).toBe("blocked");
+    expect(result.rows[0].reasons).toContain("표제어가 비어 있습니다");
+  });
+
+  it("meaning이 비어 있으면 blocked", () => {
+    const result = validateRegistrationInput(genericBatch([{ term: "take off", note: "", meaning: "" }]), EMPTY, "generic");
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.rows[0].status).toBe("blocked");
+    expect(result.rows[0].reasons).toContain("뜻이 비어 있습니다");
+  });
+
+  it("배치 내 term이 중복되면 둘 다 blocked", () => {
+    const result = validateRegistrationInput(
+      genericBatch([
+        { term: "take off", meaning: "이륙하다" },
+        { term: "take off", meaning: "옷을 벗다" },
+      ]),
+      EMPTY,
+      "generic",
+    );
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.rows[0].status).toBe("blocked");
+    expect(result.rows[0].reasons).toContain("입력 내에 중복된 표제어입니다");
+    expect(result.rows[1].status).toBe("blocked");
+    expect(result.rows[1].reasons).toContain("입력 내에 중복된 표제어입니다");
+  });
+
+  it("선택 탭에 이미 있는 표제어는 duplicate", () => {
+    const result = validateRegistrationInput(
+      genericBatch([{ term: "take off", meaning: "이륙하다" }]),
+      new Set(["take off"]),
+      "generic",
+    );
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.rows[0]).toEqual({
+      hanzi: "take off",
+      pinyin: "",
+      meaning: "이륙하다",
+      status: "duplicate",
+      reasons: ["선택한 탭에 이미 있는 표제어입니다"],
+    });
+  });
+
+  it("한자 유니코드 범위 밖 문자·한자 혼입도 term이면 그대로 통과한다 — zh 전용 범위 검사 미적용", () => {
+    const result = validateRegistrationInput(genericBatch([{ term: "经济학 abc!", meaning: "혼합 표제어" }]), EMPTY, "generic");
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.rows[0].status).toBe("valid");
+  });
+
+  it("note가 병음처럼 term과 전혀 안 맞아도 차단하지 않는다 — pinyin-pro 미적용", () => {
+    const result = validateRegistrationInput(
+      genericBatch([{ term: "take off", note: "nǐhǎo", meaning: "이륙하다" }]),
+      EMPTY,
+      "generic",
+    );
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.rows[0].status).toBe("valid");
+  });
+
+  it("generic 프로필에 contentType 없는 JSON(zh 스키마)을 붙여넣으면 오배치 오류", () => {
+    const result = validateRegistrationInput(
+      batch([{ hanzi: "经济", pinyin: "jīngjì", meaning: "경제" }]),
+      EMPTY,
+      "generic",
+    );
+    expect(result).toEqual({ ok: false, error: expect.stringContaining("zh") });
+  });
+
+  it("zh 프로필에 contentType:generic JSON을 붙여넣으면 오배치 오류", () => {
+    const result = validateRegistrationInput(
+      genericBatch([{ term: "take off", meaning: "이륙하다" }]),
+      EMPTY,
+      "zh",
+    );
+    expect(result).toEqual({ ok: false, error: expect.stringContaining("generic") });
   });
 });
 
