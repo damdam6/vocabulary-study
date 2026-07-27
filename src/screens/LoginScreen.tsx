@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { savePassword, verifyPassword } from '../lib/api.ts'
+import { saveProfile, savePassword, verifyPassword } from '../lib/api.ts'
 
 // design-prd §2 로그인 화면 — GET /api/health로 검증, 성공 시 localStorage 저장
 interface LoginScreenProps {
@@ -21,6 +21,7 @@ function LoginScreen({ onLogin }: LoginScreenProps) {
     const result = await verifyPassword(password)
     if (result.status === 'ok') {
       savePassword(password)
+      saveProfile(result.profile)
       onLogin()
       return
     }
