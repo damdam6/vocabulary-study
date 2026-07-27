@@ -85,6 +85,11 @@ function detectSchemaMismatch(bodyContentType: unknown, contentType: ContentType
   return null;
 }
 
+/** 오류·중복 문구에서 A열/표제어 자리를 가리키는 명사 — zh: 한자, generic: 표제어. */
+function headwordNoun(contentType: ContentType): string {
+  return contentType === "zh" ? "한자" : "표제어";
+}
+
 export function validateRegistrationInput(
   rawText: string,
   existingHanziInTab: ReadonlySet<string>,
@@ -122,9 +127,10 @@ export function validateRegistrationInput(
   const rows: ValidatedRow[] = parsedWords.map(({ hanzi, pinyin, meaning }): ValidatedRow => {
     const reasons: string[] = [];
 
+    const noun = headwordNoun(contentType);
     if (contentType === "zh") {
       const hanziValid = hanzi !== "" && HANZI_RE.test(hanzi);
-      if (hanzi === "") reasons.push("한자가 비어 있습니다");
+      if (hanzi === "") reasons.push(`${noun}가 비어 있습니다`);
       else if (!hanziValid) reasons.push("한자 유니코드 범위를 벗어난 문자가 있습니다");
       if (pinyin === "") reasons.push("병음이 비어 있습니다");
       if (meaning === "") reasons.push("뜻이 비어 있습니다");
@@ -132,13 +138,13 @@ export function validateRegistrationInput(
         reasons.push("한자와 병음이 일치하지 않습니다");
       }
       if (hanzi !== "" && (hanziCounts.get(hanzi) ?? 0) > 1) {
-        reasons.push("입력 내에 중복된 한자입니다");
+        reasons.push(`입력 내에 중복된 ${noun}입니다`);
       }
     } else {
-      if (hanzi === "") reasons.push("표제어가 비어 있습니다");
+      if (hanzi === "") reasons.push(`${noun}가 비어 있습니다`);
       if (meaning === "") reasons.push("뜻이 비어 있습니다");
       if (hanzi !== "" && (hanziCounts.get(hanzi) ?? 0) > 1) {
-        reasons.push("입력 내에 중복된 표제어입니다");
+        reasons.push(`입력 내에 중복된 ${noun}입니다`);
       }
     }
 
@@ -146,8 +152,7 @@ export function validateRegistrationInput(
       return { hanzi, pinyin, meaning, status: "blocked", reasons };
     }
     if (existingHanziInTab.has(hanzi)) {
-      const duplicateReason = contentType === "zh" ? "선택한 탭에 이미 있는 한자입니다" : "선택한 탭에 이미 있는 표제어입니다";
-      return { hanzi, pinyin, meaning, status: "duplicate", reasons: [duplicateReason] };
+      return { hanzi, pinyin, meaning, status: "duplicate", reasons: [`선택한 탭에 이미 있는 ${noun}입니다`] };
     }
     return { hanzi, pinyin, meaning, status: "valid", reasons: [] };
   });
