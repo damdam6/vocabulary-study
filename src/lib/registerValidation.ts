@@ -48,22 +48,21 @@ function stringField(obj: unknown, key: string): string {
 }
 
 /**
- * 파싱 원본 하나에서 hanzi/pinyin/meaning 운반자를 안전하게 뽑아 트림한다.
- * 소스 필드명은 contentType별로 다르다(zh: hanzi/pinyin/meaning, generic:
- * term/note/meaning → 운반자 자리로 매핑) — 등록 일반화 플랜 §3.1·§3.3.
+ * contentType별 붙여넣기 스키마의 소스 필드명 — zh: hanzi/pinyin/meaning,
+ * generic: term/note/meaning → 운반자 자리로 매핑(등록 일반화 플랜 §3.1·§3.3).
  */
+const SOURCE_FIELDS: Record<ContentType, ParsedWord> = {
+  zh: { hanzi: "hanzi", pinyin: "pinyin", meaning: "meaning" },
+  generic: { hanzi: "term", pinyin: "note", meaning: "meaning" },
+};
+
+/** 파싱 원본 하나에서 hanzi/pinyin/meaning 운반자를 안전하게 뽑아 트림한다. */
 function extract(raw: unknown, contentType: ContentType): ParsedWord {
-  if (contentType === "generic") {
-    return {
-      hanzi: stringField(raw, "term"),
-      pinyin: stringField(raw, "note"),
-      meaning: stringField(raw, "meaning"),
-    };
-  }
+  const fields = SOURCE_FIELDS[contentType];
   return {
-    hanzi: stringField(raw, "hanzi"),
-    pinyin: stringField(raw, "pinyin"),
-    meaning: stringField(raw, "meaning"),
+    hanzi: stringField(raw, fields.hanzi),
+    pinyin: stringField(raw, fields.pinyin),
+    meaning: stringField(raw, fields.meaning),
   };
 }
 
@@ -110,14 +109,14 @@ export function validateRegistrationInput(
     return { ok: false, error: mismatch };
   }
 
+  const parsedWords = body.words.map((raw) => extract(raw, contentType));
+
   const hanziCounts = new Map<string, number>();
-  for (const raw of body.words) {
-    const { hanzi } = extract(raw, contentType);
+  for (const { hanzi } of parsedWords) {
     if (hanzi !== "") hanziCounts.set(hanzi, (hanziCounts.get(hanzi) ?? 0) + 1);
   }
 
-  const rows: ValidatedRow[] = body.words.map((raw): ValidatedRow => {
-    const { hanzi, pinyin, meaning } = extract(raw, contentType);
+  const rows: ValidatedRow[] = parsedWords.map(({ hanzi, pinyin, meaning }): ValidatedRow => {
     const reasons: string[] = [];
 
     if (contentType === "zh") {
