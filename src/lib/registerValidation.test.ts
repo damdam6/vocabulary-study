@@ -3,12 +3,12 @@ import { validateNewTabName, validateRegistrationInput } from "./registerValidat
 
 const EMPTY = new Set<string>();
 
-function batch(words: unknown[], version: unknown = 1): string {
-  return JSON.stringify({ version, words });
+function batch(words: unknown[], version: unknown = 1, contentType?: string): string {
+  return JSON.stringify({ version, ...(contentType !== undefined ? { contentType } : {}), words });
 }
 
 function genericBatch(words: unknown[], version: unknown = 1): string {
-  return JSON.stringify({ version, contentType: "generic", words });
+  return batch(words, version, "generic");
 }
 
 describe("validateRegistrationInput", () => {
