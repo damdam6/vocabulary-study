@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>#104 세션 설정 — 클라 세션 상한 파라미터화 (SESSION_CAP 인자화 + settings 수신) — 작업 플랜</title>
+<style>
+  :root {
+    --bg: #f7f7f8; --card: #ffffff; --ink: #1c1c1e; --muted: #6e6e73;
+    --line: #e3e3e6; --accent: #3b6ef5; --accent-soft: #e8eefe;
+    --ok: #2e8b57; --warn: #b25e09; --code-bg: #f0f0f2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161618; --card: #202024; --ink: #ececf0; --muted: #98989f;
+      --line: #333338; --accent: #7a9bff; --accent-soft: #26304a;
+      --ok: #58c088; --warn: #e0a35c; --code-bg: #2a2a2f;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 40px 20px 80px; background: var(--bg); color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+                 "Segoe UI", "Noto Sans KR", sans-serif;
+    line-height: 1.65;
+  }
+  main { max-width: 860px; margin: 0 auto; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code {
+    font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 0.86em;
+    background: var(--code-bg); border-radius: 5px; padding: 2px 6px;
+  }
+  header { margin-bottom: 28px; }
+  .issue-chip {
+    display: inline-block; font-weight: 700; color: var(--accent);
+    background: var(--accent-soft); border-radius: 999px;
+    padding: 3px 14px; font-size: 0.95rem; margin-bottom: 10px;
+  }
+  .type-chip {
+    display: inline-block; font-weight: 600; color: var(--muted);
+    border: 1px solid var(--line); border-radius: 999px;
+    padding: 3px 12px; font-size: 0.8rem; margin-left: 8px; vertical-align: 2px;
+  }
+  h1 { font-size: 1.7rem; margin: 0 0 14px; letter-spacing: -0.02em; }
+  .meta {
+    display: flex; flex-wrap: wrap; gap: 6px 22px;
+    color: var(--muted); font-size: 0.87rem;
+  }
+  .meta b { color: var(--ink); font-weight: 600; }
+  section.card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 24px 28px; margin-top: 18px;
+  }
+  h2 {
+    font-size: 1.05rem; margin: 0 0 14px; letter-spacing: -0.01em;
+    display: flex; align-items: center; gap: 8px;
+  }
+  h2 .no {
+    color: var(--accent); font-size: 0.8rem; font-weight: 700;
+    border: 1.5px solid var(--accent); border-radius: 6px; padding: 0 6px;
+  }
+  ul, ol { margin: 0; padding-left: 22px; }
+  li { margin: 6px 0; }
+  .steps { list-style: none; padding: 0; counter-reset: step; }
+  .steps li {
+    counter-increment: step; position: relative; padding: 10px 0 10px 44px;
+    border-bottom: 1px dashed var(--line);
+  }
+  .steps li:last-child { border-bottom: none; }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 10px;
+    width: 28px; height: 28px; border-radius: 8px; background: var(--accent-soft);
+    color: var(--accent); font-weight: 700; font-size: 0.85rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .steps li.done::before { content: "✓"; background: var(--ok); color: #fff; }
+  .steps .files { display: block; margin-top: 4px; font-size: 0.85rem; color: var(--muted); }
+  .steps .note { display: block; margin-top: 4px; font-size: 0.85rem; color: var(--warn); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 0.82rem; }
+  .done-list { list-style: none; padding: 0; }
+  .done-list li { padding-left: 30px; position: relative; }
+  .done-list li::before {
+    content: ""; position: absolute; left: 2px; top: 7px; width: 15px; height: 15px;
+    border: 2px solid var(--ok); border-radius: 5px;
+  }
+  .done-list li.checked::before { background: var(--ok); }
+  .done-list li.checked::after {
+    content: "✓"; position: absolute; left: 4px; top: 6px; color: #fff; font-size: 11px; font-weight: 700;
+  }
+  .scroll-x { overflow-x: auto; }
+  footer { margin-top: 30px; color: var(--muted); font-size: 0.8rem; text-align: center; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <span class="issue-chip"><a href="https://github.com/damdam6/vocabulary-study/issues/104">#104</a></span><span class="type-chip">기능 개선</span>
+    <h1>세션 설정 — 클라 세션 상한 파라미터화 (SESSION_CAP 인자화 + settings 수신)</h1>
+    <div class="meta">
+      <span><b>damdam6/vocabulary-study</b></span>
+      <span>브랜치 <b><code>feat/104-session-limit-param</code></b> ← <code>main</code></span>
+      <span>라벨 <b>enhancement</b></span>
+      <span>2026-07-28</span>
+    </div>
+  </header>
+
+  <section class="card">
+    <h2><span class="no">1</span>요약</h2>
+    <p>
+      시트별로 세션 문제 수를 다르게 설정할 수 있게 하는 플랜(<code>docs/plans/session-limit-and-home-utils.md</code> §5 작업 C)의
+      클라이언트 절반이다. Worker가 <code>GET /api/words</code> 응답에 <code>settings.sessionLimit</code>을 동봉하는 것은
+      별도 작업(A)이 담당하며, 이 작업은 <b>A 머지 여부와 무관하게</b> 클라 로직이 그 값을 소비할 수 있도록 준비하는 것이 목표다.
+      <code>sessionQueue.ts</code>·<code>homeStats.ts</code>의 하드코딩된 <code>60</code>을 <code>limit</code> 인자로 바꾸고
+      두 곳의 중복 상수를 하나로 일원화하며, <code>fetchWords</code>가 <code>settings</code> 블록을 수신·검증해 홈 화면
+      배선(<code>HomeScreen.tsx</code>)에 흘려보낸다. Worker·UI 신규 요소는 이 작업 범위 밖이다.
+    </p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">2</span>현황 분석</h2>
+    <ul>
+      <li><code>src/lib/sessionQueue.ts:12</code> — <code>export const SESSION_CAP = 60</code>. <code>buildSessionQueue</code>가
+        복습 대기 "오래된 순 최대 60개" 컷(<code>:54</code>)과 학습 중 슬롯을 채운 뒤의 총 상한(<code>:64</code>)에
+        이 상수를 그대로 참조한다.</li>
+      <li><code>src/lib/homeStats.ts:10</code>(수정 전) — 로컬 <code>const SESSION_CAP = 60</code> 중복. <code>sessionCount</code> 산식
+        <code>Math.min(SESSION_CAP, Math.min(reviewDue, SESSION_CAP) + learning)</code>이 sessionQueue.ts의 로직과 별도로
+        같은 상수를 하드코딩하고 있었다.</li>
+      <li><code>src/lib/wordsApi.ts:17</code>(수정 전) — <code>fetchWords</code>가 서버 응답에서 <code>profile</code>·<code>words</code>만
+        골라 반환하고 <code>settings</code> 필드는 애초에 없었다(작업 A 이전에는 서버도 안 보낸다).</li>
+      <li><code>src/screens/HomeScreen.tsx:36-42,79</code> — <code>fetchWords</code> 결과로 <code>computeHomeStats</code>를 호출하고,
+        시작 버튼 클릭 시 <code>buildSessionQueue</code>를 호출한다. 둘 다 limit 인자를 넘기지 않아 각 함수의 기본값(60)에
+        의존하는 구조라, 함수 시그니처만 확장하면 호출부 배선만 추가하면 된다.</li>
+      <li><code>src/lib/studySession.ts:9,85</code> — 세션 진행 중 학습 오답 재삽입 시 <code>state.queue.length &lt; SESSION_CAP</code>로
+        큐 성장 상한을 체크한다. 이슈 완료 조건·플랜 §5 작업 C의 파일 범위("src/lib 4파일": sessionQueue·homeStats·wordsApi·api)에
+        포함되지 않고, 플랜 §3.2가 "진행 중 세션은 영향 없음(큐는 시작 시 확정)"이라 명시하므로 <b>불변으로 유지</b>했다 — 세션
+        시작 시점의 <code>SESSION_CAP</code> 기본값 자체가 바뀌는 게 아니라 그 값을 쓰는 지점이 파라미터화되는 것뿐이라
+        studySession.ts의 재삽입 상한 로직과 상충하지 않는다.</li>
+      <li><code>src/lib/api.ts</code> — <code>PublicProfile</code>·<code>WordEntry</code> 등 worker 타입의 클라이언트 쪽 미러를 모아두는
+        파일. <code>settings</code> 타입 미러를 여기 추가하는 것이 기존 패턴과 일치한다.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">3</span>설계</h2>
+    <ul>
+      <li><b>limit 인자화</b>: <code>buildSessionQueue(words, today, modes, rng, limit = SESSION_CAP)</code>·
+        <code>computeHomeStats(words, today, modes, limit = SESSION_CAP)</code> — 기본값을 <code>SESSION_CAP</code>으로 둬서
+        인자를 생략하면 기존 동작과 100% 동일하다(기존 테스트 무수정 통과 요건).</li>
+      <li><b>상수 일원화</b>: homeStats.ts의 로컬 <code>SESSION_CAP</code>을 제거하고 sessionQueue.ts에서 <code>import</code>했다
+        — "sessionQueue의 SESSION_CAP을 기본값 상수로 일원화"(이슈 기대 동작 1항)를 그대로 따른다.</li>
+      <li><b>settings 수신·폴백</b>: <code>fetchWords</code>가 raw 응답의 <code>settings</code>를 검증되지 않은 값으로 받아
+        <code>normalizeSettings</code>를 거친다 — 객체가 아니거나, <code>sessionLimit</code>이 유한 양의 정수가 아니면
+        <code>{ sessionLimit: SESSION_CAP }</code>(60)으로 폴백한다. 이는 "응답에 settings가 없거나 형태 이상이면 60"이라는
+        이슈 문구를 그대로 구현한 것이며, Worker(작업 A)가 이미 1~500 범위를 검증해 보내더라도 구서버·비정상 응답에 대한
+        방어선을 클라에도 둔다(읽기는 관대하게, 플랜 §3.1).</li>
+      <li><b>타입 계약</b>: <code>api.ts</code>에 <code>WordsSettings { sessionLimit: number }</code>를 추가해 기존
+        <code>PublicProfile</code>·<code>WordEntry</code>와 같은 "worker 타입 미러" 패턴을 유지했다. <code>WordsResponse</code>는
+        <code>settings</code>를 필수 필드로 갖고(정규화 후 값이므로), 정규화 이전의 raw 응답 형태는 별도 내부 타입
+        <code>RawWordsResponse</code>로 분리했다.</li>
+      <li><b>HomeScreen 배선</b>: <code>settings.sessionLimit</code>을 상태로 저장해 <code>computeHomeStats</code>(집계 시점)와
+        <code>buildSessionQueue</code>(시작 클릭 시점)에 같은 값을 넘긴다 — 두 계산이 어긋나지 않아야 한다는 기존 주석
+        (<code>HomeScreen.tsx:1-3</code>)의 불변식을 limit 배선 이후에도 유지한다. UI 신규 요소는 추가하지 않았다(이슈 명시 범위).</li>
+      <li><b>기각한 대안</b>: <code>fetchWords</code> 밖(HomeScreen)에서 폴백 검증을 하는 방안 — API 클라이언트가 아닌
+        화면 컴포넌트가 계약 검증을 떠맡으면 RegisterScreen 등 다른 <code>fetchWords</code> 호출부마다 같은 검증을
+        중복해야 해서 기각했다.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">4</span>작업 단계</h2>
+    <ol class="steps">
+      <li class="done">sessionQueue.ts — <code>buildSessionQueue</code>에 <code>limit: number = SESSION_CAP</code> 5번째 인자 추가,
+        복습 컷·총 상한 두 곳의 하드코딩 <code>SESSION_CAP</code>을 <code>limit</code>으로 교체
+        <span class="files"><code>src/lib/sessionQueue.ts</code></span>
+      </li>
+      <li class="done">homeStats.ts — 로컬 <code>SESSION_CAP</code> 상수 제거하고 sessionQueue.ts에서 import, <code>computeHomeStats</code>에
+        <code>limit: number = SESSION_CAP</code> 인자 추가해 <code>sessionCount</code> 산식에 반영
+        <span class="files"><code>src/lib/homeStats.ts</code></span>
+      </li>
+      <li class="done">api.ts — <code>WordsSettings { sessionLimit: number }</code> 타입 미러 추가
+        <span class="files"><code>src/lib/api.ts</code></span>
+      </li>
+      <li class="done">wordsApi.ts — <code>WordsResponse</code>에 <code>settings</code> 필드 추가, raw 응답을 <code>normalizeSettings</code>로
+        검증(비객체·sessionLimit 비정수·0 이하 → 60 폴백)해 반환
+        <span class="files"><code>src/lib/wordsApi.ts</code></span>
+      </li>
+      <li class="done">HomeScreen.tsx — <code>fetchWords</code> 결과의 <code>settings.sessionLimit</code>을 상태로 저장, <code>computeHomeStats</code>·
+        <code>buildSessionQueue</code> 호출에 배선. UI 요소 추가 없음
+        <span class="files"><code>src/screens/HomeScreen.tsx</code></span>
+      </li>
+      <li class="done">테스트 — sessionQueue.test.ts·homeStats.test.ts에 limit 30/1/60 경계 테스트, wordsApi.test.ts에 settings 폴백
+        (부재·null·배열·문자열·필드 누락·비정수·소수·0·음수) 테스트 추가. 기존 테스트는 fetchWords의 반환 형태가 실제로
+        <code>settings</code>를 항상 포함하도록 바뀐 1개 assertion만 갱신(신규 필드 추가, 기존 검증 로직 변경 없음)
+        <span class="files"><code>src/lib/sessionQueue.test.ts</code>, <code>src/lib/homeStats.test.ts</code>, <code>src/lib/wordsApi.test.ts</code></span>
+      </li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">5</span>리스크</h2>
+    <div class="scroll-x">
+    <table>
+      <thead><tr><th>리스크</th><th>영향</th><th>완화책</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>studySession.ts의 오답 재삽입 상한이 여전히 고정 <code>SESSION_CAP</code>(60)을 참조</td>
+          <td>이론상 limit=30으로 시작한 세션이라도 학습 중 오답 재삽입으로 30~60 사이까지 큐가 늘어날 여지가 남는다</td>
+          <td>플랜 §5 작업 C 파일 범위·완료 조건에 명시적으로 없고 "진행 중 세션 영향 없음(다음 세션부터)" 원칙과도 별개
+            사안이라 이번 작업 범위 밖으로 명확히 남겨둔다. 실제로 문제가 되면(예: 시트당 30문제 설정이 흔해지면) 별도
+            이슈로 studySession.ts에도 limit을 스레딩하는 후속 작업이 필요하다</td>
+        </tr>
+        <tr>
+          <td>작업 A(Worker 읽기) 미머지 상태에서 이 작업만 먼저 머지</td>
+          <td>서버가 <code>settings</code>를 보내지 않아 <code>normalizeSettings</code>가 항상 60으로 폴백 — 플랜이 명시한
+            "A 미머지 상태에선 기본 60으로 동작 불변" 그대로</td>
+          <td>의도된 동작. 별도 조치 불필요</td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">6</span>테스트 계획</h2>
+    <ul>
+      <li><code>npm run test</code> 전체 스위트 — 기존 326개 테스트가 limit 기본값(60) 경로로 무수정 통과하는지 확인
+        (buildSessionQueue·computeHomeStats 관련 기존 assertion 변경 없음).</li>
+      <li>sessionQueue.test.ts: limit 생략(60 기본), limit=30(복습 컷+총 상한 모두 30), limit=30 복습20+학습40 혼합(30 캡),
+        limit=1(정확히 1문제) — 경계값 30/1/60 커버.</li>
+      <li>homeStats.test.ts: limit 생략(60), limit=30(reviewDue 40이어도 sessionCount 30 캡), limit=1(sessionCount 최대 1).</li>
+      <li>wordsApi.test.ts: settings 정상 수신(그대로 사용) · settings 부재 · null/배열/문자열 · sessionLimit 누락/문자열/소수/0/음수
+        → 전부 60 폴백, 유효한 양의 정수(1)는 그대로 통과.</li>
+      <li><code>npx tsc -b</code>·<code>npm run lint</code> — 타입·린트 통과 확인(둘 다 통과 확인 완료).</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">7</span>완료 조건</h2>
+    <ul class="done-list">
+      <li class="checked">기존 스위트가 limit 기본값 경로로 무수정 통과(인자 추가만 허용) — 동작 보존 증명</li>
+      <li class="checked">limit 30/1/60 경계에서 큐 컷(복습 대기 오래된 순)·총 상한·sessionCount 일치 테스트</li>
+      <li class="checked">settings 부재/형태 이상 → 60 폴백 테스트</li>
+      <li class="checked">Worker(worker/) 변경 없음 — 작업 A·B 소관 (git diff로 확인, worker/ 디렉터리 무변경)</li>
+    </ul>
+  </section>
+
+  <footer>issue-plan · <a href="https://github.com/damdam6/vocabulary-study/issues/104">#104</a> · 2026-07-28</footer>
+</main>
+</body>
+</html>
