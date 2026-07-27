@@ -41,7 +41,7 @@ function Mode2Card({ question, contentType, onJudged, onProceed }: Mode2CardProp
         <div className="mode-card mode-card--result">
           <span className="mode-result-title">오답</span>
           <span lang={lang} className="mode-card-hanzi">{word.hanzi}</span>
-          {word.pinyin !== '' && <span className="mode-card-pinyin">{word.pinyin}</span>}
+          {word.pinyin && <span className="mode-card-pinyin">{word.pinyin}</span>}
           <span className="mode-card-meaning">{word.meaning}</span>
           {wrongAnswer !== '' && (
             <span className="mode-my-answer">

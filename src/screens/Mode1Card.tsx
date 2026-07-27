@@ -39,7 +39,7 @@ function Mode1Card({ question, contentType, onJudged }: Mode1CardProps) {
           </span>
           <span className="flip-face flip-face--back">
             <span lang={lang} className="mode-card-hanzi">{word.hanzi}</span>
-            {word.pinyin !== '' && <span className="mode-card-pinyin">{word.pinyin}</span>}
+            {word.pinyin && <span className="mode-card-pinyin">{word.pinyin}</span>}
             <span className="mode-card-meaning">{word.meaning}</span>
           </span>
         </button>
