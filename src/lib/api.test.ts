@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
+  ApiError,
   apiFetch,
   clearPassword,
   clearProfile,
@@ -257,6 +258,14 @@ describe("postAnswer", () => {
       postAnswer({ tab: "HSK4", hanzi: "经济", mode: "m1", timestamp: "t", isReview: false }),
     ).rejects.toThrow("404");
   });
+
+  it("비정상 응답이면 상태 코드를 실은 ApiError를 던진다 — 재시도 큐가 영구/일시 실패를 구분하는 데 쓴다(#79)", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(null, { status: 404 })));
+
+    await expect(
+      postAnswer({ tab: "HSK4", hanzi: "经济", mode: "m1", timestamp: "t", isReview: false }),
+    ).rejects.toSatisfy((err: unknown) => err instanceof ApiError && err.status === 404);
+  });
 });
 
 describe("postReviewFail", () => {
@@ -275,5 +284,13 @@ describe("postReviewFail", () => {
   it("비정상 응답이면 throw한다", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(null, { status: 500 })));
     await expect(postReviewFail("HSK4", "经济")).rejects.toThrow("500");
+  });
+
+  it("비정상 응답이면 상태 코드를 실은 ApiError를 던진다(#79)", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(null, { status: 500 })));
+
+    await expect(postReviewFail("HSK4", "经济")).rejects.toSatisfy(
+      (err: unknown) => err instanceof ApiError && err.status === 500,
+    );
   });
 });

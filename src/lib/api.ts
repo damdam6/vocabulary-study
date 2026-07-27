@@ -149,6 +149,20 @@ export interface AnswerRecord {
 }
 
 /**
+ * API 응답 실패를 상태 코드와 함께 싣는 에러(#79). 재시도 큐가 4xx(재시도해도 영원히
+ * 실패하는 영구 실패)와 네트워크 예외·5xx(일시 실패)를 구분하는 데 쓴다.
+ */
+export class ApiError extends Error {
+  readonly status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+  }
+}
+
+/**
  * POST /api/answer — 정답 1건 기록. 갱신된 단어 객체를 반환하고, 비정상 응답은
  * throw한다 — 셸이 catch로 무시해 진행을 막지 않는다(§6.2). 실패분 재전송은
  * 재시도 큐(#18)가 그 catch 지점에 배선될 예정.
@@ -160,7 +174,7 @@ export async function postAnswer(answer: AnswerRecord): Promise<WordEntry> {
     body: JSON.stringify(answer),
   });
   if (!response.ok) {
-    throw new Error(`POST /api/answer 실패 (${response.status})`);
+    throw new ApiError(`POST /api/answer 실패 (${response.status})`, response.status);
   }
   return (await response.json()) as WordEntry;
 }
@@ -183,7 +197,7 @@ export async function postReviewFail(tab: string, hanzi: string): Promise<WordEn
     body: JSON.stringify({ tab, hanzi }),
   });
   if (!response.ok) {
-    throw new Error(`POST /api/review-fail 실패 (${response.status})`);
+    throw new ApiError(`POST /api/review-fail 실패 (${response.status})`, response.status);
   }
   return (await response.json()) as WordEntry;
 }
