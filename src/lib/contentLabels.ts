@@ -23,3 +23,21 @@ export function mode2Hint(contentType: ContentType): string {
 export function mode2Placeholder(contentType: ContentType): string | undefined {
   return contentType === "zh" ? "汉字" : undefined;
 }
+
+export interface RegisterTableHeaders {
+  headword: string;
+  note: string;
+  meaning: string;
+}
+
+export function registerTableHeaders(contentType: ContentType): RegisterTableHeaders {
+  return contentType === "zh"
+    ? { headword: "한자", note: "병음", meaning: "뜻" }
+    : { headword: "표제어", note: "보조 표기", meaning: "뜻" };
+}
+
+export function registerPlaceholder(contentType: ContentType): string {
+  return contentType === "zh"
+    ? '{"version":1,"words":[{"hanzi":"经济","pinyin":"jīngjì","meaning":"경제"}]}'
+    : '{"version":1,"contentType":"generic","words":[{"term":"take off","note":"구동사","meaning":"이륙하다, (옷을) 벗다"}]}';
+}
