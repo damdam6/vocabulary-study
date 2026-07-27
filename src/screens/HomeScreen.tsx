@@ -137,12 +137,10 @@ function HomeScreen({ onStart, onNavigateRegister, onSwitchProfile }: HomeScreen
         </button>
       )}
 
-      {/* 단어 등록 진입 (#49) — 오늘 학습 상태와 무관하게 항상 노출, zh 프로필 전용(#78) */}
-      {profile?.contentType === "zh" && (
-        <button type="button" className="home-register-link" onClick={onNavigateRegister}>
-          단어 등록 ›
-        </button>
-      )}
+      {/* 단어 등록 진입 (#49) — 오늘 학습 상태와 무관하게 항상 노출, 전 프로필 대상(#100) */}
+      <button type="button" className="home-register-link" onClick={onNavigateRegister}>
+        단어 등록 ›
+      </button>
 
       {/* 프로필 전환 (#78) — v1엔 로그아웃이 없어 다른 프로필로 갈아탈 유일한 경로 */}
       <button type="button" className="home-switch-profile-link" onClick={onSwitchProfile}>
