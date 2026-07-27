@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>#78 화면 프로필 배선 — 작업 플랜</title>
+<style>
+  :root {
+    --bg: #f7f7f8; --card: #ffffff; --ink: #1c1c1e; --muted: #6e6e73;
+    --line: #e3e3e6; --accent: #3b6ef5; --accent-soft: #e8eefe;
+    --ok: #2e8b57; --warn: #b25e09; --code-bg: #f0f0f2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161618; --card: #202024; --ink: #ececf0; --muted: #98989f;
+      --line: #333338; --accent: #7a9bff; --accent-soft: #26304a;
+      --ok: #58c088; --warn: #e0a35c; --code-bg: #2a2a2f;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 40px 20px 80px; background: var(--bg); color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+                 "Segoe UI", "Noto Sans KR", sans-serif;
+    line-height: 1.65;
+  }
+  main { max-width: 860px; margin: 0 auto; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code {
+    font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 0.86em;
+    background: var(--code-bg); border-radius: 5px; padding: 2px 6px;
+  }
+  header { margin-bottom: 28px; }
+  .issue-chip {
+    display: inline-block; font-weight: 700; color: var(--accent);
+    background: var(--accent-soft); border-radius: 999px;
+    padding: 3px 14px; font-size: 0.95rem; margin-bottom: 10px;
+  }
+  .type-chip {
+    display: inline-block; font-weight: 600; color: var(--muted);
+    border: 1px solid var(--line); border-radius: 999px;
+    padding: 3px 12px; font-size: 0.8rem; margin-left: 8px; vertical-align: 2px;
+  }
+  h1 { font-size: 1.7rem; margin: 0 0 14px; letter-spacing: -0.02em; }
+  .meta {
+    display: flex; flex-wrap: wrap; gap: 6px 22px;
+    color: var(--muted); font-size: 0.87rem;
+  }
+  .meta b { color: var(--ink); font-weight: 600; }
+  section.card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 24px 28px; margin-top: 18px;
+  }
+  h2 {
+    font-size: 1.05rem; margin: 0 0 14px; letter-spacing: -0.01em;
+    display: flex; align-items: center; gap: 8px;
+  }
+  h2 .no {
+    color: var(--accent); font-size: 0.8rem; font-weight: 700;
+    border: 1.5px solid var(--accent); border-radius: 6px; padding: 0 6px;
+  }
+  ul, ol { margin: 0; padding-left: 22px; }
+  li { margin: 6px 0; }
+  .steps { list-style: none; padding: 0; counter-reset: step; }
+  .steps li {
+    counter-increment: step; position: relative; padding: 10px 0 10px 44px;
+    border-bottom: 1px dashed var(--line);
+  }
+  .steps li:last-child { border-bottom: none; }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 10px;
+    width: 28px; height: 28px; border-radius: 8px; background: var(--accent-soft);
+    color: var(--accent); font-weight: 700; font-size: 0.85rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .steps.done li::before { content: "✓"; }
+  .steps .files { display: block; margin-top: 4px; font-size: 0.85rem; color: var(--muted); }
+  .steps .note { display: block; margin-top: 4px; font-size: 0.85rem; color: var(--warn); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 0.82rem; }
+  .done-list { list-style: none; padding: 0; }
+  .done-list li { padding-left: 30px; position: relative; }
+  .done-list li::before {
+    content: ""; position: absolute; left: 2px; top: 7px; width: 15px; height: 15px;
+    border: 2px solid var(--ok); border-radius: 5px;
+  }
+  .scroll-x { overflow-x: auto; }
+  footer { margin-top: 30px; color: var(--muted); font-size: 0.8rem; text-align: center; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <span class="issue-chip"><a href="https://github.com/damdam6/vocabulary-study/issues/78">#78</a></span><span class="type-chip">기능 개선</span>
+    <h1>화면 프로필 배선 — 로그인 저장·홈 프로필명/전환/등록 링크·modes 연결 + design-prd §2·§3 개정</h1>
+    <div class="meta">
+      <span><b>damdam6/vocabulary-study</b></span>
+      <span>브랜치 <b><code>feat/78-screen-profile-wiring</code></b> ← <code>main</code></span>
+      <span>라벨 <b>enhancement</b></span>
+      <span>2026-07-27</span>
+    </div>
+  </header>
+
+  <section class="card">
+    <h2><span class="no">1</span>요약</h2>
+    <p>로그인 검증 성공 시 서버가 내려주는 profile을 저장하고, 홈 화면이 그 profile.modes·contentType으로 현황·세션 큐·등록 링크 노출을 계산하도록 배선한다. "프로필 전환" 저강조 링크를 추가해 비밀번호·프로필 캐시를 지우고 로그인 화면으로 돌려보내며, App은 전환 핸들러를 소유하고 StudyScreen에는 실제 렌더링 분기 없이 contentType 전달 지점만 마련한다. design-prd.md §2·§3을 프로필명 표기·전환 링크의 구체 스타일 값까지 개정해 범용화 플랜 작업 4의 마지막 잔여 디테일을 마무리한다.</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">2</span>현황 분석</h2>
+    <ul>
+      <li><code>src/screens/LoginScreen.tsx:21-27</code> — <code>verifyPassword</code> 성공 시 <code>savePassword</code>만 호출하고 응답의 <code>profile</code>은 버린다.</li>
+      <li><code>src/lib/api.ts:34-57</code> — <code>#77</code>에서 이미 <code>PublicProfile</code>·<code>getStoredProfile</code>·<code>saveProfile</code>·<code>clearProfile</code>이 구현되어 있으나 호출부가 없다. <code>clearPassword</code>(<code>:20-23</code>)는 이미 프로필 캐시도 함께 지운다.</li>
+      <li><code>src/lib/wordsApi.ts:12-24</code> — <code>fetchWords</code>가 <code>{ profile, words }</code>를 반환하지만 <code>profile</code> 필드는 아직 소비되지 않는다.</li>
+      <li><code>src/screens/HomeScreen.tsx:38-39</code>·<code>:76-77</code> — <code>computeHomeStats</code>·<code>buildSessionQueue</code>에 <code>["m1","m2"]</code>가 하드코딩되어 있고, 주석이 명시적으로 "#78 전까지 고정 주입"이라 표시하고 있다.</li>
+      <li><code>src/screens/HomeScreen.tsx:137-140</code> — "단어 등록 ›" 링크가 <code>contentType</code>과 무관하게 항상 노출된다.</li>
+      <li><code>src/screens/HomeScreen.tsx</code> 전체 — 프로필명 표기·"프로필 전환" UI가 전혀 없다. v1에는 로그아웃이 없어 이 링크가 없으면 다른 프로필로 갈아탈 방법이 없다.</li>
+      <li><code>src/App.tsx:51-53</code> — <code>HomeScreen</code>에 <code>onStart</code>·<code>onNavigateRegister</code>만 전달, 전환 핸들러 없음. <code>src/App.tsx:54-56</code>의 <code>StudyScreen</code> 렌더와 <code>src/screens/StudyScreen.tsx:30-34</code>의 <code>StudyScreenProps</code>에는 profile/contentType 관련 필드가 아예 없다.</li>
+      <li><code>docs/design-prd.md:62-80</code>(§2·§3) — 프로필 관련 문구가 전혀 없다. <code>docs/PRD-general.md:156-166</code>(§7)·<code>:194,197</code>(§10 Q5·Q8)가 요구하는 프로필명 표기 위치(확정)와 구체 스타일 값(design-prd 개정 대상)·전환 링크가 아직 이 문서에 반영되지 않았다.</li>
+      <li><code>package.json</code> — 컴포넌트 테스트 인프라(testing-library 등) 자체가 없다. 기존 홈·로그인 "테스트"는 <code>src/lib/*.test.ts</code> 수준(<code>homeStats.test.ts</code>·<code>wordsApi.test.ts</code>·<code>api.test.ts</code> 등)뿐이라, 완료 조건의 "회귀 없음"은 이 lib 테스트들과 <code>tsc -b</code> 통과를 뜻한다.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">3</span>설계</h2>
+    <ul>
+      <li><b>프로필 상태 소유</b>: <code>HomeScreen</code>이 자체 <code>state</code>로 소유한다 — 캐시(<code>getStoredProfile()</code>)로 초기화하고 <code>fetchWords</code> 응답마다 갱신·재저장한다. <code>wordsApi.ts</code> 주석대로 홈이 "진입마다 재조회하는 최신 프로필 원천"이라는 기존 설계와 일치시킨다. App으로 끌어올리는 대안은 App의 책임(화면 전환)을 불필요하게 넓혀 기각.</li>
+      <li><b>프로필 전환 핸들러 소유</b>: App이 구현(<code>clearPassword()</code> + <code>setScreen('login')</code>)하고 HomeScreen은 prop(<code>onSwitchProfile</code>)만 호출한다. 기존 <code>onNavigateRegister</code>와 동일한 패턴 — 화면 전환은 항상 App 소유.</li>
+      <li><b>StudyScreen contentType 전달</b>: 실제 렌더링 분기 없이 최상위 컨테이너에 <code>data-content-type</code> 속성만 부여한다. <code>tsconfig.app.json</code>의 <code>noUnusedLocals</code>/<code>noUnusedParameters</code>가 죽은 prop을 컴파일 에러로 막기 때문에, 후속 이슈가 실제 분기(한자 크기·칩 문구·placeholder)를 붙일 훅 지점만 남기고 지금은 소비하지 않는 대안(prop만 받고 미사용)은 빌드가 깨져 기각.</li>
+      <li><b>profile 부재 시 StudyScreen 기본 contentType</b>: <code>'zh'</code>. <code>PRD-general.md</code> §9 마이그레이션 폴백 원칙과 동일한 안전망 — 어떤 이유로든 프로필 캐시가 비어 있어도 기존 zh 전용 동작을 유지한다.</li>
+      <li><b>"프로필 전환" 링크 위치</b>: "단어 등록 ›" 아래, 같은 저강조 톤(<code>text-muted</code>, <code>0.85rem</code>)으로 배치한다. 타이틀 옆에 두는 대안은 프로필명 표기와 시각적 위계가 겹쳐 기각. 구체 여백 값은 구현 중 <code>index.css</code>·<code>design-prd.md</code>에서 확정한다.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">4</span>작업 단계</h2>
+    <ol class="steps done">
+      <li>LoginScreen: <code>verifyPassword</code> 성공 분기(<code>status === 'ok'</code>)에서 <code>savePassword</code> 옆에 <code>saveProfile(result.profile)</code> 호출을 추가한다.
+        <span class="files"><code>src/screens/LoginScreen.tsx</code></span>
+      </li>
+      <li>HomeScreen: <code>profile</code> state를 <code>getStoredProfile()</code>로 초기화하고, <code>fetchWords</code> 응답의 <code>profile</code>로 <code>setProfile</code> + <code>saveProfile</code>(캐시 갱신)을 수행한다. <code>computeHomeStats</code>·<code>buildSessionQueue</code>에 하드코딩된 <code>["m1","m2"]</code>를 <code>profile?.modes ?? []</code>(또는 응답에서 막 받은 profile의 modes)로 교체한다. "오늘의 학습" 타이틀 아래 프로필명을 저강조로 표기한다. "단어 등록 ›" 링크를 <code>profile?.contentType === 'zh'</code> 조건부로 바꾸고, 그 아래 "프로필 전환" 저강조 버튼을 추가해 새 prop <code>onSwitchProfile</code>을 호출한다.
+        <span class="files"><code>src/screens/HomeScreen.tsx</code></span>
+      </li>
+      <li>App: <code>api.ts</code>에서 <code>clearPassword</code>·<code>getStoredProfile</code>을 추가로 import하고, <code>HomeScreen</code>에 <code>onSwitchProfile={() =&gt; { clearPassword(); setScreen('login') }}</code>를 배선한다. <code>StudyScreen</code> 렌더에 <code>contentType={getStoredProfile()?.contentType ?? 'zh'}</code>를 전달한다.
+        <span class="files"><code>src/App.tsx</code></span>
+      </li>
+      <li>StudyScreen: <code>StudyScreenProps</code>에 <code>contentType: ContentType</code>(<code>api.ts</code>에서 타입 import)을 추가하고, 최상위 <code>.study</code> div에 <code>data-content-type={contentType}</code>를 부여한다. 그 외 렌더링 로직은 건드리지 않는다(실제 분기는 후속 이슈).
+        <span class="files"><code>src/screens/StudyScreen.tsx</code></span>
+      </li>
+      <li>스타일: <code>.home-profile-name</code>(프로필명)과 "프로필 전환" 링크 클래스를 추가하고, <code>.home-title</code> 하단 마진을 줄여 전체 세로 간격을 기존과 비슷하게 유지한다. 기존 토큰(<code>text-muted</code>, <code>0.8~0.85rem</code>, <code>home-register-link</code> 스타일)을 재사용한다.
+        <span class="files"><code>src/index.css</code></span>
+      </li>
+      <li>design-prd.md 개정: §2에 검증 성공 시 profile도 저장한다는 문구 추가. §3에 프로필명 표기 위치·스타일 값, "프로필 전환" 링크 스펙, 등록 링크의 <code>zh</code> 조건부 노출, 현황·큐가 실제 <code>profile.modes</code>를 쓴다는 문구를 추가한다. §9 결정 로그·§10 이슈 매핑에 이번 결정과 #78 행을 추가한다.
+        <span class="files"><code>docs/design-prd.md</code></span>
+      </li>
+      <li>회귀 확인: <code>npm test</code>(lib 테스트 전부 그린), <code>npm run build</code>(<code>tsc -b</code> — <code>noUnusedLocals</code>/<code>noUnusedParameters</code> 통과 포함), <code>npm run lint</code>(oxlint) 실행.
+        <span class="files"><code>package.json</code></span>
+        <span class="note">251 tests passed, build clean, lint clean. 추가로 로컬 dev 서버(Worker + 실제 Google Sheets, 폴백 프로필: modes m1+m2/contentType zh)에서 cmux 브라우저 자동화로 로그인→프로필명 표시→등록 링크(zh)→프로필 전환(캐시 삭제+로그인 복귀)→StudyScreen data-content-type="zh"까지 실기 확인. modes ["m1"]만 있는 프로필·generic contentType 분기는 로컬에 PROFILES 시크릿이 없어 실기 확인은 못 했고, 타입 검사 + 기존 computeHomeStats/buildSessionQueue 단위 테스트(#75/#76)로 대체 확인.</span>
+      </li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">5</span>리스크</h2>
+    <div class="scroll-x">
+    <table>
+      <thead><tr><th>리스크</th><th>영향</th><th>완화책</th></tr></thead>
+      <tbody>
+        <tr><td>HomeScreen 마운트 시점에 profile 캐시가 비어 있을 가능성(이론상 로그인 직후엔 항상 채워짐)</td><td>프로필명 미표시·등록 링크 순간적 미노출</td><td>fetchWords 응답 도착 즉시 갱신되어 표시 창이 매우 짧고, 조건은 "미노출"이라는 안전한 기본값으로 수렴</td></tr>
+        <tr><td>손상된 profile로 <code>computeHomeStats</code>/<code>buildSessionQueue</code>에 빈 <code>modes</code> 전달</td><td>현황 0, 큐 비어있음</td><td>서버 <code>worker/lib/profiles.ts</code>(#70)가 modes를 항상 최소 1개 이상으로 검증하므로 실사용 경로에서 발생하지 않음</td></tr>
+        <tr><td>StudyScreen에 <code>data-content-type</code> 속성 추가</td><td>기존 CSS 선택자와 충돌 가능성</td><td>신규 속성이라 매칭되는 기존 규칙 없음 — 빌드 후 육안으로 학습 화면 스타일 무변화 확인</td></tr>
+        <tr><td>design-prd §3 프로필명·전환 링크 스타일 값이 근거 목업 없이 신규 설계</td><td>추후 소유자 피드백으로 조정될 수 있음</td><td>기존 토큰(<code>text-muted</code>, <code>0.8~0.85rem</code>)만 재사용해 최소한의 일관성 확보</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">6</span>테스트 계획</h2>
+    <ul>
+      <li><code>npm test</code> — 기존 lib 테스트(<code>homeStats</code>·<code>sessionQueue</code>·<code>wordsApi</code>·<code>api</code> 등) 전부 그린 유지 확인 (회귀 없음 검증).</li>
+      <li><code>npm run build</code> — <code>HomeScreenProps</code>/<code>StudyScreenProps</code> 확장이 타입 오류·미사용 변수 없이 컴파일되는지 확인.</li>
+      <li><code>npm run lint</code>(oxlint) 통과 확인.</li>
+      <li>수동 확인(dev 서버): 로그인 → 홈에 프로필명 표시 → "프로필 전환" 클릭 시 <code>localStorage</code>(비밀번호·프로필)가 지워지고 로그인 화면으로 돌아가는지.</li>
+      <li>수동 확인: modes가 <code>["m1"]</code>뿐인 프로필(임시 모킹 또는 서버 <code>PROFILES</code> 설정)로 로그인해 현황 카드·세션 수·큐가 m1 로직으로만 집계되는지.</li>
+      <li>수동 확인: <code>contentType: "generic"</code> 프로필에서 등록 링크 미노출, <code>"zh"</code> 프로필에서 노출.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">7</span>완료 조건</h2>
+    <ul class="done-list">
+      <li>로그인 → 홈에 프로필명 표시, "프로필 전환" → 저장값 삭제 + 로그인 화면 복귀</li>
+      <li>modes <code>["m1"]</code> 프로필(모킹)에서 홈 현황·세션 수·큐가 m1 기준으로 계산됨</li>
+      <li>generic 프로필에서 등록 링크 미노출, zh 프로필에서 노출</li>
+      <li>design-prd §2·§3이 구현과 일치하게 개정됨</li>
+      <li>기존 홈·로그인 lib 테스트 회귀 없음(<code>npm test</code>·<code>npm run build</code> 그린)</li>
+    </ul>
+  </section>
+
+  <footer>issue-plan · <a href="https://github.com/damdam6/vocabulary-study/issues/78">#78</a> · 2026-07-27</footer>
+</main>
+</body>
+</html>
