@@ -123,11 +123,18 @@ def check_word_generic(i, word, seen_terms, errors):
     term = word.get("term")
     label = " (%s)" % term if isinstance(term, str) and term.strip() else ""
 
+    # Report everything wrong with this entry in one pass rather than bailing
+    # at the first missing field: pasting a zh payload under
+    # contentType "generic" is the mistake this kit exists to catch, and it
+    # shows up as a missing 'term' *and* an unexpected 'hanzi'. Seeing both at
+    # once names the actual problem — one at a time reads like two unrelated
+    # typos and costs an extra validator round-trip.
+    missing = []
     for field in ("term", "meaning"):
         value = word.get(field)
         if not isinstance(value, str) or not value.strip():
             err("field '%s' is missing, not a string, or empty" % field)
-            return
+            missing.append(field)
 
     # 'note' carries column B, which is optional for generic content
     # (registration-generalization.md §3.1) — an omitted or empty note is a
@@ -139,6 +146,10 @@ def check_word_generic(i, word, seen_terms, errors):
     extra = sorted(set(word) - {"term", "note", "meaning"})
     if extra:
         err("unexpected field(s): %s" % ", ".join(extra))
+
+    # The duplicate check below is the only one that needs a usable term.
+    if missing:
+        return
 
     # Registration trims before writing and rejects duplicates on the trimmed
     # value (worker/lib/register.ts), so compare trimmed here too. The zh path
