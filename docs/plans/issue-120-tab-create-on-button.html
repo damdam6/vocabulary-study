@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>#120 등록 화면 '생성' 버튼이 실제로 시트에 새 탭을 만들어야 한다 — 작업 플랜</title>
+<style>
+  :root {
+    --bg: #f7f7f8; --card: #ffffff; --ink: #1c1c1e; --muted: #6e6e73;
+    --line: #e3e3e6; --accent: #3b6ef5; --accent-soft: #e8eefe;
+    --ok: #2e8b57; --warn: #b25e09; --code-bg: #f0f0f2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161618; --card: #202024; --ink: #ececf0; --muted: #98989f;
+      --line: #333338; --accent: #7a9bff; --accent-soft: #26304a;
+      --ok: #58c088; --warn: #e0a35c; --code-bg: #2a2a2f;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 40px 20px 80px; background: var(--bg); color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+                 "Segoe UI", "Noto Sans KR", sans-serif;
+    line-height: 1.65;
+  }
+  main { max-width: 860px; margin: 0 auto; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code {
+    font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 0.86em;
+    background: var(--code-bg); border-radius: 5px; padding: 2px 6px;
+  }
+  header { margin-bottom: 28px; }
+  .issue-chip {
+    display: inline-block; font-weight: 700; color: var(--accent);
+    background: var(--accent-soft); border-radius: 999px;
+    padding: 3px 14px; font-size: 0.95rem; margin-bottom: 10px;
+  }
+  .type-chip {
+    display: inline-block; font-weight: 600; color: var(--muted);
+    border: 1px solid var(--line); border-radius: 999px;
+    padding: 3px 12px; font-size: 0.8rem; margin-left: 8px; vertical-align: 2px;
+  }
+  h1 { font-size: 1.7rem; margin: 0 0 14px; letter-spacing: -0.02em; }
+  .meta {
+    display: flex; flex-wrap: wrap; gap: 6px 22px;
+    color: var(--muted); font-size: 0.87rem;
+  }
+  .meta b { color: var(--ink); font-weight: 600; }
+  section.card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 24px 28px; margin-top: 18px;
+  }
+  h2 {
+    font-size: 1.05rem; margin: 0 0 14px; letter-spacing: -0.01em;
+    display: flex; align-items: center; gap: 8px;
+  }
+  h2 .no {
+    color: var(--accent); font-size: 0.8rem; font-weight: 700;
+    border: 1.5px solid var(--accent); border-radius: 6px; padding: 0 6px;
+  }
+  ul, ol { margin: 0; padding-left: 22px; }
+  li { margin: 6px 0; }
+  .steps { list-style: none; padding: 0; counter-reset: step; }
+  .steps li {
+    counter-increment: step; position: relative; padding: 10px 0 10px 44px;
+    border-bottom: 1px dashed var(--line);
+  }
+  .steps li:last-child { border-bottom: none; }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 10px;
+    width: 28px; height: 28px; border-radius: 8px; background: var(--accent-soft);
+    color: var(--accent); font-weight: 700; font-size: 0.85rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .steps li.done::before { content: "✓"; background: var(--ok); color: #fff; }
+  .steps .files { display: block; margin-top: 4px; font-size: 0.85rem; color: var(--muted); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 0.82rem; }
+  .done-list { list-style: none; padding: 0; }
+  .done-list li { padding-left: 30px; position: relative; }
+  .done-list li::before {
+    content: ""; position: absolute; left: 2px; top: 7px; width: 15px; height: 15px;
+    border: 2px solid var(--ok); border-radius: 5px;
+  }
+  .scroll-x { overflow-x: auto; }
+  footer { margin-top: 30px; color: var(--muted); font-size: 0.8rem; text-align: center; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <span class="issue-chip"><a href="https://github.com/damdam6/vocabulary-study/issues/120">#120</a></span><span class="type-chip">기능 개선</span>
+    <h1>등록 화면 '생성' 버튼이 실제로 시트에 새 탭을 만들어야 한다</h1>
+    <div class="meta">
+      <span><b>damdam6/vocabulary-study</b></span>
+      <span>브랜치 <b><code>feat/120-tab-create-on-button</code></b> ← <code>main</code></span>
+      <span>라벨 <b>enhancement</b></span>
+      <span>2026-07-28</span>
+    </div>
+  </header>
+
+  <section class="card">
+    <h2><span class="no">1</span>요약</h2>
+    <p>#118의 탭 우선 흐름에서 "생성" 버튼은 클라이언트 선택지 추가만 하고 실제 구글 시트 탭 생성은
+    제출 시 <code>createTab</code>에 남겨뒀다. 소유자 확정(2026-07-28)으로 (b)안을 채택 — 생성 버튼을 누르면
+    그 시점에 <code>POST /api/tabs</code>로 시트에 실제 탭이 생긴다(빈 탭은 감수, v1 §8 Q5 결정 공식 뒤집기).
+    Worker에 라우트를 신설하고 register의 탭 생성 로직을 공통 lib로 추출해 재사용하며, 클라이언트는
+    서버 성공 후에만 선택 전환하고 제출 페이로드에서 <code>createTab</code>을 제거한다. 문서 3곳
+    (PRD §7.3 · design-prd §6 · word-registration-system §8 Q5)을 함께 개정한다.</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">2</span>현황 분석</h2>
+    <ul>
+      <li><b>클라 생성 버튼</b>: <code>src/screens/RegisterScreen.tsx:197-205</code>의 <code>handleCreateTab</code>이
+        로컬 상태 <code>localTabs</code>에만 이름을 추가하고 <code>selectedTab</code>을 전환한다 — 서버 호출 없음.
+        선검증은 <code>src/lib/registerValidation.ts:167-172</code>의 <code>validateNewTabName</code>(트림 후 빈 값·<code>_</code> 시작 차단).</li>
+      <li><b>제출 시 탭 생성</b>: <code>src/screens/RegisterScreen.tsx:211</code>이
+        <code>createTab = !tabs.includes(effectiveTab)</code>를 계산해 <code>registerWords</code> 바디에 실어 보내고,
+        Worker <code>worker/routes/register.ts:58-74</code>가 그때 탭을 만든다 — 기존 단어 탭이 있으면 첫 탭
+        <code>1:1</code> 헤더 복사, 0개면 <code>DEFAULT_TAB_HEADERS[contentType]</code> 부트스트랩(#95) 후
+        <code>addSheet</code> + <code>A1</code> 헤더 PUT.</li>
+      <li><b>기존 /api/tabs</b>: <code>worker/routes/tabs.ts</code>는 GET 핸들러(<code>handleGetTabs</code>)뿐이고
+        <code>worker/index.ts:73-80</code>도 GET만 배선한다. 탭 목록은 <code>worker/lib/words.ts:12-15</code>의
+        <code>getWordTabTitles</code>(<code>_</code> 접두 제외)가 공급.</li>
+      <li><b>이름 규칙 원본</b>: <code>worker/lib/register.ts:99-111</code>의 <code>normalizeTabName</code> —
+        비문자열·트림 후 빈 값·<code>_</code> 시작을 400 사유 문자열로 반환. 이 lib 파일은 헤더 주석에
+        "Sheets 호출 없이 순수 함수"라고 계약을 못박고 있다(<code>worker/lib/register.ts:3</code>).</li>
+      <li><b>클라 API 레이어</b>: <code>src/lib/registerApi.ts</code> — <code>apiFetch</code> 경유 +
+        비정상 응답의 Worker <code>{error}</code> 본문 우선 추출(<code>extractErrorMessage</code>) 패턴.
+        <code>RegisterRequest.createTab?: boolean</code> 필드 보유.</li>
+      <li><b>테스트 지형</b>: Worker는 "테스트 파일 = isolate" 규약(프로필 구성 다이제스트 캐시가 isolate당 고정,
+        <code>worker/test-utils.ts</code>) — 폴백(zh) 구성은 <code>worker/routes/tabs.test.ts</code>·<code>register.test.ts</code>,
+        zh+generic 2프로필 구성은 <code>register.generic.test.ts</code>·<code>index.sheet-isolation.test.ts</code>가 선례.
+        클라는 <code>src/screens/RegisterScreen.test.tsx</code>의 #118 스위트가 생성 버튼 동작(로컬 확정·createTab 바디)을 고정 중.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">3</span>설계</h2>
+    <ul>
+      <li><b>공통 lib 추출 — <code>worker/lib/tabs.ts</code> 신설</b>:
+        <code>createWordTab(env, sheetId, tab, wordTabs, contentType)</code> — wordTabs 0개면
+        <code>DEFAULT_TAB_HEADERS[contentType]</code>, 아니면 첫 탭 <code>1:1</code> 헤더 복사 →
+        <code>addSheet</code> → <code>A1</code> PUT. register 라우트의 인라인 블록(<code>register.ts:65-73</code>)을
+        이 함수 호출로 대체해 두 경로가 한 구현을 공유한다.
+        <i>기각</i>: <code>worker/lib/register.ts</code>에 두기 — "Sheets 호출 없는 순수 함수" 모듈 계약 위반.
+        <code>worker/lib/words.ts</code>에 두기 — 읽기 전용 조회 모듈에 쓰기 로직 혼입.</li>
+      <li><b><code>POST /api/tabs</code></b>: <code>worker/routes/tabs.ts</code>에 <code>handleCreateTab</code> 추가 —
+        JSON 파싱 실패·비객체 400 → <code>normalizeTabName(body.name)</code> 재사용(오류 문자열 그대로 400) →
+        <code>getWordTabTitles</code> 대조: 포함이면 생성 없이 <code>{name, created: false}</code>(멱등, "그 탭을 선택하라"),
+        아니면 <code>createWordTab</code> 후 <code>{name, created: true}</code>.
+        <code>worker/index.ts</code>에 POST 분기 배선 + 500 캐치(<code>failed to create tab</code>) — 기존 라우트 관례 동일.
+        인증·프로필 해석은 기존 <code>/api/</code> 공통 블록이 그대로 적용.</li>
+      <li><b>클라 API</b>: <code>src/lib/registerApi.ts</code>에 <code>createTab(name)</code> 추가 —
+        <code>POST /api/tabs</code>, 실패 시 <code>extractErrorMessage</code>로 Worker <code>{error}</code> 우선 throw.
+        <code>RegisterRequest</code>에서 <code>createTab</code> 필드 제거(클라는 더 이상 보내지 않음 —
+        Worker의 createTab 경로 자체는 계약 호환으로 유지, 제거는 비범위).</li>
+      <li><b>등록 화면</b>: <code>handleCreateTab</code>을 서버 호출로 전환 — 호출 중 <code>'creating'</code> 상태로
+        버튼 비활성("생성 중…"), 성공 시 응답 <code>name</code>을 <code>tabs</code> 상태에 편입(중복 없이)하고
+        선택 전환 + 입력 초기화, 실패 시 입력란 아래 오류 문구(Worker 본문 우선)·입력값 유지, 입력을 고치면
+        오류 클리어(문제수 필드와 같은 패턴). <code>localTabs</code> 상태는 통째로 제거 — 생성된 탭은 항상 실존하므로
+        서버 목록 상태 하나로 충분하고, 제출의 <code>createTab</code> 계산도 사라진다. 파일 상단 #118 주석 블록 개정.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">4</span>작업 단계</h2>
+    <ol class="steps">
+      <li class="done">Worker 공통 lib 추출 — <code>worker/lib/tabs.ts</code> 신설(<code>createWordTab</code>: 헤더 복사/기본 헤더
+        부트스트랩 + <code>addSheet</code> + <code>A1</code> PUT), register 라우트가 이를 호출하도록 대체.
+        기존 register 라우트 스위트로 회귀 확인. <b>✓ register 스위트 24건 통과</b>
+        <span class="files"><code>worker/lib/tabs.ts</code>, <code>worker/routes/register.ts</code></span>
+      </li>
+      <li class="done"><code>POST /api/tabs</code> 라우트 + 배선 — <code>handleCreateTab</code>(이름 규칙 400 · 기존 탭 멱등
+        <code>created:false</code> · 생성 <code>created:true</code>), <code>worker/index.ts</code> POST 분기 + 500 캐치.
+        <span class="files"><code>worker/routes/tabs.ts</code>, <code>worker/index.ts</code></span>
+      </li>
+      <li class="done">Worker 테스트 — <code>tabs.test.ts</code>에 POST 스위트(401 · 비문자열/빈 값/<code>_</code> 시작 400 ·
+        트림 멱등 <code>created:false</code>(addSheet 미호출) · 헤더 복사 mock range 검증 · zh 기본 헤더 부트스트랩),
+        <code>tabs.generic.test.ts</code> 신설(zh+generic 2프로필: generic 기본 헤더 부트스트랩 + sheetId 격리 URL 전수 검증).
+        <b>✓ 16건 통과 (생성 직후 GET 목록 정합 포함)</b>
+        <span class="files"><code>worker/routes/tabs.test.ts</code>, <code>worker/routes/tabs.generic.test.ts</code></span>
+      </li>
+      <li class="done">클라 API — <code>createTab(name)</code> 함수 + <code>CreateTabResult</code> 추가,
+        <code>RegisterRequest.createTab</code> 필드 제거. 테스트 갱신(신규 createTab 스위트 — 성공 파싱·
+        <code>{error}</code> 본문 추출, createTab 바디 포함 테스트 삭제).
+        <span class="files"><code>src/lib/registerApi.ts</code>, <code>src/lib/registerApi.test.ts</code></span>
+      </li>
+      <li class="done">등록 화면 — <code>handleCreateTab</code> 서버 호출 전환(성공 후 <code>tabs</code> 편입·선택 전환),
+        로딩("생성 중…")·오류 상태 추가, 실패 시 입력 유지, <code>localTabs</code>·제출 <code>createTab</code> 계산 제거,
+        상단 주석 개정.
+        <span class="files"><code>src/screens/RegisterScreen.tsx</code></span>
+      </li>
+      <li class="done">등록 화면 테스트 — #118 스위트를 서버 생성 흐름으로 갱신(성공 후 선택지 추가·선택 전환, 기존 탭 이름
+        <code>created:false</code> 선택), 신규: 로딩 중 재클릭 방지, 실패 시 오류 표시·입력 유지·선택지 미추가,
+        생성 직후 그 탭 기준 중복 대조, 제출 바디 <code>createTab</code> 부재.
+        <b>✓ 화면 18건 + registerApi 11건 통과</b> <i>(참고: 워크트리 node_modules가 빈 껍데기라 npm ci로 재설치 후 jsdom 스위트 정상)</i>
+        <span class="files"><code>src/screens/RegisterScreen.test.tsx</code></span>
+      </li>
+      <li class="done">문서 개정 — PRD §7.3에 <code>POST /api/tabs</code> 명세 신설 + register 3단계("탭 생성은 등록 제출 시점에만")
+        개정, design-prd §6 새 탭 규칙 개정(서버 생성·로딩·오류) + §9 결정 로그(#118 행 폐기 표시 + #120 행) +
+        §10 이슈 매핑, word-registration-system §8 Q5에 결정 뒤집힘 노트(#120 포인터).
+        <i>플랜 대비 추가: word-registration-system §6 표의 "탭 생성은 이 시점에만" 문구에도 뒤집힘 포인터 — 사양 표가 사실과 어긋나지 않게.</i>
+        <span class="files"><code>docs/PRD.md</code>, <code>docs/design-prd.md</code>, <code>docs/plans/word-registration-system.md</code></span>
+      </li>
+      <li class="done">전체 검증 — <code>npm test</code>(vitest 전체) · <code>npm run build</code>(tsc -b 포함) · <code>npm run lint</code>.
+        <b>✓ 테스트 32파일 417건 전부 통과 · 빌드 성공 · oxlint 무경고</b>
+        <span class="files">(검증)</span>
+      </li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">5</span>리스크</h2>
+    <div class="scroll-x">
+    <table>
+      <thead><tr><th>리스크</th><th>영향</th><th>완화책</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><code>addSheet</code> 성공 후 <code>A1</code> 헤더 PUT 실패(부분 생성)</td>
+          <td>헤더 없는 빈 탭이 남음 — 재시도하면 멱등 경로(<code>created:false</code>)라 헤더가 채워지지 않음</td>
+          <td>register의 기존 createTab 경로와 동일 순서·동일 위험(신규 악화 없음). 등록은 A2부터 쓰므로 기능 파손 없음.
+              빈 탭 감수는 이슈가 명시적으로 승인한 트레이드오프.</td>
+        </tr>
+        <tr>
+          <td>배포 전파 윈도우 중 구버전 Worker(<code>POST /api/tabs</code> 없음) + 신버전 클라 혼재</td>
+          <td>생성 버튼이 404(비JSON 본문) 오류</td>
+          <td>클라 오류 표시가 폴백 문구(HTTP 상태 포함)로 안내하고 입력이 유지돼 재시도로 회복.
+              Worker+assets 단일 배포라 윈도우는 짧다(#23 버전 헤더 관측 가능).</td>
+        </tr>
+        <tr>
+          <td>클라 <code>tabs</code> 상태 편입과 서버 목록의 정합</td>
+          <td>드롭다운·중복 대조가 어긋날 수 있음</td>
+          <td>생성 성공 시점에 탭이 시트에 실존하므로 로컬 편입 = 서버 재조회와 동일 결과.
+              중복 대조는 <code>allWords</code>의 탭 필터라 새 탭(단어 0)에선 자연히 빈 집합.</td>
+        </tr>
+        <tr>
+          <td><code>normalizeTabName</code> 재사용 시 비문자열 오류 문구가 "tab은 문자열이어야 합니다"로 필드명(<code>name</code>)과 불일치</td>
+          <td>직접 API 호출자에게만 문구가 다소 어긋남(클라는 항상 문자열 전송)</td>
+          <td>이슈가 "normalizeTabName 재사용"을 명시 — 규칙·문구 단일 원본 유지가 우선. 실사용 경로 영향 없음.</td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">6</span>테스트 계획</h2>
+    <ul>
+      <li><code>npm test</code> — 전체 vitest 스위트(worker 라우트·lib + 클라 화면·lib) 통과.</li>
+      <li>신규 Worker 스위트: <code>POST /api/tabs</code> 401 / 이름 규칙 400 3경계 / 트림 멱등
+        <code>created:false</code>(addSheet·PUT 미발생) / 기존 탭 헤더 복사(putCalls <code>A1</code> = 첫 탭 헤더) /
+        탭 0개 zh·generic 기본 헤더 부트스트랩 / 프로필 sheetId 격리(URL 전수 검증).</li>
+      <li>신규 클라 스위트: 생성 성공 시 선택 전환·입력 초기화 / 로딩 중 버튼 비활성·재클릭 무시 /
+        실패 시 오류 문구·입력 유지·선택지 미추가 / 생성 직후 중복 대조 / 제출 바디에 <code>createTab</code> 없음.</li>
+      <li>회귀: register 라우트 스위트(공통 lib 추출 후 putCalls 형태 불변) · #118 잔존 동작(탭 우선 순서,
+        확정 전 제출 차단) · 문제수 필드 스위트.</li>
+      <li><code>npm run build</code>(tsc -b 타입 체크) · <code>npm run lint</code>(oxlint).</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">7</span>완료 조건</h2>
+    <ul class="done-list">
+      <li><code>POST /api/tabs</code>: 이름 규칙 400 경계(비문자열·트림 후 빈 값·<code>_</code> 시작), 기존 탭 멱등
+        성공(<code>created:false</code>, 트림 대조), 헤더 복사/기본 헤더 부트스트랩 경로 mock range 검증,
+        인증 프로필 sheetId 격리</li>
+      <li>생성 버튼: 서버 성공 후에만 선택지 추가·선택 전환, 로딩 중 재클릭 방지, 실패 시 오류 표시·입력값 유지</li>
+      <li>생성 직후 그 탭 기준 중복 대조·등록 제출 정상(<code>createTab</code> 미전송)</li>
+      <li>기존 등록 화면·라우트 테스트 갱신·통과(zh·generic 양쪽 기본 헤더 확인)</li>
+      <li>PRD §7.3 · design-prd §6(+§9·§10) · word-registration-system §8 Q5 노트 개정</li>
+    </ul>
+  </section>
+
+  <footer>issue-plan · <a href="https://github.com/damdam6/vocabulary-study/issues/120">#120</a> · 2026-07-28</footer>
+</main>
+</body>
+</html>
