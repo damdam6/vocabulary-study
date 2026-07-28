@@ -1,6 +1,6 @@
 /**
- * 시트 안 '_정보' 설정 탭(A열 키 / B열 값) 읽기.
- * 사양 원본: `docs/plans/session-limit-and-home-utils.md` §3.1·§3.2 (PRD 4.1·6.1·7.3).
+ * 시트 안 '_정보' 설정 탭(A열 키 / B열 값) 읽기·쓰기 계획.
+ * 사양 원본: `docs/plans/session-limit-and-home-utils.md` §3.1·§3.2·§3.3 (PRD 4.1·6.1·7.3).
  *
  * 탭 이름이 `_`로 시작하므로 기존 "`_` 접두 = 학습 제외" 규약(PRD 4.1)에 그대로 걸린다 —
  * words 출제·tabs 목록·등록 대상에서 이미 자동 제외되어 제외용 코드가 따로 필요 없다.
@@ -17,8 +17,9 @@ export const SETTINGS_TAB = "_정보";
 export const SETTINGS_RANGE = "A:B";
 export const SESSION_LIMIT_KEY = "문제수";
 export const DEFAULT_SESSION_LIMIT = 60;
-const MIN_SESSION_LIMIT = 1;
-const MAX_SESSION_LIMIT = 500;
+// 쓰기 경로(POST /api/settings)의 엄격 검증도 같은 경계를 쓰므로 export한다 (플랜 §3.3).
+export const MIN_SESSION_LIMIT = 1;
+export const MAX_SESSION_LIMIT = 500;
 
 export interface SheetSettings {
   /** 세션당 최대 문제 수 (PRD 6.1). 시트 설정이 없거나 이상하면 DEFAULT_SESSION_LIMIT. */
@@ -65,4 +66,25 @@ function parseSessionLimit(raw: string | undefined): number {
     return DEFAULT_SESSION_LIMIT;
   }
   return value;
+}
+
+export interface SettingsWritePlan {
+  range: string;
+  values: (string | number)[][];
+}
+
+/**
+ * '_정보' 탭 A:B 읽기 결과로 `문제수` 쓰기 계획을 세운다 (플랜 §3.3 — 다른 행·열 불가침).
+ * A열 정확 일치(트림)로 행을 찾으면 그 행의 B열만 갱신하고, 없으면 첫 빈 행에
+ * `[문제수, 값]` 행을 추가한다. 빈 행 판정은 A·B 모두 빈 행만 — A만 비고 B에 값이
+ * 있는 행에 쓰면 그 값을 덮어쓰므로(불가침 위반) 건너뛴다.
+ */
+export function planSessionLimitWrite(rows: string[][], limit: number): SettingsWritePlan {
+  const keyIndex = rows.findIndex((row) => (row[0] ?? "").trim() === SESSION_LIMIT_KEY);
+  if (keyIndex !== -1) {
+    return { range: `B${keyIndex + 1}`, values: [[limit]] };
+  }
+  const emptyIndex = rows.findIndex((row) => !(row[0] ?? "").trim() && !(row[1] ?? "").trim());
+  const rowNumber = (emptyIndex === -1 ? rows.length : emptyIndex) + 1;
+  return { range: `A${rowNumber}:B${rowNumber}`, values: [[SESSION_LIMIT_KEY, limit]] };
 }

@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>#103 세션 설정 — POST /api/settings 신설 ('_정보' 탭 문제수 쓰기) — 작업 플랜</title>
+<style>
+  :root {
+    --bg: #f7f7f8; --card: #ffffff; --ink: #1c1c1e; --muted: #6e6e73;
+    --line: #e3e3e6; --accent: #3b6ef5; --accent-soft: #e8eefe;
+    --ok: #2e8b57; --warn: #b25e09; --code-bg: #f0f0f2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161618; --card: #202024; --ink: #ececf0; --muted: #98989f;
+      --line: #333338; --accent: #7a9bff; --accent-soft: #26304a;
+      --ok: #58c088; --warn: #e0a35c; --code-bg: #2a2a2f;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 40px 20px 80px; background: var(--bg); color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+                 "Segoe UI", "Noto Sans KR", sans-serif;
+    line-height: 1.65;
+  }
+  main { max-width: 860px; margin: 0 auto; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code {
+    font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 0.86em;
+    background: var(--code-bg); border-radius: 5px; padding: 2px 6px;
+  }
+  header { margin-bottom: 28px; }
+  .issue-chip {
+    display: inline-block; font-weight: 700; color: var(--accent);
+    background: var(--accent-soft); border-radius: 999px;
+    padding: 3px 14px; font-size: 0.95rem; margin-bottom: 10px;
+  }
+  .type-chip {
+    display: inline-block; font-weight: 600; color: var(--muted);
+    border: 1px solid var(--line); border-radius: 999px;
+    padding: 3px 12px; font-size: 0.8rem; margin-left: 8px; vertical-align: 2px;
+  }
+  h1 { font-size: 1.7rem; margin: 0 0 14px; letter-spacing: -0.02em; }
+  .meta {
+    display: flex; flex-wrap: wrap; gap: 6px 22px;
+    color: var(--muted); font-size: 0.87rem;
+  }
+  .meta b { color: var(--ink); font-weight: 600; }
+  section.card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 24px 28px; margin-top: 18px;
+  }
+  h2 {
+    font-size: 1.05rem; margin: 0 0 14px; letter-spacing: -0.01em;
+    display: flex; align-items: center; gap: 8px;
+  }
+  h2 .no {
+    color: var(--accent); font-size: 0.8rem; font-weight: 700;
+    border: 1.5px solid var(--accent); border-radius: 6px; padding: 0 6px;
+  }
+  ul, ol { margin: 0; padding-left: 22px; }
+  li { margin: 6px 0; }
+  .steps { list-style: none; padding: 0; counter-reset: step; }
+  .steps li {
+    counter-increment: step; position: relative; padding: 10px 0 10px 44px;
+    border-bottom: 1px dashed var(--line);
+  }
+  .steps li:last-child { border-bottom: none; }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 10px;
+    width: 28px; height: 28px; border-radius: 8px; background: var(--accent-soft);
+    color: var(--accent); font-weight: 700; font-size: 0.85rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .steps li.done::before { content: "✓"; background: var(--ok); color: #fff; }
+  .steps .files { display: block; margin-top: 4px; font-size: 0.85rem; color: var(--muted); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 0.82rem; }
+  .done-list { list-style: none; padding: 0; }
+  .done-list li { padding-left: 30px; position: relative; }
+  .done-list li::before {
+    content: ""; position: absolute; left: 2px; top: 7px; width: 15px; height: 15px;
+    border: 2px solid var(--ok); border-radius: 5px;
+  }
+  .scroll-x { overflow-x: auto; }
+  footer { margin-top: 30px; color: var(--muted); font-size: 0.8rem; text-align: center; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <span class="issue-chip"><a href="https://github.com/damdam6/vocabulary-study/issues/103">#103</a></span><span class="type-chip">기능 개선</span>
+    <h1>세션 설정 — POST /api/settings 신설 ('_정보' 탭 문제수 쓰기)</h1>
+    <div class="meta">
+      <span><b>damdam6/vocabulary-study</b></span>
+      <span>브랜치 <b><code>feat/103-settings-write-api</code></b> ← <code>main</code></span>
+      <span>라벨 <b>enhancement</b></span>
+      <span>2026-07-28</span>
+    </div>
+  </header>
+
+  <section class="card">
+    <h2><span class="no">1</span>요약</h2>
+    <p>세션 문제 수 플랜(<code>docs/plans/session-limit-and-home-utils.md</code> §3.3, §5 작업 B)의 쓰기 절반이다. <code>POST /api/settings</code>를 신설해 인증된 프로필의 시트 '_정보' 탭에 <code>문제수</code> 값을 쓴다 — 정수 1~500 엄격 검증(아니면 400), 탭 없으면 빈 탭 생성, <code>문제수</code> 행 없으면 첫 빈 행에 추가, 있으면 그 행 B열만 갱신. 행 탐색·쓰기 계획은 <code>worker/lib/settings.ts</code>의 순수 함수로 두어 병렬 진행 중인 작업 A(읽기 파서)와 파일을 공유하되 함수 충돌을 피한다. 클라이언트(src/) 변경은 없다 — 호출자는 작업 E가 만든다.</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">2</span>현황 분석</h2>
+    <ul>
+      <li><b>설정을 쓸 경로가 없다</b>: Worker 라우트는 words·answer·review-fail·tabs·register 5개뿐이고(<code>worker/index.ts:45-88</code>), 시트 쓰기는 answer(<code>batchUpdateValues</code>)·review-fail·register(<code>updateValues</code>)가 전부 단어 탭 대상이다. '_정보' 탭을 만지는 코드는 아직 없다.</li>
+      <li><b>Sheets 래퍼는 재사용 가능</b>: <code>worker/lib/sheets.ts</code>에 필요한 프리미티브가 모두 있다 — <code>getSheetTitles</code>(<code>sheets.ts:51</code>, 전 탭 제목), <code>addSheet</code>(<code>sheets.ts:61</code>, 탭 생성 — register가 사용), <code>getValues</code>(<code>sheets.ts:39</code>), <code>updateValues</code>(<code>sheets.ts:68</code>, <code>valueInputOption=RAW</code> 내장). 신규 Sheets 코드는 불필요.</li>
+      <li><b>탭 존재 확인에 주의</b>: <code>getWordTabTitles</code>(<code>worker/lib/words.ts:12-15</code>)는 <code>_</code> 접두 탭을 걸러내므로 '_정보' 존재 확인에 쓰면 항상 "없음"으로 판정된다 — 반드시 raw <code>getSheetTitles</code>를 써야 한다. 반대로 이 필터 덕에 '_정보' 탭은 생성되는 순간부터 words 출제(<code>worker/routes/words.ts:17</code>)·tabs 목록(<code>worker/routes/tabs.ts:7</code>)·등록 헤더 원본 선택(<code>worker/routes/register.ts:54</code>)에서 자동 제외된다(플랜 Q1 — 제외 코드 변경 0).</li>
+      <li><b>탭 생성 선례</b>: register의 createTab(<code>worker/routes/register.ts:58-74</code>)은 titles 포함 확인 → <code>addSheet</code> → 헤더 행 복사 순서다. '_정보'는 헤더 없는 키-값 탭이므로 헤더 복사 단계만 뺀 같은 흐름을 쓴다.</li>
+      <li><b>POST 검증 선례</b>: answer 라우트(<code>worker/routes/answer.ts:25-56</code>)가 "JSON 파싱 실패 400 → 필드 파서 null 반환 시 한국어 문구 400" 패턴의 기준이다. index.ts 배선은 라우트별 try/catch + <code>console.error</code> + 500 JSON(<code>worker/index.ts:54-61</code>) 패턴.</li>
+      <li><b>테스트 인프라</b>: register 스위트(<code>worker/routes/register.test.ts:26-70</code>)가 mock fetch로 titles·addSheet·values GET/PUT을 흉내 내고 PUT 호출 전수(putCalls)로 range를 검증한다. sheetId 격리는 <code>worker/index.sheet-isolation.test.ts:54-79</code>의 "URL 전수 기록" 패턴. 이 둘을 조합해 신규 스위트를 만든다.</li>
+      <li><b><code>worker/lib/settings.ts</code>는 아직 없다</b>: 작업 A(읽기 파서)가 병렬 브랜치에서 같은 파일을 만들 예정 — 이슈 지시대로 쓰기 계획 함수를 별도 함수로 담아 충돌을 블록 단위로 국한한다.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">3</span>설계</h2>
+    <ul>
+      <li><b>순수 로직(<code>worker/lib/settings.ts</code> 신설)</b>: 상수 <code>SETTINGS_TAB = "_정보"</code>, <code>SESSION_LIMIT_KEY = "문제수"</code>, <code>SESSION_LIMIT_MIN = 1</code>, <code>SESSION_LIMIT_MAX = 500</code> + 쓰기 계획 함수 <code>planSessionLimitWrite(rows, limit)</code>. A1:B 읽기 결과에서 A열을 트림 정확 일치로 탐색해 — 있으면 <code>{ range: "B{행}", values: [[limit]] }</code>(그 행 B열만), 없으면 첫 빈 행 번호로 <code>{ range: "A{행}:B{행}", values: [["문제수", limit]] }</code>를 반환한다.</li>
+      <li><b>"첫 빈 행" 판정</b>: A·B가 모두 빈 첫 행(트림 기준). A만 비고 B에 값이 있는 비정상 행은 건너뛴다 — "다른 행·열 불가침" 불변식이 문구 해석보다 우선(값을 덮어쓰지 않기 위해). 빈 행이 없으면 데이터 마지막 행 + 1.</li>
+      <li><b>라우트(<code>worker/routes/settings.ts</code> 신설)</b>: ① JSON 파싱 실패 → 400 "invalid JSON body"(answer 선례) ② 비객체·<code>sessionLimit</code> 누락·비수·비정수·1~500 밖 → 400, 문구에 허용 범위 명시("sessionLimit은 1~500 사이의 정수여야 합니다") ③ <code>getSheetTitles</code>로 '_정보' 존재 확인 → 없으면 <code>addSheet</code>(빈 탭 — 헤더 쓰기 없음, rows는 빈 배열로 확정) / 있으면 <code>getValues</code>(A1:B — 헤더 행 없는 탭이므로 1행부터) ④ <code>planSessionLimitWrite</code> → <code>updateValues</code>(RAW 내장) ⑤ 응답 <code>{ "sessionLimit": n }</code>(반영값).</li>
+      <li><b>배선(<code>worker/index.ts</code>)</b>: register 블록 뒤에 <code>POST /api/settings</code> 분기 — 기존 try/catch·<code>console.error("[POST /api/settings]")</code>·500 <code>{ error: "failed to save settings" }</code> 패턴 그대로. 인증·프로필 해석은 기존 Bearer 블록이 이미 감싼다(<code>worker/index.ts:16-36</code>) — 추가 코드 0.</li>
+      <li><b>기각한 대안</b>: ⓐ 탭 존재를 <code>getValues</code> 400(catch)으로 판정(<code>findWordRow</code> 선례) — 읽기 1회를 아끼지만, 쓰기 API에서 무관한 400을 "탭 없음"으로 오인하면 탭 생성으로 이어지므로 register의 명시적 titles 확인을 따른다. ⓑ <code>appendValues</code>로 행 추가 — append는 "표"의 끝을 Sheets가 추정해 의도치 않은 위치에 쓸 수 있으므로, 행 번호를 계산해 명시 range로 <code>updateValues</code>하는 편이 불가침 검증에 안전. ⓒ 검증 로직을 lib로 분리 — answer가 파서를 라우트 파일에 두는 선례를 따르고, lib에는 이슈가 지정한 행 탐색·쓰기 계획만 둔다.</li>
+      <li><b>재시도 큐 비대상</b>: 실패는 그대로 4xx/5xx 응답 — 클라이언트 오류 표시는 작업 E 소관, Worker에는 관련 코드가 없다.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">4</span>작업 단계</h2>
+    <ol class="steps">
+      <li class="done"><b><code>worker/lib/settings.ts</code> 신설</b> — 상수 4개(SETTINGS_TAB·SESSION_LIMIT_KEY·MIN·MAX)와 <code>planSessionLimitWrite(rows, limit)</code> 순수 함수(트림 일치 탐색 → B열 갱신 계획 / 첫 빈 행 추가 계획). 작업 A 병렬 대비 쓰기 쪽만.
+        <span class="files"><code>worker/lib/settings.ts</code></span>
+      </li>
+      <li class="done"><b>라우트 신설</b> — <code>handleSettingsPost</code>: JSON 400 → sessionLimit 정수 1~500 검증 400(범위 명시 문구) → titles 확인 → addSheet(빈 탭)/getValues(A1:B) → plan → updateValues(RAW) → <code>{ sessionLimit }</code> 응답.
+        <span class="files"><code>worker/routes/settings.ts</code></span>
+      </li>
+      <li class="done"><b>index.ts 배선</b> — <code>POST /api/settings</code> 분기(기존 try/catch·로그·500 패턴), import 추가.
+        <span class="files"><code>worker/index.ts</code></span>
+      </li>
+      <li class="done"><b>테스트 신설</b> — register.test.ts 모킹 패턴 + sheet-isolation URL 전수 패턴: 400 경계(비객체·누락·비정수·0·501·잘못된 JSON)와 경계 성공(1·500), 세 경로(탭 생성/행 추가/B열 갱신)의 putCalls range 전수 검증(다른 셀 불가침·헤더 미복사), 트림 일치, 2프로필 sheetId 격리, '_정보' 존재 시 words·tabs 자연 제외 회귀.
+        <span class="files"><code>worker/routes/settings.test.ts</code></span>
+      </li>
+      <li class="done"><b>PRD §7.3 명세 추가</b> — <code>POST /api/settings</code> 블록을 §7.3 끝에 append(작업 A의 words 응답 수정과 충돌 최소화): 요청/검증/세 경로 동작/RAW/응답/재시도 큐 비대상.
+        <span class="files"><code>docs/PRD.md</code></span>
+      </li>
+      <li class="done"><b>전체 검증</b> — <code>npm test</code>(기존 스위트 무수정 통과 + 신규 스위트 그린), <code>npm run build</code>(tsc) 통과, <code>src/</code> diff 없음 확인.
+        <span class="files"><code>package.json</code> scripts (실행만)</span> — 328 테스트·oxlint·tsc 빌드 그린, src/ diff 없음 확인
+      </li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">5</span>리스크</h2>
+    <div class="scroll-x">
+    <table>
+      <thead><tr><th>리스크</th><th>영향</th><th>완화책</th></tr></thead>
+      <tbody>
+        <tr><td>작업 A가 같은 파일(<code>worker/lib/settings.ts</code>)을 병렬 생성 — 머지 충돌 확정적</td><td>나중에 머지되는 쪽이 충돌 해소 필요</td><td>이슈 지시대로 쓰기 계획 함수·상수만 담아 함수 블록 단위 충돌로 국한 — 해소가 기계적(두 블록 병기)</td></tr>
+        <tr><td>탭 존재 확인을 <code>getWordTabTitles</code>로 하는 실수 — <code>_</code> 필터에 걸려 매번 addSheet 시도 → "already exists" 500</td><td>두 번째 저장부터 전부 실패</td><td>raw <code>getSheetTitles</code> 사용 + "탭이 이미 있으면 addSheet 없이 갱신" 테스트로 고정</td></tr>
+        <tr><td>행 추가가 A만 빈 비정상 행(B에 값)을 덮어쓸 가능성</td><td>불가침 위반 — 값 유실</td><td>빈 행 판정을 A·B 모두 빈 행으로 강화, 해당 케이스 단위 검증</td></tr>
+        <tr><td>PRD §7.3을 작업 A도 수정(words 응답) — 문서 충돌</td><td>머지 시 수동 해소</td><td>섹션 끝 신규 블록 append만 — words 블록 본문은 건드리지 않음</td></tr>
+        <tr><td>숫자를 RAW로 쓰면 셀 타입이 숫자 — 읽기 파서(작업 A)와의 호환</td><td>없음 — values.get은 문자열 "30"으로 반환, 파서는 정수 문자열 허용 계약(플랜 §3.1)</td><td>쓰기 값은 number 그대로(answer의 카운트 쓰기 선례), 테스트 기대값도 number로 고정</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">6</span>테스트 계획</h2>
+    <ul>
+      <li><code>npm test</code>(vitest run) — 기존 스위트가 무수정으로 전부 통과(동작 보존), 신규 <code>worker/routes/settings.test.ts</code> 그린.</li>
+      <li><b>인증</b>: Authorization 헤더 없음 → 401 (라우트가 인증 블록 안에 배선됐는지 확인).</li>
+      <li><b>400 경계</b>: 잘못된 JSON · 비객체 바디(<code>"30"</code>) · <code>{}</code>(누락) · <code>1.5</code> · <code>"30"</code>(문자열) · <code>0</code> · <code>501</code> → 전부 400, 오류 문구에 "1~500" 포함. 경계 성공: <code>1</code>·<code>500</code> → 200.</li>
+      <li><b>탭 생성 경로</b>: '_정보' 없는 시트 → addSheet 1회 + PUT은 <code>A1:B1 [["문제수", n]]</code> 단 1건(헤더 복사 PUT 없음), 응답 <code>{ sessionLimit: n }</code>.</li>
+      <li><b>행 추가 경로</b>: '_정보'에 다른 키 행만 존재 → PUT <code>A2:B2</code> 1건, 기존 행 데이터 불변(모르는 키 불가침).</li>
+      <li><b>B열 갱신 경로</b>: <code>문제수</code> 행이 중간에 존재(위아래 다른 행) → PUT <code>B{행}</code> 1건만 — putCalls 전수 비교로 다른 셀 불가침 증명. 트림 일치(<code>" 문제수 "</code>)도 같은 행 갱신.</li>
+      <li><b>sheetId 격리</b>: 2프로필 PROFILES 구성에서 프로필 B로 호출 → mock fetch URL 전수가 B의 sheetId만 포함.</li>
+      <li><b>'_정보' 자연 제외 회귀</b>: '_정보' 탭이 존재하는 상태에서 GET /api/tabs 목록·GET /api/words 조회 대상에 '_정보'가 없음(기존 <code>_</code> 규칙 — 신규 제외 코드 없이).</li>
+      <li><code>npm run build</code> — tsc 타입 체크 통과.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">7</span>완료 조건</h2>
+    <ul class="done-list">
+      <li>400 경계 테스트: 0·501·비정수·누락·비객체 바디 전부 400 (+ 경계 1·500은 200)</li>
+      <li>탭 생성 / 행 추가 / B열 갱신 세 경로의 mock range 검증 — 다른 셀 불가침 확인</li>
+      <li>인증 프로필의 sheetId로만 쓰는지 mock URL 전수 검증</li>
+      <li>'_정보' 탭 생성이 words 출제·tabs 목록에 안 새는 회귀 확인 (기존 <code>_</code> 규칙)</li>
+      <li>PRD §7.3에 POST /api/settings 명세 추가</li>
+      <li>클라(src/) 변경 없음 — 작업 E 소관</li>
+      <li>기존 테스트 스위트 무수정 통과 + 신규 스위트 그린, tsc 빌드 통과</li>
+    </ul>
+  </section>
+
+  <footer>issue-plan · <a href="https://github.com/damdam6/vocabulary-study/issues/103">#103</a> · 2026-07-28</footer>
+</main>
+</body>
+</html>

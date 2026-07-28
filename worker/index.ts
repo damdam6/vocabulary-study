@@ -3,6 +3,7 @@ import { handleGetWords } from "./routes/words.ts";
 import { handleReviewFail } from "./routes/review-fail.ts";
 import { handleGetTabs } from "./routes/tabs.ts";
 import { handleWordsRegister } from "./routes/register.ts";
+import { handleSettingsPost } from "./routes/settings.ts";
 import { resolveProfile } from "./lib/auth.ts";
 import { ProfileConfigError, toPublicProfile, type Profile } from "./lib/profiles.ts";
 
@@ -84,6 +85,15 @@ export default {
         } catch (err) {
           console.error("[POST /api/words/register]", err);
           return Response.json({ error: "failed to register words" }, { status: 500 });
+        }
+      }
+
+      if (url.pathname === "/api/settings" && request.method === "POST") {
+        try {
+          return await handleSettingsPost(request, env, profile);
+        } catch (err) {
+          console.error("[POST /api/settings]", err);
+          return Response.json({ error: "failed to save settings" }, { status: 500 });
         }
       }
     }
