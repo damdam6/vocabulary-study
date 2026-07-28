@@ -106,7 +106,13 @@ function HomeUtilBar({ onNavigateRegister, onSwitchProfile }: HomeUtilBarProps) 
   const moveFocus = (delta: number) => {
     const items = itemRefs.current.filter((item): item is HTMLButtonElement => item !== null)
     if (items.length === 0) return
-    const current = items.indexOf(document.activeElement as HTMLButtonElement)
+    const current = items.findIndex((item) => item === document.activeElement)
+    // 포커스가 메뉴 밖이면 방향과 무관하게 첫 항목으로 — -1을 그대로 모듈러에 넣으면
+    // ArrowUp이 엉뚱한 항목에 떨어진다.
+    if (current === -1) {
+      items[0].focus()
+      return
+    }
     items[(current + delta + items.length) % items.length].focus()
   }
 
