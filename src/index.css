@@ -983,7 +983,15 @@ button {
   color: var(--red);
 }
 
+/* 새 탭 확정 행 (#118) — 이름 입력란 우측에 "생성" 버튼 */
+.register-new-tab-row {
+  display: flex;
+  gap: 10px;
+}
+
 .register-new-tab-input {
+  flex: 1;
+  min-width: 0;
   height: 48px;
   border-radius: 12px;
   border: 1px solid var(--border-input);
@@ -991,6 +999,22 @@ button {
   color: var(--text);
   font-size: 15px;
   padding: 0 14px;
+}
+
+.register-new-tab-create-button {
+  height: 48px;
+  padding: 0 20px;
+  border: none;
+  border-radius: 12px;
+  background: var(--accent);
+  color: var(--text);
+  font-weight: 600;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.register-new-tab-create-button:disabled {
+  opacity: 0.5;
 }
 
 /* '문제수' 필드 (세션 설정 플랜 §3.5, #110) — 등록 배치와 독립된 상단 섹션 */

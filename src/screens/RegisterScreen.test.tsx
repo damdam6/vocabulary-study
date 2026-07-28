@@ -1,9 +1,12 @@
 // @vitest-environment jsdom
 //
-// 등록 화면 상단 '문제수' 필드 회귀 테스트 (세션 설정 플랜 §3.5, #110) — 현재값
-// 프리필·1~500 클라 선검증·저장 성공/실패 표시·등록 배치와의 독립성·포커스 배선만
-// 다룬다. 붙여넣기→검증→탭 선택→제출 흐름 자체는 이 이슈의 대상이 아니라
-// fetchTabs/registerWords는 항상 빈 목록/미사용으로 고정 응답한다.
+// 등록 화면 테스트 두 묶음:
+// - '문제수' 필드 회귀 (세션 설정 플랜 §3.5, #110) — 현재값 프리필·1~500 클라
+//   선검증·저장 성공/실패 표시·등록 배치와의 독립성만 다룬다. 이 묶음에서
+//   fetchTabs/registerWords는 빈 목록/미사용 고정 응답.
+// - 탭 우선 흐름 (#118) — 탭 섹션이 붙여넣기보다 위, "+ 새 탭"의 "생성" 버튼
+//   확정(선택지 추가+선택 전환·이름 선검증·기존 탭 중복 시 그 탭 선택), 확정 전
+//   제출 차단, 제출 바디의 createTab 계산(서버 조회 목록 기준)을 고정한다.
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import RegisterScreen from "./RegisterScreen.tsx";
 import { fire, flush, renderComponent } from "../test-utils.tsx";
@@ -38,6 +41,10 @@ function setNativeValue(element: HTMLInputElement | HTMLTextAreaElement, value: 
   element.dispatchEvent(new Event("input", { bubbles: true }));
 }
 
+// jsdom은 scrollIntoView를 구현하지 않는다 — Dropdown이 열릴 때 활성 옵션을
+// 스크롤하는 효과(Dropdown.tsx)가 던지지 않게 no-op으로 채운다.
+HTMLElement.prototype.scrollIntoView = () => {};
+
 let unmountCurrent: (() => void) | null = null;
 
 beforeEach(() => {
@@ -70,8 +77,18 @@ function setup() {
     successMessage: () => container.querySelector(".register-limit-success"),
     textarea: () => container.querySelector<HTMLTextAreaElement>("#register-textarea")!,
     confirmButton: () => container.querySelector<HTMLButtonElement>(".register-confirm-button")!,
+    tabTrigger: () => container.querySelector<HTMLButtonElement>("#register-tab-select")!,
+    tabTriggerLabel: () => container.querySelector(".dropdown-trigger-label"),
+    tabOptions: () => Array.from(container.querySelectorAll<HTMLLIElement>('[role="option"]')),
+    newTabInput: () => container.querySelector<HTMLInputElement>(".register-new-tab-input"),
+    createButton: () => container.querySelector<HTMLButtonElement>(".register-new-tab-create-button"),
+    newTabErrors: () =>
+      Array.from(container.querySelectorAll(".register-field .register-error")).map((el) => el.textContent),
+    submitButton: () => container.querySelector<HTMLButtonElement>(".primary-button"),
   };
 }
+
+const VALID_BATCH = '{"version":1,"words":[{"hanzi":"经济","pinyin":"jīngjì","meaning":"경제"}]}';
 
 describe("RegisterScreen 문제수 필드", () => {
   it("fetchWords의 settings.sessionLimit을 입력란 현재값으로 프리필한다", async () => {
@@ -152,5 +169,114 @@ describe("RegisterScreen 문제수 필드", () => {
     // 문제수 저장이 끝난 뒤에도 붙여넣은 텍스트·확인 가능 상태가 그대로다.
     expect(textarea().value).toBe('{"version":1,"words":[]}');
     expect(confirmButton().disabled).toBe(false);
+  });
+});
+
+describe("RegisterScreen 탭 우선 흐름 (#118)", () => {
+  it("등록할 탭 섹션이 스키마 붙여넣기보다 위에 렌더된다", async () => {
+    const { tabTrigger, textarea } = setup();
+    await flush();
+
+    // DOCUMENT_POSITION_FOLLOWING: textarea가 탭 드롭다운 뒤에 온다.
+    expect(tabTrigger().compareDocumentPosition(textarea()) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it("생성 클릭 시 이름이 선택지에 추가되고 그 탭이 선택 상태가 된다", async () => {
+    const { tabTrigger, tabTriggerLabel, tabOptions, newTabInput, createButton } = setup();
+    await flush();
+
+    // 탭 목록이 비어 있으면 기본이 새 탭 모드 — 이름 입력란이 보인다.
+    fire(() => setNativeValue(newTabInput()!, "HSK7"));
+    fire(() => createButton()!.click());
+
+    expect(tabTriggerLabel()?.textContent).toBe("HSK7");
+    expect(newTabInput()).toBeNull();
+
+    fire(() => tabTrigger().click());
+    expect(tabOptions().map((el) => el.textContent)).toEqual(["HSK7", "+ 새 탭"]);
+  });
+
+  it("빈 이름·_ 시작이면 생성 버튼이 비활성화되고 유효해지면 풀린다", async () => {
+    const { newTabInput, createButton, newTabErrors } = setup();
+    await flush();
+
+    expect(createButton()!.disabled).toBe(true);
+
+    fire(() => setNativeValue(newTabInput()!, "_숨김"));
+    expect(createButton()!.disabled).toBe(true);
+    expect(newTabErrors()).toContain("탭 이름은 _로 시작할 수 없습니다");
+
+    fire(() => setNativeValue(newTabInput()!, "HSK7"));
+    expect(createButton()!.disabled).toBe(false);
+  });
+
+  it("기존 탭과 같은 이름을 생성하면 그 탭이 선택되고 선택지는 중복되지 않는다", async () => {
+    fetchTabsMock.mockResolvedValue(["HSK6"]);
+    const { tabTrigger, tabTriggerLabel, tabOptions, newTabInput, createButton } = setup();
+    await flush();
+
+    // 첫 탭이 자동 선택된 상태에서 "+ 새 탭"으로 진입한다.
+    fire(() => tabTrigger().click());
+    fire(() => tabOptions().find((el) => el.textContent === "+ 새 탭")!.click());
+    fire(() => setNativeValue(newTabInput()!, "HSK6"));
+    fire(() => createButton()!.click());
+
+    expect(tabTriggerLabel()?.textContent).toBe("HSK6");
+    expect(newTabInput()).toBeNull();
+
+    fire(() => tabTrigger().click());
+    expect(tabOptions().map((el) => el.textContent)).toEqual(["HSK6", "+ 새 탭"]);
+  });
+
+  it("생성 확정 전에는 확인을 마쳐도 제출이 불가하고, 확정하면 활성화된다", async () => {
+    const { textarea, confirmButton, newTabInput, createButton, submitButton } = setup();
+    await flush();
+
+    fire(() => setNativeValue(textarea(), VALID_BATCH));
+    fire(() => confirmButton().click());
+
+    // 새 탭 모드(이름 미확정) — 검증 테이블은 떠도 제출은 막힌다.
+    expect(submitButton()!.disabled).toBe(true);
+
+    fire(() => setNativeValue(newTabInput()!, "HSK7"));
+    fire(() => createButton()!.click());
+
+    expect(submitButton()!.disabled).toBe(false);
+  });
+
+  it("로컬 생성 탭 제출에는 createTab: true가 포함된다", async () => {
+    registerWordsMock.mockResolvedValue({ tab: "HSK7", created: true, added: [], skipped: [] });
+    const { textarea, confirmButton, newTabInput, createButton, submitButton } = setup();
+    await flush();
+
+    fire(() => setNativeValue(newTabInput()!, "HSK7"));
+    fire(() => createButton()!.click());
+    fire(() => setNativeValue(textarea(), VALID_BATCH));
+    fire(() => confirmButton().click());
+    fire(() => submitButton()!.click());
+    await flush();
+
+    expect(registerWordsMock).toHaveBeenCalledWith({
+      tab: "HSK7",
+      createTab: true,
+      words: [{ hanzi: "经济", pinyin: "jīngjì", meaning: "경제" }],
+    });
+  });
+
+  it("서버 조회 목록에 있는 탭 제출에는 createTab이 포함되지 않는다", async () => {
+    fetchTabsMock.mockResolvedValue(["HSK6"]);
+    registerWordsMock.mockResolvedValue({ tab: "HSK6", created: false, added: [], skipped: [] });
+    const { textarea, confirmButton, submitButton } = setup();
+    await flush();
+
+    fire(() => setNativeValue(textarea(), VALID_BATCH));
+    fire(() => confirmButton().click());
+    fire(() => submitButton()!.click());
+    await flush();
+
+    expect(registerWordsMock).toHaveBeenCalledWith({
+      tab: "HSK6",
+      words: [{ hanzi: "经济", pinyin: "jīngjì", meaning: "경제" }],
+    });
   });
 });
