@@ -55,11 +55,9 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-function setup(focusSessionLimit?: boolean) {
+function setup() {
   const onGoHome = vi.fn();
-  const { container, unmount } = renderComponent(
-    <RegisterScreen contentType="zh" onGoHome={onGoHome} focusSessionLimit={focusSessionLimit} />,
-  );
+  const { container, unmount } = renderComponent(<RegisterScreen contentType="zh" onGoHome={onGoHome} />);
   unmountCurrent = unmount;
 
   return {
@@ -154,19 +152,5 @@ describe("RegisterScreen 문제수 필드", () => {
     // 문제수 저장이 끝난 뒤에도 붙여넣은 텍스트·확인 가능 상태가 그대로다.
     expect(textarea().value).toBe('{"version":1,"words":[]}');
     expect(confirmButton().disabled).toBe(false);
-  });
-
-  it("focusSessionLimit이 true면 준비된 뒤 문제수 입력란에 포커스한다", async () => {
-    const { limitInput } = setup(true);
-    await flush();
-
-    expect(document.activeElement).toBe(limitInput());
-  });
-
-  it("focusSessionLimit이 없으면 포커스를 옮기지 않는다", async () => {
-    const { limitInput } = setup();
-    await flush();
-
-    expect(document.activeElement).not.toBe(limitInput());
   });
 });
