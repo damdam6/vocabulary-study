@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>#116 학습 중 오답 재삽입 제거 — 작업 플랜</title>
+<style>
+  :root {
+    --bg: #f7f7f8; --card: #ffffff; --ink: #1c1c1e; --muted: #6e6e73;
+    --line: #e3e3e6; --accent: #3b6ef5; --accent-soft: #e8eefe;
+    --ok: #2e8b57; --warn: #b25e09; --code-bg: #f0f0f2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161618; --card: #202024; --ink: #ececf0; --muted: #98989f;
+      --line: #333338; --accent: #7a9bff; --accent-soft: #26304a;
+      --ok: #58c088; --warn: #e0a35c; --code-bg: #2a2a2f;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 40px 20px 80px; background: var(--bg); color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+                 "Segoe UI", "Noto Sans KR", sans-serif;
+    line-height: 1.65;
+  }
+  main { max-width: 860px; margin: 0 auto; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code {
+    font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 0.86em;
+    background: var(--code-bg); border-radius: 5px; padding: 2px 6px;
+  }
+  header { margin-bottom: 28px; }
+  .issue-chip {
+    display: inline-block; font-weight: 700; color: var(--accent);
+    background: var(--accent-soft); border-radius: 999px;
+    padding: 3px 14px; font-size: 0.95rem; margin-bottom: 10px;
+  }
+  .type-chip {
+    display: inline-block; font-weight: 600; color: var(--muted);
+    border: 1px solid var(--line); border-radius: 999px;
+    padding: 3px 12px; font-size: 0.8rem; margin-left: 8px; vertical-align: 2px;
+  }
+  h1 { font-size: 1.7rem; margin: 0 0 14px; letter-spacing: -0.02em; }
+  .meta {
+    display: flex; flex-wrap: wrap; gap: 6px 22px;
+    color: var(--muted); font-size: 0.87rem;
+  }
+  .meta b { color: var(--ink); font-weight: 600; }
+  section.card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 24px 28px; margin-top: 18px;
+  }
+  h2 {
+    font-size: 1.05rem; margin: 0 0 14px; letter-spacing: -0.01em;
+    display: flex; align-items: center; gap: 8px;
+  }
+  h2 .no {
+    color: var(--accent); font-size: 0.8rem; font-weight: 700;
+    border: 1.5px solid var(--accent); border-radius: 6px; padding: 0 6px;
+  }
+  ul, ol { margin: 0; padding-left: 22px; }
+  li { margin: 6px 0; }
+  .steps { list-style: none; padding: 0; counter-reset: step; }
+  .steps li {
+    counter-increment: step; position: relative; padding: 10px 0 10px 44px;
+    border-bottom: 1px dashed var(--line);
+  }
+  .steps li:last-child { border-bottom: none; }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 10px;
+    width: 28px; height: 28px; border-radius: 8px; background: var(--accent-soft);
+    color: var(--accent); font-weight: 700; font-size: 0.85rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .steps .files { display: block; margin-top: 4px; font-size: 0.85rem; color: var(--muted); }
+  .steps li.done::before { content: "✓"; background: var(--ok); color: #fff; }
+  .steps .note {
+    display: block; margin-top: 6px; font-size: 0.85rem; color: var(--warn);
+  }
+  .done-list li.done::before { background: var(--ok); }
+  .done-list li.done::after {
+    content: "✓"; position: absolute; left: 5px; top: 2px;
+    color: #fff; font-size: 0.75rem; font-weight: 700;
+  }
+  table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 0.82rem; }
+  .done-list { list-style: none; padding: 0; }
+  .done-list li { padding-left: 30px; position: relative; }
+  .done-list li::before {
+    content: ""; position: absolute; left: 2px; top: 7px; width: 15px; height: 15px;
+    border: 2px solid var(--ok); border-radius: 5px;
+  }
+  .scroll-x { overflow-x: auto; }
+  footer { margin-top: 30px; color: var(--muted); font-size: 0.8rem; text-align: center; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <span class="issue-chip"><a href="https://github.com/damdam6/vocabulary-study/issues/116">#116</a></span><span class="type-chip">기능 개선 (규칙 제거)</span>
+    <h1>학습 중 오답 재삽입 제거 — 방금 본 단어가 같은 세션에 다시 나온다</h1>
+    <div class="meta">
+      <span><b>damdam6/vocabulary-study</b></span>
+      <span>브랜치 <b><code>feat/116-remove-learning-requeue</code></b> ← <code>main</code></span>
+      <span>라벨 <b>enhancement</b></span>
+      <span>2026-07-28</span>
+    </div>
+  </header>
+
+  <section class="card">
+    <h2><span class="no">1</span>요약</h2>
+    <p>
+      학습 중 오답 시 같은 문제를 세션 큐 맨 뒤에 1회 재삽입하던 v1 규칙(PRD §6.2, #18)을 제거한다.
+      방금 정답까지 본 단어를 같은 세션에서 다시 묻는 것은 단기 기억으로 맞히게 만들어 학습 효과가 없고,
+      그렇게 오른 D/E 카운트가 실제 암기 없이 졸업(3회)을 앞당기기 때문이다.
+      오답 시 기록 API를 쏘지 않는 현행 동작은 그대로라 그 단어는 <b>학습 중</b> 상태로 남고 다음 세션에 자연히 재출제된다 — 세션 간 간격이 곧 재학습 간격이다.
+      부수 효과로 세션 큐가 시작 시점에 고정되어 진행도 분모(<code>queue.length</code>)가 세션 중 절대 변하지 않으며,
+      재삽입만을 위해 존재하던 #113의 세션 상한 스레딩(홈 → App → 학습 화면 → <code>startSession</code>)이 통째로 불필요해진다.
+    </p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">2</span>현황 분석</h2>
+    <p><b>재삽입은 순수 리듀서 한 곳에서만 일어난다.</b> <code>src/lib/studySession.ts:98-101</code>의 <code>recordAnswer</code>가 학습 중 오답일 때 큐 맨 뒤에 복사본을 push한다:</p>
+    <ul>
+      <li><code>src/lib/studySession.ts:11-14</code> — <code>StudyQuestion</code>이 <code>SessionQuestion&lt;WordEntry&gt;</code>에 <code>requeued: boolean</code>을 더한 형태. 이 플래그의 유일한 용도가 "재재삽입 금지(1회만)" 판정이다.</li>
+      <li><code>src/lib/studySession.ts:98-101</code> — 조건 <code>!question.requeued &amp;&amp; state.queue.length &lt; state.limit</code>일 때 <code>[...state.queue, { ...question, requeued: true }]</code>. 큐가 길어지므로 <b>진행도 분모가 판정 시점에 즉시 +1</b> 된다.</li>
+      <li><code>src/lib/studySession.ts:23-27, 50-53</code> — <code>StudySessionState.limit</code>과 <code>startSession(questions, limit = SESSION_CAP)</code>. <code>limit</code>은 <b>오직</b> 위 재삽입 상한 판정에만 쓰인다(모듈 내 다른 참조 없음).</li>
+      <li>복습 오답은 <code>:87-93</code>에서 먼저 갈라져 <code>review-fail</code> effect만 내고 큐를 건드리지 않는다 — 이번 변경과 무관하며 그대로 유지된다.</li>
+    </ul>
+    <p><b>#113이 깐 <code>limit</code> 배선은 재삽입 전용이다.</b> 큐 구성용 상한은 홈이 <code>buildSessionQueue(..., sessionLimit)</code>로 직접 쓰고 있어(<code>src/screens/HomeScreen.tsx:84-87</code>) 이번 변경과 무관하다. 반면 아래 경로는 재삽입이 사라지면 전부 죽은 코드가 된다:</p>
+    <ul>
+      <li><code>src/screens/HomeScreen.tsx:16</code> — <code>onStart: (queue, limit) =&gt; void</code>의 둘째 인자. <code>handleStart</code>가 <code>sessionLimit</code>을 함께 올린다(<code>:84-87</code>).</li>
+      <li><code>src/App.tsx:29, 46-50, 78</code> — <code>sessionLimit</code> 상태와 그것을 <code>StudyScreen</code>에 내려주는 <code>limit</code> prop.</li>
+      <li><code>src/screens/StudyScreen.tsx:33-34, 47-48</code> — <code>limit</code> prop과 <code>startSession(queue, limit)</code>. 이 화면에서 <code>limit</code>의 다른 용도는 없다(진행도는 <code>session.queue.length</code>를 쓴다, <code>:128-129</code>).</li>
+    </ul>
+    <p><b>기존 테스트에서 재삽입 커버리지</b>는 <code>src/lib/studySession.test.ts</code>에 집중돼 있다: <code>:72-77</code>(<code>requeued=false</code> 초기화), <code>:115-128</code>(재삽입·분모 증가), <code>:130-139</code>(1회 제한), <code>:141-149</code>(<code>SESSION_CAP</code> 상한), <code>:157-207</code>(#113 limit 상한 describe 5건), <code>:209-227</code>(재삽입 포함 집계 흐름). 화면 레벨에는 <code>src/screens/HomeScreen.test.tsx:109-136</code>의 <b>limit 스레딩</b> 테스트가 있다. <code>SESSION_CAP</code> 자체는 <code>sessionQueue</code>·<code>homeStats</code>에서 계속 쓰이고, "시트 설정이 큐 길이를 좌우한다"는 계약은 <code>src/lib/sessionQueue.test.ts:187</code>·<code>src/lib/homeStats.test.ts:60</code>이 독립적으로 지키고 있다 — 즉 <code>studySession</code>에서 <code>limit</code>을 걷어내도 설정 반영 커버리지는 남는다.</p>
+    <p><b>문서</b>에 재삽입이 서술된 곳: <code>docs/PRD.md:160</code>(§6.1 "§6.2 오답 재삽입 제외" 단서), <code>:164</code>(§6.2 재삽입 규칙 본문), <code>:330</code>(§12 결정표 "학습 중 오답의 세션 내 재출제 = 큐 뒤에 1회"), <code>docs/design-prd.md:93</code>(§4.1 "진행도 분모는 동적"), <code>:121</code>(§4.5 진행 규칙), <code>:195</code>(§9 결정 로그 "진행도 분모 = 동적 증가"), <code>docs/PRD-general.md:103</code>(세션 규칙 요약에 "학습 중 오답 1회 재삽입"). 코드 주석 중에는 <code>src/lib/sessionQueue.ts:12</code>(<code>SESSION_CAP</code> 설명이 "§6.2 재삽입 상한도 같은 값" 이라고 말한다)도 사실과 어긋나게 된다. <code>docs/plans/*.html</code>은 당시 기록물이라 손대지 않는다.</p>
+    <p><b>Worker</b>(<code>worker/</code>)에는 재삽입 개념이 없다 — 큐 구성·진행은 전부 클라이언트 책임(PRD §7.3)이라 이번 변경은 프런트엔드에 갇힌다.</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">3</span>설계</h2>
+    <p><b>규칙을 제거하는 것이 곧 설계다.</b> <code>recordAnswer</code>의 학습 중 오답 분기는 "집계만 올리고 effect는 <code>none</code>"으로 축소된다 — 복습 오답 분기와 대칭이 되고, 큐를 만드는 코드가 <code>startSession</code> 한 곳으로 줄어 세션 큐는 <b>시작 시점에 고정</b>된다.</p>
+    <ul>
+      <li><b><code>requeued</code> 플래그 제거</b> → <code>StudyQuestion</code>이 <code>SessionQuestion&lt;WordEntry&gt;</code>와 동일해진다. 인터페이스를 지우는 대신 <code>export type StudyQuestion = SessionQuestion&lt;WordEntry&gt;</code> 별칭으로 남긴다 — <code>Mode1Card</code>/<code>Mode2Card</code>/<code>RecordEffect</code>가 이 이름을 쓰고 있어(<code>src/screens/Mode1Card.tsx:10</code>, <code>Mode2Card.tsx:9</code>) 도메인 이름을 유지하는 편이 변경 폭이 작다.</li>
+      <li><b><code>limit</code> 제거 범위</b>: <code>StudySessionState.limit</code> → <code>startSession</code>의 인자 → <code>StudyScreen</code>의 prop → <code>App</code>의 <code>sessionLimit</code> 상태 → <code>HomeScreen.onStart</code>의 둘째 인자까지, 재삽입만을 위해 존재하던 배선을 끝까지 걷어낸다. 홈이 <code>buildSessionQueue</code>에 넘기는 <code>sessionLimit</code>은 <b>그대로 둔다</b>(큐 구성 상한은 여전히 시트 설정).</li>
+      <li><b>기록 규칙 불변</b>: 학습 중 오답은 여전히 API 호출 없음(<code>effect: none</code>), 복습 오답은 <code>review-fail</code>. 오답 단어가 학습 중으로 남아 다음 세션에 다시 나오는 것은 <code>getWordState</code>의 기존 동작이라 추가 코드가 필요 없다.</li>
+    </ul>
+    <p><b>기각한 대안</b> (이슈 본문의 결정 계승):</p>
+    <ul>
+      <li><b>최소 간격 재삽입</b>(k문제 뒤 배치) — 짧은 세션에서는 여전히 금방 재노출되고, "정답을 방금 봤다"는 단기 기억 문제는 간격으로 해소되지 않는다.</li>
+      <li><b>재삽입 유지 + 재삽입분 카운트 미기록</b> — 재삽입 정답도 D/E에 기록되는 현 구조를 바꾸는 복잡도 대비, 세션에서 빼고 다음 세션에 맡기는 쪽이 단순하고 일관적이다.</li>
+      <li><b><code>limit</code> 배선만 남겨두기</b> — <code>StudyScreen</code>이 쓰지 않는 prop을 유지하면 "세션 상한이 학습 화면에도 걸린다"는 잘못된 신호가 남는다. 이슈의 완료 조건이 "상한 판정 코드 제거"를 명시하므로 죽은 배선까지 걷어낸다.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">4</span>작업 단계</h2>
+    <ol class="steps">
+      <li class="done"><b><code>studySession</code>에서 재삽입 제거</b> — <code>StudyQuestion</code>을 <code>SessionQuestion&lt;WordEntry&gt;</code> 별칭으로 축소(<code>requeued</code> 삭제), <code>StudySessionState.limit</code> 삭제, <code>startSession(questions)</code>로 시그니처 축소, <code>recordAnswer</code>의 학습 중 오답 분기를 <code>wrong+1</code> + <code>effect: none</code>만 남기고 큐 복사 제거. 모듈 헤더·<code>queue</code> 필드 주석의 "재삽입/동적 분모" 서술을 "세션 큐는 시작 시 고정"으로 개정하고 근거로 #116을 남긴다. <code>SESSION_CAP</code> import도 정리.
+        <span class="files"><code>src/lib/studySession.ts</code></span>
+      </li>
+      <li class="done"><b><code>studySession</code> 테스트를 새 규칙으로 대체</b> — 재삽입 4건(<code>:115-149</code>)과 #113 limit describe(<code>:157-207</code>)를 제거하고 그 자리에 ① 학습 중 오답 후 큐 길이·내용 불변(같은 단어가 뒤에 없다) ② 오답이 연속·다수여도 <code>queue.length</code>가 시작값 그대로(분모 불변) ③ 학습 중 오답 effect가 <code>none</code>이고 <code>wrong</code>만 증가를 추가. <code>:72-77</code> 초기화 테스트에서 <code>requeued</code> 단언 제거, <code>:209-227</code> 집계 흐름을 재삽입 없는 3문제 시나리오로 갱신, 복습 오답 무재출제 테스트(<code>:99-105</code>)는 <b>유지</b>.
+        <span class="files"><code>src/lib/studySession.test.ts</code></span>
+      </li>
+      <li class="done"><b>화면 배선에서 <code>limit</code> 제거</b> — <code>StudyScreenProps.limit</code>과 <code>startSession(queue, limit)</code>의 둘째 인자 삭제, prop 주석의 재삽입 언급 정리. <code>App</code>은 <code>sessionLimit</code> 상태·<code>SESSION_CAP</code> import·<code>StudyScreen limit</code> prop을 걷어내고 <code>startSession(queue)</code> 핸들러로 축소. <code>HomeScreen</code>은 <code>onStart</code> 타입을 <code>(queue) =&gt; void</code>로 좁히고 <code>handleStart</code>가 큐만 올린다(<code>buildSessionQueue</code>의 <code>sessionLimit</code> 인자는 유지).
+        <span class="files"><code>src/screens/StudyScreen.tsx</code>, <code>src/App.tsx</code>, <code>src/screens/HomeScreen.tsx</code></span>
+      </li>
+      <li class="done"><b>홈 스레딩 테스트 갱신</b> — <code>src/screens/HomeScreen.test.tsx:109-136</code>의 "#113 limit 스레딩" 테스트가 검사하던 <code>onStart</code> 둘째 인자가 사라지므로, 같은 설정(<code>settings.sessionLimit: 35</code>)에서 <b>올라가는 큐 자체가 그 상한으로 구성되는지</b>를 검사하도록 고쳐 쓴다(학습 중 단어를 상한보다 많이 준 뒤 큐 길이 35 확인). describe 제목·주석도 #116 기준으로 개정.
+        <span class="files"><code>src/screens/HomeScreen.test.tsx</code></span>
+      </li>
+      <li class="done"><b>기능 PRD 개정</b> — §6.2의 재삽입 규칙 문단을 "학습 중 오답도 같은 세션에 재출제하지 않는다 · 기록 API 호출 없음 · 다음 세션에 자연 재출제"로 교체하고, 세션 큐가 시작 시 고정이라 진행도 분모가 세션 중 불변임을 명시. §6.1 3번 항목의 "(§6.2 오답 재삽입 제외)" 단서 삭제. §12 결정표의 "학습 중 오답의 세션 내 재출제" 행을 폐기 표기(취소선 + 2026-07-28 폐기 사유)로 갱신. 문서 상단에 개정 노트 + #116 포인터 추가.
+        <span class="files"><code>docs/PRD.md</code></span>
+      </li>
+      <li class="done"><b>디자인 PRD 개정</b> — §4.1의 "진행도 분모는 동적" 항목을 "분모는 세션 시작 시 확정, 세션 중 불변"으로, §4.5 진행 규칙의 "큐 맨 뒤에 1회 재삽입" 줄을 "API 호출 없음 · 재출제 없음"으로 개정. §9 결정 로그의 "진행도 분모" 행도 폐기 표기로 갱신(§9의 기존 폐기 표기 스타일을 따른다). 상단에 개정 노트 + #116 포인터.
+        <span class="files"><code>docs/design-prd.md</code></span>
+        <span class="note">개정 노트는 문서 상단이 아니라 §4.1·§4.5 인라인 표기 + §9 결정 로그 폐기 행으로 남겼다 — 이 문서에는 상단 개정 노트 관례가 없고(#105·#112도 §9 행으로만 기록), 기존 표기 패턴을 따르는 편이 일관적이라 판단.</span>
+      </li>
+      <li class="done"><b>남은 재삽입 서술 정리</b> — <code>docs/PRD-general.md:103</code>의 세션 규칙 요약에서 "학습 중 오답 1회 재삽입"을 제거(#116 표기), <code>src/lib/sessionQueue.ts:12</code>의 <code>SESSION_CAP</code> 주석에서 "§6.2 재삽입 상한도 같은 값" 문구 삭제. 이슈가 명시한 목록 밖이지만 두 곳 모두 변경 후 사실과 어긋나므로 함께 고친다.
+        <span class="files"><code>docs/PRD-general.md</code>, <code>src/lib/sessionQueue.ts</code></span>
+      </li>
+      <li class="done"><b>전체 검증</b> — <code>npm test</code>, <code>npm run lint</code>, <code>npm run build</code>(tsc 타입 체크 포함) 그린 확인. <code>git status</code>로 <code>worker/</code> 무변경 확인, <code>grep -rn "requeue" src/</code>가 비는지 확인.
+        <span class="files">전 범위</span>
+        <span class="note">환경 이슈 1건: 공유 <code>node_modules</code>에 <code>jsdom</code>이 없어 jsdom 테스트 2파일이 실행조차 되지 않았다(코드 변경과 무관한 선행 상태). 워크트리에서 <code>npm ci</code>로 의존성을 설치한 뒤 31파일 390테스트 전부 그린. 잔존 "재삽입" 문자열은 제거된 규칙을 설명하는 테스트 주석 2곳뿐이고 <code>requeued</code> 식별자는 완전히 사라졌다.</span>
+      </li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">5</span>리스크</h2>
+    <div class="scroll-x">
+    <table>
+      <thead><tr><th>리스크</th><th>영향</th><th>완화책</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><code>limit</code> 배선을 홈까지 걷어내면서 시트 <code>문제수</code> 설정(#102·#113)이 큐 구성에서도 빠지는 사고</td>
+          <td>세션 문제 수가 항상 60으로 되돌아감 — 사용자에게 바로 보이는 회귀</td>
+          <td><code>HomeScreen.handleStart</code>의 <code>buildSessionQueue(..., sessionLimit)</code> 인자는 손대지 않는다. 4단계 테스트가 "큐 길이 = 35"로 이를 화면 레벨에서 고정하고, <code>sessionQueue.test.ts</code>·<code>homeStats.test.ts</code>의 limit 테스트가 그대로 남아 이중으로 지킨다.</td>
+        </tr>
+        <tr>
+          <td><code>StudyQuestion</code>을 별칭으로 바꾸면서 <code>Mode1Card</code>/<code>Mode2Card</code>의 타입이 깨질 가능성</td>
+          <td>빌드 실패</td>
+          <td>두 카드는 <code>question.word/mode/isReview</code>만 읽고 <code>requeued</code>를 참조하지 않는다(<code>Mode1Card.tsx:13</code>, <code>Mode2Card.tsx:13</code>). 별칭 유지로 import 경로도 그대로다. 8단계 <code>npm run build</code>가 최종 확인.</td>
+        </tr>
+        <tr>
+          <td>학습 효과 자체의 변화 — 틀린 단어를 같은 날 다시 보지 못한다</td>
+          <td>단기적으로 세션당 노출 횟수 감소</td>
+          <td>이슈에서 소유자가 명시적으로 결정한 트레이드오프(단기 기억으로 맞히는 정답이 D/E를 부풀리는 문제가 더 크다). 오답 단어는 학습 중 상태로 남아 다음 세션 큐 우선순위에 자연히 들어온다.</td>
+        </tr>
+        <tr>
+          <td>진행도 분모가 고정되면서 기존 UI 가정과 어긋날 여지</td>
+          <td>표시 오류</td>
+          <td><code>StudyScreen</code>은 이미 <code>session.queue.length</code>를 그대로 렌더하므로(<code>:128-129</code>) 코드 변경이 필요 없다 — 분모가 변하지 않게 될 뿐이다. design-prd §4.1 서술만 개정한다.</td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">6</span>테스트 계획</h2>
+    <ul>
+      <li><b>vitest — 재출제 없음</b>: 학습 중 오답(모드1·모드2 각각) 후 <code>next.queue</code>가 입력 큐와 길이·내용 모두 동일하고, 그 단어가 큐 뒤쪽에 추가되지 않는다.</li>
+      <li><b>vitest — 분모 불변</b>: 학습 중 문제 여러 개를 전부 오답으로 소진하는 동안 매 판정마다 <code>state.queue.length</code>가 시작값 그대로이고, 종료 시 <code>wrong</code>이 문제 수와 같다.</li>
+      <li><b>vitest — effect 불변</b>: 학습 중 오답 <code>{ kind: "none" }</code>, 학습 중 정답 <code>answer(isReview:false)</code>, 복습 정답 <code>answer(isReview:true)</code>, 복습 오답 <code>review-fail</code> + 큐 길이 불변 — 네 케이스가 그대로 통과.</li>
+      <li><b>vitest — 집계</b>: 정오가 섞인 세션의 <code>correct</code>/<code>wrong</code> 합이 문제 수와 일치하고, 큐 소진(<code>isDone</code>) 시점이 시작 큐 길이와 정확히 맞는다.</li>
+      <li><b>vitest — <code>applyWordUpdate</code>·<code>gradeMode2</code></b>: 무수정 통과(재삽입과 무관한 기존 계약 보존).</li>
+      <li><b>vitest(jsdom) — 홈</b>: <code>settings.sessionLimit: 35</code> 환경에서 "학습 시작" 시 <code>onStart</code>가 <b>큐 하나만</b> 인자로 받고, 그 큐 길이가 35(시트 설정 상한)다.</li>
+      <li><b>전역</b>: <code>npm test</code>(전체 스위트), <code>npm run lint</code>(oxlint — 미사용 import/변수 검출), <code>npm run build</code>(tsc -b 타입 체크 포함) 모두 그린.</li>
+      <li><b>수동 확인</b>: <code>grep -rn "requeue" src/</code> 결과 없음, <code>git status</code>에 <code>worker/</code> 변경 없음.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">7</span>완료 조건</h2>
+    <ul class="done-list">
+      <li class="done">학습 중 오답 후 같은 세션에서 그 단어가 다시 출제되지 않는 테스트 통과</li>
+      <li class="done">진행도 분모(<code>queue.length</code>)가 세션 내 불변임을 오답 다수 시나리오로 검증</li>
+      <li class="done"><code>requeued</code> 플래그·큐 복사 분기·<code>limit</code> 상한 판정 제거, 기존 재삽입 테스트를 새 규칙 테스트로 대체</li>
+      <li class="done">복습 오답 동작 불변(재출제 없음 · <code>review-fail</code> effect) 테스트 유지</li>
+      <li class="done">재삽입 전용이던 <code>limit</code> 배선(홈 → App → 학습 화면) 제거, 큐 구성용 시트 설정 상한은 보존</li>
+      <li class="done"><code>docs/PRD.md</code> §6.1·§6.2·§12, <code>docs/design-prd.md</code> §4.1·§4.5·§9 개정 (+ 개정 노트와 #116 포인터)</li>
+      <li class="done"><code>worker/</code> 변경 없음</li>
+      <li class="done"><code>npm test</code> · <code>npm run lint</code> · <code>npm run build</code> 모두 그린</li>
+    </ul>
+  </section>
+
+  <footer>issue-plan · <a href="https://github.com/damdam6/vocabulary-study/issues/116">#116</a> · 2026-07-28</footer>
+</main>
+</body>
+</html>
