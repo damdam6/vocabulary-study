@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>#112 홈 수정 아이콘 드롭다운 제거 — 목적지가 등록 화면 하나뿐이라 선택 단계가 무의미 — 작업 플랜</title>
+<style>
+  :root {
+    --bg: #f7f7f8; --card: #ffffff; --ink: #1c1c1e; --muted: #6e6e73;
+    --line: #e3e3e6; --accent: #3b6ef5; --accent-soft: #e8eefe;
+    --ok: #2e8b57; --warn: #b25e09; --code-bg: #f0f0f2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161618; --card: #202024; --ink: #ececf0; --muted: #98989f;
+      --line: #333338; --accent: #7a9bff; --accent-soft: #26304a;
+      --ok: #58c088; --warn: #e0a35c; --code-bg: #2a2a2f;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 40px 20px 80px; background: var(--bg); color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+                 "Segoe UI", "Noto Sans KR", sans-serif;
+    line-height: 1.65;
+  }
+  main { max-width: 860px; margin: 0 auto; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code {
+    font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 0.86em;
+    background: var(--code-bg); border-radius: 5px; padding: 2px 6px;
+  }
+  header { margin-bottom: 28px; }
+  .issue-chip {
+    display: inline-block; font-weight: 700; color: var(--accent);
+    background: var(--accent-soft); border-radius: 999px;
+    padding: 3px 14px; font-size: 0.95rem; margin-bottom: 10px;
+  }
+  .type-chip {
+    display: inline-block; font-weight: 600; color: var(--muted);
+    border: 1px solid var(--line); border-radius: 999px;
+    padding: 3px 12px; font-size: 0.8rem; margin-left: 8px; vertical-align: 2px;
+  }
+  h1 { font-size: 1.7rem; margin: 0 0 14px; letter-spacing: -0.02em; }
+  .meta {
+    display: flex; flex-wrap: wrap; gap: 6px 22px;
+    color: var(--muted); font-size: 0.87rem;
+  }
+  .meta b { color: var(--ink); font-weight: 600; }
+  section.card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 24px 28px; margin-top: 18px;
+  }
+  h2 {
+    font-size: 1.05rem; margin: 0 0 14px; letter-spacing: -0.01em;
+    display: flex; align-items: center; gap: 8px;
+  }
+  h2 .no {
+    color: var(--accent); font-size: 0.8rem; font-weight: 700;
+    border: 1.5px solid var(--accent); border-radius: 6px; padding: 0 6px;
+  }
+  ul, ol { margin: 0; padding-left: 22px; }
+  li { margin: 6px 0; }
+  .steps { list-style: none; padding: 0; counter-reset: step; }
+  .steps li {
+    counter-increment: step; position: relative; padding: 10px 0 10px 44px;
+    border-bottom: 1px dashed var(--line);
+  }
+  .steps li:last-child { border-bottom: none; }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 10px;
+    width: 28px; height: 28px; border-radius: 8px; background: var(--accent-soft);
+    color: var(--accent); font-weight: 700; font-size: 0.85rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .steps .files { display: block; margin-top: 4px; font-size: 0.85rem; color: var(--muted); }
+  .steps li.done::before { content: "✓"; background: var(--ok); color: #fff; }
+  .steps .note {
+    display: block; margin-top: 6px; font-size: 0.85rem; color: var(--warn);
+  }
+  table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 0.82rem; }
+  .done-list { list-style: none; padding: 0; }
+  .done-list li { padding-left: 30px; position: relative; }
+  .done-list li::before {
+    content: ""; position: absolute; left: 2px; top: 7px; width: 15px; height: 15px;
+    border: 2px solid var(--ok); border-radius: 5px;
+  }
+  .done-list li.done::before { background: var(--ok); }
+  .done-list li.done::after {
+    content: "✓"; position: absolute; left: 5px; top: 2px;
+    color: #fff; font-size: 0.75rem; font-weight: 700;
+  }
+  .scroll-x { overflow-x: auto; }
+  footer { margin-top: 30px; color: var(--muted); font-size: 0.8rem; text-align: center; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <span class="issue-chip"><a href="https://github.com/damdam6/vocabulary-study/issues/112">#112</a></span><span class="type-chip">기능 개선</span>
+    <h1>홈 수정 아이콘 드롭다운 제거</h1>
+    <div class="meta">
+      <span><b>damdam6/vocabulary-study</b></span>
+      <span>브랜치 <b><code>feat/112-remove-edit-dropdown</code></b> ← <code>main</code></span>
+      <span>라벨 <b>enhancement</b></span>
+      <span>2026-07-28</span>
+    </div>
+  </header>
+
+  <section class="card">
+    <h2><span class="no">1</span>요약</h2>
+    <p>홈 유틸 바의 수정 아이콘(#105)은 현재 팝오버 메뉴를 열어 "단어 등록"·"1회 문제 수 수정"(#110) 두 옵션을 보여준다. #111에서 문제수 편집이 등록 화면 상단 필드로 흡수되면서 두 옵션의 목적지가 완전히 같아졌고, 메뉴는 클릭 한 번을 더 요구하는 무의미한 중간 단계가 됐다. 이 작업은 메뉴·바깥 클릭 닫힘·포커스 전달 배선을 모두 제거하고 수정 아이콘을 사람 아이콘과 동일하게 즉시-동작 버튼으로 단순화한다. 사람 아이콘(프로필 전환)은 이미 메뉴 없는 즉시 동작이라 변경이 없다.</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">2</span>현황 분석</h2>
+    <p><code>src/components/HomeUtilBar.tsx:8-14</code> — 수정 버튼은 <code>onNavigateRegister</code>·<code>onEditSessionLimit</code> 두 콜백을 받고, 내부 <code>menuItems</code>(68-71)가 "단어 등록"/"1회 문제 수 수정" 두 항목으로 각각 연결한다.</p>
+    <p>메뉴 상태·상호작용 로직이 전체의 절반 이상을 차지한다: <code>menuOpen</code>/<code>menuWrapRef</code>/<code>triggerRef</code>/<code>itemRefs</code>/<code>menuId</code>(61-65), 바깥 <code>pointerdown</code>·<code>Escape</code> 닫힘 이펙트(73-97), 첫 항목 자동 포커스 이펙트(99-102), <code>selectItem</code>(104-107), 화살표 키 이동 <code>moveFocus</code>(111-122)와 그 트리거(124-139), <code>role="menu"</code> 마크업(158-176).</p>
+    <p>포커스 대상 배선은 <code>HomeUtilBar</code> 밖, 상위 두 곳에 흩어져 있다: <code>src/App.tsx:33</code>의 <code>registerFocusLimit</code> state, <code>App.tsx:49-52</code>의 <code>navigateRegister(focusLimit)</code>, <code>App.tsx:78-79</code>에서 <code>HomeScreen</code>에 내려주는 두 콜백, <code>App.tsx:104</code>에서 <code>RegisterScreen</code>에 넘기는 <code>focusSessionLimit={registerFocusLimit}</code>. <code>src/screens/HomeScreen.tsx:17-19,102-106</code>은 이 두 콜백을 그대로 <code>HomeUtilBar</code>까지 통과시킬 뿐이다.</p>
+    <p><code>src/screens/RegisterScreen.tsx:44,66,89-90,117-124,304</code> — <code>focusSessionLimit</code> prop과 <code>limitInputRef</code>/<code>hasFocusedLimitRef</code>, 그리고 값이 준비되는 순간 입력란에 포커스·스크롤하는 이펙트. 같은 파일 293-326을 보면 문제수 필드는 애초에 헤더 바로 아래 항상 렌더되는 독립 섹션이라(#111), 포커스 이동이 없어도 필드는 이미 보인다 — 이 배선은 순수하게 "메뉴에서 어떤 옵션을 골랐는지"를 화면 간에 전달하는 용도였다.</p>
+    <p><code>src/index.css:901-942</code> — <code>.home-util-menu-wrap</code>/<code>.home-util-menu</code>/<code>.home-util-menu-item</code>(+hover/focus-visible) 규칙은 메뉴 전용. <code>.home-util-bar</code>(863-867)·<code>.home-util-button</code> 계열(869-894)·<code>.home-util-icon</code>(896-899)은 수정·사람 버튼이 공유하므로 유지 대상.</p>
+    <p>사람 버튼은 이미 메뉴가 없다 — <code>HomeUtilBar.tsx:179-183</code>는 <code>onClick={onSwitchProfile}</code> 직결 버튼이고 <code>menuOpen</code> 등 어떤 상태도 참조하지 않는다. 이번 변경의 목표 형태와 정확히 같은 패턴이다.</p>
+    <p>테스트는 세 파일에 걸쳐 메뉴 동작을 검증한다: <code>src/components/HomeUtilBar.test.tsx</code>(메뉴 열기/항목 순서/첫 항목 포커스/바깥 pointerdown 닫힘/Escape 닫힘/항목 선택 2건), <code>src/screens/HomeScreen.test.tsx</code>(메뉴 두 옵션이 App까지 이어지는지 2건), <code>src/screens/RegisterScreen.test.tsx:159-171</code>(<code>focusSessionLimit</code> 포커스 이동 2건).</p>
+    <p><code>docs/design-prd.md</code> §3(85-87행)이 메뉴 스펙(위치·애니메이션·role·닫힘 방식·두 옵션)을 규정하고, §6(151행 "진입", 154행 문제수 필드 마지막 문장)이 그 메뉴를 전제로 진입 경로를 설명한다. §9 결정 로그(204행 "수정 메뉴 형태")와 §10 이슈 매핑(222행 #105 행)도 메뉴를 언급한다.</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">3</span>설계</h2>
+    <p><b>채택</b>: 수정 버튼을 사람 버튼과 동일한 형태로 맞춘다 — <code>role="menu"</code>·팝오버·바깥 클릭 닫힘·포커스 이동을 통째로 제거하고, <code>onClick</code> 하나가 곧바로 등록 화면으로 이동시킨다. <code>onNavigateRegister</code>/<code>onEditSessionLimit</code> 두 콜백을 <code>onNavigateRegister</code> 하나로 합친다. <code>App.tsx</code>의 <code>registerFocusLimit</code>/<code>navigateRegister(focusLimit)</code>와 <code>RegisterScreen</code>의 <code>focusSessionLimit</code>은 필드가 이미 화면 상단에 항상 보이므로(§2, #111) 존재 이유가 사라져 함께 삭제한다.</p>
+    <p><b>기각한 대안 1</b> — 메뉴 구조는 남기고 옵션을 하나로 줄인다: 옵션이 하나뿐인 메뉴를 열기 위해 한 번 더 클릭하게 만드는 건 이슈가 지적한 문제(무의미한 선택 단계)를 그대로 남긴다.</p>
+    <p><b>기각한 대안 2</b> — <code>focusSessionLimit</code> 배선은 남기고 메뉴만 제거해 수정 버튼이 항상 포커스+스크롤과 함께 진입하게 한다: 필드가 이미 헤더 바로 아래 있어 스크롤할 거리가 사실상 없고, "왜 등록 화면인데 포커스가 강제로 옮겨가는지" 설명하기 어려운 동작만 남는다. 단순 이동이 더 정직하다.</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">4</span>작업 단계</h2>
+    <ol class="steps">
+      <li class="done">수정 버튼을 사람 버튼과 같은 즉시-클릭 구조로 재작성: props를 <code>onNavigateRegister</code>·<code>onSwitchProfile</code> 둘로 축소하고, <code>menuOpen</code>/<code>menuWrapRef</code>/<code>triggerRef</code>/<code>itemRefs</code>/<code>menuId</code>/<code>menuItems</code>, 바깥 pointerdown·Escape 닫힘 이펙트, 첫 항목 포커스 이펙트, <code>selectItem</code>/<code>moveFocus</code>/<code>handleTriggerKeyDown</code>/<code>handleMenuKeyDown</code>, <code>role="menu"</code> 마크업을 모두 제거. 수정 버튼은 <code>aria-label="수정"</code>·<code>onClick={onNavigateRegister}</code>만 남긴 단순 버튼으로. 관련 파일 상단 주석(#105·#110 설명)도 현재 구조에 맞게 정리.
+        <span class="files"><code>src/components/HomeUtilBar.tsx</code></span>
+      </li>
+      <li class="done">메뉴 전용 CSS 삭제: <code>.home-util-menu-wrap</code>·<code>.home-util-menu</code>·<code>.home-util-menu-item</code>(+hover/focus-visible) 규칙 제거. <code>.home-util-bar</code>·<code>.home-util-button</code>·<code>.home-util-icon</code>은 유지.
+        <span class="files"><code>src/index.css</code> (901~942행 부근)</span>
+      </li>
+      <li class="done"><code>HomeScreen</code>의 props를 <code>onNavigateRegister</code> 하나로 축소하고 <code>HomeUtilBar</code>로 그대로 전달.
+        <span class="files"><code>src/screens/HomeScreen.tsx</code></span>
+      </li>
+      <li class="done"><code>App.tsx</code>에서 <code>registerFocusLimit</code> state와 <code>navigateRegister(focusLimit)</code> 헬퍼를 제거하고, <code>HomeScreen</code>에는 <code>onNavigateRegister={() => setScreen('register')}</code>를 직접 연결. <code>RegisterScreen</code>에 넘기던 <code>focusSessionLimit={registerFocusLimit}</code> prop도 제거.
+        <span class="files"><code>src/App.tsx</code></span>
+      </li>
+      <li class="done"><code>RegisterScreen</code>에서 <code>focusSessionLimit</code> prop, <code>limitInputRef</code>, <code>hasFocusedLimitRef</code>, 관련 포커스·스크롤 <code>useEffect</code>를 제거하고 입력란의 <code>ref={limitInputRef}</code>도 정리. 필드 자체(프리필·저장·검증)는 변경 없음.
+        <span class="files"><code>src/screens/RegisterScreen.tsx</code></span>
+      </li>
+      <li class="done"><code>HomeUtilBar.test.tsx</code>를 새 구조에 맞게 재작성: 메뉴 열기/항목 순서/첫 항목 포커스/바깥 pointerdown 닫힘/Escape 닫힘 테스트는 제거, "수정 버튼 클릭 시 즉시 <code>onNavigateRegister</code> 호출" 테스트로 대체. 사람 버튼 테스트와 <code>aria-label</code>·SVG 접근성 테스트는 새 props에 맞춰 유지.
+        <span class="files"><code>src/components/HomeUtilBar.test.tsx</code></span>
+      </li>
+      <li class="done"><code>HomeScreen.test.tsx</code>에서 "1회 문제 수 수정" prop 전달 테스트를 제거하고, "수정 메뉴의 '단어 등록'…" 테스트를 "수정 버튼 클릭이 <code>onNavigateRegister</code>까지 이어진다"로 단순화. <code>setup()</code>의 mock·쿼리 헬퍼도 갱신. 사람 버튼·로딩 상태 테스트는 그대로.
+        <span class="files"><code>src/screens/HomeScreen.test.tsx</code></span>
+      </li>
+      <li class="done"><code>RegisterScreen.test.tsx</code>에서 <code>focusSessionLimit</code> 관련 테스트 2건과 <code>setup()</code>의 <code>focusSessionLimit</code> 매개변수를 제거. 문제수 필드 자체의 프리필/저장/검증/독립성 테스트는 영향 없음.
+        <span class="files"><code>src/screens/RegisterScreen.test.tsx</code></span>
+      </li>
+      <li class="done"><code>docs/design-prd.md</code> §3 개정: 85-86행의 메뉴 스펙(위치·애니메이션·role·닫힘·두 옵션)을 "수정 버튼 클릭 시 팝오버 없이 등록 화면으로 즉시 이동"으로 교체. §6 151행에서 "→ 메뉴 '단어 등록'" 문구 삭제, 154행 마지막 문장(메뉴 옵션으로 진입 시 포커스+스크롤)을 삭제. §9 결정 로그의 "수정 메뉴 형태(#105)" 행에 취소선·개정 각주를 추가(기존 "프로필 전환 링크 위치·스타일" 행의 표기 패턴 재사용, #112 언급). §10 이슈 매핑에 #112 행 추가.
+        <span class="files"><code>docs/design-prd.md</code></span>
+      </li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">5</span>리스크</h2>
+    <div class="scroll-x">
+    <table>
+      <thead><tr><th>리스크</th><th>영향</th><th>완화책</th></tr></thead>
+      <tbody>
+        <tr><td>메뉴 전용 테스트를 지우며 실제로 검증하던 접근성 속성(예: <code>aria-label</code>)까지 함께 잃는다</td><td>회귀를 못 잡음</td><td>새 단순 버튼에 대해서도 <code>aria-label</code>·클릭→콜백 테스트를 남겨 커버리지 공백 방지</td></tr>
+        <tr><td>design-prd §9 결정 로그가 과거 결정("메뉴 채택")과 현재 상태가 어긋난 채로 남음</td><td>문서 신뢰도 저하</td><td>기존 "프로필 전환 링크 위치·스타일" 행이 쓰던 취소선+개정 각주 패턴을 그대로 적용</td></tr>
+        <tr><td>미사용 CSS 규칙이 남아 이후 개발자가 착각</td><td>낮음 — 코드 정리 이슈</td><td>4단계에서 메뉴 전용 규칙을 명시적으로 삭제</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">6</span>테스트 계획</h2>
+    <ul>
+      <li><code>npm test</code> (vitest) — <code>HomeUtilBar.test.tsx</code>, <code>HomeScreen.test.tsx</code>, <code>RegisterScreen.test.tsx</code> 전부 통과.</li>
+      <li>수동 확인: 홈에서 수정 아이콘 클릭 → 팝오버 없이 등록 화면으로 즉시 이동하는지.</li>
+      <li>수동 확인: 사람 아이콘 클릭 → 기존과 동일하게 즉시 로그인 화면으로 전환되는지(동작 불변 확인).</li>
+      <li>수동 확인: 등록 화면 진입 시 문제수 필드가 헤더 바로 아래 별도 포커스 없이도 바로 보이는지.</li>
+      <li><code>npm run build</code> (tsc + vite) — 제거된 prop/ref 참조가 남아 타입 에러가 나지 않는지 확인.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">7</span>완료 조건</h2>
+    <ul class="done-list">
+      <li class="done">수정 아이콘 클릭 즉시 등록 화면 이동 (팝오버 미노출)</li>
+      <li class="done">메뉴·pointerdown 닫힘·포커스 전달 관련 코드 제거, 기존 홈 테스트 갱신·통과</li>
+      <li class="done">사람 아이콘 동작 불변</li>
+      <li class="done">design-prd §3(및 §6·§9·§10 연동 언급) 개정</li>
+    </ul>
+  </section>
+
+  <footer>issue-plan · <a href="https://github.com/damdam6/vocabulary-study/issues/112">#112</a> · 2026-07-28</footer>
+</main>
+</body>
+</html>

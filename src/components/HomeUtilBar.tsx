@@ -2,14 +2,10 @@
 // 헤더 우측 라운드 사각 아이콘 버튼으로 승격한다. 근거 플랜:
 // docs/plans/session-limit-and-home-utils.md §3.4 · §5 작업 D.
 //
-// 수정 메뉴 옵션은 "단어 등록"·"1회 문제 수 수정" 둘이다(§5 작업 E, #110) — 둘 다
-// 등록 화면(RegisterScreen)으로 이동하고, 후자는 상단 문제수 필드에 포커스를 준다
-// (App.tsx의 focusSessionLimit 배선). 옵션이 늘어날 자리는 menuItems 배열 하나.
-import { useEffect, useId, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react'
-
+// 수정 버튼은 팝오버 메뉴 없이 등록 화면으로 즉시 이동한다 — 문제수 필드가 등록
+// 화면 상단에 항상 보이므로(#111) 별도 진입 경로가 필요 없어졌다(#112, 메뉴 제거).
 interface HomeUtilBarProps {
   onNavigateRegister: () => void
-  onEditSessionLimit: () => void
   onSwitchProfile: () => void
 }
 
@@ -58,123 +54,12 @@ function PersonIcon() {
   )
 }
 
-function HomeUtilBar({ onNavigateRegister, onEditSessionLimit, onSwitchProfile }: HomeUtilBarProps) {
-  const [menuOpen, setMenuOpen] = useState(false)
-  const menuWrapRef = useRef<HTMLDivElement>(null)
-  const triggerRef = useRef<HTMLButtonElement>(null)
-  const itemRefs = useRef<(HTMLButtonElement | null)[]>([])
-  const menuId = useId()
-
-  const menuItems = [
-    { label: '단어 등록', onSelect: onNavigateRegister },
-    { label: '1회 문제 수 수정', onSelect: onEditSessionLimit },
-  ]
-
-  // 바깥 탭/ESC로 닫힘 — 커스텀 드롭다운과 같은 패턴(#66). click이 아니라 pointerdown인
-  // 이유는 터치 환경에서 click이 늦게 오거나 스크롤로 취소되기 때문(#65). 트리거가 이
-  // 컨테이너 안에 있으므로 열린 상태에서 트리거를 다시 눌러도 여기서 닫히지 않고
-  // onClick 토글이 처리한다. 열려 있을 때만 리스너를 붙여 다른 UI에 영향을 주지 않는다.
-  useEffect(() => {
-    if (!menuOpen) return
-    const handlePointerDown = (event: PointerEvent) => {
-      if (!menuWrapRef.current?.contains(event.target as Node)) {
-        setMenuOpen(false)
-      }
-    }
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        event.preventDefault()
-        setMenuOpen(false)
-        triggerRef.current?.focus()
-      }
-    }
-    document.addEventListener('pointerdown', handlePointerDown)
-    document.addEventListener('keydown', handleKeyDown)
-    return () => {
-      document.removeEventListener('pointerdown', handlePointerDown)
-      document.removeEventListener('keydown', handleKeyDown)
-    }
-  }, [menuOpen])
-
-  // 열리면 첫 항목으로 포커스 — role="menu"의 기본 기대 동작
-  useEffect(() => {
-    if (menuOpen) itemRefs.current[0]?.focus()
-  }, [menuOpen])
-
-  const selectItem = (onSelect: () => void) => {
-    setMenuOpen(false)
-    onSelect()
-  }
-
-  // 항목 간 이동은 포커스 기준 — 옵션이 하나인 지금은 사실상 no-op이지만
-  // 작업 E에서 옵션이 늘어나도 그대로 동작한다.
-  const moveFocus = (delta: number) => {
-    const items = itemRefs.current.filter((item): item is HTMLButtonElement => item !== null)
-    if (items.length === 0) return
-    const current = items.findIndex((item) => item === document.activeElement)
-    // 포커스가 메뉴 밖이면 방향과 무관하게 첫 항목으로 — -1을 그대로 모듈러에 넣으면
-    // ArrowUp이 엉뚱한 항목에 떨어진다.
-    if (current === -1) {
-      items[0].focus()
-      return
-    }
-    items[(current + delta + items.length) % items.length].focus()
-  }
-
-  const handleTriggerKeyDown = (event: ReactKeyboardEvent<HTMLButtonElement>) => {
-    if (event.key === 'ArrowDown') {
-      event.preventDefault()
-      setMenuOpen(true)
-    }
-  }
-
-  const handleMenuKeyDown = (event: ReactKeyboardEvent<HTMLUListElement>) => {
-    if (event.key === 'ArrowDown') {
-      event.preventDefault()
-      moveFocus(1)
-    } else if (event.key === 'ArrowUp') {
-      event.preventDefault()
-      moveFocus(-1)
-    }
-  }
-
+function HomeUtilBar({ onNavigateRegister, onSwitchProfile }: HomeUtilBarProps) {
   return (
     <div className="home-util-bar">
-      <div className="home-util-menu-wrap" ref={menuWrapRef}>
-        <button
-          ref={triggerRef}
-          type="button"
-          className="home-util-button"
-          aria-label="수정"
-          aria-haspopup="menu"
-          aria-expanded={menuOpen}
-          aria-controls={menuId}
-          onClick={() => setMenuOpen((open) => !open)}
-          onKeyDown={handleTriggerKeyDown}
-        >
-          <EditIcon />
-        </button>
-
-        {menuOpen && (
-          <ul id={menuId} className="home-util-menu" role="menu" aria-label="수정" onKeyDown={handleMenuKeyDown}>
-            {menuItems.map((item, index) => (
-              <li key={item.label} role="none">
-                <button
-                  ref={(node) => {
-                    itemRefs.current[index] = node
-                  }}
-                  type="button"
-                  role="menuitem"
-                  className="home-util-menu-item"
-                  onClick={() => selectItem(item.onSelect)}
-                >
-                  {item.label}
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
+      <button type="button" className="home-util-button" aria-label="수정" onClick={onNavigateRegister}>
+        <EditIcon />
+      </button>
 
       {/* 프로필 전환 (#78) — v1엔 로그아웃이 없어 다른 프로필로 갈아탈 유일한 경로.
           확인 단계 없이 즉시 전환한다(플랜 Q5). */}

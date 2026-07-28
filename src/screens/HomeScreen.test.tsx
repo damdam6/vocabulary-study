@@ -1,8 +1,9 @@
 // @vitest-environment jsdom
 //
 // 홈 화면의 진입 액션 배치 회귀 테스트 (#105) — 유틸 바가 헤더에 있고, 옛 하단 저강조
-// 링크 2개는 사라졌으며, 유틸 바의 두 액션이 App에서 내려온 prop까지 실제로 이어지는지.
-// 세션 큐·현황 집계 로직은 이 작업의 대상이 아니라 fetchWords만 고정 응답으로 대체한다.
+// 링크 2개는 사라졌으며, 유틸 바의 액션이 App에서 내려온 prop까지 실제로 이어지는지.
+// 수정 버튼은 메뉴 없이 즉시 등록 화면으로 이동한다(#112). 세션 큐·현황 집계 로직은
+// 이 작업의 대상이 아니라 fetchWords만 고정 응답으로 대체한다.
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import HomeScreen from "./HomeScreen.tsx";
 import { fire, flush, renderComponent } from "../test-utils.tsx";
@@ -32,15 +33,9 @@ afterEach(() => {
 function setup() {
   const onStart = vi.fn();
   const onNavigateRegister = vi.fn();
-  const onEditSessionLimit = vi.fn();
   const onSwitchProfile = vi.fn();
   const { container, unmount } = renderComponent(
-    <HomeScreen
-      onStart={onStart}
-      onNavigateRegister={onNavigateRegister}
-      onEditSessionLimit={onEditSessionLimit}
-      onSwitchProfile={onSwitchProfile}
-    />,
+    <HomeScreen onStart={onStart} onNavigateRegister={onNavigateRegister} onSwitchProfile={onSwitchProfile} />,
   );
   unmountCurrent = unmount;
 
@@ -49,12 +44,10 @@ function setup() {
     container,
     onStart,
     onNavigateRegister,
-    onEditSessionLimit,
     onSwitchProfile,
     startButton: () => container.querySelector<HTMLButtonElement>(".start-button")!,
     editButton: byLabel("수정")!,
     personButton: byLabel("프로필 전환")!,
-    menuItems: () => Array.from(container.querySelectorAll<HTMLButtonElement>('[role="menuitem"]')),
   };
 }
 
@@ -84,24 +77,13 @@ describe("HomeScreen 진입 액션 배치", () => {
     expect(container.textContent).not.toContain("단어 등록 ›");
   });
 
-  it("수정 메뉴의 '단어 등록'이 등록 화면 이동 prop까지 이어진다", async () => {
-    const { editButton, menuItems, onNavigateRegister } = setup();
+  it("수정 버튼을 누르면 메뉴 없이 등록 화면 이동 prop까지 즉시 이어진다 (#112)", async () => {
+    const { editButton, onNavigateRegister } = setup();
     await flush();
 
     fire(() => editButton.click());
-    fire(() => menuItems()[0].click());
 
     expect(onNavigateRegister).toHaveBeenCalledTimes(1);
-  });
-
-  it("수정 메뉴의 '1회 문제 수 수정'이 문제 수 수정 prop까지 이어진다 (#110)", async () => {
-    const { editButton, menuItems, onEditSessionLimit } = setup();
-    await flush();
-
-    fire(() => editButton.click());
-    fire(() => menuItems()[1].click());
-
-    expect(onEditSessionLimit).toHaveBeenCalledTimes(1);
   });
 
   it("사람 버튼이 프로필 전환 prop까지 이어진다", async () => {
