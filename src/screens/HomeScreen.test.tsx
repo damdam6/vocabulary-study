@@ -14,7 +14,7 @@ const { fetchWordsMock } = vi.hoisted(() => ({ fetchWordsMock: vi.fn() }));
 vi.mock("../lib/wordsApi.ts", () => ({ fetchWords: fetchWordsMock }));
 
 const profile: PublicProfile = { id: "hsk6", name: "HSK 6급", modes: ["m1", "m2"], contentType: "zh" };
-const wordsResponse: WordsResponse = { profile, words: [] };
+const wordsResponse: WordsResponse = { profile, words: [], settings: { sessionLimit: 60 } };
 
 let unmountCurrent: (() => void) | null = null;
 
@@ -53,6 +53,12 @@ describe("HomeScreen 진입 액션 배치", () => {
   it("헤더에 유틸 바 버튼 2개를 렌더한다", async () => {
     const { container, editButton, personButton } = setup();
     await flush();
+
+    // 목 응답이 실제로 ready 상태까지 갔는지 먼저 못박는다 — fetchWords 계약이 바뀌어
+    // then 블록이 던지면 조용히 error 상태로 떨어지는데, 유틸 바는 그때도 보이기 때문에
+    // 이 단언이 없으면 아래 검사가 통과하면서 회귀를 놓친다.
+    expect(container.querySelector(".error-card")).toBeNull();
+    expect(container.querySelectorAll(".status-card:not(.skeleton)")).toHaveLength(3);
 
     expect(editButton).not.toBeNull();
     expect(personButton).not.toBeNull();
