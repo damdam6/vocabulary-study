@@ -15,13 +15,12 @@ interface HomeScreenProps {
   /** limit은 그 세션의 문제 수 상한 — 큐 구성뿐 아니라 §6.2 오답 재삽입 상한에도 쓰인다(#113). */
   onStart: (queue: SessionQuestion<WordEntry>[], limit: number) => void
   onNavigateRegister: () => void
-  onEditSessionLimit: () => void
   onSwitchProfile: () => void
 }
 
 type Status = "loading" | "error" | "ready";
 
-function HomeScreen({ onStart, onNavigateRegister, onEditSessionLimit, onSwitchProfile }: HomeScreenProps) {
+function HomeScreen({ onStart, onNavigateRegister, onSwitchProfile }: HomeScreenProps) {
   const [status, setStatus] = useState<Status>("loading");
   const [stats, setStats] = useState<HomeStats | null>(null);
   const [words, setWords] = useState<WordEntry[]>([]);
@@ -99,11 +98,7 @@ function HomeScreen({ onStart, onNavigateRegister, onEditSessionLimit, onSwitchP
           <h1 className="home-title">오늘의 학습</h1>
           {profile && <p className="home-profile-name">{profile.name}</p>}
         </div>
-        <HomeUtilBar
-          onNavigateRegister={onNavigateRegister}
-          onEditSessionLimit={onEditSessionLimit}
-          onSwitchProfile={onSwitchProfile}
-        />
+        <HomeUtilBar onNavigateRegister={onNavigateRegister} onSwitchProfile={onSwitchProfile} />
       </div>
 
       {status === "loading" && (

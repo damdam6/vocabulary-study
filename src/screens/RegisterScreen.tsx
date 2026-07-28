@@ -28,7 +28,7 @@
 // 아래 등록 플로우(text/confirmedText/submitPhase 등)에 영향을 주지 않고, 역도
 // 같다. 현재값은 이 화면이 이미 부르는 fetchWords의 settings에서 오며, 별도
 // 표시 없이 입력란을 그 값으로 프리필하는 것으로 "현재값 표시"를 겸한다.
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import RegisterTable from './RegisterTable.tsx'
 import Dropdown from '../components/Dropdown.tsx'
 import { postSettings, type ContentType, type WordEntry } from '../lib/api.ts'
@@ -40,8 +40,6 @@ import { validateNewTabName, validateRegistrationInput } from '../lib/registerVa
 interface RegisterScreenProps {
   contentType: ContentType
   onGoHome: () => void
-  /** 홈 수정 메뉴의 "1회 문제 수 수정"에서 진입했을 때 문제수 입력란에 포커스+스크롤한다(§3.5). */
-  focusSessionLimit?: boolean
 }
 
 type FetchStatus = 'loading' | 'error' | 'ready'
@@ -63,7 +61,7 @@ function validateSessionLimit(rawValue: string): string | null {
   return null
 }
 
-function RegisterScreen({ contentType, onGoHome, focusSessionLimit }: RegisterScreenProps) {
+function RegisterScreen({ contentType, onGoHome }: RegisterScreenProps) {
   const [wordsStatus, setWordsStatus] = useState<FetchStatus>('loading')
   const [wordsError, setWordsError] = useState('')
   const [allWords, setAllWords] = useState<WordEntry[]>([])
@@ -86,8 +84,6 @@ function RegisterScreen({ contentType, onGoHome, focusSessionLimit }: RegisterSc
   const [limitInput, setLimitInput] = useState('')
   const [limitSaveStatus, setLimitSaveStatus] = useState<LimitSaveStatus>('idle')
   const [limitError, setLimitError] = useState<string | null>(null)
-  const limitInputRef = useRef<HTMLInputElement>(null)
-  const hasFocusedLimitRef = useRef(false)
 
   useEffect(() => {
     let cancelled = false
@@ -110,18 +106,6 @@ function RegisterScreen({ contentType, onGoHome, focusSessionLimit }: RegisterSc
       controller.abort()
     }
   }, [wordsRetryKey])
-
-  // 홈 수정 메뉴 "1회 문제 수 수정"에서 진입했을 때 최초로 값이 준비되는 순간에만
-  // 포커스를 옮긴다 — "다시 시도" 등으로 wordsStatus가 재차 ready가 되어도 커서를
-  // 다시 뺏지 않도록 1회 가드.
-  useEffect(() => {
-    if (!focusSessionLimit || wordsStatus !== 'ready' || hasFocusedLimitRef.current) return
-    hasFocusedLimitRef.current = true
-    const input = limitInputRef.current
-    input?.focus()
-    // jsdom(테스트 환경)엔 scrollIntoView가 없다 — 존재할 때만 호출.
-    input?.scrollIntoView?.({ block: 'center' })
-  }, [focusSessionLimit, wordsStatus])
 
   // #48(Worker API) 미구현으로 지금은 항상 실패할 수 있다 — 실패해도 화면은 막지
   // 않고 "새 탭" 수동 입력으로 대체한다(아래 tabsStatus 사용부 참고).
@@ -301,7 +285,6 @@ function RegisterScreen({ contentType, onGoHome, focusSessionLimit }: RegisterSc
         <div className="register-limit-row">
           <input
             id="register-limit-input"
-            ref={limitInputRef}
             className="register-limit-input"
             type="number"
             inputMode="numeric"

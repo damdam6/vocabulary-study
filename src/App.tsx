@@ -28,9 +28,6 @@ function App() {
   // 큐와 같은 세션 문제 수 상한 — §6.2 오답 재삽입도 이 값을 써야 세션이 설정값을 넘지 않는다(#113)
   const [sessionLimit, setSessionLimit] = useState(SESSION_CAP)
   const [sessionResult, setSessionResult] = useState<SessionResult>({ correct: 0, wrong: 0 })
-  // 홈 수정 메뉴의 "1회 문제 수 수정"에서 등록 화면으로 진입했는지 — 문제수 필드
-  // 포커스 대상 전달(세션 설정 플랜 §3.5, #110). 구조 변경 없이 진입 경로만 분기.
-  const [registerFocusLimit, setRegisterFocusLimit] = useState(false)
 
   // 어느 API든 401 수신 시 로그인 화면 복귀 — 저장값 삭제는 apiFetch가 이미 수행
   useEffect(() => {
@@ -45,11 +42,6 @@ function App() {
     void flushRetryQueue()
     return () => setApiSuccessHandler(null)
   }, [])
-
-  const navigateRegister = (focusLimit: boolean) => {
-    setRegisterFocusLimit(focusLimit)
-    setScreen('register')
-  }
 
   const startSession = (queue: SessionQuestion<WordEntry>[], limit: number) => {
     setSessionQueue(queue)
@@ -75,8 +67,7 @@ function App() {
         {screen === 'home' && (
           <HomeScreen
             onStart={startSession}
-            onNavigateRegister={() => navigateRegister(false)}
-            onEditSessionLimit={() => navigateRegister(true)}
+            onNavigateRegister={() => setScreen('register')}
             onSwitchProfile={switchProfile}
           />
         )}
@@ -101,7 +92,6 @@ function App() {
             <RegisterScreen
               contentType={getStoredProfile()?.contentType ?? 'zh'}
               onGoHome={() => setScreen('home')}
-              focusSessionLimit={registerFocusLimit}
             />
           </Suspense>
         )}
