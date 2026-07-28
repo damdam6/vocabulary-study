@@ -183,6 +183,40 @@ describe("buildSessionQueue — 단어 유일성 (#44)", () => {
   });
 });
 
+describe("buildSessionQueue — limit 파라미터화 (세션 설정 플랜 §3.2, #104)", () => {
+  it("limit을 생략하면 SESSION_CAP(60)이 그대로 상한이다 — 기존 동작 보존", () => {
+    const reviews = Array.from({ length: 70 }, (_, i) => reviewWord(`복${i}`, "2026-07-01"));
+    const queue = buildSessionQueue(reviews, today, M, mulberry32(11));
+
+    expect(queue).toHaveLength(SESSION_CAP);
+  });
+
+  it("limit=30이면 복습 대기 컷과 총 상한 모두 30이다", () => {
+    const reviews = Array.from({ length: 40 }, (_, i) => reviewWord(`복${i}`, "2026-07-01"));
+    const queue = buildSessionQueue(reviews, today, M, mulberry32(12), 30);
+
+    expect(queue).toHaveLength(30);
+    expect(queue.every((q) => q.isReview)).toBe(true);
+  });
+
+  it("limit=30이면 복습 20 + 학습 40이어도 총 30문제로 캡된다", () => {
+    const reviews = Array.from({ length: 20 }, (_, i) => reviewWord(`복${i}`, "2026-07-01"));
+    const learnings = Array.from({ length: 40 }, (_, i) => learningWord(`학${i}`, i % 3, 0));
+    const queue = buildSessionQueue([...reviews, ...learnings], today, M, mulberry32(13), 30);
+
+    expect(queue).toHaveLength(30);
+    expect(queue.filter((q) => q.isReview)).toHaveLength(20);
+    expect(queue.filter((q) => !q.isReview)).toHaveLength(10);
+  });
+
+  it("limit=1이면 큐는 정확히 1문제다", () => {
+    const words = [reviewWord("복", "2026-07-01"), learningWord("학", 0, 0)];
+    const queue = buildSessionQueue(words, today, M, mulberry32(14), 1);
+
+    expect(queue).toHaveLength(1);
+  });
+});
+
 describe("buildSessionQueue — M 파라미터화 (#76)", () => {
   it("M={m1}이면 복습·학습 중 문제가 전부 m1이다", () => {
     // m2:0인 채로 m1만 3 이상이면 M={m1} 기준으로 졸업(복습 대기) — 상태 분류도 M을 탄다(#75)
