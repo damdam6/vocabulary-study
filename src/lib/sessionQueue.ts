@@ -8,7 +8,7 @@
 
 import { getWordState, type Mode, type WordProgress } from "./wordState.ts";
 
-/** PRD §6.1: 세션 전체 상한. §6.2의 오답 재삽입 상한도 같은 값을 쓴다(#15). */
+/** PRD §6.1: 세션 전체 상한의 기본값 — 시트 `문제수` 설정이 없을 때 쓰인다(#102). */
 export const SESSION_CAP = 60;
 
 export type QuizMode = "m1" | "m2";

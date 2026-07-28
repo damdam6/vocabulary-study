@@ -1,30 +1,23 @@
 /**
  * PRD §6.2·design-prd §4.5: 학습 세션 진행 규칙 — 정오 판정에 따른 기록 effect
- * 결정, 학습 중 오답 재삽입, 정오 집계. 화면(StudyScreen)이 아닌 순수 모듈에 두는
- * 이유: 네 케이스(복습/학습 중 × 정오)의 API 분기와 재삽입·분모 규칙이 #15의 검증
- * 대상이라 vitest(node 환경)로 고정한다 — wordState·sessionQueue와 같은 배치.
+ * 결정과 정오 집계. 화면(StudyScreen)이 아닌 순수 모듈에 두는 이유: 네 케이스
+ * (복습/학습 중 × 정오)의 API 분기가 #15의 검증 대상이라 vitest(node 환경)로
+ * 고정한다 — wordState·sessionQueue와 같은 배치.
  */
 
 import type { WordEntry } from "./api.ts";
-import { SESSION_CAP, type SessionQuestion } from "./sessionQueue.ts";
+import type { SessionQuestion } from "./sessionQueue.ts";
 
-/** 진행 중 큐 항목. requeued는 학습 중 오답 재삽입 복사본 표시 — 재재삽입(§6.2 "1회만")을 막는다. */
-export interface StudyQuestion extends SessionQuestion<WordEntry> {
-  requeued: boolean;
-}
+/** 진행 중 큐 항목. 큐는 시작 시 확정되므로 큐 항목은 세션 문제와 같은 형태다(#116). */
+export type StudyQuestion = SessionQuestion<WordEntry>;
 
 export interface StudySessionState {
-  /** 학습 중 오답 재삽입으로 세션 도중 늘어날 수 있다 — 진행도 분모는 항상 queue.length. */
+  /** 시작 시 확정돼 세션 내내 불변 — 진행도 분모(queue.length)도 따라서 불변이다(#116). */
   queue: StudyQuestion[];
   /** 현재 문제 인덱스. queue.length에 도달하면 세션 소진. */
   pos: number;
   correct: number;
   wrong: number;
-  /**
-   * 이 세션의 문제 수 상한(시트 `문제수` 설정, 세션 설정 플랜 §3.2) — 재삽입 판정에 쓴다.
-   * 시작 시점에 확정해 세션 내내 고정한다(설정 변경은 다음 세션부터, §3.2와 동일 성질).
-   */
-  limit: number;
 }
 
 /** 판정 직후 셸이 발사해야 할 기록 API. none = 학습 중 오답(호출 없음, §6.2). */
@@ -44,19 +37,17 @@ export function gradeMode2(input: string, hanzi: string): { correct: boolean; an
 }
 
 /**
- * limit은 세션 총 문제 수 상한 — §6.2 재삽입도 큐 구성(sessionQueue)·홈 집계(homeStats)와
- * 같은 값을 쓴다(#113). 기본값 SESSION_CAP(60)이라 인자를 생략하면 기존 동작과 같다.
+ * 홈이 만든 큐(sessionQueue, 시트 `문제수` 설정 상한 적용)를 그대로 세션 큐로 삼는다 —
+ * 세션 중 큐가 늘어나는 경로가 없으므로 문제 수는 시작 시점에 확정된다(#116).
  */
 export function startSession(
   questions: readonly SessionQuestion<WordEntry>[],
-  limit: number = SESSION_CAP,
 ): StudySessionState {
   return {
-    queue: questions.map((question) => ({ ...question, requeued: false })),
+    queue: [...questions],
     pos: 0,
     correct: 0,
     wrong: 0,
-    limit,
   };
 }
 
@@ -85,22 +76,17 @@ export function recordAnswer(
     };
   }
   if (question.isReview) {
-    // 복습 오답: 간격 후퇴만(§5.3). 복습 문제는 단어당 1개(§6.1)라 재삽입하지 않는
-    // 것만으로 "이번 세션 재출제 없음"이 성립한다.
+    // 복습 오답: 간격 후퇴만(§5.3).
     return {
       state: { ...state, wrong: state.wrong + 1 },
       effect: { kind: "review-fail", question },
     };
   }
-  // 학습 중 오답: API 호출 없음. 원본 문제일 때만 큐 맨 뒤에 1회 재삽입(세션 문제 수
-  // 상한 내) — 진행도 분모가 이 시점에 즉시 늘어난다. 상한에 걸려 생략된 단어는 상태가
-  // 학습 중 그대로라 다음 세션에 자연히 재출제된다(#113).
-  const queue =
-    !question.requeued && state.queue.length < state.limit
-      ? [...state.queue, { ...question, requeued: true }]
-      : state.queue;
+  // 학습 중 오답: API 호출 없음 — 카운트가 오르지 않아 단어가 학습 중으로 남고 다음
+  // 세션에 자연히 재출제된다. 같은 세션에 다시 내지 않는 이유(#116): 방금 정답까지 본
+  // 단어는 단기 기억으로 맞히게 돼 학습 효과 없이 D/E만 부풀린다.
   return {
-    state: { ...state, queue, wrong: state.wrong + 1 },
+    state: { ...state, wrong: state.wrong + 1 },
     effect: { kind: "none" },
   };
 }
