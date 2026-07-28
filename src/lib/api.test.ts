@@ -8,6 +8,7 @@ import {
   getStoredProfile,
   postAnswer,
   postReviewFail,
+  postSettings,
   saveProfile,
   savePassword,
   setApiSuccessHandler,
@@ -292,5 +293,37 @@ describe("postReviewFail", () => {
     await expect(postReviewFail("HSK4", "经济")).rejects.toSatisfy(
       (err: unknown) => err instanceof ApiError && err.status === 500,
     );
+  });
+});
+
+describe("postSettings", () => {
+  it("/api/settings에 {sessionLimit}을 POST하고 반영값을 반환한다", async () => {
+    savePassword("secret");
+    const fetchMock = vi.fn().mockResolvedValue(Response.json({ sessionLimit: 30 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(postSettings(30)).resolves.toEqual({ sessionLimit: 30 });
+
+    const [path, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(path).toBe("/api/settings");
+    expect(init.method).toBe("POST");
+    expect(new Headers(init.headers).get("Content-Type")).toBe("application/json");
+    expect(new Headers(init.headers).get("Authorization")).toBe("Bearer secret");
+    expect(JSON.parse(init.body as string)).toEqual({ sessionLimit: 30 });
+  });
+
+  it("비정상 응답의 {error} 본문이 있으면 그 메시지로 throw한다", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        Response.json({ error: "sessionLimit은 1~500 사이의 정수여야 합니다" }, { status: 400 }),
+      ),
+    );
+    await expect(postSettings(0)).rejects.toThrow("sessionLimit은 1~500 사이의 정수여야 합니다");
+  });
+
+  it("비정상 응답이고 본문이 JSON이 아니면 HTTP 상태를 담은 메시지로 throw한다", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(null, { status: 500 })));
+    await expect(postSettings(30)).rejects.toThrow("500");
   });
 });
