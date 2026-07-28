@@ -4,24 +4,30 @@
 // - '문제수' 필드 회귀 (세션 설정 플랜 §3.5, #110) — 현재값 프리필·1~500 클라
 //   선검증·저장 성공/실패 표시·등록 배치와의 독립성만 다룬다. 이 묶음에서
 //   fetchTabs/registerWords는 빈 목록/미사용 고정 응답.
-// - 탭 우선 흐름 (#118) — 탭 섹션이 붙여넣기보다 위, "+ 새 탭"의 "생성" 버튼
-//   확정(선택지 추가+선택 전환·이름 선검증·기존 탭 중복 시 그 탭 선택), 확정 전
-//   제출 차단, 제출 바디의 createTab 계산(서버 조회 목록 기준)을 고정한다.
+// - 탭 우선 흐름 (#118·#120) — 탭 섹션이 붙여넣기보다 위, "+ 새 탭"의 "생성" 버튼이
+//   POST /api/tabs로 시트에 실제 탭을 만든 뒤(서버 성공 후)에만 선택지 추가·선택
+//   전환(#120), 이름 선검증, 로딩 중 재클릭 방지, 실패 시 오류·입력 유지, 확정 전
+//   제출 차단, 제출 바디에 createTab 부재를 고정한다.
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import RegisterScreen from "./RegisterScreen.tsx";
 import { fire, flush, renderComponent } from "../test-utils.tsx";
 import type { PublicProfile } from "../lib/api.ts";
 import type { WordsResponse } from "../lib/wordsApi.ts";
 
-const { fetchWordsMock, fetchTabsMock, registerWordsMock, postSettingsMock } = vi.hoisted(() => ({
+const { fetchWordsMock, fetchTabsMock, createTabMock, registerWordsMock, postSettingsMock } = vi.hoisted(() => ({
   fetchWordsMock: vi.fn(),
   fetchTabsMock: vi.fn(),
+  createTabMock: vi.fn(),
   registerWordsMock: vi.fn(),
   postSettingsMock: vi.fn(),
 }));
 
 vi.mock("../lib/wordsApi.ts", () => ({ fetchWords: fetchWordsMock }));
-vi.mock("../lib/registerApi.ts", () => ({ fetchTabs: fetchTabsMock, registerWords: registerWordsMock }));
+vi.mock("../lib/registerApi.ts", () => ({
+  fetchTabs: fetchTabsMock,
+  createTab: createTabMock,
+  registerWords: registerWordsMock,
+}));
 vi.mock("../lib/api.ts", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../lib/api.ts")>();
   return { ...actual, postSettings: postSettingsMock };
@@ -52,6 +58,7 @@ beforeEach(() => {
   fetchWordsMock.mockResolvedValue(wordsResponse);
   fetchTabsMock.mockReset();
   fetchTabsMock.mockResolvedValue([]);
+  createTabMock.mockReset();
   registerWordsMock.mockReset();
   postSettingsMock.mockReset();
 });
@@ -172,7 +179,7 @@ describe("RegisterScreen 문제수 필드", () => {
   });
 });
 
-describe("RegisterScreen 탭 우선 흐름 (#118)", () => {
+describe("RegisterScreen 탭 우선 흐름 (#118·#120)", () => {
   it("등록할 탭 섹션이 스키마 붙여넣기보다 위에 렌더된다", async () => {
     const { tabTrigger, textarea } = setup();
     await flush();
@@ -181,14 +188,17 @@ describe("RegisterScreen 탭 우선 흐름 (#118)", () => {
     expect(tabTrigger().compareDocumentPosition(textarea()) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
-  it("생성 클릭 시 이름이 선택지에 추가되고 그 탭이 선택 상태가 된다", async () => {
+  it("생성 클릭 시 POST /api/tabs를 호출하고 성공 후 선택지에 추가·선택 상태가 된다", async () => {
+    createTabMock.mockResolvedValue({ name: "HSK7", created: true });
     const { tabTrigger, tabTriggerLabel, tabOptions, newTabInput, createButton } = setup();
     await flush();
 
     // 탭 목록이 비어 있으면 기본이 새 탭 모드 — 이름 입력란이 보인다.
     fire(() => setNativeValue(newTabInput()!, "HSK7"));
     fire(() => createButton()!.click());
+    await flush();
 
+    expect(createTabMock).toHaveBeenCalledWith("HSK7");
     expect(tabTriggerLabel()?.textContent).toBe("HSK7");
     expect(newTabInput()).toBeNull();
 
@@ -208,10 +218,59 @@ describe("RegisterScreen 탭 우선 흐름 (#118)", () => {
 
     fire(() => setNativeValue(newTabInput()!, "HSK7"));
     expect(createButton()!.disabled).toBe(false);
+    expect(createTabMock).not.toHaveBeenCalled();
   });
 
-  it("기존 탭과 같은 이름을 생성하면 그 탭이 선택되고 선택지는 중복되지 않는다", async () => {
+  it("서버 호출 중에는 버튼이 '생성 중…'으로 비활성화되고 재클릭해도 중복 호출되지 않는다", async () => {
+    let resolveCreate!: (value: { name: string; created: boolean }) => void;
+    createTabMock.mockReturnValue(
+      new Promise<{ name: string; created: boolean }>((resolve) => {
+        resolveCreate = resolve;
+      }),
+    );
+    const { tabTriggerLabel, newTabInput, createButton } = setup();
+    await flush();
+
+    fire(() => setNativeValue(newTabInput()!, "HSK7"));
+    fire(() => createButton()!.click());
+
+    expect(createButton()!.disabled).toBe(true);
+    expect(createButton()!.textContent).toBe("생성 중…");
+
+    fire(() => createButton()!.click());
+    expect(createTabMock).toHaveBeenCalledTimes(1);
+
+    fire(() => resolveCreate({ name: "HSK7", created: true }));
+    await flush();
+
+    expect(tabTriggerLabel()?.textContent).toBe("HSK7");
+  });
+
+  it("생성 실패 시 오류 문구를 보여주고 입력값을 유지하며 선택지는 추가되지 않는다", async () => {
+    createTabMock.mockRejectedValue(new Error("탭 생성에 실패했습니다 (HTTP 500)"));
+    const { tabTrigger, tabOptions, newTabInput, createButton, newTabErrors } = setup();
+    await flush();
+
+    fire(() => setNativeValue(newTabInput()!, "HSK7"));
+    fire(() => createButton()!.click());
+    await flush();
+
+    // 입력값·새 탭 모드 유지 + Worker 오류 문구 표시. 선택지는 그대로.
+    expect(newTabInput()!.value).toBe("HSK7");
+    expect(newTabErrors()).toContain("탭 생성에 실패했습니다 (HTTP 500)");
+    fire(() => tabTrigger().click());
+    expect(tabOptions().map((el) => el.textContent)).toEqual(["+ 새 탭"]);
+    fire(() => tabTrigger().click());
+
+    // 입력을 고치면 서버 오류 문구는 사라진다.
+    fire(() => setNativeValue(newTabInput()!, "HSK8"));
+    expect(newTabErrors()).not.toContain("탭 생성에 실패했습니다 (HTTP 500)");
+    expect(createButton()!.disabled).toBe(false);
+  });
+
+  it("기존 탭과 같은 이름이면 created: false 멱등 응답으로 그 탭이 선택되고 선택지는 중복되지 않는다", async () => {
     fetchTabsMock.mockResolvedValue(["HSK6"]);
+    createTabMock.mockResolvedValue({ name: "HSK6", created: false });
     const { tabTrigger, tabTriggerLabel, tabOptions, newTabInput, createButton } = setup();
     await flush();
 
@@ -220,6 +279,7 @@ describe("RegisterScreen 탭 우선 흐름 (#118)", () => {
     fire(() => tabOptions().find((el) => el.textContent === "+ 새 탭")!.click());
     fire(() => setNativeValue(newTabInput()!, "HSK6"));
     fire(() => createButton()!.click());
+    await flush();
 
     expect(tabTriggerLabel()?.textContent).toBe("HSK6");
     expect(newTabInput()).toBeNull();
@@ -228,7 +288,34 @@ describe("RegisterScreen 탭 우선 흐름 (#118)", () => {
     expect(tabOptions().map((el) => el.textContent)).toEqual(["HSK6", "+ 새 탭"]);
   });
 
+  it("생성 직후 그 탭 기준으로 시트 중복이 분류된다", async () => {
+    // 시트에는 이미 HSK6 탭에 经济가 있는데 클라 탭 목록 조회가 실패한 상황 —
+    // 생성 버튼이 멱등 성공(created: false)으로 그 탭을 선택하면, 중복 대조는
+    // allWords의 탭 필터로 즉시 정합해야 한다.
+    fetchWordsMock.mockResolvedValue({
+      ...wordsResponse,
+      words: [
+        { tab: "HSK6", hanzi: "经济", pinyin: "jīngjì", meaning: "경제", m1: 0, m2: 0, nextReview: null, interval: null },
+      ],
+    });
+    createTabMock.mockResolvedValue({ name: "HSK6", created: false });
+    const { container, textarea, confirmButton, newTabInput, createButton } = setup();
+    await flush();
+
+    fire(() => setNativeValue(newTabInput()!, "HSK6"));
+    fire(() => createButton()!.click());
+    await flush();
+
+    fire(() => setNativeValue(textarea(), VALID_BATCH));
+    fire(() => confirmButton().click());
+
+    // 经济가 duplicate로 분류돼 확인 배너가 뜬다.
+    expect(container.querySelector(".register-confirm-banner")).not.toBeNull();
+    expect(container.textContent).toContain("중복 1건");
+  });
+
   it("생성 확정 전에는 확인을 마쳐도 제출이 불가하고, 확정하면 활성화된다", async () => {
+    createTabMock.mockResolvedValue({ name: "HSK7", created: true });
     const { textarea, confirmButton, newTabInput, createButton, submitButton } = setup();
     await flush();
 
@@ -240,30 +327,33 @@ describe("RegisterScreen 탭 우선 흐름 (#118)", () => {
 
     fire(() => setNativeValue(newTabInput()!, "HSK7"));
     fire(() => createButton()!.click());
+    await flush();
 
     expect(submitButton()!.disabled).toBe(false);
   });
 
-  it("로컬 생성 탭 제출에는 createTab: true가 포함된다", async () => {
-    registerWordsMock.mockResolvedValue({ tab: "HSK7", created: true, added: [], skipped: [] });
+  it("생성한 새 탭 제출 바디에도 createTab은 포함되지 않는다", async () => {
+    createTabMock.mockResolvedValue({ name: "HSK7", created: true });
+    registerWordsMock.mockResolvedValue({ tab: "HSK7", created: false, added: [], skipped: [] });
     const { textarea, confirmButton, newTabInput, createButton, submitButton } = setup();
     await flush();
 
     fire(() => setNativeValue(newTabInput()!, "HSK7"));
     fire(() => createButton()!.click());
+    await flush();
     fire(() => setNativeValue(textarea(), VALID_BATCH));
     fire(() => confirmButton().click());
     fire(() => submitButton()!.click());
     await flush();
 
+    // toHaveBeenCalledWith는 정확 일치 — createTab 키가 없음을 함께 고정한다.
     expect(registerWordsMock).toHaveBeenCalledWith({
       tab: "HSK7",
-      createTab: true,
       words: [{ hanzi: "经济", pinyin: "jīngjì", meaning: "경제" }],
     });
   });
 
-  it("서버 조회 목록에 있는 탭 제출에는 createTab이 포함되지 않는다", async () => {
+  it("서버 조회 목록에 있는 탭 제출에도 createTab이 포함되지 않는다", async () => {
     fetchTabsMock.mockResolvedValue(["HSK6"]);
     registerWordsMock.mockResolvedValue({ tab: "HSK6", created: false, added: [], skipped: [] });
     const { textarea, confirmButton, submitButton } = setup();

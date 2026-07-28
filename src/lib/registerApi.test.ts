@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { fetchTabs, registerWords } from "./registerApi";
+import { createTab, fetchTabs, registerWords } from "./registerApi";
 
 // vitest는 node 환경이라 localStorage/fetch가 없다 — 전역에 스텁을 주입한다.
 function stubLocalStorage() {
@@ -83,18 +83,6 @@ describe("registerWords", () => {
     expect(JSON.parse(init.body as string)).toEqual(request);
   });
 
-  it("createTab이 true면 바디에 그대로 포함된다", async () => {
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValue(Response.json({ tab: "새탭", created: true, added: [], skipped: [] }));
-    vi.stubGlobal("fetch", fetchMock);
-
-    await registerWords({ tab: "새탭", createTab: true, words: [] });
-
-    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
-    expect(JSON.parse(init.body as string)).toEqual({ tab: "새탭", createTab: true, words: [] });
-  });
-
   it("비정상 응답이고 본문이 JSON이 아니면 HTTP 상태를 담은 메시지로 throw한다", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(null, { status: 400 })));
     await expect(registerWords({ tab: "HSK4", words: [] })).rejects.toThrow("400");
@@ -103,11 +91,46 @@ describe("registerWords", () => {
   it("비정상 응답의 {error} 본문이 있으면 Worker가 준 구체적 사유로 throw한다", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn().mockResolvedValue(Response.json({ error: "헤더를 복사할 기존 탭이 없습니다" }, { status: 400 })),
+      vi.fn().mockResolvedValue(Response.json({ error: "존재하지 않는 탭입니다. 새로 만들려면 createTab을 지정하세요" }, { status: 400 })),
     );
-    await expect(registerWords({ tab: "새탭", createTab: true, words: [] })).rejects.toThrow(
-      "헤더를 복사할 기존 탭이 없습니다",
+    await expect(registerWords({ tab: "새탭", words: [] })).rejects.toThrow(
+      "존재하지 않는 탭입니다. 새로 만들려면 createTab을 지정하세요",
     );
+  });
+});
+
+describe("createTab", () => {
+  it("/api/tabs에 { name } 바디를 POST하고 결과(worker/routes/tabs.ts 실측 응답 형태)를 반환한다", async () => {
+    savePassword();
+    const fetchMock = vi.fn().mockResolvedValue(Response.json({ name: "HSK7", created: true }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(createTab("HSK7")).resolves.toEqual({ name: "HSK7", created: true });
+
+    const [path, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(path).toBe("/api/tabs");
+    expect(init.method).toBe("POST");
+    expect(new Headers(init.headers).get("Content-Type")).toBe("application/json");
+    expect(new Headers(init.headers).get("Authorization")).toBe("Bearer secret");
+    expect(JSON.parse(init.body as string)).toEqual({ name: "HSK7" });
+  });
+
+  it("기존 탭 이름이면 created: false 멱등 응답을 그대로 반환한다", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(Response.json({ name: "HSK6급", created: false })));
+    await expect(createTab("  HSK6급  ")).resolves.toEqual({ name: "HSK6급", created: false });
+  });
+
+  it("비정상 응답이고 본문이 JSON이 아니면 HTTP 상태를 담은 메시지로 throw한다", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(null, { status: 500 })));
+    await expect(createTab("HSK7")).rejects.toThrow("500");
+  });
+
+  it("비정상 응답의 {error} 본문이 있으면 Worker가 준 구체적 사유로 throw한다", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(Response.json({ error: "탭 이름은 _로 시작할 수 없습니다" }, { status: 400 })),
+    );
+    await expect(createTab("_숨김")).rejects.toThrow("탭 이름은 _로 시작할 수 없습니다");
   });
 });
 

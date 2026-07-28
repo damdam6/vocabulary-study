@@ -1,7 +1,7 @@
 import { handleAnswerPost } from "./routes/answer.ts";
 import { handleGetWords } from "./routes/words.ts";
 import { handleReviewFail } from "./routes/review-fail.ts";
-import { handleGetTabs } from "./routes/tabs.ts";
+import { handleCreateTab, handleGetTabs } from "./routes/tabs.ts";
 import { handleWordsRegister } from "./routes/register.ts";
 import { handleSettingsPost } from "./routes/settings.ts";
 import { resolveProfile } from "./lib/auth.ts";
@@ -76,6 +76,15 @@ export default {
         } catch (err) {
           console.error("[GET /api/tabs]", err);
           return Response.json({ error: "failed to load tabs" }, { status: 500 });
+        }
+      }
+
+      if (url.pathname === "/api/tabs" && request.method === "POST") {
+        try {
+          return await handleCreateTab(request, env, profile);
+        } catch (err) {
+          console.error("[POST /api/tabs]", err);
+          return Response.json({ error: "failed to create tab" }, { status: 500 });
         }
       }
 

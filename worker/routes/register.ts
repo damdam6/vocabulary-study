@@ -3,13 +3,15 @@
  * 3단계(저장). 클라이언트가 보낸 단어 배열을 인증 프로필의 contentType으로 재검증하고
  * (등록 일반화 플랜 `docs/plans/registration-generalization.md` §3.2·§3.3), 탭 내 중복 A열 값은
  * 스킵, 신규 단어만 마지막 데이터 행 아래 A·B·C열에 append-only로 기록한다(D열 이후 절대 불가침).
- * createTab이면 기존 단어 탭의 헤더 행을 복사해 새 탭을 생성하고, 학습 대상 탭이 0개면
- * contentType별 기본 헤더로 첫 탭을 부트스트랩한다(§3.3) — 탭 생성은 이 시점에만(빈 탭 방지).
+ * createTab이면 새 탭을 생성한다(lib/tabs.ts 공통 로직 — 헤더 복사/기본 헤더 부트스트랩 §3.3).
+ * 탭 생성의 주 경로는 POST /api/tabs(#120, 등록 화면 "생성" 버튼)로 옮겨졌고 클라이언트는
+ * 더 이상 createTab을 보내지 않는다 — 이 경로는 계약 호환으로만 유지한다.
  */
 
-import { addSheet, getValues, updateValues } from "../lib/sheets.ts";
+import { getValues, updateValues } from "../lib/sheets.ts";
+import { createWordTab } from "../lib/tabs.ts";
 import { getWordTabTitles } from "../lib/words.ts";
-import { DEFAULT_TAB_HEADERS, MAX_REGISTER_WORDS, normalizeTabName, parseRegisterWords, partitionByExisting } from "../lib/register.ts";
+import { MAX_REGISTER_WORDS, normalizeTabName, parseRegisterWords, partitionByExisting } from "../lib/register.ts";
 import type { Profile } from "../lib/profiles.ts";
 
 export async function handleWordsRegister(
@@ -62,14 +64,7 @@ export async function handleWordsRegister(
         { status: 400 },
       );
     }
-    // 탭 0개 부트스트랩(§3.3): 복사할 헤더 원본 탭이 없으면 contentType별 기본 헤더로 첫 탭을
-    // 만든다 — 새 스프레드시트 온보딩을 막던 기존 400("헤더를 복사할 기존 탭이 없습니다") 대체.
-    const headerRow =
-      wordTabs.length === 0
-        ? DEFAULT_TAB_HEADERS[profile.contentType]
-        : ((await getValues(env, profile.sheetId, wordTabs[0], "1:1"))[0] ?? []);
-    await addSheet(env, profile.sheetId, targetTab);
-    await updateValues(env, profile.sheetId, targetTab, "A1", [headerRow]);
+    await createWordTab(env, profile.sheetId, targetTab, wordTabs, profile.contentType);
     created = true;
   }
 

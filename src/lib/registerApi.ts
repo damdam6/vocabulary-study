@@ -1,6 +1,6 @@
 /**
- * 등록 화면 전용 API 클라이언트 — `GET /api/tabs`·`POST /api/words/register`
- * (단어 등록 시스템 플랜 §6, Worker 구현 #48 — worker/routes/tabs.ts·register.ts
+ * 등록 화면 전용 API 클라이언트 — `GET /api/tabs`·`POST /api/tabs`·`POST /api/words/register`
+ * (단어 등록 시스템 플랜 §6, Worker 구현 #48·#120 — worker/routes/tabs.ts·register.ts
  * 실측 계약 기준). 기존 wordsApi.ts/api.ts와 동일하게 apiFetch 경유 + 비정상
  * 응답 throw 패턴.
  *
@@ -37,9 +37,30 @@ export async function fetchTabs(signal?: AbortSignal): Promise<string[]> {
   return data.tabs;
 }
 
+/** worker/routes/tabs.ts POST 응답 계약(#120): 트림 후 기존 탭과 같으면 created: false(멱등). */
+export interface CreateTabResult {
+  name: string;
+  created: boolean;
+}
+
+/** POST /api/tabs(#120) — 등록 화면 "생성" 버튼이 클릭 시점에 호출해 시트에 실제 탭을
+ * 만든다. created: false면 이미 있던 탭이라는 뜻이므로 호출부는 그 탭을 선택하면 된다. */
+export async function createTab(name: string): Promise<CreateTabResult> {
+  const response = await apiFetch("/api/tabs", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name }),
+  });
+  if (!response.ok) {
+    throw new Error(await extractErrorMessage(response, `탭 생성에 실패했습니다 (HTTP ${response.status})`));
+  }
+  return (await response.json()) as CreateTabResult;
+}
+
+// createTab 필드는 #120에서 클라 전송을 제거했다 — 선택된 탭은 항상 실존한다(위
+// createTab() 사전 생성). Worker의 createTab 경로 자체는 계약 호환으로 남아 있다.
 export interface RegisterRequest {
   tab: string;
-  createTab?: boolean;
   words: ParsedWord[];
 }
 
