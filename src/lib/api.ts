@@ -38,6 +38,15 @@ export interface PublicProfile {
   contentType: ContentType;
 }
 
+/**
+ * `GET /api/words` 응답의 settings 블록 (세션 설정 플랜 §3.2). worker/lib/settings.ts의
+ * 파싱 결과와 같은 형태지만, tsconfig.app.json이 src만 포함해 worker 타입을 import할 수
+ * 없어 클라이언트 쪽 계약 미러로 둔다. 값의 실사용은 wordsApi.ts의 fetchWords.
+ */
+export interface WordsSettings {
+  sessionLimit: number;
+}
+
 export function getStoredProfile(): PublicProfile | null {
   const raw = localStorage.getItem(PROFILE_STORAGE_KEY);
   if (raw === null) return null;

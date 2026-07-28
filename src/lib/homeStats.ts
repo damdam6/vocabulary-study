@@ -5,20 +5,25 @@
  * 실제 큐 구성(#14)은 이 이슈 범위 밖 — 여기서는 문제 수만 센다.
  */
 
+import { SESSION_CAP } from "./sessionQueue.ts";
 import { getWordState, type Mode, type WordProgress } from "./wordState.ts";
-
-const SESSION_CAP = 60;
 
 export interface HomeStats {
   reviewDue: number;
   learning: number;
   /** design-prd §3: 졸업 수 = 복습 대기를 포함한 졸업 단어 총수 (reviewDue + reviewScheduled). */
   graduated: number;
-  /** design-prd §3 / 기능 PRD §6.1: min(60, min(복습대기,60) + 학습중 단어 수). 학습 중은 단어당 1문제(#44). */
+  /** design-prd §3 / 기능 PRD §6.1: min(limit, min(복습대기,limit) + 학습중 단어 수). 학습 중은 단어당 1문제(#44). */
   sessionCount: number;
 }
 
-export function computeHomeStats(words: WordProgress[], today: string, modes: readonly Mode[]): HomeStats {
+/** limit은 세션 문제 수 상한(세션 설정 플랜 §3.2) — 기본값 SESSION_CAP(60)은 sessionQueue.ts와 일원화되어 있다. */
+export function computeHomeStats(
+  words: WordProgress[],
+  today: string,
+  modes: readonly Mode[],
+  limit: number = SESSION_CAP,
+): HomeStats {
   let reviewDue = 0;
   let reviewScheduled = 0;
   let learning = 0;
@@ -38,6 +43,6 @@ export function computeHomeStats(words: WordProgress[], today: string, modes: re
     reviewDue,
     learning,
     graduated: reviewDue + reviewScheduled,
-    sessionCount: Math.min(SESSION_CAP, Math.min(reviewDue, SESSION_CAP) + learning),
+    sessionCount: Math.min(limit, Math.min(reviewDue, limit) + learning),
   };
 }

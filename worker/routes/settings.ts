@@ -8,9 +8,10 @@
 
 import { addSheet, getSheetTitles, getValues, updateValues } from "../lib/sheets.ts";
 import {
+  MAX_SESSION_LIMIT,
+  MIN_SESSION_LIMIT,
   planSessionLimitWrite,
-  SESSION_LIMIT_MAX,
-  SESSION_LIMIT_MIN,
+  SETTINGS_RANGE,
   SETTINGS_TAB,
 } from "../lib/settings.ts";
 import type { Profile } from "../lib/profiles.ts";
@@ -23,7 +24,7 @@ function parseSessionLimit(body: unknown): number | null {
   if (typeof sessionLimit !== "number" || !Number.isInteger(sessionLimit)) {
     return null;
   }
-  if (sessionLimit < SESSION_LIMIT_MIN || sessionLimit > SESSION_LIMIT_MAX) {
+  if (sessionLimit < MIN_SESSION_LIMIT || sessionLimit > MAX_SESSION_LIMIT) {
     return null;
   }
   return sessionLimit;
@@ -44,7 +45,7 @@ export async function handleSettingsPost(
   const sessionLimit = parseSessionLimit(body);
   if (sessionLimit === null) {
     return Response.json(
-      { error: `sessionLimit은 ${SESSION_LIMIT_MIN}~${SESSION_LIMIT_MAX} 사이의 정수여야 합니다` },
+      { error: `sessionLimit은 ${MIN_SESSION_LIMIT}~${MAX_SESSION_LIMIT} 사이의 정수여야 합니다` },
       { status: 400 },
     );
   }
@@ -56,7 +57,7 @@ export async function handleSettingsPost(
     // 키-값 탭이므로 register의 createTab과 달리 헤더 행을 만들지 않는다 (§3.1).
     await addSheet(env, profile.sheetId, SETTINGS_TAB);
   } else {
-    rows = await getValues(env, profile.sheetId, SETTINGS_TAB, "A1:B");
+    rows = await getValues(env, profile.sheetId, SETTINGS_TAB, SETTINGS_RANGE);
   }
 
   const plan = planSessionLimitWrite(rows, sessionLimit);

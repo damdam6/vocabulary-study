@@ -39,16 +39,23 @@ const PROFILE: PublicProfile = {
 };
 
 describe("fetchWords", () => {
-  it("GET /api/words를 apiFetch 경유(Authorization 첨부)로 호출하고 {profile, words}를 반환한다", async () => {
+  it("GET /api/words를 apiFetch 경유(Authorization 첨부)로 호출하고 {profile, words, settings}를 반환한다", async () => {
     localStorage.setItem("app-password", "secret");
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValue(
-        Response.json({ fetchedAt: "2026-07-18 09:00", words: [WORD], profile: PROFILE }),
-      );
+    const fetchMock = vi.fn().mockResolvedValue(
+      Response.json({
+        fetchedAt: "2026-07-18 09:00",
+        words: [WORD],
+        profile: PROFILE,
+        settings: { sessionLimit: 30 },
+      }),
+    );
     vi.stubGlobal("fetch", fetchMock);
 
-    await expect(fetchWords()).resolves.toEqual({ words: [WORD], profile: PROFILE });
+    await expect(fetchWords()).resolves.toEqual({
+      words: [WORD],
+      profile: PROFILE,
+      settings: { sessionLimit: 30 },
+    });
 
     const [path, init] = fetchMock.mock.calls[0] as [string, RequestInit];
     expect(path).toBe("/api/words");
@@ -69,5 +76,46 @@ describe("fetchWords", () => {
   it("비정상 응답이면 throw한다", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(null, { status: 500 })));
     await expect(fetchWords()).rejects.toThrow("500");
+  });
+
+  describe("settings 폴백 (세션 설정 플랜 §3.2, #104) — 구서버 호환·방어", () => {
+    it("settings가 아예 없으면 sessionLimit 60으로 폴백한다", async () => {
+      vi.stubGlobal("fetch", vi.fn().mockResolvedValue(Response.json({ words: [], profile: PROFILE })));
+
+      await expect(fetchWords()).resolves.toEqual({ words: [], profile: PROFILE, settings: { sessionLimit: 60 } });
+    });
+
+    it.each([
+      ["null", null],
+      ["배열", []],
+      ["문자열", "30"],
+      ["sessionLimit 없음", {}],
+      ["sessionLimit이 문자열", { sessionLimit: "30" }],
+      ["sessionLimit이 소수", { sessionLimit: 30.5 }],
+      ["sessionLimit이 0", { sessionLimit: 0 }],
+      ["sessionLimit이 음수", { sessionLimit: -5 }],
+    ])("settings 형태 이상(%s)이면 sessionLimit 60으로 폴백한다", async (_label, settings) => {
+      vi.stubGlobal(
+        "fetch",
+        vi.fn().mockResolvedValue(Response.json({ words: [], profile: PROFILE, settings })),
+      );
+
+      const result = await fetchWords();
+
+      expect(result.settings).toEqual({ sessionLimit: 60 });
+    });
+
+    it("settings.sessionLimit이 유효한 양의 정수면 그대로 쓴다", async () => {
+      vi.stubGlobal(
+        "fetch",
+        vi.fn().mockResolvedValue(
+          Response.json({ words: [], profile: PROFILE, settings: { sessionLimit: 1 } }),
+        ),
+      );
+
+      const result = await fetchWords();
+
+      expect(result.settings).toEqual({ sessionLimit: 1 });
+    });
   });
 });
