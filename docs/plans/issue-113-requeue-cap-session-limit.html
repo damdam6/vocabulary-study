@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>#113 세션 문제 수 설정이 재삽입 상한에 미적용 — 작업 플랜</title>
+<style>
+  :root {
+    --bg: #f7f7f8; --card: #ffffff; --ink: #1c1c1e; --muted: #6e6e73;
+    --line: #e3e3e6; --accent: #3b6ef5; --accent-soft: #e8eefe;
+    --ok: #2e8b57; --warn: #b25e09; --code-bg: #f0f0f2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161618; --card: #202024; --ink: #ececf0; --muted: #98989f;
+      --line: #333338; --accent: #7a9bff; --accent-soft: #26304a;
+      --ok: #58c088; --warn: #e0a35c; --code-bg: #2a2a2f;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 40px 20px 80px; background: var(--bg); color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+                 "Segoe UI", "Noto Sans KR", sans-serif;
+    line-height: 1.65;
+  }
+  main { max-width: 860px; margin: 0 auto; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code {
+    font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 0.86em;
+    background: var(--code-bg); border-radius: 5px; padding: 2px 6px;
+  }
+  header { margin-bottom: 28px; }
+  .issue-chip {
+    display: inline-block; font-weight: 700; color: var(--accent);
+    background: var(--accent-soft); border-radius: 999px;
+    padding: 3px 14px; font-size: 0.95rem; margin-bottom: 10px;
+  }
+  .type-chip {
+    display: inline-block; font-weight: 600; color: var(--muted);
+    border: 1px solid var(--line); border-radius: 999px;
+    padding: 3px 12px; font-size: 0.8rem; margin-left: 8px; vertical-align: 2px;
+  }
+  h1 { font-size: 1.7rem; margin: 0 0 14px; letter-spacing: -0.02em; }
+  .meta {
+    display: flex; flex-wrap: wrap; gap: 6px 22px;
+    color: var(--muted); font-size: 0.87rem;
+  }
+  .meta b { color: var(--ink); font-weight: 600; }
+  section.card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 24px 28px; margin-top: 18px;
+  }
+  h2 {
+    font-size: 1.05rem; margin: 0 0 14px; letter-spacing: -0.01em;
+    display: flex; align-items: center; gap: 8px;
+  }
+  h2 .no {
+    color: var(--accent); font-size: 0.8rem; font-weight: 700;
+    border: 1.5px solid var(--accent); border-radius: 6px; padding: 0 6px;
+  }
+  ul, ol { margin: 0; padding-left: 22px; }
+  li { margin: 6px 0; }
+  .steps { list-style: none; padding: 0; counter-reset: step; }
+  .steps li {
+    counter-increment: step; position: relative; padding: 10px 0 10px 44px;
+    border-bottom: 1px dashed var(--line);
+  }
+  .steps li:last-child { border-bottom: none; }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 10px;
+    width: 28px; height: 28px; border-radius: 8px; background: var(--accent-soft);
+    color: var(--accent); font-weight: 700; font-size: 0.85rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .steps .files { display: block; margin-top: 4px; font-size: 0.85rem; color: var(--muted); }
+  .steps li.done::before { content: "✓"; background: var(--ok); color: #fff; }
+  .steps .note {
+    display: block; margin-top: 6px; font-size: 0.85rem; color: var(--warn);
+  }
+  .done-list li.done::before { background: var(--ok); }
+  .done-list li.done::after {
+    content: "✓"; position: absolute; left: 5px; top: 2px;
+    color: #fff; font-size: 0.75rem; font-weight: 700;
+  }
+  table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 0.82rem; }
+  .done-list { list-style: none; padding: 0; }
+  .done-list li { padding-left: 30px; position: relative; }
+  .done-list li::before {
+    content: ""; position: absolute; left: 2px; top: 7px; width: 15px; height: 15px;
+    border: 2px solid var(--ok); border-radius: 5px;
+  }
+  .scroll-x { overflow-x: auto; }
+  footer { margin-top: 30px; color: var(--muted); font-size: 0.8rem; text-align: center; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <span class="issue-chip"><a href="https://github.com/damdam6/vocabulary-study/issues/113">#113</a></span><span class="type-chip">버그 수정</span>
+    <h1>세션 문제 수 설정이 재삽입 상한에 미적용 — 35 설정에도 세션이 60까지 커진다</h1>
+    <div class="meta">
+      <span><b>damdam6/vocabulary-study</b></span>
+      <span>브랜치 <b><code>fix/113-requeue-cap-session-limit</code></b> ← <code>main</code></span>
+      <span>라벨 <b>bug</b></span>
+      <span>2026-07-28</span>
+    </div>
+  </header>
+
+  <section class="card">
+    <h2><span class="no">1</span>요약</h2>
+    <p>시트별 "1회 문제 수" 설정(<code>_정보</code> 탭 <code>문제수</code>)은 초기 큐 구성과 홈 집계에는 반영되지만, 학습 중 오답의 <b>재삽입 상한에는 반영되지 않는다</b> — 그 조건이 고정 상수 <code>SESSION_CAP</code>(60)을 그대로 쓰기 때문이다. 그래서 35로 설정해도 오답이 쌓이면 진행도 분모가 60까지 자란다. 수정은 세션의 limit을 <code>StudySessionState</code>에 실어 <code>recordAnswer</code>가 그 값으로 판정하게 하고, 홈이 이미 들고 있는 <code>sessionLimit</code>을 큐와 함께 학습 화면까지 스레딩하는 것이다. Worker는 건드리지 않는다.</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">2</span>현황 분석</h2>
+    <p>세션 상한 <code>limit</code>이 흐르는 경로는 현재 세 갈래이고, 그중 <b>두 갈래만</b> #106에서 파라미터화됐다.</p>
+    <ul>
+      <li><b>① 초기 큐 구성 — 반영됨.</b> <code>src/lib/sessionQueue.ts:36</code> <code>buildSessionQueue(words, today, modes, rng, limit = SESSION_CAP)</code>가 복습 대기 컷(<code>:57</code> <code>.slice(0, limit)</code>)과 총 상한(<code>:67</code> <code>learningQuestions.slice(0, limit - reviewQuestions.length)</code>)에 모두 limit을 쓴다.</li>
+      <li><b>② 홈 집계 — 반영됨.</b> <code>src/lib/homeStats.ts:25</code>의 <code>limit</code> 인자로 <code>:46</code> <code>sessionCount</code>를 산출한다. 그래서 홈의 "오늘 세션 · 35문제" 표시는 정상이다.</li>
+      <li><b>③ 학습 중 오답 재삽입 상한 — 누락.</b> <code>src/lib/studySession.ts:85</code>의 조건이 <code>state.queue.length &lt; SESSION_CAP</code> — 임포트된 <b>고정 상수 60</b>이다. 세션이 아는 limit이 없어서 참조할 값 자체가 없다.</li>
+    </ul>
+    <p>스레딩 배선의 현재 상태 — limit은 홈까지만 도달하고 학습 화면으로 넘어가지 않는다.</p>
+    <ul>
+      <li><code>src/screens/HomeScreen.tsx:32</code>가 <code>sessionLimit</code> 상태를 갖고 <code>:46</code>에서 <code>fetchWords</code>의 <code>settings.sessionLimit</code>으로 채운다 — <b>값은 이미 홈에 있다</b>.</li>
+      <li><code>src/screens/HomeScreen.tsx:84</code> <code>onStart(buildSessionQueue(..., sessionLimit))</code> — 큐만 올리고 limit은 버린다.</li>
+      <li><code>src/App.tsx:52</code> <code>startSession(queue)</code>가 <code>sessionQueue</code> 상태만 두고, <code>:81</code>에서 <code>StudyScreen</code>에 <code>queue</code>만 내린다.</li>
+      <li><code>src/screens/StudyScreen.tsx:46</code> <code>useState(() =&gt; startSession(queue))</code> — 세션 시작 시점에 limit을 모른다.</li>
+    </ul>
+    <p>진행도 분모는 <code>src/screens/StudyScreen.tsx:127</code>의 <code>session.queue.length</code>라, 재삽입이 곧 분모 증가로 즉시 보인다(실측 38 → 57).</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">3</span>원인 분석</h2>
+    <p><b>근본 원인:</b> #106이 "세션 총 상한은 전부 같은 limit을 쓴다"(세션 설정 플랜 §3.2)를 구현하면서 <code>sessionQueue</code>·<code>homeStats</code> 두 사용처만 인자화하고, <b>세 번째 사용처인 <code>studySession.recordAnswer</code>의 재삽입 상한을 놓쳤다.</b> 근거는 <code>src/lib/studySession.ts:9</code>가 여전히 <code>SESSION_CAP</code>을 값으로 임포트해 <code>:85</code>에서 비교에 쓰는 것 하나로 충분하다 — 이 파일에는 limit이 도달할 통로가 아예 없다.</p>
+    <p><b>설계 (이슈 본문에서 확정된 방향):</b></p>
+    <ul>
+      <li><code>startSession(questions, limit = SESSION_CAP)</code> — limit을 <code>StudySessionState.limit</code>으로 보관한다. 세션은 시작 시점에 상한을 확정하며(세션 설정 플랜 §3.2 "진행 중인 세션에는 영향 없다"와 같은 성질), <code>recordAnswer</code>는 <code>state.queue.length &lt; state.limit</code>으로 판정한다.</li>
+      <li><b>기본값을 둬 v1 경로를 보존</b>한다 — 인자를 생략하면 60이라 기존 <code>studySession.test.ts</code>는 한 줄도 고치지 않고 통과해야 한다. <code>sessionQueue</code>·<code>homeStats</code>가 이미 쓰는 것과 같은 관례라 파일 간 일관성도 유지된다.</li>
+      <li>경계 의미론은 현행과 동일 — <code>&lt;</code> 비교라 초기 34 + 재삽입 1 = 35는 허용, 이미 35면 재삽입 생략. 세션 총 문제 수가 설정값을 <b>절대 넘지 않는 것</b>이 계약이다.</li>
+      <li>limit 도달로 재삽입이 생략된 단어는 상태가 그대로 "학습 중"이라 <b>다음 세션에 자연 재출제</b>된다 — v1에서 60 도달 시와 같은 의미론이라 별도 보상 로직이 없다.</li>
+    </ul>
+    <p><b>배제한 대안:</b></p>
+    <ul>
+      <li><i>모듈 전역에 limit을 세팅</i> — <code>studySession</code>은 vitest node 환경의 순수 모듈(파일 헤더 주석의 설계 의도)이라 전역 가변 상태는 그 성질을 깬다.</li>
+      <li><i><code>recordAnswer(state, isCorrect, limit)</code>로 호출부마다 전달</i> — 상한은 세션의 성질이지 판정 1회의 성질이 아니다. 호출부(<code>StudyScreen</code>)가 매번 같은 값을 되먹여야 해 불일치 여지가 생긴다.</li>
+      <li><i>큐 길이로 역산(<code>초기 queue.length</code>를 상한으로)</i> — 초기 큐가 limit보다 짧은 경우(단어 부족)에 상한이 잘못 좁아진다. 35 설정·초기 12문제면 재삽입이 전면 금지돼 버린다.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">4</span>작업 단계</h2>
+    <ol class="steps">
+      <li class="done"><b><code>studySession</code>에 세션 limit 도입</b> — <code>StudySessionState</code>에 <code>limit</code> 필드 추가, <code>startSession(questions, limit = SESSION_CAP)</code>으로 시그니처 확장, <code>recordAnswer</code>의 재삽입 조건을 <code>state.queue.length &lt; state.limit</code>으로 교체. <code>:82</code>의 "60문제 상한 내" 주석도 설정값 기준으로 개정.
+        <span class="files"><code>src/lib/studySession.ts</code></span>
+      </li>
+      <li class="done"><b>회귀 테스트 추가</b> — limit 35 세션에서 오답이 반복돼도 <code>queue.length</code>가 35를 넘지 않음(경계: 34 → 재삽입 1회 허용해 35, 35면 생략), 그리고 limit 미전달 시 기존 <code>SESSION_CAP</code> 동작 유지. 기존 테스트는 <b>수정하지 않는다</b> — 무수정 통과가 v1 보존의 증거다.
+        <span class="files"><code>src/lib/studySession.test.ts</code></span>
+      </li>
+      <li class="done"><b>홈 → App 배선</b> — <code>onStart</code> 시그니처를 <code>(queue, limit)</code>로 넓히고 <code>handleStart</code>가 <code>sessionLimit</code>을 함께 올린다. App은 <code>sessionLimit</code> 상태를 추가해 보관.
+        <span class="files"><code>src/screens/HomeScreen.tsx</code>, <code>src/App.tsx</code></span>
+      </li>
+      <li class="done"><b>App → StudyScreen 배선</b> — <code>StudyScreenProps</code>에 <code>limit</code> 추가, <code>useState(() =&gt; startSession(queue, limit))</code>로 세션 생성 시 전달.
+        <span class="files"><code>src/App.tsx</code>, <code>src/screens/StudyScreen.tsx</code></span>
+      </li>
+      <li class="done"><b>스레딩 회귀 테스트</b> — <code>fetchWords</code>가 <code>settings.sessionLimit: 35</code>를 주는 홈에서 "학습 시작"을 누르면 <code>onStart</code>가 두 번째 인자로 35를 받는지 검증(현 테스트는 <code>onStart</code> 인자를 보지 않는다).
+        <span class="files"><code>src/screens/HomeScreen.test.tsx</code></span>
+      </li>
+      <li class="done"><b>PRD §6.2 개정</b> — 재삽입 문구의 "(§6.1 상한 내에서)"를 설정 기반 상한(시트 설정, 기본 60)으로 명시하도록 개정. §6.1은 #106에서 이미 개정됐으므로 손대지 않는다.
+        <span class="files"><code>docs/PRD.md</code></span>
+        <span class="note">실제 원문은 이슈가 인용한 "60문제 상한 내"가 아니라 "(§6.1 상한 내에서)"였다 — 같은 취지로, 상한이 시트 `문제수` 설정(기본 60)임과 상한 도달 시 다음 세션 재출제 의미론을 명시하도록 개정했다.</span>
+      </li>
+      <li class="done"><b>전체 검증</b> — <code>npm test</code>, <code>npm run lint</code>, <code>npm run build</code>(tsc 타입 체크 포함) 그린 확인. Worker 디렉터리 무변경 확인.
+        <span class="files"><code>worker/</code> (변경 없음 확인)</span>
+        <span class="note">워크트리의 <code>node_modules</code>가 비어 있어 jsdom 해석에 실패 → <code>pnpm install</code> 1회 실행(레포 표준 의존성 그대로, <code>package.json</code> 무변경). 생성된 <code>pnpm-lock.yaml</code>은 로컬 산출물이라 커밋하지 않는다.</span>
+      </li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">5</span>리스크</h2>
+    <div class="scroll-x">
+    <table>
+      <thead><tr><th>리스크</th><th>영향</th><th>완화책</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><code>StudySessionState</code>에 필수 필드가 늘어 기존 상태 리터럴이 깨진다</td>
+          <td>테스트·호출부 타입 에러</td>
+          <td>상태는 항상 <code>startSession</code>으로만 만들어진다(테스트 포함 — <code>studySession.test.ts:37</code> <code>sessionAt</code>). 기본값 인자라 호출부 무수정. <code>tsc -b</code>로 확인.</td>
+        </tr>
+        <tr>
+          <td><code>onStart</code> 시그니처 확장이 다른 호출부를 깬다</td>
+          <td>홈 테스트/타입 에러</td>
+          <td>호출부는 <code>App.tsx</code> 하나, 테스트의 <code>vi.fn()</code>은 인자 수에 무관. 확장(추가 인자)이라 기존 assertion도 유효.</td>
+        </tr>
+        <tr>
+          <td>limit 도달 시 재삽입이 생략돼 오답 단어가 그 세션에 다시 안 나온다</td>
+          <td>사용자 체감 변화</td>
+          <td>의도된 계약이다(이슈 기대 동작). 단어 상태는 "학습 중" 그대로라 다음 세션에 재출제 — v1의 60 도달 시와 동일 의미론.</td>
+        </tr>
+        <tr>
+          <td>설정값이 초기 큐보다 작거나 큰 비정상 조합</td>
+          <td>경계 동작 혼선</td>
+          <td>Worker가 1~500·비정상 시 60 폴백을 이미 강제(세션 설정 플랜 §3.1). 클라는 받은 값을 그대로 상한으로 쓰고 <code>&lt;</code> 비교라 초기 큐가 limit 이상이면 자연히 재삽입 0.</td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">6</span>테스트 계획</h2>
+    <ul>
+      <li><b>회귀(핵심):</b> limit 35 · 학습 중 문제 35개 큐에서 연속 오답을 내도 <code>queue.length</code>가 35를 유지 — 재삽입이 한 건도 일어나지 않는다.</li>
+      <li><b>경계:</b> limit 35 · 초기 34개 큐에서 학습 중 오답 1건 → 35로 증가(허용), 그 상태에서 또 다른 원본 오답 → 35 유지(생략).</li>
+      <li><b>v1 보존:</b> 기존 <code>src/lib/studySession.test.ts</code> 전체가 <b>무수정</b> 통과 — 특히 "큐가 SESSION_CAP이면 재삽입하지 않는다"(<code>:141</code>)가 limit 미전달 경로로 그대로 성립.</li>
+      <li><b>불변식:</b> "재삽입은 1회만"(<code>requeued</code> 플래그) 규칙이 limit 도입 후에도 유지 — 기존 <code>:130</code> 테스트로 커버.</li>
+      <li><b>스레딩:</b> <code>HomeScreen.test.tsx</code>에서 <code>settings.sessionLimit: 35</code> 응답 + 학습 중 단어로 "학습 시작" 클릭 → <code>onStart</code>가 <code>(큐, 35)</code>로 호출.</li>
+      <li><b>전체:</b> <code>npm test</code>(vitest 전체) · <code>npm run lint</code>(oxlint) · <code>npm run build</code>(<code>tsc -b</code> + vite build) 모두 그린.</li>
+      <li><b>범위 확인:</b> <code>git status</code>/<code>git diff --stat</code>에 <code>worker/</code> 변경이 없음.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">7</span>완료 조건</h2>
+    <ul class="done-list">
+      <li class="done">limit 35 세션에서 오답이 아무리 나도 <code>queue.length</code>가 35를 초과하지 않는 테스트 통과 (경계: 초기 34+재삽입 1 허용, 35면 생략)</li>
+      <li class="done">limit 미전달(기본 60) 경로에서 기존 <code>studySession</code> 테스트 <b>무수정</b> 통과 — v1 동작 보존</li>
+      <li class="done">HomeScreen → App → StudyScreen limit 스레딩 배선 완료 + <code>requeued</code> 1회 규칙 불변</li>
+      <li class="done"><code>docs/PRD.md</code> §6.2 재삽입 문구 개정 (고정 60 → 세션 문제 수 상한, 시트 설정·기본 60)</li>
+      <li class="done"><code>worker/</code> 변경 없음</li>
+      <li class="done"><code>npm test</code> · <code>npm run lint</code> · <code>npm run build</code> 모두 그린</li>
+    </ul>
+  </section>
+
+  <footer>issue-plan · <a href="https://github.com/damdam6/vocabulary-study/issues/113">#113</a> · 2026-07-28</footer>
+</main>
+</body>
+</html>

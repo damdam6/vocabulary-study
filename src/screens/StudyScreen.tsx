@@ -30,6 +30,8 @@ export interface SessionResult {
 
 interface StudyScreenProps {
   queue: SessionQuestion<WordEntry>[]
+  /** 세션 문제 수 상한(시트 설정) — §6.2 오답 재삽입이 이 값을 넘지 않게 한다(#113). */
+  limit: number
   /** 프로필 콘텐츠 타입(#78) — 칩 문구·lang·크기 스케일 등 렌더링 분기에 쓰인다(#80). */
   contentType: ContentType
   onExit: () => void
@@ -42,8 +44,8 @@ interface Feedback {
   seq: number
 }
 
-function StudyScreen({ queue, contentType, onExit, onComplete }: StudyScreenProps) {
-  const [session, setSession] = useState<StudySessionState>(() => startSession(queue))
+function StudyScreen({ queue, limit, contentType, onExit, onComplete }: StudyScreenProps) {
+  const [session, setSession] = useState<StudySessionState>(() => startSession(queue, limit))
   const [feedback, setFeedback] = useState<Feedback | null>(null)
   // 마지막 문제의 판정 피드백이 화면 전환으로 유실되지 않도록, 오버레이가 재생 중일
   // 때의 완료 전환만 오버레이 종료(onAnimationEnd) 시점으로 미룬다. 문제 간 전환은

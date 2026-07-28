@@ -149,6 +149,63 @@ describe("recordAnswer — 네 케이스의 effect·재삽입", () => {
   });
 });
 
+/**
+ * #113: 재삽입 상한은 고정 60이 아니라 그 세션의 문제 수 설정(시트 `문제수`)이다.
+ * 세션 총 문제 수가 설정값을 절대 넘지 않는 것이 계약 — 진행도 분모가 곧 queue.length라
+ * 상한 위반이 사용자에게 그대로 보인다.
+ */
+describe("recordAnswer — 세션 limit 재삽입 상한", () => {
+  /** 학습 중 문제 n개짜리 큐. */
+  const learningQueue = (n: number) =>
+    Array.from({ length: n }, (_, i) => makeQuestion({ word: makeWord({ hanzi: `词${i}` }) }));
+
+  it("limit 35 세션은 오답이 아무리 나도 queue.length가 35를 넘지 않는다", () => {
+    let state = startSession(learningQueue(35), 35);
+    // 큐 전체를 오답으로 소진 — 매 판정마다 상한 유지를 확인한다.
+    while (!isDone(state)) {
+      state = recordAnswer(state, false).state;
+      expect(state.queue.length).toBeLessThanOrEqual(35);
+      state = advance(state);
+    }
+    expect(state.queue).toHaveLength(35);
+    expect(state.wrong).toBe(35);
+  });
+
+  it("경계: limit 35에서 초기 34는 재삽입 1회를 허용하고, 35가 되면 생략한다", () => {
+    let state = startSession(learningQueue(34), 35);
+    state = recordAnswer(state, false).state; // 34 → 35 (허용)
+    expect(state.queue).toHaveLength(35);
+    expect(state.queue[34]).toMatchObject({ word: { hanzi: "词0" }, requeued: true });
+
+    state = advance(state); // 아직 재삽입되지 않은 원본 문제
+    expect(currentQuestion(state)?.requeued).toBe(false);
+    state = recordAnswer(state, false).state; // 상한 도달 → 생략
+    expect(state.queue).toHaveLength(35);
+    expect(state.wrong).toBe(2);
+  });
+
+  it("limit 미전달이면 SESSION_CAP(60)이 상한 — v1 동작 보존", () => {
+    expect(startSession(learningQueue(1)).limit).toBe(SESSION_CAP);
+    const state = startSession(learningQueue(SESSION_CAP));
+    expect(recordAnswer(state, false).state.queue).toHaveLength(SESSION_CAP);
+  });
+
+  it("limit이 커도 재삽입은 문제당 1회 규칙을 유지한다", () => {
+    let state = startSession(learningQueue(1), 35);
+    state = recordAnswer(state, false).state; // 원본 오답 → 재삽입, 길이 2
+    state = advance(state);
+    state = recordAnswer(state, false).state; // 복사본 오답 → 재재삽입 없음
+    expect(state.queue).toHaveLength(2);
+  });
+
+  it("복습 오답은 limit에 여유가 있어도 재삽입하지 않는다", () => {
+    const state = startSession([makeQuestion({ isReview: true }), makeQuestion()], 35);
+    const { state: next, effect } = recordAnswer(state, false);
+    expect(effect).toMatchObject({ kind: "review-fail" });
+    expect(next.queue).toHaveLength(2);
+  });
+});
+
 describe("세션 흐름 집계", () => {
   it("정오가 섞인 세션의 correct/wrong 합계가 완료 화면 수치와 일치한다", () => {
     // 학습 중 3문제: 정답 → 오답(재삽입) → 정답 → 재삽입 복사본 정답

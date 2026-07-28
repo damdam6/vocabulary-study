@@ -20,6 +20,11 @@ export interface StudySessionState {
   pos: number;
   correct: number;
   wrong: number;
+  /**
+   * 이 세션의 문제 수 상한(시트 `문제수` 설정, 세션 설정 플랜 §3.2) — 재삽입 판정에 쓴다.
+   * 시작 시점에 확정해 세션 내내 고정한다(설정 변경은 다음 세션부터, §3.2와 동일 성질).
+   */
+  limit: number;
 }
 
 /** 판정 직후 셸이 발사해야 할 기록 API. none = 학습 중 오답(호출 없음, §6.2). */
@@ -38,12 +43,20 @@ export function gradeMode2(input: string, hanzi: string): { correct: boolean; an
   return { correct: answer !== "" && answer === hanzi, answer };
 }
 
-export function startSession(questions: readonly SessionQuestion<WordEntry>[]): StudySessionState {
+/**
+ * limit은 세션 총 문제 수 상한 — §6.2 재삽입도 큐 구성(sessionQueue)·홈 집계(homeStats)와
+ * 같은 값을 쓴다(#113). 기본값 SESSION_CAP(60)이라 인자를 생략하면 기존 동작과 같다.
+ */
+export function startSession(
+  questions: readonly SessionQuestion<WordEntry>[],
+  limit: number = SESSION_CAP,
+): StudySessionState {
   return {
     queue: questions.map((question) => ({ ...question, requeued: false })),
     pos: 0,
     correct: 0,
     wrong: 0,
+    limit,
   };
 }
 
@@ -79,10 +92,11 @@ export function recordAnswer(
       effect: { kind: "review-fail", question },
     };
   }
-  // 학습 중 오답: API 호출 없음. 원본 문제일 때만 큐 맨 뒤에 1회 재삽입(60문제 상한 내)
-  // — 진행도 분모가 이 시점에 즉시 늘어난다.
+  // 학습 중 오답: API 호출 없음. 원본 문제일 때만 큐 맨 뒤에 1회 재삽입(세션 문제 수
+  // 상한 내) — 진행도 분모가 이 시점에 즉시 늘어난다. 상한에 걸려 생략된 단어는 상태가
+  // 학습 중 그대로라 다음 세션에 자연히 재출제된다(#113).
   const queue =
-    !question.requeued && state.queue.length < SESSION_CAP
+    !question.requeued && state.queue.length < state.limit
       ? [...state.queue, { ...question, requeued: true }]
       : state.queue;
   return {

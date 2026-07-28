@@ -12,7 +12,7 @@ import {
   type WordEntry,
 } from './lib/api.ts'
 import { flushRetryQueue } from './lib/retryQueue.ts'
-import type { SessionQuestion } from './lib/sessionQueue.ts'
+import { SESSION_CAP, type SessionQuestion } from './lib/sessionQueue.ts'
 
 // pinyin-pro(gzip 약 145KB) 의존성이 등록 화면에만 있어(#49) 학습 플로우 번들에서
 // 제외되도록 지연 로딩한다 — 등록 화면은 홈의 저강조 링크로만 진입하는 비핵심 경로.
@@ -25,6 +25,8 @@ function App() {
   const [screen, setScreen] = useState<Screen>(() => (getStoredPassword() ? 'home' : 'login'))
   // 세션 큐는 홈이 만들고(PRD §6.1) 셸이 소비한다(§6.2) — App은 화면 간 전달만 담당
   const [sessionQueue, setSessionQueue] = useState<SessionQuestion<WordEntry>[]>([])
+  // 큐와 같은 세션 문제 수 상한 — §6.2 오답 재삽입도 이 값을 써야 세션이 설정값을 넘지 않는다(#113)
+  const [sessionLimit, setSessionLimit] = useState(SESSION_CAP)
   const [sessionResult, setSessionResult] = useState<SessionResult>({ correct: 0, wrong: 0 })
   // 홈 수정 메뉴의 "1회 문제 수 수정"에서 등록 화면으로 진입했는지 — 문제수 필드
   // 포커스 대상 전달(세션 설정 플랜 §3.5, #110). 구조 변경 없이 진입 경로만 분기.
@@ -49,8 +51,9 @@ function App() {
     setScreen('register')
   }
 
-  const startSession = (queue: SessionQuestion<WordEntry>[]) => {
+  const startSession = (queue: SessionQuestion<WordEntry>[], limit: number) => {
     setSessionQueue(queue)
+    setSessionLimit(limit)
     setScreen('study')
   }
 
@@ -80,6 +83,7 @@ function App() {
         {screen === 'study' && (
           <StudyScreen
             queue={sessionQueue}
+            limit={sessionLimit}
             contentType={getStoredProfile()?.contentType ?? 'zh'}
             onExit={() => setScreen('home')}
             onComplete={completeSession}
