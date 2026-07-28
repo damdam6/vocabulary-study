@@ -1,7 +1,14 @@
-// 단어 등록 화면 (#49, 단어 등록 시스템 플랜 §5). 붙여넣기 → "확인" 클릭 시
-// 기계 검토(JSON/스키마/pinyin-pro/시트 중복) → 검증 테이블 → 탭 선택/생성 →
+// 단어 등록 화면 (#49, 단어 등록 시스템 플랜 §5). 탭 선택/생성(#118) → 붙여넣기 →
+// "확인" 클릭 시 기계 검토(JSON/스키마/pinyin-pro/시트 중복) → 검증 테이블 →
 // (중복 있으면 명시적 확인) → 제출(#48) → 결과 순으로 진행한다. React.lazy로
 // 지연 로딩되므로(App.tsx) pinyin-pro는 이 화면에 진입할 때만 받는다.
+//
+// "+ 새 탭"은 이름 입력만으로는 대상 탭이 되지 않는다(#118) — 입력란 우측 "생성"
+// 버튼으로 확정해야 선택지에 추가되고 그 탭이 선택된다(기존 탭과 같은 이름이면
+// 그 탭을 선택). 확정 전(새 탭 모드)에는 제출이 막힌다. 실제 시트 탭 생성은
+// 여전히 제출 시 Worker의 createTab 몫이다(빈 탭 방지, 등록 시스템 플랜 §8 Q5).
+// Worker는 이미 존재하는 탭에 createTab을 받아도 no-op이라, 제출 시 createTab은
+// "서버 조회 목록(tabs)에 없는 탭"으로만 판단한다.
 //
 // 검토는 텍스트 입력만으로는 실행되지 않는다(#55) — 붙여넣기/타이핑 중에는
 // 결과가 없고, textarea 아래 "확인" 버튼을 눌러야 그 시점의 텍스트로 검증이
@@ -72,6 +79,8 @@ function RegisterScreen({ contentType, onGoHome }: RegisterScreenProps) {
 
   const [selectedTab, setSelectedTab] = useState(NEW_TAB_VALUE)
   const [newTabName, setNewTabName] = useState('')
+  // "생성" 버튼으로 확정했지만 아직 시트에는 없는 탭 이름들(#118) — 제출 시 createTab 대상.
+  const [localTabs, setLocalTabs] = useState<string[]>([])
   const [text, setText] = useState('')
   const [confirmedText, setConfirmedText] = useState<string | null>(null)
   const [acknowledgedDuplicateKey, setAcknowledgedDuplicateKey] = useState<string | null>(null)
@@ -136,8 +145,12 @@ function RegisterScreen({ contentType, onGoHome }: RegisterScreenProps) {
   const newTabError = isNewTab ? validateNewTabName(newTabName) : null
 
   const tabOptions = useMemo(
-    () => [...tabs.map((tab) => ({ value: tab, label: tab })), { value: NEW_TAB_VALUE, label: '+ 새 탭' }],
-    [tabs],
+    () => [
+      ...tabs.map((tab) => ({ value: tab, label: tab })),
+      ...localTabs.map((tab) => ({ value: tab, label: tab })),
+      { value: NEW_TAB_VALUE, label: '+ 새 탭' },
+    ],
+    [tabs, localTabs],
   )
 
   const existingHanziInTab = useMemo(
@@ -172,18 +185,30 @@ function RegisterScreen({ contentType, onGoHome }: RegisterScreenProps) {
     !isDirty &&
     parseResult?.ok === true &&
     submittableRows.length > 0 &&
-    (!isNewTab || newTabError === null) &&
+    !isNewTab &&
     duplicatesAcknowledged
 
   const handleConfirm = () => {
     setConfirmedText(text)
   }
 
+  // "생성" 클릭 — 이름을 로컬 확정하고 그 탭을 선택 상태로 전환한다(#118). 기존
+  // 탭(서버 조회분·이미 확정한 로컬분)과 같은 이름이면 추가 없이 그 탭을 선택한다.
+  const handleCreateTab = () => {
+    if (newTabError !== null) return
+    const name = newTabName.trim()
+    if (!tabs.includes(name) && !localTabs.includes(name)) {
+      setLocalTabs((prev) => [...prev, name])
+    }
+    setSelectedTab(name)
+    setNewTabName('')
+  }
+
   const handleSubmit = () => {
     if (!canSubmit) return
     setSubmitPhase('submitting')
     setSubmitError(null)
-    const createTab = isNewTab && !tabs.includes(effectiveTab)
+    const createTab = !tabs.includes(effectiveTab)
     registerWords({
       tab: effectiveTab,
       ...(createTab ? { createTab: true } : {}),
@@ -309,6 +334,39 @@ function RegisterScreen({ contentType, onGoHome }: RegisterScreenProps) {
       </div>
 
       <div className="register-field">
+        <label className="register-field-label" htmlFor="register-tab-select">
+          등록할 탭
+        </label>
+        <Dropdown id="register-tab-select" value={selectedTab} options={tabOptions} onChange={setSelectedTab} />
+        {tabsStatus === 'error' && (
+          <p className="register-hint">탭 목록을 불러오지 못했습니다 — 새 탭 이름을 직접 입력하세요.</p>
+        )}
+        {isNewTab && (
+          <>
+            <div className="register-new-tab-row">
+              <input
+                className="register-new-tab-input"
+                type="text"
+                placeholder="새 탭 이름"
+                value={newTabName}
+                onChange={(event) => setNewTabName(event.target.value)}
+                autoFocus
+              />
+              <button
+                type="button"
+                className="register-new-tab-create-button"
+                disabled={newTabError !== null}
+                onClick={handleCreateTab}
+              >
+                생성
+              </button>
+            </div>
+            {newTabName !== '' && newTabError && <p className="register-error">{newTabError}</p>}
+          </>
+        )}
+      </div>
+
+      <div className="register-field">
         <label className="register-field-label" htmlFor="register-textarea">
           스키마 JSON 붙여넣기
         </label>
@@ -330,29 +388,6 @@ function RegisterScreen({ contentType, onGoHome }: RegisterScreenProps) {
         >
           확인
         </button>
-      </div>
-
-      <div className="register-field">
-        <label className="register-field-label" htmlFor="register-tab-select">
-          등록할 탭
-        </label>
-        <Dropdown id="register-tab-select" value={selectedTab} options={tabOptions} onChange={setSelectedTab} />
-        {tabsStatus === 'error' && (
-          <p className="register-hint">탭 목록을 불러오지 못했습니다 — 새 탭 이름을 직접 입력하세요.</p>
-        )}
-        {isNewTab && (
-          <>
-            <input
-              className="register-new-tab-input"
-              type="text"
-              placeholder="새 탭 이름"
-              value={newTabName}
-              onChange={(event) => setNewTabName(event.target.value)}
-              autoFocus
-            />
-            {newTabName !== '' && newTabError && <p className="register-error">{newTabError}</p>}
-          </>
-        )}
       </div>
 
       {isDirty && <p className="register-hint">텍스트가 수정되었습니다 — 다시 확인해 주세요.</p>}
