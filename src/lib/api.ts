@@ -210,3 +210,37 @@ export async function postReviewFail(tab: string, hanzi: string): Promise<WordEn
   }
   return (await response.json()) as WordEntry;
 }
+
+/**
+ * 비정상 응답의 `{error}` 본문을 우선 추출한다 — registerApi.ts의 동명 헬퍼와 같은
+ * 형태(의도적 중복, 계층 역전 방지: api.ts는 registerApi.ts를 import하지 않는다).
+ * 본문이 JSON이 아니거나 error 필드가 없으면 폴백 메시지를 쓴다.
+ */
+async function extractErrorMessage(response: Response, fallback: string): Promise<string> {
+  try {
+    const body = (await response.json()) as { error?: unknown };
+    if (typeof body.error === "string" && body.error !== "") return body.error;
+  } catch {
+    // 본문이 JSON이 아니면 폴백 메시지를 그대로 쓴다.
+  }
+  return fallback;
+}
+
+/**
+ * POST /api/settings — 세션당 문제 수 저장 (세션 설정 플랜 §3.3, #103). 요청·응답
+ * 형태는 WordsSettings와 같다. 비정상 응답은 Worker의 `{error}` 본문(예: 1~500 범위
+ * 안내)을 우선해 throw한다 — 등록 화면의 문제수 필드가 그 메시지를 그대로 보여준다
+ * (플랜 §3.5). 재시도 큐 대상이 아니다(설정은 최신 의도만 유효) — 호출부가 실패를
+ * 그 자리에서 표시하고 재시도 큐에 넣지 않는다.
+ */
+export async function postSettings(sessionLimit: number): Promise<WordsSettings> {
+  const response = await apiFetch("/api/settings", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ sessionLimit }),
+  });
+  if (!response.ok) {
+    throw new Error(await extractErrorMessage(response, `POST /api/settings 실패 (${response.status})`));
+  }
+  return (await response.json()) as WordsSettings;
+}

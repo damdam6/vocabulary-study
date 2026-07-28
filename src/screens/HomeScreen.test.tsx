@@ -32,9 +32,15 @@ afterEach(() => {
 function setup() {
   const onStart = vi.fn();
   const onNavigateRegister = vi.fn();
+  const onEditSessionLimit = vi.fn();
   const onSwitchProfile = vi.fn();
   const { container, unmount } = renderComponent(
-    <HomeScreen onStart={onStart} onNavigateRegister={onNavigateRegister} onSwitchProfile={onSwitchProfile} />,
+    <HomeScreen
+      onStart={onStart}
+      onNavigateRegister={onNavigateRegister}
+      onEditSessionLimit={onEditSessionLimit}
+      onSwitchProfile={onSwitchProfile}
+    />,
   );
   unmountCurrent = unmount;
 
@@ -42,6 +48,7 @@ function setup() {
   return {
     container,
     onNavigateRegister,
+    onEditSessionLimit,
     onSwitchProfile,
     editButton: byLabel("수정")!,
     personButton: byLabel("프로필 전환")!,
@@ -83,6 +90,16 @@ describe("HomeScreen 진입 액션 배치", () => {
     fire(() => menuItems()[0].click());
 
     expect(onNavigateRegister).toHaveBeenCalledTimes(1);
+  });
+
+  it("수정 메뉴의 '1회 문제 수 수정'이 문제 수 수정 prop까지 이어진다 (#110)", async () => {
+    const { editButton, menuItems, onEditSessionLimit } = setup();
+    await flush();
+
+    fire(() => editButton.click());
+    fire(() => menuItems()[1].click());
+
+    expect(onEditSessionLimit).toHaveBeenCalledTimes(1);
   });
 
   it("사람 버튼이 프로필 전환 prop까지 이어진다", async () => {

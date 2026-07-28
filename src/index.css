@@ -1036,6 +1036,45 @@ button {
   padding: 0 14px;
 }
 
+/* '문제수' 필드 (세션 설정 플랜 §3.5, #110) — 등록 배치와 독립된 상단 섹션 */
+.register-limit-row {
+  display: flex;
+  gap: 10px;
+}
+
+.register-limit-input {
+  flex: 1;
+  height: 48px;
+  border-radius: 12px;
+  border: 1px solid var(--border-input);
+  background: var(--bg-panel);
+  color: var(--text);
+  font-size: 15px;
+  padding: 0 14px;
+}
+
+.register-limit-save-button {
+  height: 48px;
+  padding: 0 20px;
+  border: none;
+  border-radius: 12px;
+  background: var(--accent);
+  color: var(--text);
+  font-weight: 600;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.register-limit-save-button:disabled {
+  opacity: 0.5;
+}
+
+.register-limit-success {
+  margin: 0;
+  font-size: 13px;
+  color: var(--green);
+}
+
 /* 커스텀 드롭다운 (#56) — 리스트박스 버튼 패턴, design-prd §1 토큰 기반 */
 .dropdown {
   position: relative;

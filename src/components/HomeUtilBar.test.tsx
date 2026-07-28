@@ -12,9 +12,14 @@ afterEach(() => {
 
 function setup() {
   const onNavigateRegister = vi.fn();
+  const onEditSessionLimit = vi.fn();
   const onSwitchProfile = vi.fn();
   const { container, unmount } = renderComponent(
-    <HomeUtilBar onNavigateRegister={onNavigateRegister} onSwitchProfile={onSwitchProfile} />,
+    <HomeUtilBar
+      onNavigateRegister={onNavigateRegister}
+      onEditSessionLimit={onEditSessionLimit}
+      onSwitchProfile={onSwitchProfile}
+    />,
   );
   unmountCurrent = unmount;
 
@@ -22,6 +27,7 @@ function setup() {
   return {
     container,
     onNavigateRegister,
+    onEditSessionLimit,
     onSwitchProfile,
     editButton: byLabel("수정")!,
     personButton: byLabel("프로필 전환")!,
@@ -46,7 +52,7 @@ describe("HomeUtilBar", () => {
     }
   });
 
-  it("수정 버튼을 누르면 메뉴가 열리고, 옵션은 '단어 등록' 하나뿐이다 (문제 수 수정은 후속 작업 소관)", () => {
+  it("수정 버튼을 누르면 메뉴가 열리고, 옵션은 '단어 등록'·'1회 문제 수 수정' 순서다 (#110)", () => {
     const { editButton, menu, menuItems } = setup();
 
     expect(menu()).toBeNull();
@@ -55,7 +61,7 @@ describe("HomeUtilBar", () => {
 
     expect(menu()).not.toBeNull();
     expect(editButton.getAttribute("aria-expanded")).toBe("true");
-    expect(menuItems().map((item) => item.textContent)).toEqual(["단어 등록"]);
+    expect(menuItems().map((item) => item.textContent)).toEqual(["단어 등록", "1회 문제 수 수정"]);
   });
 
   it("메뉴가 열리면 첫 항목이 포커스를 받는다", () => {
@@ -90,23 +96,37 @@ describe("HomeUtilBar", () => {
   });
 
   it("'단어 등록'을 고르면 등록 화면으로 이동시키고 메뉴를 닫는다", () => {
-    const { editButton, menu, menuItems, onNavigateRegister, onSwitchProfile } = setup();
+    const { editButton, menu, menuItems, onNavigateRegister, onEditSessionLimit, onSwitchProfile } = setup();
 
     fire(() => editButton.click());
     fire(() => menuItems()[0].click());
 
     expect(onNavigateRegister).toHaveBeenCalledTimes(1);
+    expect(onEditSessionLimit).not.toHaveBeenCalled();
+    expect(onSwitchProfile).not.toHaveBeenCalled();
+    expect(menu()).toBeNull();
+  });
+
+  it("'1회 문제 수 수정'을 고르면 문제 수 수정 콜백을 호출하고 메뉴를 닫는다 (#110)", () => {
+    const { editButton, menu, menuItems, onNavigateRegister, onEditSessionLimit, onSwitchProfile } = setup();
+
+    fire(() => editButton.click());
+    fire(() => menuItems()[1].click());
+
+    expect(onEditSessionLimit).toHaveBeenCalledTimes(1);
+    expect(onNavigateRegister).not.toHaveBeenCalled();
     expect(onSwitchProfile).not.toHaveBeenCalled();
     expect(menu()).toBeNull();
   });
 
   it("사람 버튼은 메뉴 없이 즉시 프로필 전환한다", () => {
-    const { personButton, menu, onNavigateRegister, onSwitchProfile } = setup();
+    const { personButton, menu, onNavigateRegister, onEditSessionLimit, onSwitchProfile } = setup();
 
     fire(() => personButton.click());
 
     expect(onSwitchProfile).toHaveBeenCalledTimes(1);
     expect(onNavigateRegister).not.toHaveBeenCalled();
+    expect(onEditSessionLimit).not.toHaveBeenCalled();
     expect(menu()).toBeNull();
   });
 });
