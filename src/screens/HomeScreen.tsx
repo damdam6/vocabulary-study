@@ -7,7 +7,7 @@ import { getStoredProfile, saveProfile, type PublicProfile, type WordEntry } fro
 import { formatHomeDate } from "../lib/date.ts";
 import { computeHomeStats, type HomeStats } from "../lib/homeStats.ts";
 import { RETRY_QUEUE_CHANGED_EVENT, RETRY_QUEUE_STORAGE_KEY, getRetryQueueLength } from "../lib/retryQueue.ts";
-import { buildSessionQueue, type SessionQuestion } from "../lib/sessionQueue.ts";
+import { buildSessionQueue, SESSION_CAP, type SessionQuestion } from "../lib/sessionQueue.ts";
 import { getSeoulToday } from "../lib/wordState.ts";
 import { fetchWords } from "../lib/wordsApi.ts";
 
@@ -27,6 +27,8 @@ function HomeScreen({ onStart, onNavigateRegister, onSwitchProfile }: HomeScreen
   const [errorMessage, setErrorMessage] = useState("");
   const [retryKey, setRetryKey] = useState(0);
   const [retryQueueLength, setRetryQueueLength] = useState(0);
+  // 시트별 세션 문제 수(세션 설정 플랜 §3.2) — words 응답 동봉값, 미동봉 시 fetchWords가 SESSION_CAP으로 폴백.
+  const [sessionLimit, setSessionLimit] = useState(SESSION_CAP);
 
   // App.tsx가 홈 화면을 조건부로만 렌더링하므로, 홈을 벗어났다 돌아올 때마다
   // 이 컴포넌트가 새로 마운트되어 design-prd §3의 "홈 진입 시마다 재조회"를 만족한다.
@@ -35,12 +37,13 @@ function HomeScreen({ onStart, onNavigateRegister, onSwitchProfile }: HomeScreen
     const controller = new AbortController();
     setStatus("loading");
     fetchWords(controller.signal)
-      .then(({ profile: fetchedProfile, words: fetched }) => {
+      .then(({ profile: fetchedProfile, words: fetched, settings }) => {
         if (cancelled) return;
         setWords(fetched);
         setProfile(fetchedProfile);
         saveProfile(fetchedProfile);
-        setStats(computeHomeStats(fetched, getSeoulToday(), fetchedProfile.modes));
+        setSessionLimit(settings.sessionLimit);
+        setStats(computeHomeStats(fetched, getSeoulToday(), fetchedProfile.modes, settings.sessionLimit));
         setStatus("ready");
       })
       .catch((err: unknown) => {
@@ -76,8 +79,8 @@ function HomeScreen({ onStart, onNavigateRegister, onSwitchProfile }: HomeScreen
   const canStart = status === "ready" && (stats?.sessionCount ?? 0) > 0;
 
   const handleStart = () => {
-    // canStart(sessionCount>0)와 같은 단어 집합·같은 산식이므로 빈 큐가 나올 수 없다
-    onStart(buildSessionQueue(words, getSeoulToday(), profile?.modes ?? []));
+    // canStart(sessionCount>0)와 같은 단어 집합·같은 산식(같은 sessionLimit)이므로 빈 큐가 나올 수 없다
+    onStart(buildSessionQueue(words, getSeoulToday(), profile?.modes ?? [], undefined, sessionLimit));
   };
 
   return (

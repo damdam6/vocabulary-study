@@ -57,6 +57,47 @@ describe("computeHomeStats", () => {
     expect(stats).toEqual({ reviewDue: 0, learning: 0, graduated: 0, sessionCount: 0 });
   });
 
+  it("limit을 생략하면 60(SESSION_CAP)이 그대로 상한이다 — 기존 동작 보존", () => {
+    const reviewDueWords: WordProgress[] = Array.from({ length: 70 }, () => ({
+      m1: 3,
+      m2: 3,
+      nextReview: "2026-07-19",
+    }));
+
+    const stats = computeHomeStats(reviewDueWords, today, ["m1", "m2"]);
+
+    expect(stats.sessionCount).toBe(60);
+  });
+
+  it("limit=30이면 복습 대기 컷·sessionCount 상한 모두 30이다", () => {
+    const reviewDueWords: WordProgress[] = Array.from({ length: 40 }, () => ({
+      m1: 3,
+      m2: 3,
+      nextReview: "2026-07-19",
+    }));
+    const learningWords: WordProgress[] = [
+      { m1: 0, m2: 0, nextReview: null },
+      { m1: 0, m2: 0, nextReview: null },
+    ];
+
+    const stats = computeHomeStats([...reviewDueWords, ...learningWords], today, ["m1", "m2"], 30);
+
+    // sessionCount = min(30, min(40,30) + 2) = min(30, 32) = 30
+    expect(stats.reviewDue).toBe(40);
+    expect(stats.sessionCount).toBe(30);
+  });
+
+  it("limit=1이면 sessionCount는 최대 1이다", () => {
+    const words: WordProgress[] = [
+      { m1: 3, m2: 3, nextReview: "2026-07-19" },
+      { m1: 0, m2: 0, nextReview: null },
+    ];
+
+    const stats = computeHomeStats(words, today, ["m1", "m2"], 1);
+
+    expect(stats.sessionCount).toBe(1);
+  });
+
   it("modes가 판정에 반영된다 — M={m1}이면 m2 미달 단어도 M 기준으로 졸업 취급된다", () => {
     const words: WordProgress[] = [
       { m1: 3, m2: 0, nextReview: "2026-07-19" }, // M={m1,m2}면 학습 중, M={m1}이면 복습 대기
