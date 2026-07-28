@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>#102 세션 설정 — Worker &#39;_정보&#39; 탭 읽기 + words 응답 settings 동봉 — 작업 플랜</title>
+<style>
+  :root {
+    --bg: #f7f7f8; --card: #ffffff; --ink: #1c1c1e; --muted: #6e6e73;
+    --line: #e3e3e6; --accent: #3b6ef5; --accent-soft: #e8eefe;
+    --ok: #2e8b57; --warn: #b25e09; --code-bg: #f0f0f2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161618; --card: #202024; --ink: #ececf0; --muted: #98989f;
+      --line: #333338; --accent: #7a9bff; --accent-soft: #26304a;
+      --ok: #58c088; --warn: #e0a35c; --code-bg: #2a2a2f;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 40px 20px 80px; background: var(--bg); color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+                 "Segoe UI", "Noto Sans KR", sans-serif;
+    line-height: 1.65;
+  }
+  main { max-width: 860px; margin: 0 auto; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code {
+    font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 0.86em;
+    background: var(--code-bg); border-radius: 5px; padding: 2px 6px;
+  }
+  header { margin-bottom: 28px; }
+  .issue-chip {
+    display: inline-block; font-weight: 700; color: var(--accent);
+    background: var(--accent-soft); border-radius: 999px;
+    padding: 3px 14px; font-size: 0.95rem; margin-bottom: 10px;
+  }
+  .type-chip {
+    display: inline-block; font-weight: 600; color: var(--muted);
+    border: 1px solid var(--line); border-radius: 999px;
+    padding: 3px 12px; font-size: 0.8rem; margin-left: 8px; vertical-align: 2px;
+  }
+  h1 { font-size: 1.7rem; margin: 0 0 14px; letter-spacing: -0.02em; }
+  .meta {
+    display: flex; flex-wrap: wrap; gap: 6px 22px;
+    color: var(--muted); font-size: 0.87rem;
+  }
+  .meta b { color: var(--ink); font-weight: 600; }
+  section.card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 24px 28px; margin-top: 18px;
+  }
+  h2 {
+    font-size: 1.05rem; margin: 0 0 14px; letter-spacing: -0.01em;
+    display: flex; align-items: center; gap: 8px;
+  }
+  h2 .no {
+    color: var(--accent); font-size: 0.8rem; font-weight: 700;
+    border: 1.5px solid var(--accent); border-radius: 6px; padding: 0 6px;
+  }
+  ul, ol { margin: 0; padding-left: 22px; }
+  li { margin: 6px 0; }
+  .steps { list-style: none; padding: 0; counter-reset: step; }
+  .steps li {
+    counter-increment: step; position: relative; padding: 10px 0 10px 44px;
+    border-bottom: 1px dashed var(--line);
+  }
+  .steps li:last-child { border-bottom: none; }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 10px;
+    width: 28px; height: 28px; border-radius: 8px; background: var(--accent-soft);
+    color: var(--accent); font-weight: 700; font-size: 0.85rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .steps .files { display: block; margin-top: 4px; font-size: 0.85rem; color: var(--muted); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 0.82rem; }
+  .done-list { list-style: none; padding: 0; }
+  .done-list li { padding-left: 30px; position: relative; }
+  .done-list li::before {
+    content: ""; position: absolute; left: 2px; top: 7px; width: 15px; height: 15px;
+    border: 2px solid var(--ok); border-radius: 5px;
+  }
+  .steps li.done::before { content: "✓"; background: var(--ok); color: #fff; }
+  .steps li.done > b:first-child { text-decoration: line-through; text-decoration-color: var(--muted); }
+  .note { display: block; margin-top: 6px; font-size: 0.85rem; color: var(--muted); }
+  .note b { color: var(--ok); }
+  .done-list li.done::before { background: var(--ok); }
+  .done-list li.done::after {
+    content: "✓"; position: absolute; left: 5px; top: 3px; color: #fff;
+    font-size: 0.75rem; font-weight: 700;
+  }
+  .scroll-x { overflow-x: auto; }
+  footer { margin-top: 30px; color: var(--muted); font-size: 0.8rem; text-align: center; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <span class="issue-chip"><a href="https://github.com/damdam6/vocabulary-study/issues/102">#102</a></span><span class="type-chip">기능 개선</span>
+    <h1>세션 설정 — Worker &#39;_정보&#39; 탭 읽기 + words 응답 settings 동봉</h1>
+    <div class="meta">
+      <span><b>damdam6/vocabulary-study</b></span>
+      <span>브랜치 <b><code>feat/102-info-tab-settings-read</code></b> ← <code>main</code></span>
+      <span>라벨 <b>enhancement</b></span>
+      <span>2026-07-28</span>
+    </div>
+  </header>
+
+  <section class="card">
+    <h2><span class="no">1</span>요약</h2>
+    <p>세션당 문제 수가 클라이언트 상수 60으로 고정돼 있어 시트(프로필)마다 학습량을 다르게 줄 수 없다. 이 이슈는 그 설정의 <b>읽기 경로만</b> 만든다 — 스프레드시트 안 &#39;_정보&#39; 탭(A열 키 / B열 값)을 파싱하는 순수 파서 <code>worker/lib/settings.ts</code>를 신설하고, <code>GET /api/words</code> 응답 최상위에 <code>settings: { sessionLimit }</code> 블록을 동봉한다. 읽기는 관대하게 — 탭 없음·키 없음·비정수·범위 밖은 전부 기본 60으로 폴백해 words 호출을 절대 실패시키지 않는다. 탭 이름이 <code>_</code>로 시작하므로 기존 &quot;<code>_</code> 접두 = 학습 제외&quot; 규약(PRD §4.1)에 걸려 words 출제·tabs 목록·등록 대상에서 <b>이미 자동으로 빠진다</b> — 제외용 코드 변경이 0이다. 쓰기 API는 작업 B, 클라이언트 소비는 작업 C 소관으로 이 PR 범위 밖이다.</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">2</span>현황 분석</h2>
+    
+    <p>기준 문서는 <code>docs/plans/session-limit-and-home-utils.md</code> §3.1·§3.2(2026-07-28 확정, Q1~Q7 소유자 확인)이고,
+       이 이슈는 그 문서 §5의 <b>작업 A</b>다. B·C·D와 병렬 루트이며 캡스톤 E가 네 작업 모두에 의존한다.</p>
+
+    <h3>현재 상한 60이 사는 곳 (클라이언트 — 이번 범위 밖)</h3>
+    <ul>
+      <li><code>src/lib/sessionQueue.ts</code> — <code>export const SESSION_CAP = 60</code>. 복습 대기 &quot;오래된 순 최대 60개&quot; 컷과
+          세션 총 상한이 같은 상수를 공유한다.</li>
+      <li><code>src/lib/homeStats.ts</code> — 같은 이름의 로컬 상수 60이 <b>중복</b>돼 있다.</li>
+      <li>두 지점의 파라미터화·상수 일원화는 <b>작업 C</b> 소관 — 이 PR은 <code>src/</code>를 건드리지 않는다.</li>
+    </ul>
+
+    <h3>Worker 읽기 경로</h3>
+    <ul>
+      <li><code>worker/routes/words.ts:17-34</code> — <code>getWordTabTitles</code>로 학습 탭 목록을 얻고, 탭별
+          <code>A2:F</code>를 <code>Promise.all</code>로 읽어 <code>{ fetchedAt, words, profile }</code>을 반환한다.
+          응답 최상위 블록을 추가할 자리가 여기다.</li>
+      <li><code>worker/lib/words.ts:12-15</code> — <code>getWordTabTitles</code>가
+          <code>titles.filter((title) =&gt; !title.startsWith(&quot;_&quot;))</code>로 <code>_</code> 접두 탭을 제외한다.
+          <b>words·tabs·등록 헤더 원본 선택이 이 한 함수를 공유</b>하므로, &#39;_정보&#39; 탭은 여기서 이미 걸러진다.</li>
+      <li><code>worker/lib/register.ts:107</code> — 등록 대상 탭 이름이 <code>_</code>로 시작하면 차단한다(§4.1과 모순 방지).
+          &#39;_정보&#39;를 등록 대상으로 지정하는 경로도 이미 막혀 있다.</li>
+      <li><code>worker/lib/sheets.ts:39-48</code> — <code>getValues(env, sheetId, tab, range)</code>는 빈 범위를 <code>[]</code>로 돌려주고,
+          뒤쪽 빈 셀은 API가 생략하므로 <b>행 길이가 들쭉날쭉</b>할 수 있다(파서가 감안해야 함).</li>
+      <li><code>worker/lib/sheets.ts:131-150</code> — 비 2xx는 <code>SheetsApiError</code>로 throw된다.
+          <b>없는 탭을 읽으면 400(Unable to parse range)</b>이 오는데, <code>worker/lib/words.ts:60-66</code>·<code>88-92</code>가
+          이미 그 400을 &quot;찾지 못함&quot;으로 흡수하는 선례를 만들어 뒀다 — settings 파서도 같은 방식을 따른다.</li>
+      <li><code>worker/index.ts:45-52</code> — <code>/api/words</code>는 예외를 잡아 500으로 바꾼다.
+          settings 읽기 실패가 여기까지 올라가면 words 전체가 죽으므로, 폴백은 반드시 <b>라우트 아래</b>에서 끝나야 한다.</li>
+      <li><code>worker/index.ts:38-43</code> — <code>/api/health</code>는 <code>profile</code>만 싣는다. 플랜 §3.2에 따라
+          settings는 <b>넣지 않는다</b>(로그인 시점에 불필요).</li>
+    </ul>
+
+    <h3>계약·테스트 기준선</h3>
+    <ul>
+      <li><code>worker/index.sheet-isolation.test.ts:103-130</code> — <code>words</code> 배열 형태를 <code>toEqual</code>로 못 박고 있다.
+          <b>최상위에 필드를 더하는 것</b>이므로 이 단언은 그대로 통과한다.</li>
+      <li>같은 파일 <code>:86-95</code> — 호출된 모든 Sheets URL이 인증된 프로필의 sheetId만 담는지 전수 검사한다.
+          &#39;_정보&#39; 읽기도 <code>profile.sheetId</code>로 나가야 이 테스트를 통과한다.</li>
+      <li>같은 파일 <code>:54-77</code>의 목은 알 수 없는 탭 조회에 <code>{ values: [] }</code>를 돌려준다 →
+          기존 스위트는 자연히 &quot;탭 없음 → 60&quot; 경로를 타게 된다.</li>
+      <li><code>docs/PRD.md</code> §4.1(<code>_</code> 접두 제외)·§6.1(&quot;상한 60문제&quot;)·§7.3(<code>GET /api/words</code> 응답 예)이
+          개정 대상이다. <code>docs/PRD-general.md</code>는 <code>profile</code> 블록만 정의하므로 이번 개정 대상이 아니다.</li>
+    </ul>
+    
+  </section>
+
+  <section class="card">
+    <h2><span class="no">3</span>설계</h2>
+    
+    <h3>&#39;_정보&#39; 탭 계약 (플랜 §3.1 — 소유자 확정)</h3>
+    <ul>
+      <li><b>탭 이름은 &#39;_정보&#39;</b>. 기존 <code>_</code> 규약 재사용이 핵심 — 제외·차단 특례 코드가 0이다.
+          (비접두 &#39;정보&#39;로 만들면 단어 탭으로 스캔·출제된다.)</li>
+      <li><b>헤더 행 없음. A열 = 키, B열 = 값. 행 위치 자유</b> — A열에서 키를 트림 후 정확 일치로 탐색해 그 행의 B열을 읽는다.</li>
+      <li><b>모르는 키는 무시</b>(전방 호환). 이번에 인식하는 키는 <code>문제수</code> 하나.</li>
+      <li><b>읽기는 관대</b>: 정수 1~500만 채택하고, 그 외(탭 없음·키 없음·빈칸·비정수·0·501·음수·소수)는 기본 <b>60</b> 폴백.</li>
+    </ul>
+
+    <h3>모듈 경계 — 순수 파서 + 얇은 fetch 래퍼</h3>
+    <p>신설 <code>worker/lib/settings.ts</code>를 두 층으로 나눈다. 이슈가 요구하는 테스트(정상·행 위치 자유·이상값 폴백·모르는 키 무시)는
+       전부 <b>시트 호출 없이</b> 첫 층에서 검증된다.</p>
+    <ul>
+      <li><code>DEFAULT_SESSION_LIMIT = 60</code> · <code>SESSION_LIMIT_KEY = &quot;문제수&quot;</code> · <code>SETTINGS_TAB = &quot;_정보&quot;</code> ·
+          <code>SETTINGS_RANGE = &quot;A:B&quot;</code> — 상수를 여기 한곳에 모아 작업 B(쓰기 API)가 그대로 재사용한다.</li>
+      <li><code>parseSettings(rows: string[][]): SheetSettings</code> — <b>순수 함수</b>. A:B 값 배열에서 키 행을 찾아
+          <code>{ sessionLimit }</code>을 만든다. 짧은 행(B열 생략)·공백·중복 키(첫 유효값 우선)를 전부 감당한다.</li>
+      <li><code>readSettings(env, sheetId): Promise&lt;SheetSettings&gt;</code> — <code>getValues</code>로 <code>&#39;_정보&#39;!A:B</code>를 1회 읽어
+          파서에 넘긴다. <b>어떤 예외도 밖으로 내보내지 않고</b> 기본값으로 흡수한다(400·5xx·네트워크 모두).
+          &quot;없는 탭 = 400&quot;을 흡수하는 <code>findWordRow</code>(<code>worker/lib/words.ts:60-66</code>)의 선례를 넓힌 형태.</li>
+    </ul>
+
+    <h3>words 응답 합성 (플랜 §3.2)</h3>
+    <ul>
+      <li><code>worker/routes/words.ts</code>에서 탭 제목 조회·단어 읽기와 <b>병렬로</b> settings를 읽는다
+          (<code>Promise.all</code> — 직렬 왕복을 추가하지 않는다).</li>
+      <li>응답: <code>{ fetchedAt, words, profile, settings: { sessionLimit } }</code>. <code>words</code>·<code>profile</code> 형태 불변.</li>
+      <li><code>/api/health</code>·<code>/api/tabs</code>는 손대지 않는다.</li>
+    </ul>
+
+    <h3>기각한 대안</h3>
+    <ul>
+      <li><b>전용 <code>GET /api/settings</code></b> — 홈 진입마다 왕복이 하나 더 는다. words 동봉은 <code>profile</code> 블록의 선례를 따른다(플랜 §8).</li>
+      <li><b><code>/api/health</code>에도 동봉</b> — 로그인 시점에는 불필요하고, 상한이 두 응답에 중복 정의되면 어느 쪽이 최신인지 모호해진다.</li>
+      <li><b>읽기도 엄격(이상값 → 500)</b> — 손으로 고친 시트의 오타가 학습 전체를 멈춘다. 읽기 관대·쓰기 엄격(작업 B)이 확정 결정이다.</li>
+      <li><b>&#39;정보&#39; 탭 예약 특례</b> — words·tabs·register 세 곳에 제외 코드를 새로 넣어야 한다. Q1에서 기각됐다.</li>
+      <li><b>파서를 <code>lib/words.ts</code>에 얹기</b> — 작업 B의 쓰기 경로가 같은 상수·행 탐색을 필요로 하므로 전용 모듈이 맞다.</li>
+    </ul>
+    
+  </section>
+
+  <section class="card">
+    <h2><span class="no">4</span>작업 단계</h2>
+    <ol class="steps">
+      
+      <li class="done"><b><code>worker/lib/settings.ts</code> 신설 — 상수 + 순수 파서 <code>parseSettings</code>.</b>
+          A:B 행 배열에서 A열을 트림해 <code>문제수</code>와 정확 일치하는 행을 찾고, B열을 트림 후 정수 판정
+          (<code>Number.isInteger</code> + 1~500 범위)한다. 불일치·부재·짧은 행은 <code>DEFAULT_SESSION_LIMIT</code>(60).
+          모르는 키 행은 그냥 건너뛴다.
+          <span class="note">메모: 정수 판정에 <code>Number.isInteger</code>만 쓰면 <code>&quot;0x1E&quot;</code>·<code>&quot;1e2&quot;</code> 같은 표기가 통과하므로 <code>/^\d+$/</code>로 숫자 문자열 형태를 먼저 강제한 뒤 범위를 본다. 중복 키는 &quot;첫 유효값&quot;이 아니라 <b>첫 행 우선</b> — 규칙이 예측 가능하다.</span>
+        <span class="files"><code>worker/lib/settings.ts</code></span>
+      </li>
+      <li class="done"><b>같은 파일에 <code>readSettings(env, sheetId)</code> 추가 — 시트 1회 읽기 + 전 예외 흡수.</b>
+          <code>getValues(env, sheetId, &quot;_정보&quot;, &quot;A:B&quot;)</code> 결과를 파서에 넘기고,
+          <code>try/catch</code>로 <b>모든</b> 실패(없는 탭 400·권한 403·5xx·네트워크)를 기본값으로 흡수한다.
+          예외 삼킴이 디버깅을 가리지 않도록 <code>console.warn</code> 한 줄을 남긴다(<code>worker/index.ts</code>의 <code>console.error</code> 관용 따름).
+        <span class="files"><code>worker/lib/settings.ts</code>, <code>worker/lib/sheets.ts</code>(읽기만)</span>
+      </li>
+      <li class="done"><b><code>worker/lib/settings.test.ts</code> — 파서 단위 테스트.</b>
+          정상(<code>문제수|30</code>) · 행 위치 자유(3번째 행) · 모르는 키 혼재 · 탭 없음(<code>[]</code>) · 키 없음 ·
+          B열 빈칸/짧은 행 · 비정수(<code>&quot;삼십&quot;</code>·<code>&quot;30.5&quot;</code>) · 0 · 501 · 음수 · 경계 1·500 채택 ·
+          앞뒤 공백 트림 → 각각 기대값 검증.
+          <span class="note">메모: 계획대로 16개 케이스. <code>readSettings</code>의 시트 왕복(대상 sheetId·<code>&#39;_정보&#39;!A:B</code> 범위)과 400/500/네트워크 오류 흡수도 같은 파일에서 함께 덮었다.</span>
+        <span class="files"><code>worker/lib/settings.test.ts</code></span>
+      </li>
+      <li class="done"><b><code>worker/routes/words.ts</code> — 응답에 <code>settings</code> 블록 합성.</b>
+          <code>readSettings</code>를 탭 제목 조회와 병렬로 호출해 <code>Response.json</code>에 <code>settings</code>를 추가한다.
+          <code>fetchedAt</code>·<code>words</code>·<code>profile</code> 형태·순서는 건드리지 않는다.
+        <span class="files"><code>worker/routes/words.ts</code></span>
+      </li>
+      <li class="done"><b><code>worker/routes/words.test.ts</code> — 라우트 통합 테스트(신설).</b>
+          &#39;_정보&#39; 탭이 있는 시트 → <code>settings.sessionLimit</code>이 시트 값 · 탭이 없는 시트 → 60 ·
+          &#39;_정보&#39; 읽기가 500을 던져도 words는 200 + 60 · <b>&#39;_정보&#39; 탭이 <code>words</code> 배열에 섞이지 않음</b>(회귀) ·
+          호출 URL이 프로필 sheetId로 격리됨. 목은 <code>index.sheet-isolation.test.ts:54-77</code>의 형태를 따른다.
+          <span class="note">메모: 라우트 스위트 7개 통과. 계획한 5케이스에 &quot;범위 밖 값(501) → 60&quot;과 &quot;<code>GET /api/tabs</code> 목록에도 <code>_정보</code> 없음&quot;을 더했다.</span>
+        <span class="files"><code>worker/routes/words.test.ts</code></span>
+      </li>
+      <li class="done"><b>기존 스위트 회귀 확인.</b> <code>npm test</code> — 특히
+          <code>index.sheet-isolation.test.ts</code>(words 형태 <code>toEqual</code>·URL 격리)·<code>tabs.test.ts</code>·
+          <code>register*.test.ts</code>가 <b>무수정</b>으로 통과해야 한다. 이어서 <code>npm run lint</code>·<code>npm run build</code>(<code>tsc -b</code>).
+          <span class="note">메모: <b>전체 green</b> — 27파일 332테스트 통과(기존 스위트 무수정), <code>npm run lint</code>·<code>npm run build</code> 모두 통과.</span>
+        <span class="files"><code>worker/**/*.test.ts</code></span>
+      </li>
+      <li class="done"><b><code>docs/PRD.md</code> 개정 — §4.1 · §6.1 · §7.3.</b>
+          §4.1에 &#39;_정보&#39; 설정 탭 문단 추가(A열 키/B열 값, 단어 탭 컬럼 계약 §4.2 <b>비적용</b>, <code>_</code> 규약으로 자동 제외) ·
+          §6.1의 &quot;상한 60문제&quot;를 &quot;상한 = 시트 <code>문제수</code> 설정, 기본 60&quot;으로 · §7.3 <code>GET /api/words</code> 응답 예에
+          <code>settings</code> 블록과 폴백 규칙 명시. 문서 상단 개정 노트에 플랜 포인터를 남긴다.
+          <span class="note">메모: §4.1·§6.1·§7.3 개정 + 문서 상단 개정 노트. 계획 외 <b>1곳 추가</b>: §6.2의 &quot;(60문제 상한 내에서)&quot;를 &quot;(§6.1 상한 내에서)&quot;로 — 안 고치면 같은 절 안에서 상한이 60으로 고정된 것처럼 읽힌다.</span>
+        <span class="files"><code>docs/PRD.md</code></span>
+      </li>
+      <li class="done"><b>커밋 → 푸시 → PR.</b> 레포 스타일(한국어, <code>주제 — 세부 (#102)</code>)로 논리 단위 커밋,
+          마지막에 체크오프된 플랜 HTML을 <code>docs:</code> 커밋으로 동봉.
+        <span class="files"><code>docs/plans/issue-102-info-tab-settings-read.html</code></span>
+      </li>
+    
+    </ol>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">5</span>리스크</h2>
+    <div class="scroll-x">
+    <table>
+      <thead><tr><th>리스크</th><th>영향</th><th>완화책</th></tr></thead>
+      <tbody>
+        
+        <tr>
+          <td>settings 읽기 실패가 <code>/api/words</code> 전체를 500으로 떨어뜨림</td>
+          <td>치명 — 설정 오타 하나로 학습 불가</td>
+          <td><code>readSettings</code>가 <b>모든</b> 예외를 삼키고 60을 반환. 라우트에서 <code>await</code> 되기 전에 이미 흡수됨.
+              &quot;읽기 실패 → 200 + 60&quot; 테스트로 못 박는다.</td>
+        </tr>
+        <tr>
+          <td>&#39;_정보&#39; 탭이 단어 탭으로 스캔돼 출제됨</td>
+          <td>높음 — 설정 행이 문제로 나옴</td>
+          <td><code>worker/lib/words.ts:14</code>의 <code>_</code> 필터가 이미 제외한다. 신규 코드 없이 <b>회귀 테스트로 증명</b>
+              (&#39;_정보&#39;가 있는 시트의 words 응답에 그 탭 항목이 없음).</td>
+        </tr>
+        <tr>
+          <td>시트 읽기 1회 추가로 words 응답 지연</td>
+          <td>낮음</td>
+          <td>탭 제목 조회와 <code>Promise.all</code> 병렬 — 직렬 왕복이 늘지 않는다. 플랜 §3.2가 비용 1회를 이미 허용.</td>
+        </tr>
+        <tr>
+          <td>기존 words 테스트가 응답 필드 추가로 깨짐</td>
+          <td>중간</td>
+          <td>단언이 <code>body.words</code>·<code>body.profile</code>에 국한돼 최상위 추가는 안전
+              (<code>index.sheet-isolation.test.ts:103·138</code>). 테스트 <b>무수정 통과</b>가 완료 조건.</td>
+        </tr>
+        <tr>
+          <td>구 클라이언트가 새 필드를 만나 오동작</td>
+          <td>낮음</td>
+          <td>클라는 아직 <code>settings</code>를 읽지 않는다(작업 C). 미사용 필드는 무시된다 — 플랜 §5의 &quot;A 단독 배포 안전&quot;.</td>
+        </tr>
+        <tr>
+          <td>범위 이탈(쓰기 API·클라 파라미터화까지 손댐)</td>
+          <td>중간 — 리뷰 비대·작업 B/C와 충돌</td>
+          <td><code>src/</code>와 <code>POST /api/settings</code>는 이 PR에서 <b>건드리지 않는다</b>. 완료 조건에 명시.</td>
+        </tr>
+    
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">6</span>테스트 계획</h2>
+    <ul>
+      
+      <li><b>파서 정상</b> — <code>[[&quot;문제수&quot;,&quot;30&quot;]]</code> → <code>sessionLimit: 30</code>.</li>
+      <li><b>행 위치 자유</b> — <code>[[&quot;메모&quot;,&quot;…&quot;],[&quot;버전&quot;,&quot;2&quot;],[&quot;문제수&quot;,&quot;25&quot;]]</code> → 25.</li>
+      <li><b>모르는 키 무시</b> — 인식하지 않는 키가 섞여도 <code>문제수</code>만 반영, 예외 없음.</li>
+      <li><b>공백 트림</b> — <code>[[&quot; 문제수 &quot;,&quot; 30 &quot;]]</code> → 30.</li>
+      <li><b>경계 채택</b> — 1 · 500 → 그대로. <b>경계 밖</b> — 0 · 501 · <code>-5</code> → 60.</li>
+      <li><b>비정수</b> — <code>&quot;삼십&quot;</code> · <code>&quot;30.5&quot;</code> · <code>&quot;&quot;</code> · B열 누락(짧은 행) → 60.</li>
+      <li><b>탭/키 없음</b> — <code>[]</code> · <code>[[&quot;메모&quot;,&quot;x&quot;]]</code> → 60.</li>
+      <li><b>words 동봉</b> — &#39;_정보&#39;에 <code>문제수|30</code>이 있는 시트 → 응답 <code>settings.sessionLimit === 30</code>.</li>
+      <li><b>words 폴백</b> — &#39;_정보&#39; 탭이 없는 시트 → 200 + <code>sessionLimit: 60</code>.</li>
+      <li><b>읽기 실패 내성</b> — &#39;_정보&#39; 조회에 400/500을 돌려주는 목 → words는 여전히 200, <code>sessionLimit: 60</code>, <code>words</code> 정상.</li>
+      <li><b>&#39;_정보&#39; 자연 제외(회귀)</b> — &#39;_정보&#39; 탭이 있는 시트의 words 응답에 <code>tab: &quot;_정보&quot;</code> 항목이 하나도 없고,
+          <code>GET /api/tabs</code> 목록에도 없다.</li>
+      <li><b>시트 격리</b> — settings 읽기를 포함한 모든 Sheets URL이 인증 프로필의 sheetId만 포함.</li>
+      <li><b>기존 스위트 무수정 통과</b> — <code>npm test</code> 전체 green (특히 <code>index.sheet-isolation.test.ts</code>의 words 형태 단언).</li>
+      <li><b>정적 검사</b> — <code>npm run lint</code>(oxlint) · <code>npm run build</code>(<code>tsc -b</code> + vite build) green.</li>
+    
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">7</span>완료 조건</h2>
+    <ul class="done-list">
+      
+      <li class="done">settings 파서 테스트 통과: 정상(<code>문제수|30</code>) · 행 위치 자유 · 탭 없음/키 없음/비정수/0/501/음수 → 60 · 모르는 키 무시</li>
+      <li class="done"><code>GET /api/words</code> 응답에 <code>settings: { sessionLimit }</code> 동봉 + &#39;_정보&#39; 탭이 출제 목록에 안 섞이는 회귀 확인(기존 <code>_</code> 규칙)</li>
+      <li class="done">&#39;_정보&#39; 읽기가 실패해도 words는 200 + 기본 60 (words 호출을 절대 실패시키지 않음)</li>
+      <li class="done">기존 words 테스트 <b>무수정</b> 통과 (응답 필드 추가만) · lint · build green</li>
+      <li class="done"><code>docs/PRD.md</code> §4.1 · §6.1 · §7.3 개정 + 플랜 포인터</li>
+      <li class="done">클라(<code>src/</code>) 변경 없음 · 쓰기 API(<code>POST /api/settings</code>) 없음 — 각각 작업 C · B 소관</li>
+      <li class="done"><code>/api/health</code>에는 <code>settings</code>를 넣지 않음</li>
+    
+    </ul>
+  </section>
+
+  <footer>issue-plan · <a href="https://github.com/damdam6/vocabulary-study/issues/102">#102</a> · 2026-07-28</footer>
+</main>
+</body>
+</html>
