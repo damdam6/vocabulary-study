@@ -12,8 +12,8 @@ import { getSeoulToday } from "../lib/wordState.ts";
 import { fetchWords } from "../lib/wordsApi.ts";
 
 interface HomeScreenProps {
-  /** limit은 그 세션의 문제 수 상한 — 큐 구성뿐 아니라 §6.2 오답 재삽입 상한에도 쓰인다(#113). */
-  onStart: (queue: SessionQuestion<WordEntry>[], limit: number) => void
+  /** 큐는 시트 문제 수 설정 상한까지 잘라서 올린다 — 세션 문제 수는 이 큐로 확정된다(#116). */
+  onStart: (queue: SessionQuestion<WordEntry>[]) => void
   onNavigateRegister: () => void
   onSwitchProfile: () => void
 }
@@ -81,10 +81,7 @@ function HomeScreen({ onStart, onNavigateRegister, onSwitchProfile }: HomeScreen
 
   const handleStart = () => {
     // canStart(sessionCount>0)와 같은 단어 집합·같은 산식(같은 sessionLimit)이므로 빈 큐가 나올 수 없다
-    onStart(
-      buildSessionQueue(words, getSeoulToday(), profile?.modes ?? [], undefined, sessionLimit),
-      sessionLimit,
-    );
+    onStart(buildSessionQueue(words, getSeoulToday(), profile?.modes ?? [], undefined, sessionLimit));
   };
 
   return (
