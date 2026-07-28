@@ -76,7 +76,7 @@ claude.ai 프로젝트에 올릴 산출물 2개 (리포 `docs/registration-kit/`
 | 엔드포인트 | 동작 |
 |---|---|
 | `GET /api/tabs` | 학습 대상 탭 목록 (`_` 접두 제외) |
-| `POST /api/words/register` | `{ tab, createTab?, words[] }` → 스키마 재검증(`words` 최대 100건, 초과 `400`), 탭 내 중복 스킵, A·B·C열만 마지막 데이터 행 아래 append (`valueInputOption=RAW` — 수식 인젝션 차단). `createTab`이면 기존 탭 1행 헤더 복사해 생성 (탭 생성은 이 시점에만 — 빈 탭 방지). 응답: added/skipped 상세 |
+| `POST /api/words/register` | `{ tab, createTab?, words[] }` → 스키마 재검증(`words` 최대 100건, 초과 `400`), 탭 내 중복 스킵, A·B·C열만 마지막 데이터 행 아래 append (`valueInputOption=RAW` — 수식 인젝션 차단). `createTab`이면 기존 탭 1행 헤더 복사해 생성 (~~탭 생성은 이 시점에만 — 빈 탭 방지~~ → 2026-07-28 뒤집음: 탭 생성의 주 경로는 `POST /api/tabs`, §8 Q5 노트·#120 참조. 이 경로는 계약 호환으로만 유지). 응답: added/skipped 상세 |
 
 - 탭 이름 규칙 (Worker에서도 강제): 앞뒤 공백 트림, **`_` 시작 차단**(학습 제외 탭과 모순), 트림 후 기존 탭과 동일하면 그 탭에 등록.
 - 인증: 기존 Bearer 미들웨어 그대로. `worker/lib/sheets.ts`·`google-auth.ts` 재사용.
@@ -100,7 +100,7 @@ claude.ai 프로젝트에 올릴 산출물 2개 (리포 `docs/registration-kit/`
 | Q2 스키마 포맷 | JSON (`version` + `words[]`) | TSV(복사 변형 위험), 둘 다 허용(검증 2벌) |
 | Q2 탭 위치 | 등록 화면에서만 선택 | 스키마 포함(필수/힌트) — 캡처에 분류 정보 없음 |
 | Q1 진입 | 홈 저강조 링크 + `Screen 'register'` | URL 해시 진입, 둘 다 |
-| Q5 탭 생성 시점 | 등록 제출 시 Worker가 생성 | 즉시 생성(빈 탭 위험) |
+| Q5 탭 생성 시점 | ~~등록 제출 시 Worker가 생성~~ → **2026-07-28 뒤집음(#120)**: 등록 화면 "생성" 버튼 클릭 시점에 `POST /api/tabs`로 즉시 생성 — 빈 탭은 감수(소유자 확정) | 즉시 생성(빈 탭 위험) — #120에서 채택됨 |
 | Q5 탭 이름 규칙 | `_` 시작 차단 + 트림 | 완전 자유 |
 | Q4 중복 정책 | 미리 표시 + 제출 전 사용자 확인 필수, 제출 시 스킵 | 자동 스킵(확인 없음), 뜻 덮어쓰기(불가침 위반) |
 | Q3 AI 검토 | 제외 — `pinyin-pro` 사전 검증으로 대체 | 저가 모델 자동/수동 호출 |
