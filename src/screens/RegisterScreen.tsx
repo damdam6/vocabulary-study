@@ -4,11 +4,13 @@
 // 지연 로딩되므로(App.tsx) pinyin-pro는 이 화면에 진입할 때만 받는다.
 //
 // "+ 새 탭"은 이름 입력만으로는 대상 탭이 되지 않는다(#118) — 입력란 우측 "생성"
-// 버튼으로 확정해야 선택지에 추가되고 그 탭이 선택된다(기존 탭과 같은 이름이면
-// 그 탭을 선택). 확정 전(새 탭 모드)에는 제출이 막힌다. 실제 시트 탭 생성은
-// 여전히 제출 시 Worker의 createTab 몫이다(빈 탭 방지, 등록 시스템 플랜 §8 Q5).
-// Worker는 이미 존재하는 탭에 createTab을 받아도 no-op이라, 제출 시 createTab은
-// "서버 조회 목록(tabs)에 없는 탭"으로만 판단한다.
+// 버튼으로 확정해야 하고, 확정 전(새 탭 모드)에는 제출이 막힌다. 생성 버튼은
+// 클릭 시점에 POST /api/tabs로 시트에 실제 탭을 만든다(#120 — 제출 시 생성이던
+// 등록 시스템 플랜 §8 Q5 결정을 뒤집음, 빈 탭 감수). 서버 성공 후에만 선택지에
+// 추가·선택 전환하며(트림 후 기존 탭과 같으면 Worker가 생성 없이 멱등 성공 —
+// 그 탭을 선택), 호출 중에는 버튼이 비활성화되고 실패하면 입력값을 유지한 채
+// 입력란 아래 오류 문구를 보여준다. 선택된 탭은 항상 실존하므로 제출 페이로드의
+// createTab은 보내지 않는다.
 //
 // 검토는 텍스트 입력만으로는 실행되지 않는다(#55) — 붙여넣기/타이핑 중에는
 // 결과가 없고, textarea 아래 "확인" 버튼을 눌러야 그 시점의 텍스트로 검증이
@@ -41,7 +43,7 @@ import Dropdown from '../components/Dropdown.tsx'
 import { postSettings, type ContentType, type WordEntry } from '../lib/api.ts'
 import { registerPlaceholder } from '../lib/contentLabels.ts'
 import { fetchWords } from '../lib/wordsApi.ts'
-import { fetchTabs, registerWords, type RegisterResult } from '../lib/registerApi.ts'
+import { createTab, fetchTabs, registerWords, type RegisterResult } from '../lib/registerApi.ts'
 import { validateNewTabName, validateRegistrationInput } from '../lib/registerValidation.ts'
 
 interface RegisterScreenProps {
@@ -52,6 +54,7 @@ interface RegisterScreenProps {
 type FetchStatus = 'loading' | 'error' | 'ready'
 type SubmitPhase = 'idle' | 'submitting' | 'result'
 type LimitSaveStatus = 'idle' | 'saving' | 'success'
+type TabCreateStatus = 'idle' | 'creating'
 
 const NEW_TAB_VALUE = '__new__'
 const MIN_SESSION_LIMIT = 1
@@ -79,8 +82,10 @@ function RegisterScreen({ contentType, onGoHome }: RegisterScreenProps) {
 
   const [selectedTab, setSelectedTab] = useState(NEW_TAB_VALUE)
   const [newTabName, setNewTabName] = useState('')
-  // "생성" 버튼으로 확정했지만 아직 시트에는 없는 탭 이름들(#118) — 제출 시 createTab 대상.
-  const [localTabs, setLocalTabs] = useState<string[]>([])
+  // "생성" 버튼의 POST /api/tabs 호출 상태(#120) — 성공한 탭은 시트에 실존하므로
+  // 별도 로컬 목록 없이 tabs 상태에 바로 편입한다.
+  const [tabCreateStatus, setTabCreateStatus] = useState<TabCreateStatus>('idle')
+  const [tabCreateError, setTabCreateError] = useState<string | null>(null)
   const [text, setText] = useState('')
   const [confirmedText, setConfirmedText] = useState<string | null>(null)
   const [acknowledgedDuplicateKey, setAcknowledgedDuplicateKey] = useState<string | null>(null)
@@ -147,10 +152,9 @@ function RegisterScreen({ contentType, onGoHome }: RegisterScreenProps) {
   const tabOptions = useMemo(
     () => [
       ...tabs.map((tab) => ({ value: tab, label: tab })),
-      ...localTabs.map((tab) => ({ value: tab, label: tab })),
       { value: NEW_TAB_VALUE, label: '+ 새 탭' },
     ],
-    [tabs, localTabs],
+    [tabs],
   )
 
   const existingHanziInTab = useMemo(
@@ -192,26 +196,39 @@ function RegisterScreen({ contentType, onGoHome }: RegisterScreenProps) {
     setConfirmedText(text)
   }
 
-  // "생성" 클릭 — 이름을 로컬 확정하고 그 탭을 선택 상태로 전환한다(#118). 기존
-  // 탭(서버 조회분·이미 확정한 로컬분)과 같은 이름이면 추가 없이 그 탭을 선택한다.
+  const handleNewTabNameChange = (value: string) => {
+    setNewTabName(value)
+    setTabCreateError(null)
+  }
+
+  // "생성" 클릭 — 그 시점에 Worker가 시트에 실제 탭을 만든다(#120, POST /api/tabs).
+  // 서버 성공 후에만 선택지에 편입·선택 전환한다. 트림 후 기존 탭과 같으면 Worker가
+  // created: false 멱등 성공을 주므로 같은 경로가 그 탭을 선택하고, 실패하면 입력값을
+  // 유지한 채 오류 문구(Worker {error} 본문 우선)를 보여준다.
   const handleCreateTab = () => {
-    if (newTabError !== null) return
-    const name = newTabName.trim()
-    if (!tabs.includes(name) && !localTabs.includes(name)) {
-      setLocalTabs((prev) => [...prev, name])
-    }
-    setSelectedTab(name)
-    setNewTabName('')
+    if (newTabError !== null || tabCreateStatus === 'creating') return
+    setTabCreateStatus('creating')
+    setTabCreateError(null)
+    createTab(newTabName.trim())
+      .then(({ name }) => {
+        setTabs((prev) => (prev.includes(name) ? prev : [...prev, name]))
+        setSelectedTab(name)
+        setNewTabName('')
+        setTabCreateStatus('idle')
+      })
+      .catch((err: unknown) => {
+        setTabCreateError(err instanceof Error ? err.message : '탭 생성에 실패했습니다')
+        setTabCreateStatus('idle')
+      })
   }
 
   const handleSubmit = () => {
     if (!canSubmit) return
     setSubmitPhase('submitting')
     setSubmitError(null)
-    const createTab = !tabs.includes(effectiveTab)
+    // 선택된 탭은 항상 실존한다(생성 버튼이 사전 생성, #120) — createTab은 보내지 않는다.
     registerWords({
       tab: effectiveTab,
-      ...(createTab ? { createTab: true } : {}),
       words: submittableRows.map(({ hanzi, pinyin, meaning }) => ({ hanzi, pinyin, meaning })),
     })
       .then((response) => {
@@ -349,19 +366,20 @@ function RegisterScreen({ contentType, onGoHome }: RegisterScreenProps) {
                 type="text"
                 placeholder="새 탭 이름"
                 value={newTabName}
-                onChange={(event) => setNewTabName(event.target.value)}
+                onChange={(event) => handleNewTabNameChange(event.target.value)}
                 autoFocus
               />
               <button
                 type="button"
                 className="register-new-tab-create-button"
-                disabled={newTabError !== null}
+                disabled={newTabError !== null || tabCreateStatus === 'creating'}
                 onClick={handleCreateTab}
               >
-                생성
+                {tabCreateStatus === 'creating' ? '생성 중…' : '생성'}
               </button>
             </div>
             {newTabName !== '' && newTabError && <p className="register-error">{newTabError}</p>}
+            {tabCreateError && <p className="register-error">{tabCreateError}</p>}
           </>
         )}
       </div>
