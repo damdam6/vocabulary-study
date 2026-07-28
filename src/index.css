@@ -692,6 +692,18 @@ button {
   padding: 32px 24px 28px;
 }
 
+/* 날짜/타이틀 행 — 우측에 유틸 바가 붙는다 (#105, design-prd §3) */
+.home-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.home-header-text {
+  min-width: 0;
+}
+
 .home-date {
   margin: 0;
   color: var(--text-muted);
@@ -846,22 +858,87 @@ button {
   cursor: default;
 }
 
-/* 홈 화면 등록 진입 링크 (#49, zh 프로필 전용 #78) · 프로필 전환 링크 (#78) — "학습 시작" 아래 저강조 텍스트 링크 */
-.home-register-link,
-.home-switch-profile-link {
-  align-self: center;
-  margin-top: 14px;
-  border: none;
-  background: none;
-  color: var(--text-muted);
-  font-size: 0.85rem;
+/* 홈 상단 유틸 바 (#105, design-prd §3) — 좌→우로 수정(노트+연필) · 사람(프로필 전환).
+   등록 진입(#49·#100)과 프로필 전환(#78)이 쓰던 하단 저강조 링크를 대체한다. */
+.home-util-bar {
+  flex: none;
+  display: flex;
+  gap: 8px;
 }
 
-.home-register-link:hover,
-.home-register-link:active,
-.home-switch-profile-link:hover,
-.home-switch-profile-link:active {
-  color: var(--accent-light);
+.home-util-button {
+  width: 40px;
+  height: 40px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  border: 1px solid var(--border-card);
+  background: var(--bg-panel);
+  color: var(--text-muted);
+}
+
+.home-util-button:hover {
+  color: var(--text);
+}
+
+.home-util-button:active {
+  color: var(--text);
+  transform: scale(0.98);
+}
+
+.home-util-button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+}
+
+.home-util-icon {
+  width: 20px;
+  height: 20px;
+}
+
+.home-util-menu-wrap {
+  position: relative;
+}
+
+/* 경량 팝오버 — 커스텀 드롭다운 패널(.dropdown-panel)과 같은 톤, 우측 정렬 */
+.home-util-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 20;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  min-width: 148px;
+  border-radius: 14px;
+  border: 1px solid var(--border-card);
+  background: var(--bg-card);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
+  animation: fadeup 0.15s ease;
+}
+
+.home-util-menu-item {
+  width: 100%;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  border: none;
+  border-radius: 10px;
+  background: none;
+  color: var(--text);
+  font-size: 15px;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.home-util-menu-item:hover,
+.home-util-menu-item:focus-visible {
+  background: var(--bg-panel);
+  outline: none;
 }
 
 /* 단어 등록 화면 (#49, design-prd 신규 절) — §1 토큰 재사용 */
