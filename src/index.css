@@ -898,49 +898,6 @@ button {
   height: 20px;
 }
 
-.home-util-menu-wrap {
-  position: relative;
-}
-
-/* 경량 팝오버 — 커스텀 드롭다운 패널(.dropdown-panel)과 같은 톤, 우측 정렬 */
-.home-util-menu {
-  position: absolute;
-  top: calc(100% + 6px);
-  right: 0;
-  z-index: 20;
-  margin: 0;
-  padding: 6px;
-  list-style: none;
-  min-width: 148px;
-  border-radius: 14px;
-  border: 1px solid var(--border-card);
-  background: var(--bg-card);
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
-  animation: fadeup 0.15s ease;
-}
-
-.home-util-menu-item {
-  width: 100%;
-  min-height: 44px;
-  display: flex;
-  align-items: center;
-  padding: 0 12px;
-  border: none;
-  border-radius: 10px;
-  background: none;
-  color: var(--text);
-  font-size: 15px;
-  font-family: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-
-.home-util-menu-item:hover,
-.home-util-menu-item:focus-visible {
-  background: var(--bg-panel);
-  outline: none;
-}
-
 /* 단어 등록 화면 (#49, design-prd 신규 절) — §1 토큰 재사용 */
 .register-screen {
   flex: 1;
