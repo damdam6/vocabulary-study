@@ -14,12 +14,13 @@ import { fetchWords } from "../lib/wordsApi.ts";
 interface HomeScreenProps {
   onStart: (queue: SessionQuestion<WordEntry>[]) => void
   onNavigateRegister: () => void
+  onEditSessionLimit: () => void
   onSwitchProfile: () => void
 }
 
 type Status = "loading" | "error" | "ready";
 
-function HomeScreen({ onStart, onNavigateRegister, onSwitchProfile }: HomeScreenProps) {
+function HomeScreen({ onStart, onNavigateRegister, onEditSessionLimit, onSwitchProfile }: HomeScreenProps) {
   const [status, setStatus] = useState<Status>("loading");
   const [stats, setStats] = useState<HomeStats | null>(null);
   const [words, setWords] = useState<WordEntry[]>([]);
@@ -94,7 +95,11 @@ function HomeScreen({ onStart, onNavigateRegister, onSwitchProfile }: HomeScreen
           <h1 className="home-title">오늘의 학습</h1>
           {profile && <p className="home-profile-name">{profile.name}</p>}
         </div>
-        <HomeUtilBar onNavigateRegister={onNavigateRegister} onSwitchProfile={onSwitchProfile} />
+        <HomeUtilBar
+          onNavigateRegister={onNavigateRegister}
+          onEditSessionLimit={onEditSessionLimit}
+          onSwitchProfile={onSwitchProfile}
+        />
       </div>
 
       {status === "loading" && (

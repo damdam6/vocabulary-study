@@ -2,12 +2,14 @@
 // 헤더 우측 라운드 사각 아이콘 버튼으로 승격한다. 근거 플랜:
 // docs/plans/session-limit-and-home-utils.md §3.4 · §5 작업 D.
 //
-// 수정 메뉴 옵션은 지금 "단어 등록" 하나뿐이다 — "1회 문제 수 수정"은 후속 작업 E 소관이라
-// 비활성 자리 표시조차 두지 않는다(반쪽 UI 금지). 옵션이 늘어날 자리는 MENU 배열 하나.
+// 수정 메뉴 옵션은 "단어 등록"·"1회 문제 수 수정" 둘이다(§5 작업 E, #110) — 둘 다
+// 등록 화면(RegisterScreen)으로 이동하고, 후자는 상단 문제수 필드에 포커스를 준다
+// (App.tsx의 focusSessionLimit 배선). 옵션이 늘어날 자리는 menuItems 배열 하나.
 import { useEffect, useId, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react'
 
 interface HomeUtilBarProps {
   onNavigateRegister: () => void
+  onEditSessionLimit: () => void
   onSwitchProfile: () => void
 }
 
@@ -56,14 +58,17 @@ function PersonIcon() {
   )
 }
 
-function HomeUtilBar({ onNavigateRegister, onSwitchProfile }: HomeUtilBarProps) {
+function HomeUtilBar({ onNavigateRegister, onEditSessionLimit, onSwitchProfile }: HomeUtilBarProps) {
   const [menuOpen, setMenuOpen] = useState(false)
   const menuWrapRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
   const itemRefs = useRef<(HTMLButtonElement | null)[]>([])
   const menuId = useId()
 
-  const menuItems = [{ label: '단어 등록', onSelect: onNavigateRegister }]
+  const menuItems = [
+    { label: '단어 등록', onSelect: onNavigateRegister },
+    { label: '1회 문제 수 수정', onSelect: onEditSessionLimit },
+  ]
 
   // 바깥 탭/ESC로 닫힘 — 커스텀 드롭다운과 같은 패턴(#66). click이 아니라 pointerdown인
   // 이유는 터치 환경에서 click이 늦게 오거나 스크롤로 취소되기 때문(#65). 트리거가 이

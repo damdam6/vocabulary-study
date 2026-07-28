@@ -26,6 +26,9 @@ function App() {
   // 세션 큐는 홈이 만들고(PRD §6.1) 셸이 소비한다(§6.2) — App은 화면 간 전달만 담당
   const [sessionQueue, setSessionQueue] = useState<SessionQuestion<WordEntry>[]>([])
   const [sessionResult, setSessionResult] = useState<SessionResult>({ correct: 0, wrong: 0 })
+  // 홈 수정 메뉴의 "1회 문제 수 수정"에서 등록 화면으로 진입했는지 — 문제수 필드
+  // 포커스 대상 전달(세션 설정 플랜 §3.5, #110). 구조 변경 없이 진입 경로만 분기.
+  const [registerFocusLimit, setRegisterFocusLimit] = useState(false)
 
   // 어느 API든 401 수신 시 로그인 화면 복귀 — 저장값 삭제는 apiFetch가 이미 수행
   useEffect(() => {
@@ -40,6 +43,11 @@ function App() {
     void flushRetryQueue()
     return () => setApiSuccessHandler(null)
   }, [])
+
+  const navigateRegister = (focusLimit: boolean) => {
+    setRegisterFocusLimit(focusLimit)
+    setScreen('register')
+  }
 
   const startSession = (queue: SessionQuestion<WordEntry>[]) => {
     setSessionQueue(queue)
@@ -64,7 +72,8 @@ function App() {
         {screen === 'home' && (
           <HomeScreen
             onStart={startSession}
-            onNavigateRegister={() => setScreen('register')}
+            onNavigateRegister={() => navigateRegister(false)}
+            onEditSessionLimit={() => navigateRegister(true)}
             onSwitchProfile={switchProfile}
           />
         )}
@@ -85,7 +94,11 @@ function App() {
         )}
         {screen === 'register' && (
           <Suspense fallback={<div className="register-screen"><p className="register-hint">불러오는 중…</p></div>}>
-            <RegisterScreen contentType={getStoredProfile()?.contentType ?? 'zh'} onGoHome={() => setScreen('home')} />
+            <RegisterScreen
+              contentType={getStoredProfile()?.contentType ?? 'zh'}
+              onGoHome={() => setScreen('home')}
+              focusSessionLimit={registerFocusLimit}
+            />
           </Suspense>
         )}
       </div>
