@@ -1,6 +1,6 @@
 /**
  * 학습 화면 셸 (#15, design-prd §4.1·§4.4·§4.5). 홈이 만든 큐를 받아 문제 단위로
- * 소비하며 기록 API 발사·재삽입·집계·완료 전환을 오케스트레이션한다. 문제 카드
+ * 소비하며 기록 API 발사·집계·완료 전환을 오케스트레이션한다. 문제 카드
  * UI는 Mode1Card/Mode2Card(#16/#17)에 위임하고, 진행 템포는 여기가 소유한다:
  * 모드1 O/X·모드2 정답은 즉시 다음 문제, 모드2 오답만 결과 화면 후 "다음"으로.
  */
@@ -29,9 +29,8 @@ export interface SessionResult {
 }
 
 interface StudyScreenProps {
+  /** 홈이 시트 설정 상한까지 잘라 만든 큐 — 세션 중 늘지 않으므로 문제 수는 여기서 확정된다(#116). */
   queue: SessionQuestion<WordEntry>[]
-  /** 세션 문제 수 상한(시트 설정) — §6.2 오답 재삽입이 이 값을 넘지 않게 한다(#113). */
-  limit: number
   /** 프로필 콘텐츠 타입(#78) — 칩 문구·lang·크기 스케일 등 렌더링 분기에 쓰인다(#80). */
   contentType: ContentType
   onExit: () => void
@@ -44,8 +43,8 @@ interface Feedback {
   seq: number
 }
 
-function StudyScreen({ queue, limit, contentType, onExit, onComplete }: StudyScreenProps) {
-  const [session, setSession] = useState<StudySessionState>(() => startSession(queue, limit))
+function StudyScreen({ queue, contentType, onExit, onComplete }: StudyScreenProps) {
+  const [session, setSession] = useState<StudySessionState>(() => startSession(queue))
   const [feedback, setFeedback] = useState<Feedback | null>(null)
   // 마지막 문제의 판정 피드백이 화면 전환으로 유실되지 않도록, 오버레이가 재생 중일
   // 때의 완료 전환만 오버레이 종료(onAnimationEnd) 시점으로 미룬다. 문제 간 전환은
