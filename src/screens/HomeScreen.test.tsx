@@ -6,7 +6,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import HomeScreen from "./HomeScreen.tsx";
 import { fire, flush, renderComponent } from "../test-utils.tsx";
-import type { PublicProfile } from "../lib/api.ts";
+import type { PublicProfile, WordEntry } from "../lib/api.ts";
 import type { WordsResponse } from "../lib/wordsApi.ts";
 
 const { fetchWordsMock } = vi.hoisted(() => ({ fetchWordsMock: vi.fn() }));
@@ -47,9 +47,11 @@ function setup() {
   const byLabel = (label: string) => container.querySelector<HTMLButtonElement>(`button[aria-label="${label}"]`);
   return {
     container,
+    onStart,
     onNavigateRegister,
     onEditSessionLimit,
     onSwitchProfile,
+    startButton: () => container.querySelector<HTMLButtonElement>(".start-button")!,
     editButton: byLabel("수정")!,
     personButton: byLabel("프로필 전환")!,
     menuItems: () => Array.from(container.querySelectorAll<HTMLButtonElement>('[role="menuitem"]')),
@@ -119,5 +121,36 @@ describe("HomeScreen 진입 액션 배치", () => {
     expect(container.querySelector(".status-card.skeleton")).not.toBeNull();
     expect(editButton).not.toBeNull();
     expect(personButton).not.toBeNull();
+  });
+});
+
+describe("세션 시작 — limit 스레딩 (#113)", () => {
+  const learningWord: WordEntry = {
+    tab: "HSK6",
+    hanzi: "经济",
+    pinyin: "jīngjì",
+    meaning: "경제",
+    m1: 1,
+    m2: 0,
+    nextReview: null,
+    interval: null,
+  };
+
+  it("학습 시작이 큐와 함께 시트 설정 문제 수를 올린다 — 재삽입 상한이 60으로 굳지 않도록", async () => {
+    // 상한이 큐 구성에만 반영되고 onStart에서 누락되면 학습 화면이 기본 60으로 되돌아간다.
+    fetchWordsMock.mockResolvedValue({
+      profile,
+      words: [learningWord],
+      settings: { sessionLimit: 35 },
+    } satisfies WordsResponse);
+    const { onStart, startButton } = setup();
+    await flush();
+
+    fire(() => startButton().click());
+
+    expect(onStart).toHaveBeenCalledTimes(1);
+    const [queue, limit] = onStart.mock.calls[0] as [unknown[], number];
+    expect(limit).toBe(35);
+    expect(queue).toHaveLength(1);
   });
 });
