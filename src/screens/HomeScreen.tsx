@@ -2,6 +2,7 @@
 // 이미 조회해 둔 단어로 큐를 만들어 onStart(queue)로 올린다(#15 셸 계약).
 // 현황 집계(sessionCount)와 큐가 같은 조회 결과를 쓰므로 수치가 어긋나지 않는다.
 import { useEffect, useState } from "react";
+import HomeUtilBar from "../components/HomeUtilBar.tsx";
 import { getStoredProfile, saveProfile, type PublicProfile, type WordEntry } from "../lib/api.ts";
 import { formatHomeDate } from "../lib/date.ts";
 import { computeHomeStats, type HomeStats } from "../lib/homeStats.ts";
@@ -84,9 +85,17 @@ function HomeScreen({ onStart, onNavigateRegister, onSwitchProfile }: HomeScreen
 
   return (
     <div className="home-screen">
-      <p className="home-date">{formatHomeDate()}</p>
-      <h1 className="home-title">오늘의 학습</h1>
-      {profile && <p className="home-profile-name">{profile.name}</p>}
+      {/* 유틸 바(#105)는 헤더 우측 고정 — 하단 저강조 링크 2개를 대체한다. 등록 진입의
+          "오늘 학습 상태(로딩/에러/완료)와 무관하게 항상 노출" 성질을 유틸 바가 승계하므로
+          이 행은 status와 무관하게 렌더된다. */}
+      <div className="home-header">
+        <div className="home-header-text">
+          <p className="home-date">{formatHomeDate()}</p>
+          <h1 className="home-title">오늘의 학습</h1>
+          {profile && <p className="home-profile-name">{profile.name}</p>}
+        </div>
+        <HomeUtilBar onNavigateRegister={onNavigateRegister} onSwitchProfile={onSwitchProfile} />
+      </div>
 
       {status === "loading" && (
         <div className="status-cards" aria-hidden="true">
@@ -139,16 +148,6 @@ function HomeScreen({ onStart, onNavigateRegister, onSwitchProfile }: HomeScreen
           {status === "loading" ? "불러오는 중…" : canStart ? "학습 시작" : "오늘 할 것 없음"}
         </button>
       )}
-
-      {/* 단어 등록 진입 (#49) — 오늘 학습 상태와 무관하게 항상 노출, 전 프로필 대상(#100) */}
-      <button type="button" className="home-register-link" onClick={onNavigateRegister}>
-        단어 등록 ›
-      </button>
-
-      {/* 프로필 전환 (#78) — v1엔 로그아웃이 없어 다른 프로필로 갈아탈 유일한 경로 */}
-      <button type="button" className="home-switch-profile-link" onClick={onSwitchProfile}>
-        프로필 전환
-      </button>
     </div>
   );
 }

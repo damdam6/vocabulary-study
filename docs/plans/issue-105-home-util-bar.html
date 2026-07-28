@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>#105 홈 유틸 바 — 상단 수정·사람 아이콘 도입, 하단 저강조 링크 제거 — 작업 플랜</title>
+<style>
+  :root {
+    --bg: #f7f7f8; --card: #ffffff; --ink: #1c1c1e; --muted: #6e6e73;
+    --line: #e3e3e6; --accent: #3b6ef5; --accent-soft: #e8eefe;
+    --ok: #2e8b57; --warn: #b25e09; --code-bg: #f0f0f2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161618; --card: #202024; --ink: #ececf0; --muted: #98989f;
+      --line: #333338; --accent: #7a9bff; --accent-soft: #26304a;
+      --ok: #58c088; --warn: #e0a35c; --code-bg: #2a2a2f;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 40px 20px 80px; background: var(--bg); color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+                 "Segoe UI", "Noto Sans KR", sans-serif;
+    line-height: 1.65;
+  }
+  main { max-width: 860px; margin: 0 auto; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code {
+    font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 0.86em;
+    background: var(--code-bg); border-radius: 5px; padding: 2px 6px;
+  }
+  header { margin-bottom: 28px; }
+  .issue-chip {
+    display: inline-block; font-weight: 700; color: var(--accent);
+    background: var(--accent-soft); border-radius: 999px;
+    padding: 3px 14px; font-size: 0.95rem; margin-bottom: 10px;
+  }
+  .type-chip {
+    display: inline-block; font-weight: 600; color: var(--muted);
+    border: 1px solid var(--line); border-radius: 999px;
+    padding: 3px 12px; font-size: 0.8rem; margin-left: 8px; vertical-align: 2px;
+  }
+  h1 { font-size: 1.7rem; margin: 0 0 14px; letter-spacing: -0.02em; }
+  .meta {
+    display: flex; flex-wrap: wrap; gap: 6px 22px;
+    color: var(--muted); font-size: 0.87rem;
+  }
+  .meta b { color: var(--ink); font-weight: 600; }
+  section.card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 24px 28px; margin-top: 18px;
+  }
+  h2 {
+    font-size: 1.05rem; margin: 0 0 14px; letter-spacing: -0.01em;
+    display: flex; align-items: center; gap: 8px;
+  }
+  h2 .no {
+    color: var(--accent); font-size: 0.8rem; font-weight: 700;
+    border: 1.5px solid var(--accent); border-radius: 6px; padding: 0 6px;
+  }
+  ul, ol { margin: 0; padding-left: 22px; }
+  li { margin: 6px 0; }
+  .steps { list-style: none; padding: 0; counter-reset: step; }
+  .steps li {
+    counter-increment: step; position: relative; padding: 10px 0 10px 44px;
+    border-bottom: 1px dashed var(--line);
+  }
+  .steps li:last-child { border-bottom: none; }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 10px;
+    width: 28px; height: 28px; border-radius: 8px; background: var(--accent-soft);
+    color: var(--accent); font-weight: 700; font-size: 0.85rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .steps .files { display: block; margin-top: 4px; font-size: 0.85rem; color: var(--muted); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 0.82rem; }
+  .done-list { list-style: none; padding: 0; }
+  .done-list li { padding-left: 30px; position: relative; }
+  .done-list li::before {
+    content: ""; position: absolute; left: 2px; top: 7px; width: 15px; height: 15px;
+    border: 2px solid var(--ok); border-radius: 5px;
+  }
+  .done-list li.checked::before { background: var(--ok); }
+  .scroll-x { overflow-x: auto; }
+  footer { margin-top: 30px; color: var(--muted); font-size: 0.8rem; text-align: center; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <span class="issue-chip"><a href="https://github.com/damdam6/vocabulary-study/issues/105">#105</a></span><span class="type-chip">기능 개선</span>
+    <h1>홈 유틸 바 — 상단 수정·사람 아이콘 도입, 하단 저강조 링크 제거</h1>
+    <div class="meta">
+      <span><b>damdam6/vocabulary-study</b></span>
+      <span>브랜치 <b><code>feat/105-home-util-bar</code></b> ← <code>main</code></span>
+      <span>라벨 <b>enhancement</b></span>
+      <span>2026-07-28</span>
+    </div>
+  </header>
+
+  <section class="card">
+    <h2><span class="no">1</span>요약</h2>
+    <p>홈 화면 맨 아래에 저강조 텍스트 링크로 숨어 있는 진입 액션 2개(<b>단어 등록 ›</b> · <b>프로필 전환</b>)를
+    헤더 상단 우측의 <b>라운드 사각 아이콘 버튼 2개</b>로 승격한다. 수정 버튼(노트+연필)은 경량 팝오버 메뉴를 열고
+    이번 이슈에서는 옵션이 <b>"단어 등록" 하나뿐</b>이며(“1회 문제 수 수정”은 후속 작업 E 소관 — 비활성 자리 표시를
+    두지 않는다), 사람 버튼(상반신 실루엣)은 확인 단계 없이 즉시 프로필 전환한다. 아이콘은 외부 라이브러리 없이
+    인라인 SVG로 자체 제작하고, 팝오버의 바깥 탭 닫힘은 커스텀 드롭다운이 이미 쓰는 <code>pointerdown</code>
+    패턴(#66)을 그대로 재사용한다. 세션 큐·현황 집계·Worker·등록 화면 로직은 건드리지 않는다 — 두 액션의
+    <b>위치 이동</b>이 이 작업의 전부다. 문서는 <code>docs/design-prd.md</code> §3을 개정한다.</p>
+    <p>근거 플랜: <code>docs/plans/session-limit-and-home-utils.md</code> §3.4 · §5 <b>작업 D</b>
+    (2026-07-28 확정, Q5·Q6 소유자 결정 반영).</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">2</span>현황 분석</h2>
+    <p><b>홈 화면의 현재 구조</b> — <code>src/screens/HomeScreen.tsx</code>는 위에서 아래로
+    날짜(<code>:84</code>) → 타이틀 "오늘의 학습"(<code>:85</code>) → 프로필명(<code>:86</code>) → 현황 카드 3개
+    (<code>:106-121</code>) → 스페이서(<code>:123</code>) → 미전송 인디케이터(<code>:125-130</code>) →
+    "오늘 세션 · n문제"(<code>:132</code>) → "학습 시작" 버튼(<code>:134-138</code>) 순으로 렌더한다.
+    그 아래 마지막 두 요소가 이번에 옮길 대상이다.</p>
+    <ul>
+      <li><b>단어 등록 링크</b> — <code>src/screens/HomeScreen.tsx:140-143</code>. <code>onNavigateRegister</code>
+        prop을 호출하는 <code>&lt;button class="home-register-link"&gt;</code>. 주석이 명시하듯
+        "오늘 학습 상태와 무관하게 항상 노출"이며, #100(등록 일반화 작업 D)에서 <code>contentType === "zh"</code>
+        조건이 제거돼 <b>전 프로필</b>에 무조건 노출된다.</li>
+      <li><b>프로필 전환 링크</b> — <code>src/screens/HomeScreen.tsx:145-148</code>.
+        <code>onSwitchProfile</code> prop 호출. 실제 동작은 <code>src/App.tsx:55-58</code>의
+        <code>switchProfile()</code> — <code>clearPassword()</code>로 저장된 비밀번호·프로필 캐시를 지우고
+        로그인 화면으로 되돌린다. 확인 다이얼로그 없음.</li>
+      <li><b>스타일</b> — <code>src/index.css:849-865</code>. 두 링크가 한 규칙을 공유한다
+        (<code>align-self:center</code> · <code>margin-top:14px</code> · <code>0.85rem</code> ·
+        <code>--text-muted</code>, hover/active에 <code>--accent-light</code>).</li>
+      <li><b>App과의 계약</b> — <code>src/App.tsx:64-70</code>이 <code>onStart</code>·
+        <code>onNavigateRegister</code>·<code>onSwitchProfile</code> 세 prop을 넘긴다. 유틸 바는 <b>같은 두 prop을
+        그대로 소비</b>하므로 App은 손댈 필요가 없다.</li>
+    </ul>
+    <p><b>재사용할 팝오버 패턴</b> — <code>src/components/Dropdown.tsx:29-50</code>이 이미
+    "열려 있을 때만 <code>document</code>에 리스너를 붙이고, <code>pointerdown</code> 대상이 컨테이너 밖이면 닫는다 +
+    <code>Escape</code>로 닫고 트리거로 포커스 복귀" 패턴을 갖고 있다(#66에서 <code>click</code> → <code>pointerdown</code>
+    전환, 터치 환경 대응). 이번 메뉴는 <b>선택(listbox)이 아니라 액션(menu)</b>이라 <code>Dropdown</code> 컴포넌트를
+    그대로 쓰지는 못하지만, 닫힘 로직은 같은 모양으로 옮긴다.</p>
+    <p><b>테스트 인프라 현황(중요)</b> — 이 레포에는 <b>컴포넌트 테스트가 하나도 없다</b>.
+    <code>vitest.config.ts</code>는 <code>test: {}</code>로 환경 지정이 없어 기본 <code>node</code>에서 돌고,
+    25개 테스트 파일 309개 테스트가 전부 순수 함수 단위 테스트다(<code>src/lib/*.test.ts</code>,
+    <code>worker/**/*.test.ts</code>). 커스텀 드롭다운(#56)·pointerdown 전환(#66)도 테스트 없이 육안 검증으로
+    머지됐다. 이슈의 완료 조건 1번("유틸 바 렌더·메뉴 열림/바깥 닫힘·이동·전환 테스트")을 만족하려면
+    <b>DOM 환경을 이번에 처음 들여와야 한다</b> — §3에서 방식을 결정한다.</p>
+    <p>참고: 완료 조건 2번의 "기존 홈 테스트"는 실제로는 존재하지 않는다(홈 관련 테스트는 순수 집계 로직인
+    <code>src/lib/homeStats.test.ts</code>뿐이고 이 작업의 영향을 받지 않는다). 따라서 "갱신"할 대상은 없고,
+    <b>전체 스위트가 무수정으로 계속 통과</b>하는 것이 이 조건의 실질이다.</p>
+    <p><b>CI</b> — PR에는 <code>.github/workflows/ai-review.yml</code>(AI 코드 리뷰)만 돌고 테스트 잡은 없다
+    (<code>smoke.yml</code>은 main push 전용). 따라서 <code>npm test</code>·<code>npm run build</code>·
+    <code>npm run lint</code>는 로컬에서 직접 돌려 확인한다.</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">3</span>설계</h2>
+
+    <p><b>3.1 컴포넌트 분리</b> — 유틸 바를 <code>src/components/HomeUtilBar.tsx</code>로 뽑는다.
+    아이콘 SVG 2개 + 메뉴 열림 상태 + 바깥 닫힘 이펙트 + 키보드 처리까지 합치면 60줄 남짓인데,
+    <code>HomeScreen</code>은 "세션 큐 구성·현황 집계"가 본업이라 섞으면 흐려진다.
+    <code>src/components/Dropdown.tsx</code>가 같은 이유로 이미 분리돼 있어 레포 관행과도 맞고,
+    후속 작업 E("1회 문제 수 수정" 옵션 추가)의 변경 지점이 이 파일 하나로 국소화된다.
+    Props는 <code>{ onNavigateRegister, onSwitchProfile }</code> — <code>HomeScreen</code>이 App에서 받은 두 prop을
+    그대로 내려보내므로 <code>src/App.tsx</code>는 <b>무변경</b>이다.</p>
+
+    <p><b>3.2 마크업·접근성</b></p>
+    <ul>
+      <li>헤더를 <code>.home-header</code> 플렉스 행으로 감싼다 — 좌측 <code>.home-header-text</code>(날짜·타이틀·프로필명,
+        기존 요소·클래스·마진 그대로) / 우측 <code>&lt;HomeUtilBar&gt;</code>, <code>justify-content: space-between</code> +
+        <code>align-items: flex-start</code>. 참고 이미지(BERNICE)의 우상단 자물쇠 버튼과 같은 자리다.</li>
+      <li>버튼 2개는 <code>&lt;button type="button"&gt;</code> + <code>aria-label</code>
+        ("수정" / "프로필 전환"). 아이콘 <code>&lt;svg&gt;</code>는 <code>aria-hidden="true"</code>·
+        <code>focusable="false"</code>로 접근성 트리에서 제외한다.</li>
+      <li>수정 버튼: <code>aria-haspopup="menu"</code> · <code>aria-expanded</code> · <code>aria-controls</code>
+        (<code>useId()</code>로 생성 — <code>Dropdown.tsx:24</code>와 동일 관행).</li>
+      <li>메뉴: <code>&lt;ul role="menu"&gt;</code> + <code>&lt;li role="none"&gt;&lt;button role="menuitem"&gt;</code>.
+        옵션은 <b>"단어 등록" 하나</b>. 열릴 때 첫 항목에 포커스, <code>Escape</code>로 닫고 트리거로 포커스 복귀,
+        <code>ArrowDown</code>/<code>ArrowUp</code>으로 항목 간 이동(지금은 1개라 사실상 no-op이지만 E에서 옵션이
+        늘어나도 그대로 동작), 바깥 <code>pointerdown</code>으로 닫힘.</li>
+      <li>메뉴에서 "단어 등록"을 고르면 <code>onNavigateRegister()</code> 호출 + 메뉴 닫기. 사람 버튼은 메뉴 없이
+        곧바로 <code>onSwitchProfile()</code>(확인 단계 없음 — 플랜 Q5).</li>
+    </ul>
+
+    <p><b>3.3 아이콘(인라인 SVG 자체 제작)</b> — 외부 아이콘 라이브러리 도입 없음(플랜 §8 결정).
+    24×24 뷰박스에 <code>fill="none"</code> · <code>stroke="currentColor"</code> ·
+    <code>stroke-width="1.6"</code> · <code>stroke-linecap/linejoin="round"</code>로 통일해
+    버튼의 <code>color</code>만 바꾸면 hover 톤이 따라오게 한다.</p>
+    <ul>
+      <li><b>수정</b>: 노트(모서리 둥근 사각 윤곽 + 안쪽 가로줄 2개) 위에 연필(대각 획 + 촉 삼각)이 겹친 형태.</li>
+      <li><b>사람</b>: 머리 원(<code>circle</code>) + 어깨 아치(<code>path</code>) — 상반신 실루엣.</li>
+    </ul>
+
+    <p><b>3.4 스타일 값</b>(<code>src/index.css</code>, §1 토큰 재사용 — design-prd §3에 그대로 기록한다)</p>
+    <div class="scroll-x">
+    <table>
+      <thead><tr><th>요소</th><th>값</th></tr></thead>
+      <tbody>
+        <tr><td><code>.home-util-bar</code></td><td><code>display:flex; gap:8px;</code> — 헤더 행 우측, 순서는 좌→우로 <b>수정 · 사람</b></td></tr>
+        <tr><td><code>.home-util-button</code></td><td>40×40px, <code>border-radius:12px</code>, <code>background:var(--bg-panel)</code>, <code>border:1px solid var(--border-card)</code>, <code>color:var(--text-muted)</code></td></tr>
+        <tr><td>hover / active</td><td><code>color:var(--text)</code> · <code>transform:scale(0.98)</code>(레포의 버튼 press 관행, design-prd §1.3)</td></tr>
+        <tr><td>focus-visible</td><td><code>outline:2px solid var(--accent); outline-offset:-1px</code> — <code>.dropdown-trigger</code>와 동일</td></tr>
+        <tr><td>아이콘</td><td>20×20px</td></tr>
+        <tr><td><code>.home-util-menu</code></td><td><code>position:absolute; top:calc(100% + 6px); right:0; min-width:148px; z-index:20</code>, <code>bg-card</code>·<code>border-card</code>·<code>radius:14px</code>·그림자 <code>0 12px 28px rgba(0,0,0,0.35)</code>·<code>fadeup 0.15s</code> — <code>.dropdown-panel</code>과 같은 톤</td></tr>
+        <tr><td><code>.home-util-menu-item</code></td><td><code>min-height:44px</code>(터치 타겟), <code>radius:10px</code>, <code>padding:0 12px</code>, <code>font-size:15px</code>, hover/focus 시 <code>background:var(--bg-panel)</code></td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p>제거: <code>.home-register-link</code> · <code>.home-switch-profile-link</code> 규칙 블록
+    (<code>src/index.css:849-865</code>) — 참조자가 <code>HomeScreen.tsx</code>뿐이라 함께 지운다.</p>
+
+    <p><b>3.5 테스트 방식 결정 — jsdom만 추가, 렌더 헬퍼는 자체 제작</b></p>
+    <ul>
+      <li>채택: <code>jsdom</code> 하나만 devDependency로 추가하고, <code>react-dom/client</code>의
+        <code>createRoot</code> + React 19가 <code>react</code>에서 내보내는 <code>act</code>로 마운트하는
+        최소 헬퍼 <code>src/test-utils.tsx</code>를 만든다(<code>worker/test-utils.ts</code> 선례와 같은 자리·같은 이름 규칙).
+        환경은 테스트 파일 상단 <code>// @vitest-environment jsdom</code> 도크블록으로 <b>해당 파일에만</b> 적용해,
+        나머지 순수 함수 테스트 23개 파일은 지금처럼 빠른 <code>node</code> 환경을 유지한다
+        (<code>vitest.config.ts</code>는 무변경).</li>
+      <li>기각: <code>@testing-library/react</code>(+<code>@testing-library/dom</code>) 추가 — 편하지만 이 레포는
+        아이콘 라이브러리조차 "기능 하나에 의존성 추가는 과함"으로 기각한 곳이고(플랜 §8), 필요한 API가
+        "마운트·클릭·이벤트 디스패치·언마운트"뿐이라 20줄 헬퍼로 충분하다. <b>다만</b> 구현 중 <code>act</code> 경고나
+        비동기 처리로 헬퍼가 커지면 이 판단을 뒤집고 <code>@testing-library/react</code>를 도입한다(리스크 표 참조).</li>
+      <li>기각: 테스트 없이 육안 검증만(#56·#66 선례) — 이슈 완료 조건 1번이 명시적으로 테스트를 요구한다.</li>
+      <li>jsdom에는 <code>PointerEvent</code> 생성자가 없을 수 있으므로, 바깥 닫힘 테스트는
+        <code>new MouseEvent('pointerdown', { bubbles: true })</code>를 <code>document.body</code>에 디스패치한다 —
+        리스너는 타입 문자열로 매칭되므로 실제 구현 경로를 그대로 탄다.</li>
+    </ul>
+
+    <p><b>3.6 문서 개정 범위</b> — 이슈 완료 조건은 <code>docs/design-prd.md</code> §3만 요구하지만,
+    <code>docs/PRD.md</code> §9.1(<code>:255</code>)·§9.3(<code>:267</code>)이 "학습 시작 아래 저강조 텍스트 링크"를
+    등록 화면의 <b>진입 경로</b>로 못박고 있어 이 작업 뒤엔 사실과 어긋난다. 두 줄짜리 진입 경로 문장만 정정해
+    문서가 거짓말하지 않게 한다(기능 PRD의 다른 내용·구조는 불변 — 세션 상한·API는 후속 작업 A·B·E 소관).</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">4</span>작업 단계</h2>
+    <ol class="steps">
+      <li><b>유틸 바 컴포넌트 신설.</b> 인라인 SVG 아이콘 2개(수정=노트+연필, 사람=상반신 실루엣, 24 뷰박스·
+        <code>currentColor</code> 스트로크)와 수정 버튼 팝오버 메뉴(옵션 "단어 등록" 1개)를 구현한다.
+        바깥 <code>pointerdown</code> 닫힘·<code>Escape</code> 닫힘 + 트리거 포커스 복귀는
+        <code>src/components/Dropdown.tsx:29-50</code>의 패턴을 그대로 옮기고(열려 있을 때만 리스너 부착),
+        열릴 때 첫 메뉴 항목 포커스 + <code>ArrowDown</code>/<code>ArrowUp</code> 이동을 더한다.
+        ARIA는 §3.2대로. 성공 기준: <code>npm run build</code>(tsc) 통과. <b>완료.</b>
+        <span class="files"><code>src/components/HomeUtilBar.tsx</code> (신규)</span>
+      </li>
+      <li><b>홈 화면 배선 교체.</b> 날짜·타이틀·프로필명을 <code>.home-header</code> / <code>.home-header-text</code>로
+        감싸고 우측에 <code>&lt;HomeUtilBar onNavigateRegister={…} onSwitchProfile={…} /&gt;</code>를 놓는다.
+        하단 <code>.home-register-link</code>·<code>.home-switch-profile-link</code> 버튼 2개와 그 주석을 삭제한다.
+        Props 시그니처는 그대로 유지 — <code>src/App.tsx</code>는 건드리지 않는다.
+        헤더 상단 주석에 "등록 링크의 '항상 노출' 성질을 유틸 바가 승계"임을 남긴다. <b>완료</b> — App.tsx 무변경 확인.
+        <span class="files"><code>src/screens/HomeScreen.tsx</code> (약 82-149행)</span>
+      </li>
+      <li><b>스타일 추가·제거.</b> <code>.home-header</code>·<code>.home-header-text</code>·<code>.home-util-bar</code>·
+        <code>.home-util-button</code>·<code>.home-util-menu</code>·<code>.home-util-menu-item</code>를 §3.4 값으로
+        추가하고, <code>.home-register-link</code>·<code>.home-switch-profile-link</code> 규칙 블록을 제거한다.
+        주석은 기존 관행대로 <code>/* design-prd §3 … (#105) */</code> 형식. <b>완료</b> —
+        <code>.home-util-icon</code>(20×20)과 <code>.home-util-menu-wrap</code>(팝오버 앵커) 두 클래스를 계획보다 더 두었다.
+        <span class="files"><code>src/index.css</code> (홈 블록 687행~, 링크 블록 849-865행)</span>
+      </li>
+      <li><b>DOM 테스트 기반 마련.</b> <code>jsdom</code>을 devDependency로 추가하고
+        (<code>npm i -D jsdom</code> — <code>package.json</code>/<code>package-lock.json</code> 갱신),
+        <code>createRoot</code>+<code>act</code> 기반 최소 렌더 헬퍼(<code>renderComponent</code> → <code>{ container, unmount }</code>,
+        <code>IS_REACT_ACT_ENVIRONMENT</code> 설정 포함)를 만든다. 왜 <code>@testing-library</code>가 아닌지 파일 상단
+        주석으로 남긴다. 성공 기준: 헬퍼를 쓴 스모크 테스트 1개가 실제로 마운트·언마운트된다.
+        <b>완료</b> — <code>jsdom ^29.1.1</code> devDependency 1개만 추가. 헬퍼는 43줄
+        (<code>renderComponent</code>·<code>fire</code>·<code>flush</code>) 로 끝나 §3.5의 대안
+        (<code>@testing-library/react</code> 도입)은 <b>발동하지 않았다</b> — act 경고 없이 12개 테스트 통과.
+        <span class="files"><code>src/test-utils.tsx</code> (신규), <code>package.json</code></span>
+      </li>
+      <li><b>유틸 바 동작 테스트.</b> ① 버튼 2개가 <code>aria-label</code>("수정"·"프로필 전환")로 렌더 ②
+        수정 클릭 → <code>role="menu"</code> 열림·<code>aria-expanded=true</code>·"단어 등록" 항목 1개뿐 ③
+        바깥 <code>pointerdown</code> → 닫힘 ④ <code>Escape</code> → 닫힘 + 트리거로 포커스 복귀 ⑤
+        "단어 등록" 클릭 → <code>onNavigateRegister</code> 1회 호출 + 메뉴 닫힘 ⑥ 사람 클릭 →
+        <code>onSwitchProfile</code> 1회 호출, 메뉴는 열리지 않음. <b>완료</b> — 7개 테스트
+        (④는 "메뉴 안쪽 pointerdown으로는 닫히지 않는다"까지 함께 단언).
+        <span class="files"><code>src/components/HomeUtilBar.test.tsx</code> (신규)</span>
+      </li>
+      <li><b>홈 화면 통합 테스트.</b> <code>vi.mock</code>으로 <code>fetchWords</code>를 고정 응답으로 대체하고
+        <code>HomeScreen</code>을 렌더해 ① 헤더에 유틸 바 버튼 2개 존재 ②
+        <code>.home-register-link</code>·<code>.home-switch-profile-link</code>가 <b>DOM에 없음</b> ③
+        메뉴 → "단어 등록" 경로가 <code>onNavigateRegister</code>까지 실제로 이어짐 ④ 사람 버튼 →
+        <code>onSwitchProfile</code>. (로딩·에러 상태에서도 유틸 바가 보이는지 1케이스 추가 — 등록 진입의
+        "학습 상태 무관 항상 노출" 성질 보존 확인.) <b>완료</b> — 5개 테스트.
+        <code>vi.hoisted</code>로 <code>fetchWords</code> 목을 끌어올려 모듈 목킹과 함께 쓴다.
+        <span class="files"><code>src/screens/HomeScreen.test.tsx</code> (신규)</span>
+      </li>
+      <li><b>design-prd §3 개정.</b> 구성(위→아래) 문장에 "날짜/타이틀 행 우측 유틸 바"를 넣고 끝의 링크 2개를 뺀다.
+        <b>홈 유틸 바</b> 불릿을 신설해 위치·순서·구체 스타일 값(§3.4 표)·아이콘 사양·메뉴 옵션이 지금은 하나뿐인
+        이유(작업 E)·<code>pointerdown</code> 닫힘·ARIA를 기록한다. 기존 "단어 등록 링크"·"프로필 전환 링크"
+        불릿은 유틸 바 액션 서술로 갈아끼우되 각각의 성질("학습 상태 무관 항상 노출", "v1의 유일한 프로필 교체 경로,
+        확인 단계 없음")은 보존한다. §6 진입 문장, §9 결정 로그(유틸 바 승격·인라인 SVG·하단 링크 제거,
+        기존 "프로필 전환 링크 위치·스타일" 행 대체 표시), §10 이슈 매핑에 #105 행까지 갱신하고
+        개정 노트 + 플랜 포인터(<code>docs/plans/session-limit-and-home-utils.md</code> §3.4 · §5 작업 D)를 남긴다.
+        <b>완료</b> — §9 결정 로그는 기존 "프로필 전환 링크 위치·스타일" 행을 취소선으로 폐기 표시하고
+        진입 액션 배치·아이콘·메뉴 형태 3행을 신설했다.
+        <span class="files"><code>docs/design-prd.md</code> (§3 71-83행, §6 147행, §9 182-196행, §10 198-205행)</span>
+      </li>
+      <li><b>PRD 진입 경로 정정(§3.6).</b> §9.1의 "학습 시작 아래 저강조 텍스트 링크" 줄과 §9.3의
+        "진입: 홈의 '단어 등록 ›' 링크" 줄을 상단 유틸 바 기준으로 고친다(각 한 줄, 개정 날짜 표기). <b>완료.</b>
+        <span class="files"><code>docs/PRD.md</code> (:255, :267)</span>
+      </li>
+      <li><b>검증·정리.</b> <code>npm test</code>(기존 309개 + 신규) · <code>npm run build</code>(tsc+번들) ·
+        <code>npm run lint</code>(oxlint)를 돌리고, <code>npm run dev</code> + cmux 브라우저로
+        <code>localStorage</code>에 <code>vocab-study:password</code>·<code>vocab-study:profile</code>을 시딩해
+        홈에서 아이콘 2개·메뉴 열림·바깥 탭 닫힘·등록 이동·프로필 전환을 육안 확인한다(#100 플랜의 검증 관행).
+        플랜 HTML 체크오프 후 커밋. <b>완료</b> — vitest 27파일 321테스트(기존 309 + 신규 12) 통과,
+        빌드·oxlint 통과. cmux 브라우저(:5174)에서 아이콘 2개 헤더 우상단 배치, 메뉴 팝오버 열림,
+        <code>.home-title</code> 바깥 탭으로 닫힘, "단어 등록" → 등록 화면, 사람 → <code>app-password</code> 삭제 +
+        로그인 화면 복귀, 하단 링크 없음을 모두 확인. 실측 박스: 버튼 40×40 · 간격 8px · 메뉴 148px 폭 ·
+        항목 높이 44px. <i>주의</i>: cmux 브라우저 페인은 <code>document.visibilityState === "hidden"</code>이라
+        CSS 애니메이션이 첫 프레임에 멈춰 <code>fadeup</code>의 <code>opacity:0</code>으로 보인다 —
+        기존 <code>.dropdown-panel</code>도 동일한 환경 아티팩트이며 실제 브라우저에서는 정상이다.
+        <span class="files"></span>
+      </li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">5</span>리스크</h2>
+    <div class="scroll-x">
+    <table>
+      <thead><tr><th>리스크</th><th>영향</th><th>완화책</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>레포 첫 DOM 테스트 — <code>jsdom</code>+<code>act</code> 자체 헬퍼가 예상보다 손이 많이 갈 수 있음
+            (act 경고, 비동기 상태 갱신, <code>PointerEvent</code> 부재)</td>
+          <td>구현 지연, 테스트가 실제 동작이 아니라 헬퍼를 검증하게 될 위험</td>
+          <td><code>pointerdown</code>은 <code>MouseEvent</code>로 디스패치(리스너는 타입 문자열 매칭).
+            헬퍼가 30줄을 넘거나 act 경고를 못 잡으면 §3.5 결정을 뒤집어
+            <code>@testing-library/react</code>를 도입하고 플랜에 사유를 적는다 — 완료 조건이 테스트 <b>존재</b>를
+            요구하지, 특정 라이브러리 부재를 요구하지 않는다</td>
+        </tr>
+        <tr>
+          <td>헤더를 플렉스 행으로 감싸면서 기존 여백이 틀어짐 — <code>.home-profile-name</code>의
+            <code>margin:0 0 20px</code>이 현황 카드와의 간격을 만들고 있고, 프로필이 없으면 그 여백도 사라진다</td>
+          <td>홈 레이아웃 미세 회귀(현황 카드가 붙거나 뜸)</td>
+          <td>텍스트 요소들의 클래스·마진을 그대로 둔 채 <b>감싸기만</b> 한다. 프로필 없을 때의 간격 동작은
+            현행과 동일하게 유지(이번 이슈에서 고치지 않음). 육안 확인 시 프로필 있음/없음 두 경우 모두 본다</td>
+        </tr>
+        <tr>
+          <td>후속 작업 E와의 경계 — 수정 메뉴에 "1회 문제 수 수정"을 미리 넣고 싶은 유혹</td>
+          <td>반쪽 UI(동작하지 않는 옵션)로 머지</td>
+          <td>이슈·플랜 §5가 명시적으로 금지 — 옵션은 <b>"단어 등록" 하나만</b>. 비활성 자리 표시도 두지 않는다.
+            테스트에서 메뉴 항목 수가 1인지 단언해 회귀를 막는다</td>
+        </tr>
+        <tr>
+          <td><code>role="menu"</code> 접근성 구현이 어중간해질 수 있음(포커스 트랩·roving 미구현)</td>
+          <td>키보드 사용자 경험 저하</td>
+          <td>완료 조건은 "기본 보장" — 항목이 실제 <code>&lt;button&gt;</code>이라 Tab이 통하고,
+            열릴 때 첫 항목 포커스 · <code>Escape</code> 복귀 · 화살표 이동까지 구현한다.
+            포커스 트랩은 옵션 1개 메뉴에 과해 도입하지 않는다(플랜에 명시)</td>
+        </tr>
+        <tr>
+          <td>등록 화면 진입 경로가 유틸 바 뒤로 한 단계 깊어짐(탭 → 메뉴 → 옵션)</td>
+          <td>등록 동선이 길어졌다는 체감</td>
+          <td>소유자 확정 사항(플랜 Q6·§3.4)이라 그대로 따른다. 대신 메뉴는 팝오버라 탭 2번이면 끝나고,
+            "항상 노출" 성질은 유지된다</td>
+        </tr>
+        <tr>
+          <td><code>package-lock.json</code> 변경(jsdom 및 전이 의존성)</td>
+          <td>diff 크기 증가, 리뷰 노이즈</td>
+          <td>devDependency 1개만 추가(<code>npm i -D jsdom</code>) — 런타임 번들·배포에는 영향 없음을
+            PR 본문에 명시한다</td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">6</span>테스트 계획</h2>
+    <ul>
+      <li><b>기준선 회귀</b> — <code>npm test</code>: 기존 25파일 309테스트가 <b>무수정</b>으로 계속 통과해야 한다
+        (이 작업은 순수 로직을 건드리지 않는다). 신규 DOM 테스트는 <code>// @vitest-environment jsdom</code>
+        도크블록으로 격리되어 나머지 파일의 실행 환경을 바꾸지 않는다.</li>
+      <li><b>유틸 바 렌더</b> — 버튼 2개가 각각 <code>aria-label="수정"</code>·<code>aria-label="프로필 전환"</code>로
+        존재하고, 아이콘 <code>&lt;svg&gt;</code>는 <code>aria-hidden="true"</code>다.</li>
+      <li><b>메뉴 열림</b> — 수정 버튼 클릭 시 <code>role="menu"</code>가 나타나고
+        <code>aria-expanded</code>가 <code>true</code>로 바뀐다. <code>role="menuitem"</code>은 <b>정확히 1개</b>이며
+        라벨은 "단어 등록"이다(작업 E 옵션 선반영 금지의 회귀 방어).</li>
+      <li><b>바깥 pointerdown 닫힘</b> — 메뉴가 열린 상태에서 <code>document.body</code>에
+        <code>pointerdown</code>을 디스패치하면 메뉴가 사라진다. 메뉴 <b>안쪽</b>에 디스패치하면 유지된다.</li>
+      <li><b>Escape 닫힘·포커스</b> — <code>Escape</code> keydown으로 닫히고
+        <code>document.activeElement</code>가 수정 버튼으로 돌아온다. 열릴 때는 첫 메뉴 항목이 포커스를 받는다.</li>
+      <li><b>액션 배선</b> — "단어 등록" 항목 클릭 → <code>onNavigateRegister</code> 1회 호출 + 메뉴 닫힘.
+        사람 버튼 클릭 → <code>onSwitchProfile</code> 1회 호출(메뉴는 열리지 않음).</li>
+      <li><b>하단 링크 부재</b> — <code>HomeScreen</code> 렌더 결과에
+        <code>.home-register-link</code>·<code>.home-switch-profile-link</code>가 <b>없다</b>. 텍스트
+        "단어 등록 ›"·"프로필 전환"이 하단 영역에 남아 있지 않은지도 함께 확인.</li>
+      <li><b>학습 상태 무관 노출</b> — <code>fetchWords</code>가 아직 응답하지 않은 로딩 상태에서도
+        유틸 바 버튼 2개가 렌더된다(등록 진입의 기존 성질 승계).</li>
+      <li><b>타입·번들</b> — <code>npm run build</code>(<code>tsc -b</code> + vite build) 통과.
+        <code>npm run lint</code>(oxlint) 무경고.</li>
+      <li><b>육안 확인</b> — <code>npm run dev</code> + cmux 브라우저. <code>localStorage</code>에
+        <code>vocab-study:password</code>·<code>vocab-study:profile</code>을 직접 시딩해 홈 진입 후:
+        아이콘 2개가 헤더 우상단에 나란히 · 탭하면 메뉴가 우측 정렬로 열림 · 화면 아무 데나 탭하면 닫힘 ·
+        "단어 등록" → 등록 화면 · 사람 아이콘 → 로그인 화면 복귀 · 하단에 링크 없음.
+        모바일 기준 뷰포트(390×844)에서 44px 이상 터치 타겟인지도 본다.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">7</span>완료 조건</h2>
+    <ul class="done-list">
+      <li class="checked">유틸 바 렌더(아이콘 2개)·수정 메뉴 열림/바깥 <code>pointerdown</code> 닫힘·"단어 등록" 이동·
+        사람 버튼 = 즉시 프로필 전환이 <b>테스트로</b> 검증된다</li>
+      <li class="checked">하단 <code>.home-register-link</code>·<code>.home-switch-profile-link</code> 2개 부재 확인,
+        기존 전체 스위트(25파일 309테스트) 무수정 통과 — "기존 홈 테스트"는 실재하지 않으므로 갱신 대상 없음(§2)</li>
+      <li class="checked">접근성: 두 버튼 <code>aria-label</code>, 메뉴 <code>role="menu"</code>/<code>menuitem</code>,
+        열림 시 첫 항목 포커스 · <code>Escape</code> 닫힘 + 트리거 포커스 복귀 · 화살표 이동</li>
+      <li class="checked"><code>docs/design-prd.md</code> §3 개정(구성·유틸 바 사양·구체 스타일 값·링크 제거) +
+        §6 진입 문장 · §9 결정 로그 · §10 이슈 매핑 갱신, 개정 노트와 플랜 포인터 명시</li>
+      <li class="checked"><code>worker/</code>·등록 화면·세션 큐/현황 집계 로직 변경 없음
+        (<code>src/App.tsx</code>도 무변경 — 유틸 바가 기존 두 prop을 그대로 소비)</li>
+      <li class="checked">수정 메뉴 옵션은 "단어 등록" <b>하나뿐</b> — "1회 문제 수 수정"은 작업 E 소관, 비활성 자리 표시도 없음</li>
+      <li class="checked"><code>npm test</code> · <code>npm run build</code> · <code>npm run lint</code> 통과 + 브라우저 육안 확인</li>
+    </ul>
+  </section>
+
+  <footer>issue-plan · <a href="https://github.com/damdam6/vocabulary-study/issues/105">#105</a> · 2026-07-28</footer>
+</main>
+</body>
+</html>
