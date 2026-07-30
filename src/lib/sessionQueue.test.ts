@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { computeHomeStats } from "./homeStats.ts";
 import { buildSessionQueue, SESSION_CAP, type SessionQuestion } from "./sessionQueue.ts";
 
 const today = "2026-07-20";
@@ -87,18 +88,31 @@ describe("buildSessionQueue — 복습 대기 선별", () => {
 });
 
 describe("buildSessionQueue — 학습 중 채우기", () => {
-  it("총 정답 수(D+E)가 많은 단어부터 채우고, 동률이면 시트 순서를 따른다", () => {
-    // 59개 고득점 단어(단어당 1문제 → 후보 59개) + 동률(0점) 2개 — 남은 슬롯 1개를
-    // 시트 순서가 앞서는 쪽이 가져가고 다른 하나는 밀려난다
-    const high = Array.from({ length: 59 }, (_, i) => learningWord(`학${i}`, 2, i % 3));
-    const tieFirst = learningWord("동앞", 0, 0);
-    const tieSecond = learningWord("동뒤", 0, 0);
-    const queue = buildSessionQueue([tieSecond, ...high, tieFirst], today, M, mulberry32(2));
-    // 입력(시트) 순서상 "동뒤"가 "동앞"보다 앞이므로, 동률에서는 "동뒤"가 이긴다
+  it("총 정답 수(D+E)가 적은 단어부터 채운다 — 신규 단어가 최우선 (#128)", () => {
+    // 후보 61개(상한 60) — 오름차순이라 시트 맨 뒤에 등록된 0점 단어가 들어가고
+    // 최고점 단어가 밀려난다. 종전 내림차순에서는 정확히 반대였다.
+    const top = learningWord("최고", 2, 2); // D+E=4 — 유일한 최고점, 시트 맨 앞
+    const scored = Array.from({ length: 59 }, (_, i) => learningWord(`학${i}`, 1, 1)); // D+E=2
+    const fresh = learningWord("신규", 0, 0); // D+E=0 — 방금 등록해 시트 맨 뒤
+    const queue = buildSessionQueue([top, ...scored, fresh], today, M, mulberry32(2));
 
     expect(queue).toHaveLength(SESSION_CAP);
-    expect(hanziSet(queue).has("동뒤")).toBe(true);
-    expect(hanziSet(queue).has("동앞")).toBe(false);
+    expect(hanziSet(queue).has("신규")).toBe(true);
+    expect(hanziSet(queue).has("최고")).toBe(false);
+  });
+
+  it("총 정답 수가 동률이면 시트 상 순서를 따른다 (stable sort)", () => {
+    // 0점 동률 2개 중 하나만 들어가도록 상한을 1로 좁힌다 — 시트에서 앞선 쪽이 이긴다
+    const queue = buildSessionQueue(
+      [learningWord("동앞", 0, 0), learningWord("동뒤", 0, 0)],
+      today,
+      M,
+      mulberry32(2),
+      1,
+    );
+
+    expect(hanziSet(queue).has("동앞")).toBe(true);
+    expect(hanziSet(queue).has("동뒤")).toBe(false);
   });
 
   it("한쪽 모드만 미달이면 그 모드로 단어당 1문제만 낸다", () => {
@@ -139,9 +153,10 @@ describe("buildSessionQueue — 상한·제외·경계", () => {
     const learnings = Array.from({ length: 40 }, (_, i) => learningWord(`학${i}`, i % 3, 0));
     const queue = buildSessionQueue([...reviews, ...learnings], today, M, mulberry32(4));
 
+    // 복습 몫은 floor(60×0.3)=18이지만 학습 후보가 40개뿐이라 남은 20슬롯을 복습이 회수한다(#128)
     expect(queue).toHaveLength(SESSION_CAP);
-    expect(queue.filter((q) => q.isReview)).toHaveLength(30);
-    expect(queue.filter((q) => !q.isReview)).toHaveLength(30);
+    expect(queue.filter((q) => q.isReview)).toHaveLength(20);
+    expect(queue.filter((q) => !q.isReview)).toHaveLength(40);
   });
 
   it("복습 예약(복습일 미도래) 단어는 큐에서 제외된다", () => {
@@ -204,9 +219,10 @@ describe("buildSessionQueue — limit 파라미터화 (세션 설정 플랜 §3.
     const learnings = Array.from({ length: 40 }, (_, i) => learningWord(`학${i}`, i % 3, 0));
     const queue = buildSessionQueue([...reviews, ...learnings], today, M, mulberry32(13), 30);
 
+    // 양쪽 다 넉넉하므로 복습은 몫 floor(30×0.3)=9까지만 가져간다(#128)
     expect(queue).toHaveLength(30);
-    expect(queue.filter((q) => q.isReview)).toHaveLength(20);
-    expect(queue.filter((q) => !q.isReview)).toHaveLength(10);
+    expect(queue.filter((q) => q.isReview)).toHaveLength(9);
+    expect(queue.filter((q) => !q.isReview)).toHaveLength(21);
   });
 
   it("limit=1이면 큐는 정확히 1문제다", () => {
@@ -214,6 +230,91 @@ describe("buildSessionQueue — limit 파라미터화 (세션 설정 플랜 §3.
     const queue = buildSessionQueue(words, today, M, mulberry32(14), 1);
 
     expect(queue).toHaveLength(1);
+  });
+});
+
+describe("buildSessionQueue — 신규 단어 기아 방지 (#128)", () => {
+  it("학습 중이 상한을 훌쩍 넘겨도 갓 등록한 단어가 큐에 들어온다", () => {
+    // 소유자 제보 시나리오: 이미 학습 중인 단어가 상한(35)보다 많은 시트에 5개를 새로 등록.
+    // 종전 내림차순에서는 신규 5개가 전부 잘려 "등록했는데 안 나온다"가 됐다.
+    const existing = Array.from({ length: 40 }, (_, i) => learningWord(`기존${i}`, 1, i % 3));
+    const registered = Array.from({ length: 5 }, (_, i) => learningWord(`신규${i}`, 0, 0));
+    const queue = buildSessionQueue([...existing, ...registered], today, M, mulberry32(20), 35);
+
+    expect(queue).toHaveLength(35);
+    for (let i = 0; i < 5; i++) {
+      expect(hanziSet(queue).has(`신규${i}`)).toBe(true);
+    }
+  });
+
+  it("실측 분포(학습 145 / 상한 35)에서 큐가 전부 0점 신규 단어가 된다", () => {
+    // 이슈 실측(zh 프로필, 2026-07-30): 5점 4 / 4점 4 / 3점 4 / 2점 3 / 1점 4 / 0점 126.
+    // 종전에는 점수 있는 19개가 슬롯을 먼저 먹고 남은 16자리만 0점에 돌아갔다.
+    const scored = [
+      ...Array.from({ length: 4 }, (_, i) => learningWord(`5점${i}`, 3, 2)),
+      ...Array.from({ length: 4 }, (_, i) => learningWord(`4점${i}`, 2, 2)),
+      ...Array.from({ length: 4 }, (_, i) => learningWord(`3점${i}`, 2, 1)),
+      ...Array.from({ length: 3 }, (_, i) => learningWord(`2점${i}`, 1, 1)),
+      ...Array.from({ length: 4 }, (_, i) => learningWord(`1점${i}`, 1, 0)),
+    ];
+    const fresh = Array.from({ length: 126 }, (_, i) => learningWord(`신${i}`, 0, 0));
+    const queue = buildSessionQueue([...scored, ...fresh], today, M, mulberry32(21), 35);
+
+    expect(queue).toHaveLength(35);
+    expect(queue.every((q) => q.word.m1 + q.word.m2 === 0)).toBe(true);
+    // 0점 풀이 상한보다 크므로 이번 세션은 시트 앞 35개 — 맞힌 단어가 뒤로 빠지며 다음 세션에 전진한다
+    expect(hanziSet(queue).has("신0")).toBe(true);
+    expect(hanziSet(queue).has("신34")).toBe(true);
+    expect(hanziSet(queue).has("신35")).toBe(false);
+  });
+
+  it("복습 대기가 많아도 학습 슬롯이 확보된다 — 복습 몫 상한 30%", () => {
+    const reviews = Array.from({ length: 100 }, (_, i) => reviewWord(`복${i}`, "2026-07-01"));
+    const learnings = Array.from({ length: 145 }, (_, i) => learningWord(`학${i}`, 0, 0));
+    const queue = buildSessionQueue([...reviews, ...learnings], today, M, mulberry32(22), 35);
+
+    expect(queue).toHaveLength(35);
+    expect(queue.filter((q) => q.isReview)).toHaveLength(10); // floor(35 × 0.3)
+    expect(queue.filter((q) => !q.isReview)).toHaveLength(25);
+  });
+
+  it("학습 중이 없으면 복습이 상한 전부를 쓴다 — 몫은 하한이지 낭비 상한이 아니다", () => {
+    const reviews = Array.from({ length: 100 }, (_, i) => reviewWord(`복${i}`, "2026-07-01"));
+    const queue = buildSessionQueue(reviews, today, M, mulberry32(23), 35);
+
+    expect(queue).toHaveLength(35);
+    expect(queue.every((q) => q.isReview)).toBe(true);
+  });
+
+  it("limit=3이면 floor(3×0.3)=0이어도 복습 대기가 최소 1문제는 확보된다", () => {
+    // 복습 누락 방지 우선(PRD §12)이 작은 상한에서도 깨지지 않아야 한다
+    const reviews = Array.from({ length: 5 }, (_, i) => reviewWord(`복${i}`, "2026-07-01"));
+    const learnings = Array.from({ length: 10 }, (_, i) => learningWord(`학${i}`, 0, 0));
+    const queue = buildSessionQueue([...reviews, ...learnings], today, M, mulberry32(24), 3);
+
+    expect(queue).toHaveLength(3);
+    expect(queue.filter((q) => q.isReview)).toHaveLength(1);
+    expect(queue.filter((q) => !q.isReview)).toHaveLength(2);
+  });
+});
+
+describe("buildSessionQueue — 홈 산식과의 불변식 (#128)", () => {
+  it("어떤 조합에서도 큐 길이가 computeHomeStats의 sessionCount와 같다", () => {
+    // HomeScreen이 "같은 산식이라 빈 큐가 나올 수 없다"에 기대므로, 두 함수가 갈라지면 즉시 실패한다
+    for (const limit of [1, 2, 3, 30, 35, 60]) {
+      for (const reviewCount of [0, 1, 5, 30, 100]) {
+        for (const learningCount of [0, 1, 5, 30, 100]) {
+          const words = [
+            ...Array.from({ length: reviewCount }, (_, i) => reviewWord(`복${i}`, "2026-07-01")),
+            ...Array.from({ length: learningCount }, (_, i) => learningWord(`학${i}`, i % 4, 0)),
+          ];
+          const queue = buildSessionQueue(words, today, M, mulberry32(limit + reviewCount + learningCount), limit);
+          const stats = computeHomeStats(words, today, M, limit);
+
+          expect(queue).toHaveLength(stats.sessionCount);
+        }
+      }
+    }
   });
 });
 

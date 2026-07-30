@@ -5,7 +5,7 @@
  * 실제 큐 구성(#14)은 이 이슈 범위 밖 — 여기서는 문제 수만 센다.
  */
 
-import { SESSION_CAP } from "./sessionQueue.ts";
+import { SESSION_CAP, splitSessionSlots } from "./sessionQueue.ts";
 import { getWordState, type Mode, type WordProgress } from "./wordState.ts";
 
 export interface HomeStats {
@@ -13,7 +13,11 @@ export interface HomeStats {
   learning: number;
   /** design-prd §3: 졸업 수 = 복습 대기를 포함한 졸업 단어 총수 (reviewDue + reviewScheduled). */
   graduated: number;
-  /** design-prd §3 / 기능 PRD §6.1: min(limit, min(복습대기,limit) + 학습중 단어 수). 학습 중은 단어당 1문제(#44). */
+  /**
+   * design-prd §3 / 기능 PRD §6.1: 오늘 세션의 총 문제 수 = min(limit, 복습대기 + 학습중).
+   * 학습 중은 단어당 1문제(#44). 산식을 여기 다시 적지 않고 큐와 같은 splitSessionSlots를
+   * 호출해 얻는다 — 사본이 갈라지면 홈 표시와 실제 큐 길이가 어긋난다(#128).
+   */
   sessionCount: number;
 }
 
@@ -43,6 +47,6 @@ export function computeHomeStats(
     reviewDue,
     learning,
     graduated: reviewDue + reviewScheduled,
-    sessionCount: Math.min(limit, Math.min(reviewDue, limit) + learning),
+    sessionCount: splitSessionSlots(reviewDue, learning, limit).total,
   };
 }
