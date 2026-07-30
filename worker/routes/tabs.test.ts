@@ -34,9 +34,30 @@ interface PutCall {
   values: string[][];
 }
 
-function stubSheetsFetch(state: SheetsState): { putCalls: PutCall[]; addSheetCalls: string[] } {
+// 구조 batchUpdate의 request 형태(#122) — addSheet(서식 속성 포함)와 repeatCell만 온다.
+interface BatchRequest {
+  addSheet?: {
+    properties: {
+      title: string;
+      sheetId?: number;
+      gridProperties?: { frozenRowCount?: number };
+    };
+  };
+  repeatCell?: {
+    range: Record<string, number>;
+    cell: { userEnteredFormat: { backgroundColor: { red: number; green: number; blue: number } } };
+    fields: string;
+  };
+}
+
+function stubSheetsFetch(state: SheetsState): {
+  putCalls: PutCall[];
+  addSheetCalls: string[];
+  batchUpdateCalls: BatchRequest[][];
+} {
   const putCalls: PutCall[] = [];
   const addSheetCalls: string[] = [];
+  const batchUpdateCalls: BatchRequest[][] = [];
 
   vi.stubGlobal(
     "fetch",
@@ -49,9 +70,8 @@ function stubSheetsFetch(state: SheetsState): { putCalls: PutCall[]; addSheetCal
       }
 
       if (url.includes(":batchUpdate") && !url.includes("/values:batchUpdate")) {
-        const body = JSON.parse(init?.body as string) as {
-          requests: { addSheet?: { properties: { title: string } } }[];
-        };
+        const body = JSON.parse(init?.body as string) as { requests: BatchRequest[] };
+        batchUpdateCalls.push(body.requests);
         for (const req of body.requests) {
           if (req.addSheet) {
             addSheetCalls.push(req.addSheet.properties.title);
@@ -86,7 +106,7 @@ function stubSheetsFetch(state: SheetsState): { putCalls: PutCall[]; addSheetCal
     }),
   );
 
-  return { putCalls, addSheetCalls };
+  return { putCalls, addSheetCalls, batchUpdateCalls };
 }
 
 function parseTabRange(url: string): { tab: string; range: string } {
@@ -166,13 +186,15 @@ describe("POST /api/tabs", () => {
 
   it("트림 후 기존 탭과 같으면 생성 없이 created: false로 성공한다", async () => {
     const state = baseState();
-    const { putCalls, addSheetCalls } = stubSheetsFetch(state);
+    const { putCalls, addSheetCalls, batchUpdateCalls } = stubSheetsFetch(state);
 
     const res = await worker.fetch(createTabRequest({ name: "  HSK6급  " }), env);
 
     expect(res.status).toBe(200);
     expect((await res.json()) as object).toEqual({ name: "HSK6급", created: false });
     expect(addSheetCalls).toEqual([]);
+    // 서식만 적용하는 batchUpdate도 없어야 한다 — 기존 탭 불가침(#122).
+    expect(batchUpdateCalls).toEqual([]);
     expect(putCalls).toEqual([]);
   });
 
@@ -188,6 +210,47 @@ describe("POST /api/tabs", () => {
     // 헤더 행(A1)만 쓴다 — 다른 셀 불가침.
     expect(putCalls).toEqual([{ tab: "HSK7", range: "A1", values: [HEADER] }]);
     expect(state.titles).toContain("HSK7");
+  });
+
+  // #122: 생성은 한 번의 batchUpdate로 탭 추가 + 1행 고정 + 헤더 색 + D열 이후 배경을 적용한다.
+  it("생성 batchUpdate 하나에 1행 고정과 서식 request가 함께 담긴다", async () => {
+    const { batchUpdateCalls } = stubSheetsFetch(baseState());
+
+    const res = await worker.fetch(createTabRequest({ name: "HSK7" }), env);
+
+    expect(res.status).toBe(200);
+    expect(batchUpdateCalls).toHaveLength(1);
+    const [addSheetReq, ...formatReqs] = batchUpdateCalls[0];
+
+    const props = addSheetReq.addSheet?.properties;
+    expect(props?.title).toBe("HSK7");
+    expect(props?.gridProperties).toEqual({ frozenRowCount: 1 });
+    // 후속 repeatCell이 같은 배치에서 새 탭을 참조하도록 숫자 sheetId를 직접 지정한다.
+    const gid = props?.sheetId;
+    expect(typeof gid).toBe("number");
+
+    const YELLOW = { red: 255 / 255, green: 217 / 255, blue: 102 / 255 }; // #FFD966
+    const GREEN = { red: 217 / 255, green: 234 / 255, blue: 211 / 255 }; // #D9EAD3
+    const GRAY = { red: 102 / 255, green: 102 / 255, blue: 102 / 255 }; // #666666
+    const headerCell = (column: number) => ({
+      sheetId: gid,
+      startRowIndex: 0,
+      endRowIndex: 1,
+      startColumnIndex: column,
+      endColumnIndex: column + 1,
+    });
+    const bg = (backgroundColor: object) => ({ userEnteredFormat: { backgroundColor } });
+    expect(formatReqs.map((req) => req.repeatCell)).toEqual([
+      { range: headerCell(0), cell: bg(YELLOW), fields: "userEnteredFormat.backgroundColor" },
+      { range: headerCell(1), cell: bg(GREEN), fields: "userEnteredFormat.backgroundColor" },
+      { range: headerCell(2), cell: bg(YELLOW), fields: "userEnteredFormat.backgroundColor" },
+      // 기록 영역(D열 이후)은 행·끝 열을 고정하지 않는 open-ended 범위다.
+      {
+        range: { sheetId: gid, startColumnIndex: 3 },
+        cell: bg(GRAY),
+        fields: "userEnteredFormat.backgroundColor",
+      },
+    ]);
   });
 
   it("학습 대상 탭이 0개면 zh 기본 헤더로 부트스트랩한다", async () => {

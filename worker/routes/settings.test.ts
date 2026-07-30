@@ -49,9 +49,14 @@ interface PutCall {
 // settings.ts가 쓰는 요청(탭 제목 조회·addSheet·A:B 읽기·단일 range PUT)과
 // 회귀 확인용 words/tabs 요청(A2:F 읽기)만 지원한다. 호출 URL 전부를 기록해
 // sheetId 격리·valueInputOption 검증에 쓴다.
-function stubSheetsFetch(sheets: Record<string, SheetState>): { urls: string[]; putCalls: PutCall[] } {
+function stubSheetsFetch(sheets: Record<string, SheetState>): {
+  urls: string[];
+  putCalls: PutCall[];
+  batchUpdateCalls: unknown[][];
+} {
   const urls: string[] = [];
   const putCalls: PutCall[] = [];
+  const batchUpdateCalls: unknown[][] = [];
 
   vi.stubGlobal(
     "fetch",
@@ -74,6 +79,7 @@ function stubSheetsFetch(sheets: Record<string, SheetState>): { urls: string[]; 
         const body = JSON.parse(init?.body as string) as {
           requests: { addSheet?: { properties: { title: string } } }[];
         };
+        batchUpdateCalls.push(body.requests);
         for (const req of body.requests) {
           if (req.addSheet) {
             sheet.titles.push(req.addSheet.properties.title);
@@ -104,7 +110,7 @@ function stubSheetsFetch(sheets: Record<string, SheetState>): { urls: string[]; 
     }),
   );
 
-  return { urls, putCalls };
+  return { urls, putCalls, batchUpdateCalls };
 }
 
 function parseTabRange(url: string): { tab: string; range: string } {
@@ -221,13 +227,16 @@ describe("POST /api/settings — 검증", () => {
 describe("POST /api/settings — 탭 생성 / 행 추가 / B열 갱신", () => {
   it("'_정보' 탭이 없으면 빈 탭을 만들고 A1:B1에만 쓴다 — 헤더 복사 없음", async () => {
     const sheets = baseSheets();
-    const { putCalls } = stubSheetsFetch(sheets);
+    const { putCalls, batchUpdateCalls } = stubSheetsFetch(sheets);
 
     const res = await worker.fetch(settingsRequest({ sessionLimit: 30 }), env);
 
     expect(res.status).toBe(200);
     expect((await res.json()) as object).toEqual({ sessionLimit: 30 });
     expect(sheets["sheet-zh"].titles).toContain("_정보");
+    // 단어 탭 생성(#122)과 달리 '_정보'는 무서식 — addSheet 단일 request에
+    // sheetId·frozenRowCount·repeatCell이 없어야 한다.
+    expect(batchUpdateCalls).toEqual([[{ addSheet: { properties: { title: "_정보" } } }]]);
     // PUT은 설정 행 단 1건 — 단어 탭 createTab과 달리 헤더 행 PUT이 없어야 한다.
     expect(putCalls).toEqual([
       { sheetId: "sheet-zh", tab: "_정보", range: "A1:B1", values: [["문제수", 30]] },
