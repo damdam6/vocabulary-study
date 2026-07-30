@@ -101,18 +101,24 @@ describe("buildSessionQueue — 학습 중 채우기", () => {
     expect(hanziSet(queue).has("최고")).toBe(false);
   });
 
-  it("총 정답 수가 동률이면 시트 상 순서를 따른다 (stable sort)", () => {
-    // 0점 동률 2개 중 하나만 들어가도록 상한을 1로 좁힌다 — 시트에서 앞선 쪽이 이긴다
-    const queue = buildSessionQueue(
-      [learningWord("동앞", 0, 0), learningWord("동뒤", 0, 0)],
-      today,
-      M,
-      mulberry32(2),
-      1,
-    );
+  it("총 정답 수가 동률이면 무작위로 갈린다 — 시트 순서가 아니다 (#131)", () => {
+    // 0점 동률 2개 중 하나만 들어가도록 상한을 1로 좁힌다. 종전(시트 순서 타이브레이커)에는
+    // 어떤 시드에서도 "동앞"만 이겼다 — 시드를 훑어 양쪽 다 이기는 시드가 있어야 한다.
+    const winners = new Set<string>();
+    for (let seed = 1; seed <= 20; seed++) {
+      const queue = buildSessionQueue(
+        [learningWord("동앞", 0, 0), learningWord("동뒤", 0, 0)],
+        today,
+        M,
+        mulberry32(seed),
+        1,
+      );
 
-    expect(hanziSet(queue).has("동앞")).toBe(true);
-    expect(hanziSet(queue).has("동뒤")).toBe(false);
+      expect(queue).toHaveLength(1);
+      winners.add(queue[0].word.hanzi);
+    }
+
+    expect(winners).toEqual(new Set(["동앞", "동뒤"]));
   });
 
   it("한쪽 모드만 미달이면 그 모드로 단어당 1문제만 낸다", () => {
@@ -261,11 +267,9 @@ describe("buildSessionQueue — 신규 단어 기아 방지 (#128)", () => {
     const queue = buildSessionQueue([...scored, ...fresh], today, M, mulberry32(21), 35);
 
     expect(queue).toHaveLength(35);
+    // 점수 축 계약(#128): 0점 풀이 상한보다 크므로 점수 있는 19개는 한 개도 못 들어온다.
+    // 그 35개가 0점 126개 중 누구인지는 무작위다 — 시트 위치로 고정되지 않는다(#131).
     expect(queue.every((q) => q.word.m1 + q.word.m2 === 0)).toBe(true);
-    // 0점 풀이 상한보다 크므로 이번 세션은 시트 앞 35개 — 맞힌 단어가 뒤로 빠지며 다음 세션에 전진한다
-    expect(hanziSet(queue).has("신0")).toBe(true);
-    expect(hanziSet(queue).has("신34")).toBe(true);
-    expect(hanziSet(queue).has("신35")).toBe(false);
   });
 
   it("복습 대기가 많아도 학습 슬롯이 확보된다 — 복습 몫 상한 30%", () => {
@@ -295,6 +299,52 @@ describe("buildSessionQueue — 신규 단어 기아 방지 (#128)", () => {
     expect(queue).toHaveLength(3);
     expect(queue.filter((q) => q.isReview)).toHaveLength(1);
     expect(queue.filter((q) => !q.isReview)).toHaveLength(2);
+  });
+});
+
+describe("buildSessionQueue — 동률 구간 무작위 타이브레이커 (#131)", () => {
+  /** 이슈 실측 형태: 0점 동률 126개가 학습 슬롯(35)보다 많아 선정이 전적으로 타이브레이커로 갈린다. */
+  function zeroScorePool(): TestWord[] {
+    return Array.from({ length: 126 }, (_, i) => learningWord(`신${i}`, 0, 0));
+  }
+
+  it("시드가 다르면 큐에 드는 동점 단어 조합이 달라진다", () => {
+    const words = zeroScorePool();
+    const a = hanziSet(buildSessionQueue(words, today, M, mulberry32(31), 35));
+    const b = hanziSet(buildSessionQueue(words, today, M, mulberry32(32), 35));
+
+    expect(a.size).toBe(35);
+    expect(b.size).toBe(35);
+    expect(a).not.toEqual(b);
+  });
+
+  it("시트 뒤쪽(최근 등록) 0점 단어도 큐에 든다 — #128이 놓친 회귀", () => {
+    // 종전에는 시트 앞 35개가 항상 이겨 마지막 10행의 큐 진입이 어떤 시드에서도 0/10이었다.
+    // 시드를 훑으면 꼬리 10개가 전부 최소 한 번은 뽑혀야 한다 (세션당 35/126 ≈ 27.8%).
+    const words = zeroScorePool();
+    const tail = words.slice(-10).map((word) => word.hanzi);
+    const everSelected = new Set<string>();
+    for (let seed = 1; seed <= 50; seed++) {
+      for (const hanzi of hanziSet(buildSessionQueue(words, today, M, mulberry32(seed), 35))) {
+        everSelected.add(hanzi);
+      }
+    }
+
+    for (const hanzi of tail) {
+      expect(everSelected.has(hanzi)).toBe(true);
+    }
+  });
+
+  it("점수 오름차순 우선순위는 그대로다 — 셔플은 동점 구간만 건드린다", () => {
+    // 0점 5개가 시트 맨 뒤에 있어도 어떤 시드에서든 2점 40개를 전부 이긴다
+    const scored = Array.from({ length: 40 }, (_, i) => learningWord(`기존${i}`, 1, 1));
+    const fresh = Array.from({ length: 5 }, (_, i) => learningWord(`신규${i}`, 0, 0));
+    for (let seed = 1; seed <= 20; seed++) {
+      const queue = buildSessionQueue([...scored, ...fresh], today, M, mulberry32(seed), 5);
+
+      expect(queue).toHaveLength(5);
+      expect(queue.every((q) => q.word.m1 + q.word.m2 === 0)).toBe(true);
+    }
   });
 });
 

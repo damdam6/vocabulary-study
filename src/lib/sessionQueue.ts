@@ -3,7 +3,8 @@
  * 여기(src/lib)에 둔다. 상태 분류는 wordState의 getWordState를 재사용하고,
  * 출제 모드도 그 활성 모드 집합 M(PRD-general §4.2) 안에서만 선택한다.
  * "시트 상 순서"는 GET /api/words가 시트 행 순서 그대로 반환하므로 입력 배열
- * 순서를 그대로 쓴다 (동률 정렬은 stable sort로 이 순서를 보존).
+ * 순서를 그대로 쓴다 — 복습 대기 정렬은 stable sort로 이 순서를 동률 타이브레이커로
+ * 남기지만, 학습 중은 시트 순서를 쓰지 않는다 (동률이면 무작위, #131).
  */
 
 import { getWordState, type Mode, type WordProgress } from "./wordState.ts";
@@ -58,15 +59,24 @@ export interface SessionQuestion<T> {
 /**
  * PRD-general §4.2의 세션 큐를 만든다. ① splitSessionSlots로 상한을 복습/학습에 배분 →
  * ② 복습 대기를 복습일 오래된 순으로 그 몫만큼(단어당 1문제·모드는 M 중 무작위) →
- * ③ 남은 슬롯에 학습 중 단어를 총 정답 수 오름차순으로(단어당 1문제 — M 중 미달 모드가
- * 하나면 그 모드, 복수면 그중 무작위, #44/#76) → ④ 전체 셔플. 상태가 상호 배타라 같은
- * 단어는 큐에 최대 한 번 들어간다. 상태 분류는 getWordState(word, today, modes)를 그대로
- * 재사용한다(#75).
+ * ③ 남은 슬롯에 학습 중 단어를 총 정답 수 오름차순·동률이면 무작위로(단어당 1문제 — M 중
+ * 미달 모드가 하나면 그 모드, 복수면 그중 무작위, #44/#76) → ④ 전체 셔플. 상태가 상호
+ * 배타라 같은 단어는 큐에 최대 한 번 들어간다. 상태 분류는 getWordState(word, today, modes)를
+ * 그대로 재사용한다(#75).
+ *
+ * 셔플이 두 번 나오는데 목적이 다르다: ③의 셔플은 컷 이전이라 **어떤 단어가 뽑히는지**를
+ * 가르고, ④의 셔플은 컷 이후라 **출제 순서**만 바꾼다.
  *
  * 학습 중 정렬이 오름차순인 이유(#128): 내림차순이면 D=E=0인 신규 단어가 항상 최하위로
  * 밀려, 학습 중 단어가 상한보다 많은 시트에서는 기존 단어가 졸업할 때까지 영구히 출제되지
  * 않았다. 오름차순은 등록 즉시 다음 세션에 나오게 하고, 학습 중 오답은 기록 API를 쏘지
  * 않아 점수가 그대로이므로(§6.2) 못 맞히는 단어가 계속 앞에 남는 효과도 같이 온다.
+ *
+ * 동률 타이브레이커가 무작위인 이유(#131): #128 후에도 stable sort가 동률 구간에 시트 순서를
+ * 남겼는데, 실데이터는 학습 중 145개 중 126개가 0점 동률이라 점수 정렬이 아무것도 가르지
+ * 못하고 선정이 전적으로 타이브레이커로 결정됐다. 시트는 append-only라 신규 단어가 항상
+ * 꼬리에 있어 큐 진입이 0/10이었다. 무작위 타이브레이커는 오래된 미학습 단어와 신규 단어를
+ * 같은 확률로 경쟁시킨다 — 어느 쪽도 시트 위치 때문에 영구히 밀리지 않는다.
  *
  * modes는 활성 모드 집합 M — 복습·학습 중 모두 이 집합 안에서만 출제한다.
  * rng는 [0,1) 난수 생성기 — 테스트에서 시드 고정용으로 주입한다.
@@ -100,12 +110,19 @@ export function buildSessionQueue<T extends WordProgress>(
     .slice(0, slots.review)
     .map((word) => ({ word, mode: randomMode(modes, rng), isReview: true }));
 
+  // 정렬 전에 섞는다 — toSorted가 stable이라 동점 구간은 이 셔플 순서가 그대로 남아
+  // 타이브레이커가 시트 순서 대신 무작위가 된다(#131). 비교 함수에서 난수를 돌려주는
+  // 방식(rng() - 0.5)은 균등 분포가 아니고 비교 일관성도 깨지므로 쓰지 않는다.
+  // learning은 이 함수가 만든 지역 배열이라(입력 words는 readonly) 제자리 셔플해도 안전하다.
+  shuffle(learning, rng);
+
   // 학습 중 단어는 정의상 M 중 최소 한 모드가 미달 — 미달인 모드로 단어당 1문제만 낸다(#44/#76).
   const learningQuestions: SessionQuestion<T>[] = learning
     .toSorted((a, b) => a.m1 + a.m2 - (b.m1 + b.m2))
     .slice(0, slots.learning)
     .map((word) => ({ word, mode: learningMode(word, modes, rng), isReview: false }));
 
+  // 컷이 끝난 뒤라 이 셔플은 출제 순서만 바꾼다 — 선정에 관여하는 위쪽 셔플과 목적이 다르다.
   const queue = [...reviewQuestions, ...learningQuestions];
   shuffle(queue, rng);
   return queue;
