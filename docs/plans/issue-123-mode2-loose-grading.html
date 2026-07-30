@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>#123 모드2 채점이 대소문자·공백 차이로 오답 처리 — 느슨 채점 도입 — 작업 플랜</title>
+<style>
+  :root {
+    --bg: #f7f7f8; --card: #ffffff; --ink: #1c1c1e; --muted: #6e6e73;
+    --line: #e3e3e6; --accent: #3b6ef5; --accent-soft: #e8eefe;
+    --ok: #2e8b57; --warn: #b25e09; --code-bg: #f0f0f2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161618; --card: #202024; --ink: #ececf0; --muted: #98989f;
+      --line: #333338; --accent: #7a9bff; --accent-soft: #26304a;
+      --ok: #58c088; --warn: #e0a35c; --code-bg: #2a2a2f;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 40px 20px 80px; background: var(--bg); color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+                 "Segoe UI", "Noto Sans KR", sans-serif;
+    line-height: 1.65;
+  }
+  main { max-width: 860px; margin: 0 auto; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code {
+    font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 0.86em;
+    background: var(--code-bg); border-radius: 5px; padding: 2px 6px;
+  }
+  header { margin-bottom: 28px; }
+  .issue-chip {
+    display: inline-block; font-weight: 700; color: var(--accent);
+    background: var(--accent-soft); border-radius: 999px;
+    padding: 3px 14px; font-size: 0.95rem; margin-bottom: 10px;
+  }
+  .type-chip {
+    display: inline-block; font-weight: 600; color: var(--muted);
+    border: 1px solid var(--line); border-radius: 999px;
+    padding: 3px 12px; font-size: 0.8rem; margin-left: 8px; vertical-align: 2px;
+  }
+  h1 { font-size: 1.7rem; margin: 0 0 14px; letter-spacing: -0.02em; }
+  .meta {
+    display: flex; flex-wrap: wrap; gap: 6px 22px;
+    color: var(--muted); font-size: 0.87rem;
+  }
+  .meta b { color: var(--ink); font-weight: 600; }
+  section.card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 24px 28px; margin-top: 18px;
+  }
+  h2 {
+    font-size: 1.05rem; margin: 0 0 14px; letter-spacing: -0.01em;
+    display: flex; align-items: center; gap: 8px;
+  }
+  h2 .no {
+    color: var(--accent); font-size: 0.8rem; font-weight: 700;
+    border: 1.5px solid var(--accent); border-radius: 6px; padding: 0 6px;
+  }
+  ul, ol { margin: 0; padding-left: 22px; }
+  li { margin: 6px 0; }
+  .steps { list-style: none; padding: 0; counter-reset: step; }
+  .steps li {
+    counter-increment: step; position: relative; padding: 10px 0 10px 44px;
+    border-bottom: 1px dashed var(--line);
+  }
+  .steps li:last-child { border-bottom: none; }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 10px;
+    width: 28px; height: 28px; border-radius: 8px; background: var(--accent-soft);
+    color: var(--accent); font-weight: 700; font-size: 0.85rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .steps li.done::before { content: "✓"; background: var(--ok); color: #fff; }
+  .steps .files { display: block; margin-top: 4px; font-size: 0.85rem; color: var(--muted); }
+  .steps .note { display: block; margin-top: 4px; font-size: 0.85rem; color: var(--warn); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 0.82rem; }
+  .done-list { list-style: none; padding: 0; }
+  .done-list li { padding-left: 30px; position: relative; }
+  .done-list li::before {
+    content: ""; position: absolute; left: 2px; top: 7px; width: 15px; height: 15px;
+    border: 2px solid var(--ok); border-radius: 5px;
+  }
+  .scroll-x { overflow-x: auto; }
+  footer { margin-top: 30px; color: var(--muted); font-size: 0.8rem; text-align: center; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <span class="issue-chip"><a href="https://github.com/damdam6/vocabulary-study/issues/123">#123</a></span><span class="type-chip">기능 개선</span>
+    <h1>모드2 채점이 대소문자·공백 차이로 오답 처리 — 느슨 채점 도입</h1>
+    <div class="meta">
+      <span><b>damdam6/vocabulary-study</b></span>
+      <span>브랜치 <b><code>feat/123-mode2-loose-grading</code></b> ← <code>main</code></span>
+      <span>라벨 <b>enhancement</b></span>
+      <span>2026-07-30</span>
+    </div>
+  </header>
+
+  <section class="card">
+    <h2><span class="no">1</span>요약</h2>
+    <p>모드2 채점(<code>gradeMode2</code>)은 트림 후 정확 일치만 보므로 영어 등 generic 콘텐츠에서 <code>Apple</code>/<code>apple</code>, 내부 공백 2칸, NFC/NFD 표기 차이가 전부 오답이 된다. 비교 직전에 입력과 정답 양쪽에 동일한 정규화(NFC → 소문자화 → 트림+내부 공백 축약)를 적용해 의미상 같은 답을 정답 처리한다. 콘텐츠 타입 분기 없이 전 프로필 공통이며, 한자에는 대소문자·공백 개념이 없어 zh 동작은 사실상 불변이다. "느슨 채점 보류"를 명시한 PRD 문구 3곳도 이번 결정으로 개정한다.</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">2</span>현황 분석</h2>
+    <p>모드2 채점 경로는 단일 지점이다:</p>
+    <ul>
+      <li><code>src/lib/studySession.ts:34-37</code> — <code>gradeMode2(input, hanzi)</code>: <code>const answer = input.trim(); return { correct: answer !== "" &amp;&amp; answer === hanzi, answer }</code>. 트림 외 어떤 정규화도 없다.</li>
+      <li><code>src/screens/Mode2Card.tsx:29</code> — 유일한 호출처. 제출 시 <code>gradeMode2(value, word.hanzi)</code>를 부르고, 오답이면 반환된 <code>answer</code>(트림된 원입력)를 <code>wrongAnswer</code>로 저장해 결과 화면의 "내 답" 취소선 표시(<code>Mode2Card.tsx:46-50</code>)에 그대로 쓴다.</li>
+      <li>기존 테스트 <code>src/lib/studySession.test.ts:44-69</code> — 정확 일치·트림·빈 입력·병음·부분 일치·이체자 케이스가 고정돼 있다. 모두 zh 케이스라 느슨 채점 도입 후에도 판정이 바뀌지 않는다.</li>
+      <li>문서 3곳이 "느슨 채점 도입 안 함"을 못박고 있다: <code>docs/PRD.md</code> §5.2(3번 단계 "정확 일치"), <code>docs/PRD-general.md:104</code>(§4.2)와 <code>docs/PRD-general.md:202</code>(Q6 — "generic + 모드 2를 실제로 쓰게 되면 재론"), <code>docs/design-prd.md:109</code>(§4.3 채점 줄). 이슈가 바로 그 재론 시점을 선언했다.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">3</span>설계</h2>
+    <ul>
+      <li><b>정규화 함수</b>: <code>studySession.ts</code>에 내부 헬퍼로 <code>normalize("NFC")</code> → <code>toLowerCase()</code> → <code>trim()</code> + <code>replace(/\s+/g, " ")</code>를 순서대로 적용하는 함수를 두고, <code>gradeMode2</code>가 입력과 표제어 <b>양쪽</b>에 동일하게 적용한 값으로 비교한다.</li>
+      <li><b>반환값 불변</b>: <code>answer</code>는 기존대로 트림된 원입력을 유지한다 — 정규화 값은 비교에만 쓰고, "내 답" 표시(<code>Mode2Card.tsx</code>)는 사용자가 친 표기를 보존한다. 호출부 시그니처 변경 없음.</li>
+      <li><b>빈 입력 규칙 유지</b>: 트림 결과가 빈 문자열이면 오답 — 기존 <code>answer !== ""</code> 조건을 그대로 둔다.</li>
+      <li><b>분기 없음</b>: <code>contentType</code>을 받지 않는다. 한자는 대소문자·연속 공백이 실질적으로 없고 NFC 정규화는 무해해서 zh 판정 결과가 달라질 입력이 사실상 없다 (기존 테스트가 회귀 방지로 그대로 증명).</li>
+      <li><b>기각한 대안</b> — generic 전용 분기: 채점기가 <code>contentType</code>을 알아야 해 호출 계약이 넓어지는데, zh에 느슨 채점을 적용해도 동작이 변하지 않으므로 분기의 실익이 없다 (이슈도 "분기 없음"을 명시).</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">4</span>작업 단계</h2>
+    <ol class="steps">
+      <li class="done">「구현」 <code>gradeMode2</code>에 느슨 채점 도입 — NFC·소문자화·공백 정규화(트림+내부 연속 공백 1개화)를 입력·표제어 양쪽에 적용하는 내부 헬퍼를 추가하고 비교식을 교체. <code>answer</code> 반환은 트림 원입력 유지, 빈 입력 오답 유지. 함수 주석의 "정확 일치" 서술을 #123 느슨 채점 규칙으로 갱신.
+        <span class="files"><code>src/lib/studySession.ts</code></span>
+      </li>
+      <li class="done">「테스트」 느슨 채점 케이스 추가 — <code>Apple</code>/<code>apple</code>(대소문자), <code>ice&nbsp;&nbsp;cream</code>/<code>ice cream</code>(내부 공백 축약), NFD 입력/NFC 정답 쌍(<code>"café".normalize("NFD")</code> 형태), 그리고 오답 시 <code>answer</code>가 트림 원입력(대소문자 보존)임을 고정. 기존 zh 케이스(병음·부분 일치·이체자·빈 입력)는 그대로 통과해야 한다.
+        <span class="files"><code>src/lib/studySession.test.ts</code></span>
+      </li>
+      <li class="done">「문서」 "느슨 채점 도입 안 함" 문구 3곳 개정 — PRD §5.2 채점 단계를 정규화 후 비교로 갱신, PRD-general §4.2·Q6에 재론 결과(#123 도입) 기록, design-prd §4.3 채점 줄 갱신.
+        <span class="files"><code>docs/PRD.md</code>, <code>docs/PRD-general.md</code>, <code>docs/design-prd.md</code></span>
+      </li>
+      <li class="done">「검증」 전체 테스트·빌드 — <code>npm test</code>(vitest run)와 <code>npm run build</code>(tsc -b + vite build), <code>npm run lint</code>(oxlint) 통과 확인.
+        <span class="files"><code>package.json</code> scripts</span>
+        <span class="note">참고: 워크트리 node_modules에 jsdom이 빠져 있어 <code>pnpm install</code> 선행 — 이후 32파일 421테스트 전부 통과, 빌드·린트 그린.</span>
+      </li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">5</span>리스크</h2>
+    <div class="scroll-x">
+    <table>
+      <thead><tr><th>리스크</th><th>영향</th><th>완화책</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>느슨 채점이 zh 판정을 바꿀 가능성</td>
+          <td>한자 오답이 정답 처리되면 학습 기록 오염</td>
+          <td>한자에는 대소문자·연속 공백이 없고 NFC는 무해 — 기존 zh 테스트(병음·부분 일치·이체자) 전부 유지로 회귀 고정</td>
+        </tr>
+        <tr>
+          <td><code>toLowerCase()</code>의 로케일 특수 케이스 (터키어 İ 등)</td>
+          <td>특정 언어 표제어에서 예상 밖 판정</td>
+          <td>현재 콘텐츠는 zh·영어뿐이라 실사용 영향 없음 — 로케일 민감 비교(<code>localeCompare</code>)는 과설계로 도입하지 않음</td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">6</span>테스트 계획</h2>
+    <ul>
+      <li><code>npm test</code> — 신규 케이스: <code>gradeMode2("Apple", "apple")</code> 정답, <code>gradeMode2("ice  cream", "ice cream")</code> 정답, NFD 입력 vs NFC 정답 정답, 오답 시 <code>answer</code>가 트림 원입력 그대로인지.</li>
+      <li><code>npm test</code> — 기존 회귀: zh 정확 일치·트림·빈 입력·병음·부분 일치·이체자 케이스 전부 통과 (느슨 채점이 zh 판정을 바꾸지 않음을 증명).</li>
+      <li><code>npm run build</code> + <code>npm run lint</code> — 타입·린트 통과.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">7</span>완료 조건</h2>
+    <ul class="done-list">
+      <li><code>gradeMode2</code>가 NFC·소문자화·공백 정규화 후 비교하며, 정규화는 입력·정답 양쪽에 동일 적용된다</li>
+      <li><code>Apple</code>/<code>apple</code>, <code>ice&nbsp;&nbsp;cream</code>/<code>ice cream</code>, NFC/NFD 쌍이 정답 처리되는 테스트가 <code>studySession.test.ts</code>에 추가되고 통과한다</li>
+      <li>오답 결과 화면의 "내 답"은 트림된 원래 입력 그대로 표시된다 (정규화 값은 비교 전용)</li>
+      <li>빈 입력 = 오답 규칙과 기존 zh 채점 테스트가 전부 유지·통과한다</li>
+      <li>PRD·PRD-general·design-prd의 "느슨 채점 보류" 문구가 #123 결정으로 개정된다</li>
+    </ul>
+  </section>
+
+  <footer>issue-plan · <a href="https://github.com/damdam6/vocabulary-study/issues/123">#123</a> · 2026-07-30</footer>
+</main>
+</body>
+</html>
