@@ -56,12 +56,40 @@ export async function getSheetTitles(env: Env, sheetId: string): Promise<string[
     .filter((title): title is string => !!title);
 }
 
+// Sheets API batchUpdate request 형태 — 이 코드베이스가 실제로 보내는 두 종류만 다룬다.
+// https://developers.google.com/workspace/sheets/api/reference/rest/v4/spreadsheets/batchUpdate
+export interface AddSheetRequest {
+  addSheet: {
+    properties: {
+      title: string;
+      sheetId?: number;
+      gridProperties?: { frozenRowCount?: number };
+    };
+  };
+}
+
+export interface RepeatCellRequest {
+  repeatCell: {
+    range: {
+      sheetId: number;
+      startRowIndex?: number;
+      endRowIndex?: number;
+      startColumnIndex?: number;
+      endColumnIndex?: number;
+    };
+    cell: { userEnteredFormat: { backgroundColor: { red: number; green: number; blue: number } } };
+    fields: string;
+  };
+}
+
+export type SpreadsheetRequest = AddSheetRequest | RepeatCellRequest;
+
 // 값(`/values:batchUpdate`)이 아니라 스프레드시트 구조·서식을 바꾸는 별도 엔드포인트.
 /** 구조/서식 request 배열을 한 번의 batchUpdate로 전송한다. request는 배열 순서대로 처리된다. */
 export async function batchUpdateSpreadsheet(
   env: Env,
   sheetId: string,
-  requests: object[],
+  requests: SpreadsheetRequest[],
 ): Promise<void> {
   await sheetsFetch(env, sheetId, "POST", ":batchUpdate", { requests });
 }

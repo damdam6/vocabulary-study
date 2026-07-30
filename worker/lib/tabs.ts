@@ -9,7 +9,7 @@
  * 무서식 addSheet를 그대로 쓴다.
  */
 
-import { batchUpdateSpreadsheet, getValues, updateValues } from "./sheets.ts";
+import { batchUpdateSpreadsheet, getValues, updateValues, type RepeatCellRequest } from "./sheets.ts";
 import { DEFAULT_TAB_HEADERS } from "./register.ts";
 import type { ContentType } from "./profiles.ts";
 
@@ -27,7 +27,7 @@ const RECORD_GRAY: Rgb = { red: 102 / 255, green: 102 / 255, blue: 102 / 255 }; 
 const BG_FIELDS = "userEnteredFormat.backgroundColor";
 
 // 1행 헤더 셀 하나(column, 0-기준)에 배경색을 칠하는 repeatCell request.
-function headerBackground(gid: number, column: number, color: Rgb): object {
+function headerBackground(gid: number, column: number, color: Rgb): RepeatCellRequest {
   return {
     repeatCell: {
       range: {
