@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>#131 신규 단어가 여전히 안 나온다 — 동률 구간 타이브레이커 무작위화 — 작업 플랜</title>
+<style>
+  :root {
+    --bg: #f7f7f8; --card: #ffffff; --ink: #1c1c1e; --muted: #6e6e73;
+    --line: #e3e3e6; --accent: #3b6ef5; --accent-soft: #e8eefe;
+    --ok: #2e8b57; --warn: #b25e09; --code-bg: #f0f0f2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161618; --card: #202024; --ink: #ececf0; --muted: #98989f;
+      --line: #333338; --accent: #7a9bff; --accent-soft: #26304a;
+      --ok: #58c088; --warn: #e0a35c; --code-bg: #2a2a2f;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 40px 20px 80px; background: var(--bg); color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+                 "Segoe UI", "Noto Sans KR", sans-serif;
+    line-height: 1.65;
+  }
+  main { max-width: 860px; margin: 0 auto; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code {
+    font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 0.86em;
+    background: var(--code-bg); border-radius: 5px; padding: 2px 6px;
+  }
+  pre {
+    background: var(--code-bg); border: 1px solid var(--line); border-radius: 10px;
+    padding: 14px 16px; overflow-x: auto; font-size: 0.84rem; line-height: 1.5;
+    font-family: "SF Mono", ui-monospace, Menlo, monospace;
+  }
+  pre code { background: none; padding: 0; font-size: 1em; }
+  header { margin-bottom: 28px; }
+  .issue-chip {
+    display: inline-block; font-weight: 700; color: var(--accent);
+    background: var(--accent-soft); border-radius: 999px;
+    padding: 3px 14px; font-size: 0.95rem; margin-bottom: 10px;
+  }
+  .type-chip {
+    display: inline-block; font-weight: 600; color: var(--muted);
+    border: 1px solid var(--line); border-radius: 999px;
+    padding: 3px 12px; font-size: 0.8rem; margin-left: 8px; vertical-align: 2px;
+  }
+  h1 { font-size: 1.7rem; margin: 0 0 14px; letter-spacing: -0.02em; }
+  .meta {
+    display: flex; flex-wrap: wrap; gap: 6px 22px;
+    color: var(--muted); font-size: 0.87rem;
+  }
+  .meta b { color: var(--ink); font-weight: 600; }
+  section.card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 24px 28px; margin-top: 18px;
+  }
+  h2 {
+    font-size: 1.05rem; margin: 0 0 14px; letter-spacing: -0.01em;
+    display: flex; align-items: center; gap: 8px;
+  }
+  h2 .no {
+    color: var(--accent); font-size: 0.8rem; font-weight: 700;
+    border: 1.5px solid var(--accent); border-radius: 6px; padding: 0 6px;
+  }
+  h3 { font-size: 0.92rem; margin: 18px 0 8px; color: var(--muted); letter-spacing: 0.01em; }
+  ul, ol { margin: 0; padding-left: 22px; }
+  li { margin: 6px 0; }
+  .steps { list-style: none; padding: 0; counter-reset: step; }
+  .steps li {
+    counter-increment: step; position: relative; padding: 10px 0 10px 44px;
+    border-bottom: 1px dashed var(--line);
+  }
+  .steps li:last-child { border-bottom: none; }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 10px;
+    width: 28px; height: 28px; border-radius: 8px; background: var(--accent-soft);
+    color: var(--accent); font-weight: 700; font-size: 0.85rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .steps .files { display: block; margin-top: 4px; font-size: 0.85rem; color: var(--muted); }
+  .steps li.done::before {
+    content: "✓"; background: var(--ok); color: #fff; border-color: var(--ok);
+  }
+  .steps li.done { color: var(--muted); }
+  .steps li.done > code, .steps li.done b { color: inherit; }
+  .steps .note {
+    display: block; margin-top: 5px; font-size: 0.84rem; color: var(--ok);
+    border-left: 2px solid var(--ok); padding-left: 9px;
+  }
+  .status-banner {
+    background: var(--accent-soft); border: 1px solid var(--accent);
+    border-radius: 12px; padding: 14px 18px; margin-top: 18px; font-size: 0.92rem;
+  }
+  .status-banner b { color: var(--accent); }
+  .metric-table td:first-child { white-space: nowrap; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 0.82rem; }
+  .done-list { list-style: none; padding: 0; }
+  .done-list li { padding-left: 30px; position: relative; }
+  .done-list li::before {
+    content: "✓"; position: absolute; left: 2px; top: 7px; width: 15px; height: 15px;
+    border: 2px solid var(--ok); border-radius: 5px; background: var(--ok); color: #fff;
+    font-size: 11px; line-height: 15px; text-align: center; font-weight: 700;
+  }
+  .scroll-x { overflow-x: auto; }
+  footer { margin-top: 30px; color: var(--muted); font-size: 0.8rem; text-align: center; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <span class="issue-chip"><a href="https://github.com/damdam6/vocabulary-study/issues/131">#131</a></span><span class="type-chip">버그 수정</span>
+    <h1>신규 단어가 여전히 안 나온다 — 동률(0점) 구간 타이브레이커가 시트 순서라 최근 등록분이 뒤로 밀린다 (#128 후속)</h1>
+    <div class="meta">
+      <span><b>damdam6/vocabulary-study</b></span>
+      <span>브랜치 <b><code>fix/131-random-tiebreak-equal-scores</code></b> ← <code>main</code></span>
+      <span>라벨 <b>bug</b></span>
+      <span>2026-07-30</span>
+    </div>
+  </header>
+
+  <div class="status-banner">
+    <b>구현 완료 (2026-07-30).</b> 13단계 전부 완료 · <code>npm test</code> 436 passed · lint·build 초록 ·
+    실데이터 검증 <b>0.00/10 → 2.26/10</b>(진입률 0% → 22.6%).
+  </div>
+
+  <section class="card">
+    <h2><span class="no">1</span>요약</h2>
+    <p>
+      #128이 학습 중 정렬을 <code>D+E</code> 오름차순으로 뒤집었지만, 동률 구간의 타이브레이커가 여전히
+      <b>시트 상 순서</b>다. 실데이터(zh 프로필)는 학습 중 145개 중 <b>126개가 0점 동률</b>이라 실제 선정은
+      전적으로 타이브레이커가 결정하고, 시트가 append-only라 최근 등록분은 항상 꼬리에 있어 큐 진입이 0/10이다.
+      수정은 한 줄이다 — 학습 중 후보 배열에 <b>이미 있는 Fisher–Yates <code>shuffle</code>을 먼저 걸고</b>
+      그 다음 stable 오름차순 정렬을 하면, 점수 축 우선순위는 그대로 두고 동률 구간만 정확히 무작위가 된다.
+      비교 함수에서 난수를 반환하는 방식은 균등 분포가 아니므로 쓰지 않고, <code>rng</code> 주입 경로를 유지해
+      테스트에서 시드를 고정한다.
+    </p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">2</span>현황 분석</h2>
+    <h3>큐 구성 흐름</h3>
+    <ul>
+      <li><code>src/lib/sessionQueue.ts:83-93</code> — <code>words</code>를 <code>getWordState</code>로 분류해
+        <code>reviewDue</code> / <code>learning</code> 두 지역 배열에 담는다. 두 배열 모두 입력 순서를 그대로 물려받고,
+        입력은 <code>GET /api/words</code>가 돌려주는 <b>시트 행 순서</b>다(파일 헤더 주석 <code>sessionQueue.ts:5-6</code>에 명시).</li>
+      <li><code>src/lib/sessionQueue.ts:95</code> — <code>splitSessionSlots(reviewDue.length, learning.length, limit)</code>로
+        상한을 복습/학습에 배분(#128의 복습 몫 30%).</li>
+      <li><code>src/lib/sessionQueue.ts:98-101</code> — 복습 대기는 <code>compareNextReview</code>로 복습일 오래된 순 정렬 후
+        <code>slice(0, slots.review)</code>.</li>
+      <li><code>src/lib/sessionQueue.ts:104-107</code> — <b>문제 지점.</b> 학습 중은
+        <code>toSorted((a, b) =&gt; a.m1 + a.m2 - (b.m1 + b.m2))</code> 오름차순 후 <code>slice(0, slots.learning)</code>.</li>
+      <li><code>src/lib/sessionQueue.ts:109-111</code> — 두 묶음을 합쳐 <code>shuffle(queue, rng)</code>.
+        이 셔플은 <b>이미 선정이 끝난 뒤</b>라 <b>출제 순서만</b> 바꾼다(PRD §6.1-3에 그렇게 적혀 있다).</li>
+    </ul>
+
+    <h3>이미 갖춰져 있는 것</h3>
+    <ul>
+      <li><code>src/lib/sessionQueue.ts:143-149</code> — Fisher–Yates 제자리 <code>shuffle&lt;T&gt;(items, rng)</code>.
+        새로 만들 필요 없이 재사용하면 된다. (이슈 본문은 <code>:103</code> 부근이라 했지만 실제 정의는 <code>:144</code>다.)</li>
+      <li><code>src/lib/sessionQueue.ts:76-82</code> — <code>rng</code>가 5개 인자 중 4번째로 주입돼 있고 기본값이
+        <code>Math.random</code>이다. 프로덕션 호출부는 <code>src/screens/HomeScreen.tsx:84</code> 하나뿐이고
+        <code>undefined</code>를 넘겨 기본값을 쓴다 — <b>주입 경로를 건드릴 이유가 없다.</b></li>
+      <li>테스트는 <code>src/lib/sessionQueue.test.ts:27-36</code>의 <code>mulberry32</code> 시드 생성기를 이미 쓴다.</li>
+    </ul>
+
+    <h3>영향받지 않는 곳</h3>
+    <ul>
+      <li><code>src/lib/homeStats.ts:50</code> — <code>splitSessionSlots(...).total</code>로 <b>개수만</b> 계산한다.
+        셔플은 개수를 바꾸지 않으므로 홈의 "오늘 세션 · n문제" 표시와 큐 길이 불변식
+        (<code>sessionQueue.test.ts:301-319</code>이 지킨다)은 그대로다.</li>
+      <li><code>compareNextReview</code>(<code>sessionQueue.ts:119-130</code>) — 복습 정렬은 손대지 않는다(이슈 지시).</li>
+    </ul>
+
+    <h3>기준선</h3>
+    <p><code>npx vitest run src/lib/sessionQueue.test.ts</code> → 26 passed. 현재 스위트는 전부 초록이며, 그중 2개가
+      의도적으로 "동률이면 시트 순서"를 <b>고정</b>하고 있다(아래 원인 분석 참고).</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">3</span>원인 분석</h2>
+    <h3>근본 원인</h3>
+    <p>
+      <code>Array.prototype.toSorted</code>는 명세상 <b>stable</b>이다. 따라서 <code>sessionQueue.ts:105</code>의
+      비교 함수가 0을 돌려주는 구간(= <code>D+E</code>가 같은 단어들)은 <b>입력 배열 순서가 그대로 보존</b>된다.
+      입력 순서 = 시트 행 순서 = 등록 순서(시트는 append-only)이므로, <b>같은 점수 안에서는 오래된 단어가 항상 이긴다.</b>
+    </p>
+    <p>
+      #128은 "점수 있는 단어 vs 0점 단어" 축만 해소했다. 그런데 실데이터에서 신규 단어의 진짜 경쟁 상대는
+      <b>같은 0점인 오래된 미학습 단어 125개</b>였다. 0점 풀(126)이 학습 슬롯(35)보다 크기 때문에
+      <b>점수 정렬은 아무것도 가르지 못하고 선정이 100% 타이브레이커로 결정</b>된다 — 그래서 오름차순 반전 후에도
+      시트 마지막 10행의 큐 진입이 0/10이었다.
+    </p>
+    <p>
+      이 방향성은 테스트에도 그대로 박제돼 있다 — <code>sessionQueue.test.ts:104-116</code>
+      ("총 정답 수가 동률이면 시트 상 순서를 따른다")와 <code>sessionQueue.test.ts:265-268</code>
+      ("<code>신0</code>·<code>신34</code>는 포함, <code>신35</code>는 제외")가 현재 동작을 <b>의도된 계약으로</b> 못박고 있다.
+      두 테스트는 이번 개정에서 반드시 다시 써야 한다.
+    </p>
+
+    <h3>채택 설계 — 먼저 섞고, 그 다음 stable 정렬</h3>
+    <pre><code>// 현재 (sessionQueue.ts:104-107)
+const learningQuestions = learning
+  .toSorted((a, b) =&gt; a.m1 + a.m2 - (b.m1 + b.m2))
+  .slice(0, slots.learning)
+  .map(...);
+
+// 개정
+shuffle(learning, rng);              // ← 동률 구간의 타이브레이커를 무작위로 (#131)
+const learningQuestions = learning
+  .toSorted((a, b) =&gt; a.m1 + a.m2 - (b.m1 + b.m2))   // stable → 동점끼리는 셔플 순서 유지
+  .slice(0, slots.learning)
+  .map(...);</code></pre>
+    <ul>
+      <li><b>점수 축은 완전 불변</b> — 비교 함수를 건드리지 않으므로 낮은 점수가 높은 점수를 이기는 우선순위는 그대로다.
+        셔플은 오직 비교 함수가 0을 돌려주는 구간에만 영향을 준다.</li>
+      <li><b>제자리 셔플이 안전한 이유</b> — <code>learning</code>은 <code>:84</code>에서 함수 안에 새로 만든 지역 배열이다.
+        입력 <code>words</code>는 <code>readonly T[]</code>이고 원소 참조만 담기므로 호출자 배열이 재배열되지 않는다.</li>
+      <li><b>넣는 위치</b> — 복습 문제 생성(<code>:98-101</code>) 다음, 학습 정렬 바로 앞. 학습 슬롯 계산(<code>:95</code>)은
+        개수만 쓰므로 순서와 무관하다.</li>
+    </ul>
+
+    <h3>배제한 대안</h3>
+    <ul>
+      <li><b>비교 함수에 난수</b> (<code>toSorted((a,b) =&gt; rng() - 0.5)</code>) — 균등 분포가 아니고, 비교의 일관성
+        (transitivity)을 깨서 엔진의 정렬 구현에 따라 결과가 달라진다. 이슈에서 명시적으로 금지.</li>
+      <li><b><code>slice</code> 이후 셔플</b> — 이미 선정이 끝난 뒤라 <b>출제 순서만</b> 바뀐다. <code>:110</code>의 기존 전체 셔플이
+        정확히 그것이고, 이 버그를 못 고친다. 무작위성은 반드시 <b>컷 이전</b>에 들어가야 한다.</li>
+      <li><b>등록 타임스탬프 역순 정렬</b> — 최근 등록을 앞으로 당기지만 오래된 미학습 단어가 대신 영구히 굶는다.
+        (소유자 결정: 어느 쪽도 편들지 않는 무작위.)</li>
+      <li><b>신규 단어 전용 쿼터</b> — "신규"의 경계를 새로 정의해야 하고 PRD에 개념이 하나 늘어난다.
+        126개 동률 풀에서는 무작위만으로 충분하다(35/126 ≈ 27.8%/세션, 기대 재등장 ~3.6세션).</li>
+    </ul>
+
+    <h3>부수 효과 하나 — rng 스트림</h3>
+    <p>
+      새 셔플이 <code>learningMode</code>·최종 <code>shuffle</code>보다 먼저 <code>rng</code>를 소비하므로,
+      시드를 고정한 기존 테스트의 하류 난수 값이 밀린다. 다만 실제로 영향받는 건
+      <b>특정 시드 결과에 의존하는 단언뿐</b>이다 — <code>() =&gt; 0</code> 같은 상수 rng 테스트와
+      후보가 1개 이하인 테스트는 무영향이다(길이 ≤ 1 배열에서는 Fisher–Yates 루프가 한 번도 안 돌아 난수를 뽑지 않는다).
+      깨질 것으로 예상되는 건 위에서 지목한 2개다.
+    </p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">4</span>작업 단계</h2>
+    <ol class="steps">
+      <li class="done">학습 중 정렬 앞에 <code>shuffle(learning, rng)</code>를 넣는다. 왜 "먼저 섞고 stable 정렬"인지,
+        왜 비교 함수 난수를 안 쓰는지를 주석으로 남긴다(주변 주석 밀도에 맞춰 2~3줄).
+        <span class="files"><code>src/lib/sessionQueue.ts:113-117</code></span>
+        <span class="note">완료 — 주석 4줄(셔플 이유 / 비교 함수 난수 배제 / 제자리 셔플 안전성).</span>
+      </li>
+      <li class="done">파일 헤더 주석의 "동률 정렬은 stable sort로 이 순서를 보존"을 개정한다 — 시트 순서 보존은 이제
+        <b>복습 대기에만</b> 해당한다.
+        <span class="files"><code>src/lib/sessionQueue.ts:5-7</code></span>
+        <span class="note">완료.</span>
+      </li>
+      <li class="done"><code>buildSessionQueue</code> 독블록의 ③단계 설명에 "동률은 무작위(#131)"를 반영하고,
+        ③의 <b>선정 셔플</b>과 ④의 <b>출제 순서 셔플</b>이 서로 다른 목적임을 한 줄로 구분한다.
+        <span class="files"><code>src/lib/sessionQueue.ts:59-85</code></span>
+        <span class="note">완료 — 독블록에 두 셔플 구분 문단 + 타이브레이커 개정 사유 문단을 추가하고,
+          <code>:125</code>의 최종 셔플에도 "컷 이후라 출제 순서만" 인라인 주석을 달았다(플랜 범위 밖 1줄).</span>
+      </li>
+      <li class="done">기존 테스트 "총 정답 수가 동률이면 시트 상 순서를 따른다 (stable sort)"를
+        <b>"동률이면 무작위"</b>로 다시 쓴다 — <code>limit=1</code>·동률 2개에서 시드를 훑으면 양쪽 모두 이기는 시드가 존재한다.
+        <span class="files"><code>src/lib/sessionQueue.test.ts:104-121</code></span>
+        <span class="note">완료 — 시드 1~20의 승자 집합이 <code>{동앞, 동뒤}</code>임을 단언.
+          <b>주의:</b> 이 테스트는 수정 전에도 <code>mulberry32(2)</code> 단일 시드에서는 우연히 통과했다 —
+          시드 스윕으로 바꿔야 실제로 회귀를 잡는다.</span>
+      </li>
+      <li class="done">기존 테스트 "실측 분포(학습 145 / 상한 35)"의 위치 기반 단언(<code>신0</code> 포함 / <code>신35</code> 제외)을 걷어낸다.
+        <b>"큐가 전부 0점"</b>이라는 점수 축 단언은 그대로 유지한다 — 그게 #128의 계약이다.
+        <span class="files"><code>src/lib/sessionQueue.test.ts:250-266</code></span>
+        <span class="note">완료 — 전체 스위트에서 수정 후 실제로 깨진 기존 테스트는 이 1개뿐이었다(예상대로).</span>
+      </li>
+      <li class="done">신규 테스트 ①: <b>시드를 달리하면 동점 단어 중 큐에 드는 조합이 달라진다</b>
+        — 같은 입력·다른 시드로 두 큐를 만들어 선정 집합이 서로 다름을 확인.
+        <span class="files"><code>src/lib/sessionQueue.test.ts</code> — describe "동률 구간 무작위 타이브레이커 (#131)"</span>
+        <span class="note">완료.</span>
+      </li>
+      <li class="done">신규 테스트 ②(회귀 고정): <b>시트 뒤쪽(최근 등록) 0점 단어도 큐에 들 수 있다</b>
+        — 이슈 실측 형태(0점 126 / 상한 35)로 여러 시드를 돌려 마지막 10개 중 최소 하나가 들어오는 시드가 있음을 확인.
+        #128이 놓친 축을 못박는다.
+        <span class="files"><code>src/lib/sessionQueue.test.ts</code></span>
+        <span class="note">완료 — 계획보다 강한 단언으로 갔다: 시드 1~50에서 꼬리 10개가 <b>전부</b> 최소 한 번씩 뽑힌다.</span>
+      </li>
+      <li class="done">신규 테스트 ③: <b>점수 오름차순 우선순위는 불변</b>
+        — 낮은 점수 단어가 높은 점수 단어를 <b>모든 시드에서</b> 이긴다(셔플이 점수 축을 침범하지 않음을 고정).
+        <span class="files"><code>src/lib/sessionQueue.test.ts</code></span>
+        <span class="note">완료 — 설계대로 수정 전/후 모두 통과하는 불변식 테스트다.</span>
+      </li>
+      <li class="done">PRD §6.1-2 정렬 문구 <code>"동률이면 시트 상 순서"</code> → <code>"동률이면 무작위"</code>로 개정하고,
+        기존 관행대로 개정 사유 주석 <em>(2026-07-30 개정 … #131)</em>을 단다.
+        <span class="files"><code>docs/PRD.md:168-169</code></span>
+        <span class="note">완료 — 재개정 주석 + "먼저 섞고 나서 안정 정렬" 구현 지침 한 줄을 같이 넣었다.</span>
+      </li>
+      <li class="done">PRD §6.1-3의 "셔플은 출제 순서만 바꾸고 어떤 단어가 뽑히는지에는 관여하지 않는다"를 보강한다 —
+        이제 <b>선정 단계의 셔플(2단계, 동률 타이브레이커)</b>과 <b>출제 순서 셔플(3단계)</b> 둘이 존재한다.
+        <span class="files"><code>docs/PRD.md</code> §6.1-3</span>
+        <span class="note">완료.</span>
+      </li>
+      <li class="done">PRD §12 결정표의 "학습 중 단어 출제 순서" 행에 타이브레이커 개정을 추가한다
+        (근거: 0점 동률 풀이 슬롯보다 크면 선정이 100% 타이브레이커로 결정된다, #131).
+        <span class="files"><code>docs/PRD.md</code> §12</span>
+        <span class="note">완료 — 기존 행 수정 대신 <b>"학습 중 동률(같은 D+E) 타이브레이커"</b> 신규 행으로 분리했다.
+          #128(정렬 축)과 #131(타이브레이커 축)은 서로 다른 결정이라 한 행에 섞으면 이력이 뭉개진다.</span>
+      </li>
+      <li class="done">검증: <code>npm test</code> / <code>npm run lint</code> / <code>npm run build</code> 전부 초록.
+        <span class="files">저장소 루트</span>
+        <span class="note">완료 — 32 파일 / <b>436 tests passed</b>, oxlint 무경고, <code>tsc -b</code> + vite build 성공.
+          추가로 <code>shuffle</code>을 임시 비활성화해 신규 테스트 3개가 <b>수정 없이는 실제로 실패</b>함을 확인했다.</span>
+      </li>
+      <li class="done">실데이터 확인: 스크래치패드에 시뮬레이션 스크립트를 만들어(커밋하지 않음) 메인 체크아웃의
+        <code>.secret/</code> 서비스 계정 키로 시트를 읽고, 실제 상한으로 여러 시드를 돌려
+        <b>시트 마지막 10행의 큐 진입률</b>을 측정한다 — 0/10 → 기대 ~27.8%/세션.
+        <span class="files">스크래치패드 (저장소 밖)</span>
+        <span class="note">완료 — 실시트 직접 조회(탭 HSK6급·HSK유의어·새탭테스트, 단어 150 / 0점 126 / 상한 35).
+          결과는 아래 §8 참고. 대체 데이터는 쓰지 않았다.</span>
+      </li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">5</span>리스크</h2>
+    <div class="scroll-x">
+    <table>
+      <thead><tr><th>리스크</th><th>영향</th><th>완화책</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>새 셔플이 <code>rng</code>를 먼저 소비해 시드 고정 테스트의 하류 난수가 밀린다</td>
+          <td>기존 테스트가 예기치 않게 깨질 수 있다</td>
+          <td>상수 rng(<code>() =&gt; 0</code>)·단일 후보 테스트는 구조적으로 무영향(길이 ≤ 1이면 난수를 안 뽑는다).
+            깨질 것으로 지목한 2개는 단계 4·5에서 의도적으로 개정한다. 전체 <code>npm test</code>로 나머지를 확인.</td>
+        </tr>
+        <tr>
+          <td>세션마다 0점 조합이 바뀌어 같은 단어를 연속으로 못 볼 수 있다</td>
+          <td>단어별 학습 연속성이 낮아진다</td>
+          <td>소유자 명시 결정(2026-07-30). 35/126 ≈ 27.8%/세션이라 기대 재등장 간격 ~3.6세션이고,
+            정답을 맞힌 단어는 점수가 올라 자연히 뒤 그룹으로 빠진다. 코드 대응 없음.</td>
+        </tr>
+        <tr>
+          <td>복습 대기 동률(같은 복습일)은 여전히 시트 순서다</td>
+          <td>같은 날짜 복습이 복습 몫을 넘으면 시트 뒤쪽 단어가 밀린다 — 같은 종류의 편향</td>
+          <td>이슈가 <code>compareNextReview</code>를 손대지 말라고 명시했으므로 이번 범위 밖.
+            실사용에서 문제가 확인되면 후속 이슈로 분리한다.</td>
+        </tr>
+        <tr>
+          <td>홈 표시 문제 수와 실제 큐 길이가 어긋난다</td>
+          <td>없음 — 셔플은 개수를 바꾸지 않고 <code>homeStats</code>는 <code>splitSessionSlots</code>만 쓴다</td>
+          <td>기존 불변식 테스트(<code>sessionQueue.test.ts:301-319</code>)가 그대로 지킨다. 신규 검증 불필요.</td>
+        </tr>
+        <tr>
+          <td>실데이터 검증 경로(<code>.secret/</code>)가 워크트리에 없다</td>
+          <td>마지막 완료 조건을 못 채울 수 있다</td>
+          <td>키는 메인 체크아웃 <code>.secret/</code>에 있으므로 절대 경로로 읽는다. 실패 시 이슈 기록 분포로 대체하고 명시.</td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">6</span>테스트 계획</h2>
+    <ul>
+      <li><b>회귀(버그 재현 불가)</b> — 0점 126 / 상한 35 구성에서 시트 마지막 10개 단어가 여러 시드에 걸쳐 큐에 들어온다.
+        수정 전에는 어떤 시드에서도 0/10이므로, 이 테스트가 <code>fix</code> 없이 실패하는지 먼저 확인한다.</li>
+      <li><b>무작위성</b> — 같은 입력에 서로 다른 시드 두 개를 넣으면 선정된 0점 단어 집합이 달라진다.</li>
+      <li><b>동률 타이브레이커</b> — 동률 2개 / <code>limit=1</code>에서 시드를 훑으면 앞·뒤 단어가 각각 이기는 시드가 모두 존재한다
+        (수정 전에는 항상 앞 단어).</li>
+      <li><b>점수 축 불변(기존 동작 보존)</b> — 낮은 점수가 높은 점수를 모든 시드에서 이긴다.
+        기존 <code>#128</code> 테스트("신규 단어 최우선", "실측 분포에서 큐가 전부 0점")도 계속 통과해야 한다.</li>
+      <li><b>복습 경로 불변</b> — 복습 대기 정렬·복습 몫 30%·<code>limit</code> 파라미터화 테스트가 전부 그대로 통과
+        (<code>npx vitest run src/lib/sessionQueue.test.ts</code>, 기준선 26 passed 이상).</li>
+      <li><b>홈 불변식</b> — <code>computeHomeStats</code>의 <code>sessionCount</code> == 큐 길이 조합 테스트 통과.</li>
+      <li><b>전체 스위트 · 타입 · 린트</b> — <code>npm test</code>, <code>npm run build</code>(<code>tsc -b</code>), <code>npm run lint</code>.</li>
+      <li><b>실데이터 시뮬레이션</b> — 실제 시트 단어로 여러 시드를 돌려 마지막 10행 진입률을 측정,
+        0/10 → 유의하게 상승(기대 ~27.8%/세션)함을 수치로 보고한다.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">7</span>완료 조건</h2>
+    <ul class="done-list">
+      <li>학습 중 동률 구간이 무작위 순서 — <b>셔플 후 stable 오름차순 정렬</b>로 구현, <code>rng</code> 주입 유지
+        (<code>Math.random</code> 직접 호출 없음, 비교 함수 난수 없음)</li>
+      <li><code>sessionQueue</code> 테스트: 시드를 달리하면 동점 단어 중 큐에 드는 조합이 달라진다</li>
+      <li><code>sessionQueue</code> 테스트: 시트 뒤쪽(최근 등록) 0점 단어도 큐에 들 수 있다 — #128이 놓친 회귀를 고정</li>
+      <li><code>sessionQueue</code> 테스트: 점수 오름차순 우선순위 자체는 불변(낮은 점수가 높은 점수보다 먼저)</li>
+      <li>시트 순서를 계약으로 못박던 기존 테스트 2개(<code>:104</code>, <code>:250</code>)가 새 계약으로 개정됨</li>
+      <li><code>docs/PRD.md</code> §6.1-2 "동률이면 시트 상 순서" → "동률이면 무작위" 개정 + §6.1-3 셔플 설명 보강 + §12 결정표 갱신</li>
+      <li><code>compareNextReview</code>(복습 정렬)와 <code>splitSessionSlots</code>(복습 몫 30%)는 무변경</li>
+      <li><code>npm test</code> / <code>npm run lint</code> / <code>npm run build</code> 전부 초록</li>
+      <li>실데이터 기준 확인 — 시트 마지막 10행의 큐 진입이 <b>0.00/10 → 2.26/10</b>(0% → 22.6%),
+        출제 자격 있는 8개는 8개 전부 진입 (§8)</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">8</span>실데이터 검증 결과</h2>
+    <p>
+      zh 프로필 시트를 서비스 계정으로 직접 읽어(탭 <code>HSK6급</code>·<code>HSK유의어</code>·<code>새탭테스트</code>,
+      단어 150 / 0점 126 / 상한 35), 같은 데이터에 시드 200회를 돌려 <b>시트 마지막 10행의 큐 진입</b>을 측정했다.
+      수정 전/후는 <code>shuffle(learning, rng)</code> 한 줄의 유무만 다르다.
+    </p>
+    <div class="scroll-x">
+    <table class="metric-table">
+      <thead><tr><th></th><th>세션당 평균 진입</th><th>진입률</th><th>200회 중 한 번이라도 진입</th></tr></thead>
+      <tbody>
+        <tr><td><b>수정 전</b></td><td>0.00 / 10</td><td>0.0%</td><td>0 / 10</td></tr>
+        <tr><td><b>수정 후</b></td><td>2.26 / 10</td><td>22.6%</td><td>8 / 10</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p>
+      <b>진입하지 않은 2개는 버그가 아니라 설계대로다</b> — 꼬리 10행을 개별 확인한 결과:
+    </p>
+    <ul>
+      <li><code>容易</code> (m1=3, m2=1) — 학습 중이지만 <code>D+E=4</code>라 0점 126개에 밀린다.
+        0점 풀이 학습 슬롯보다 큰 동안 점수 있는 단어는 안 들어오는 게 <b>#128의 계약</b>이다.</li>
+      <li><code>简单</code> (m1=3, m2=3, 복습일 2026-07-31) — <b>복습 예약(복습일 미도래)</b>이라 큐에서 제외(§5.1).</li>
+    </ul>
+    <p>
+      즉 <b>출제 자격이 있는 꼬리 단어 8개는 8개 전부</b> 진입한다. 자격 있는 8개 기준 세션당 진입률은
+      2.26 ÷ 8 ≈ <b>28.3%</b>로, 이론값 35/126 ≈ 27.8%와 일치한다 — 신규 단어가 오래된 미학습 단어와
+      정확히 같은 확률로 경쟁하고 있다는 뜻이다.
+    </p>
+  </section>
+
+  <footer>issue-plan · <a href="https://github.com/damdam6/vocabulary-study/issues/131">#131</a> · 2026-07-30</footer>
+</main>
+</body>
+</html>
