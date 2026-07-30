@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>#128 새로 등록한 단어가 세션에 안 나온다 — 학습 중 큐가 '총 정답 수 많은 순'이라 신규 단어(0점)가 상한 밖으로 밀린다 — 작업 플랜</title>
+<style>
+  :root {
+    --bg: #f7f7f8; --card: #ffffff; --ink: #1c1c1e; --muted: #6e6e73;
+    --line: #e3e3e6; --accent: #3b6ef5; --accent-soft: #e8eefe;
+    --ok: #2e8b57; --warn: #b25e09; --code-bg: #f0f0f2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161618; --card: #202024; --ink: #ececf0; --muted: #98989f;
+      --line: #333338; --accent: #7a9bff; --accent-soft: #26304a;
+      --ok: #58c088; --warn: #e0a35c; --code-bg: #2a2a2f;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 40px 20px 80px; background: var(--bg); color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+                 "Segoe UI", "Noto Sans KR", sans-serif;
+    line-height: 1.65;
+  }
+  main { max-width: 860px; margin: 0 auto; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code {
+    font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 0.86em;
+    background: var(--code-bg); border-radius: 5px; padding: 2px 6px;
+  }
+  header { margin-bottom: 28px; }
+  .issue-chip {
+    display: inline-block; font-weight: 700; color: var(--accent);
+    background: var(--accent-soft); border-radius: 999px;
+    padding: 3px 14px; font-size: 0.95rem; margin-bottom: 10px;
+  }
+  .type-chip {
+    display: inline-block; font-weight: 600; color: var(--muted);
+    border: 1px solid var(--line); border-radius: 999px;
+    padding: 3px 12px; font-size: 0.8rem; margin-left: 8px; vertical-align: 2px;
+  }
+  h1 { font-size: 1.7rem; margin: 0 0 14px; letter-spacing: -0.02em; }
+  .meta {
+    display: flex; flex-wrap: wrap; gap: 6px 22px;
+    color: var(--muted); font-size: 0.87rem;
+  }
+  .meta b { color: var(--ink); font-weight: 600; }
+  section.card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 24px 28px; margin-top: 18px;
+  }
+  h2 {
+    font-size: 1.05rem; margin: 0 0 14px; letter-spacing: -0.01em;
+    display: flex; align-items: center; gap: 8px;
+  }
+  h2 .no {
+    color: var(--accent); font-size: 0.8rem; font-weight: 700;
+    border: 1.5px solid var(--accent); border-radius: 6px; padding: 0 6px;
+  }
+  ul, ol { margin: 0; padding-left: 22px; }
+  li { margin: 6px 0; }
+  .steps { list-style: none; padding: 0; counter-reset: step; }
+  .steps li {
+    counter-increment: step; position: relative; padding: 10px 0 10px 44px;
+    border-bottom: 1px dashed var(--line);
+  }
+  .steps li:last-child { border-bottom: none; }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 10px;
+    width: 28px; height: 28px; border-radius: 8px; background: var(--accent-soft);
+    color: var(--accent); font-weight: 700; font-size: 0.85rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .steps .files { display: block; margin-top: 4px; font-size: 0.85rem; color: var(--muted); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 0.82rem; }
+  .done-list { list-style: none; padding: 0; }
+  .done-list li { padding-left: 30px; position: relative; }
+  .done-list li::before {
+    content: ""; position: absolute; left: 2px; top: 7px; width: 15px; height: 15px;
+    border: 2px solid var(--ok); border-radius: 5px;
+  }
+  .scroll-x { overflow-x: auto; }
+  /* 구현 진행 표시 (issue-work) */
+  .steps li.done::before {
+    content: "✓"; background: var(--ok); color: #fff; border-color: var(--ok);
+  }
+  .steps li.done > b:first-child { color: var(--muted); }
+  .done-list li.done::before { background: var(--ok); }
+  .note {
+    display: block; margin-top: 6px; font-size: 0.85rem; color: var(--warn);
+  }
+  .note b { color: var(--warn); }
+  .status-banner {
+    background: var(--accent-soft); border: 1px solid var(--accent);
+    border-radius: 12px; padding: 12px 18px; margin-top: 18px; font-size: 0.92rem;
+  }
+  footer { margin-top: 30px; color: var(--muted); font-size: 0.8rem; text-align: center; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <span class="issue-chip"><a href="https://github.com/damdam6/vocabulary-study/issues/128">#128</a></span><span class="type-chip">버그 수정</span>
+    <h1>새로 등록한 단어가 세션에 안 나온다 — 학습 중 큐가 '총 정답 수 많은 순'이라 신규 단어(0점)가 상한 밖으로 밀린다</h1>
+    <div class="meta">
+      <span><b>damdam6/vocabulary-study</b></span>
+      <span>브랜치 <b><code>feat/128-new-word-starvation</code></b> ← <code>main</code></span>
+      <span>라벨 <b>bug</b></span>
+      <span>2026-07-30</span>
+    </div>
+  </header>
+
+  <div class="status-banner">
+    <b>구현 완료 (2026-07-30)</b> — 작업 단계 9개 전부 반영. <code>npm test</code> 424/424 ·
+    <code>npm run lint</code> · <code>npm run build</code> 통과. 플랜과 달라진 점은 각 단계의 주석 참조.
+  </div>
+
+  <section class="card">
+    <h2><span class="no">1</span>요약</h2>
+    <p>
+      새로 등록한 단어가 세션에 안 나오는 건 캐싱이 아니라 <b>큐 선별 규칙</b> 때문이다.
+      <code>buildSessionQueue</code>가 학습 중 단어를 총 정답 수(D+E) <b>내림차순</b>으로 정렬한 뒤 앞에서 잘라내므로,
+      0점인 신규 단어는 항상 최하위로 밀려 상한 밖으로 잘린다 — 명세대로 동작하는 것이고, 명세 자체가 신규 단어 기아를 만든다.
+      소유자 결정에 따라 ① 학습 중 정렬을 <b>오름차순으로 반전</b>하고, ② 복습이 세션 상한을 통째로 가져가는 두 번째 기아 경로를 막는
+      <b>복습 몫 상한 30%</b>를 함께 도입한다. 두 변경은 <code>splitSessionSlots</code> 하나로 묶어
+      <code>homeStats</code>와 <code>sessionQueue</code>가 같은 산식을 쓰도록 통합한다 —
+      전수 검증 결과 <b>총 문제 수는 바뀌지 않으므로</b>(아래 §3-D) 홈의 "오늘 세션 · n문제" 수치는 그대로다.
+    </p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">2</span>현황 분석</h2>
+    <p><b>흐름</b> — 홈 진입마다 <code>fetchWords</code>로 단어 전체를 새로 받고(<code>src/screens/HomeScreen.tsx:40</code>),
+      그 응답으로 현황 카드·세션 수를 계산하고(<code>:47</code>), "학습 시작" 클릭 시 <b>같은 배열</b>로 큐를 즉석에서 만든다(<code>:84</code>).
+      저장·캐시 계층이 중간에 없다 — 이슈의 캐싱 가설(③)은 이 구조상 성립하지 않는다.</p>
+
+    <p><b>현재 큐 산식</b> — <code>src/lib/sessionQueue.ts:55-68</code></p>
+    <ul>
+      <li>복습 대기는 복습일 오래된 순으로 <code>.slice(0, limit)</code> — <b>상한 전체를 쓸 수 있다</b>(<code>:57</code>).</li>
+      <li>학습 중은 <code>b.m1 + b.m2 - (a.m1 + a.m2)</code>, 즉 <b>총 정답 수 내림차순</b>으로 정렬한 뒤(<code>:62</code>)
+        남은 슬롯만큼 <b>앞에서</b> 잘라 붙인다(<code>:67</code>).</li>
+      <li>합친 뒤 전체 셔플(<code>:69</code>) — 셔플은 <b>출제 순서</b>만 바꾸고 <b>어떤 단어가 뽑히는지</b>에는 관여하지 않는다.
+        그래서 매 세션 같은 단어 집합이 나온다.</li>
+    </ul>
+
+    <p><b>홈 표시는 큐 산식의 사본</b> — <code>src/lib/homeStats.ts:46</code>의
+      <code>sessionCount = min(limit, min(reviewDue, limit) + learning)</code>은 위 산식을 손으로 옮겨 적은 것이다.
+      <code>src/screens/HomeScreen.tsx:83</code> 주석이 "같은 산식이라 빈 큐가 나올 수 없다"는 불변식에 기대고 있어,
+      한쪽만 고치면 조용히 깨진다.</p>
+
+    <p><b>명세가 이 동작을 지시한다</b> — 코드 버그가 아니다.</p>
+    <ul>
+      <li><code>docs/PRD.md:159</code> §6.1-1 — "복습 대기 단어 <b>전부</b> … 상한을 넘으면 복습일이 오래된 것부터 상한만큼"</li>
+      <li><code>docs/PRD.md:163</code> §6.1-2 — "정렬: 총 정답 수(D+E)가 <b>많은</b> 단어 우선 (거의 다 된 단어부터 졸업시킴), 동률이면 시트 상 순서"</li>
+      <li><code>docs/PRD.md:336-337</code> §12 결정표 — "세션 큐 우선순위 | 복습 대기 → 학습 중", "학습 중 단어 출제 순서 | 총 정답 수 많은 순"</li>
+      <li><code>docs/design-prd.md:75</code> — 홈 세션 수 산식 <code>min(60, min(복습대기, 60) + 학습중 단어 수)</code>를 문자열로 박아둠</li>
+    </ul>
+
+    <p><b>테스트 기준선</b> — <code>src/lib/sessionQueue.test.ts</code> 20건 + <code>src/lib/homeStats.test.ts</code> 7건,
+      <code>npx vitest run</code>으로 <b>27/27 통과</b> 확인. 이 중 <b>3건</b>이 이번 변경으로 기대값이 바뀐다(§5 R2).</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">3</span>원인 분석 · 설계</h2>
+    <h3 style="font-size:0.95rem;margin:0 0 8px">A. 확정 원인 — 정렬 방향이 신규 단어를 영구히 밀어낸다</h3>
+    <p>새로 등록한 단어는 <code>D=E=0</code>이라 <b>내림차순 정렬의 최하위</b>다. <code>slice</code>는 앞에서 자르므로,
+      학습 중 단어 수가 세션 상한보다 많으면 신규 단어는 <b>기존 단어가 졸업해 목록에서 빠질 때까지 출제되지 않는다.</b>
+      동률(둘 다 0점)일 때는 stable sort로 시트 순서가 유지되는데 시트는 append-only라 <b>먼저 등록한 단어가 항상 앞</b>이다 —
+      0점끼리 비교해도 최근 등록분이 뒤로 간다.</p>
+    <p><b>실측</b>(이슈 본문, 2026-07-30 · zh 프로필 · 서비스 계정으로 실제 시트 조회):
+      단어 150개 / 학습 중 145 / 복습 대기 0 / <code>sessionLimit = 35</code>.
+      점수 있는 19개가 슬롯을 먼저 채우고 남은 16자리를 0점 126개 중 시트 앞에서부터 채운다 →
+      <b>시트 마지막 10행(최근 등록)의 큐 진입은 1/10.</b> 선정에 무작위성이 없어 매 세션 동일한 35개가 나온다.</p>
+
+    <h3 style="font-size:0.95rem;margin:18px 0 8px">B. 두 번째 기아 경로 — 복습이 상한을 통째로 먹는다</h3>
+    <p>복습 대기는 <code>.slice(0, limit)</code>로 상한 전체를 가져갈 수 있다(<code>sessionQueue.ts:57</code>).
+      복습 대기가 <code>sessionLimit</code> 이상이면 학습 슬롯이 <b>0</b>이 되어, 정렬을 고쳐도 신규 단어가 아예 못 들어온다.
+      실측 시점에는 복습 대기가 0이라 미발동이지만 A와 독립된 경로이므로 소유자 결정에 따라 이번에 함께 막는다.</p>
+
+    <h3 style="font-size:0.95rem;margin:18px 0 8px">C. 배제한 가설</h3>
+    <ul>
+      <li><b>캐싱</b> — Worker는 <code>/api/words</code>에 <code>Cache-Control</code>을 붙이지 않고(worker 전체에 해당 헤더 없음),
+        클라는 단어 목록을 저장하지 않으며(<code>localStorage</code>엔 비밀번호·프로필·재시도 큐뿐), 홈은 진입마다 재조회한다. 캐시 계층 자체가 없다.</li>
+      <li><b>신규 단어가 API에 안 실림</b>(<code>_</code> 접두 탭 제외·다른 시트 등록) — 실측에서 150개 전부 조회됨. 배제.</li>
+    </ul>
+
+    <h3 style="font-size:0.95rem;margin:18px 0 8px">D. 설계 — 슬롯 배분을 한 함수로 통합</h3>
+    <p>소유자 확정 결정 2건(정렬 반전 · 복습 몫 30%)을 <code>src/lib/sessionQueue.ts</code>의 <b>순수 함수 하나</b>로 표현하고,
+      <code>homeStats</code>가 그 함수를 재사용해 산식 사본을 제거한다. <code>homeStats</code>는 이미
+      <code>sessionQueue</code>에서 <code>SESSION_CAP</code>을 import하므로 의존 방향이 그대로다(순환 없음).</p>
+<pre style="background:var(--code-bg);border-radius:10px;padding:14px 16px;overflow-x:auto;font-size:0.84rem;line-height:1.55"><code style="background:none;padding:0">/** PRD §6.1: 복습이 세션 상한을 통째로 가져가지 못하게 하는 몫 비율 (#128). */
+export const REVIEW_SHARE = 0.3;
+
+export function splitSessionSlots(reviewDue: number, learning: number, limit: number) {
+  // 복습 몫 = 상한의 30%. 복습 대기가 있으면 최소 1개 — limit ≤ 3에서 floor가 0이 되는 경계 방어.
+  const quota = Math.max(1, Math.floor(limit * REVIEW_SHARE));
+  // 학습은 복습 몫을 뺀 나머지를 쓴다 (복습 대기가 몫보다 적으면 그만큼만 예약된다).
+  const learningTake = Math.min(learning, limit - Math.min(reviewDue, quota));
+  // 학습이 남긴 슬롯은 복습이 회수한다 — 몫은 하한 보장이지 낭비 상한이 아니다.
+  const reviewTake = Math.min(reviewDue, limit - learningTake);
+  return { review: reviewTake, learning: learningTake, total: reviewTake + learningTake };
+}</code></pre>
+    <p><b>총 문제 수는 바뀌지 않는다 (전수 검증).</b>
+      <code>limit ∈ [1,60] × reviewDue ∈ [0,70] × learning ∈ [0,70]</code> 전 조합(약 31만 건)에서
+      <code>splitSessionSlots(...).total</code>이 기존 <code>min(limit, min(R,limit) + L)</code>과 <b>0건 불일치</b>로 일치했고,
+      <code>reviewDue &gt; 0</code>인데 복습 배정이 0이 되는 조합도 없었다.
+      즉 홈의 "오늘 세션 · n문제" <b>숫자는 그대로</b>이고, 이번 통합은 값 수정이 아니라 <b>회귀 방지</b>가 목적이다.</p>
+    <div class="scroll-x">
+    <table>
+      <thead><tr><th>시나리오</th><th>상한</th><th>복습 대기 / 학습 중</th><th>배분 (복습 / 학습)</th><th>계</th></tr></thead>
+      <tbody>
+        <tr><td>실측 재현 (zh)</td><td>35</td><td>0 / 145</td><td>0 / <b>35</b></td><td>35</td></tr>
+        <tr><td>복습 폭증 — 학습 슬롯 확보</td><td>35</td><td>100 / 145</td><td><b>10</b> / <b>25</b></td><td>35</td></tr>
+        <tr><td>학습 중 0 — 슬롯 낭비 없음</td><td>35</td><td>100 / 0</td><td><b>35</b> / 0</td><td>35</td></tr>
+        <tr><td>경계 <code>floor(3×0.3)=0</code></td><td>3</td><td>5 / 10</td><td><b>1</b> / 2</td><td>3</td></tr>
+        <tr><td>기존 테스트 <code>:137</code> (변경됨)</td><td>60</td><td>30 / 40</td><td>20 / 40 <i>(종전 30/30)</i></td><td>60</td></tr>
+        <tr><td>기존 테스트 <code>:202</code> (변경됨)</td><td>30</td><td>20 / 40</td><td>9 / 21 <i>(종전 20/10)</i></td><td>30</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p style="margin-top:14px"><b>정렬 반전</b>은 비교자 한 줄이다 —
+      <code>.toSorted((a, b) =&gt; a.m1 + a.m2 - (b.m1 + b.m2))</code>. 동률은 stable sort로 시트 순서가 그대로 유지된다.
+      함께 <code>.map()</code>을 <code>.slice()</code> <b>뒤</b>로 옮긴다 — 지금은 탈락할 단어까지 <code>learningMode</code>를 호출해 rng를 소비한다.
+      선정은 정렬·slice로만 결정되므로 기존 시드 고정 테스트의 <b>집합·개수 단언에는 영향이 없다.</b></p>
+    <p><b>졸업 임박 쿼터는 두지 않는다</b> — 오름차순이면 4~5점 단어가 0점 126개가 한 바퀴 돌 때까지(약 25세션) 미출제된다.
+      소유자가 이 트레이드오프를 확인한 뒤 <b>순수 오름차순</b>을 선택했다. PRD §12의 종전 근거("거의 끝난 단어부터 졸업시키기")는 폐기한다.</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">4</span>작업 단계</h2>
+    <ol class="steps">
+      <li class="done"><b>슬롯 배분 함수 신설</b> — <code>REVIEW_SHARE = 0.3</code> 상수와 <code>splitSessionSlots(reviewDue, learning, limit)</code>를 export한다(§3-D 코드).
+        비율은 상수로 두어 추후 조정 가능하게 한다.
+        <span class="files"><code>src/lib/sessionQueue.ts</code></span>
+      </li>
+      <li class="done"><b>큐 구성을 새 배분에 연결</b> — 복습·학습 각각 <code>.slice(0, slots.review)</code> / <code>.slice(0, slots.learning)</code>로 자르고,
+        <code>.map()</code>은 slice 뒤로 옮긴다. 학습 중 정렬 비교자를 <b>오름차순</b>으로 반전한다.
+        <span class="files"><code>src/lib/sessionQueue.ts:55-68</code></span>
+      </li>
+      <li class="done"><b>모듈 문서 주석 갱신</b> — 파일 상단 JSDoc(<code>:24-34</code>)의 "복습 대기 전부 … 총 정답 수 내림차순" 서술을
+        새 규칙(복습 몫 30% · 오름차순)으로 고친다. 이 주석이 PRD §6.1의 코드 측 사본이므로 함께 틀리면 안 된다.
+        <span class="files"><code>src/lib/sessionQueue.ts:1-34</code></span>
+      </li>
+      <li class="done"><b>홈 산식을 같은 함수로 교체</b> — <code>sessionCount</code>를 <code>splitSessionSlots(reviewDue, learning, limit).total</code>로 바꾸고,
+        <code>HomeStats</code>의 산식 주석(<code>:16</code>)도 함께 갱신한다. 산출값은 동일(§3-D 전수 검증).
+        <span class="files"><code>src/lib/homeStats.ts:16,46</code></span>
+      </li>
+      <li class="done"><b>기존 테스트 3건 개정</b> — <code>:90</code> 정렬 테스트를 오름차순 기준(고득점이 밀리고 0점이 들어옴)으로 대체,
+        <code>:137</code>(복습 30+학습 40 → 20/40)·<code>:202</code>(limit 30, 복습 20+학습 40 → 9/21)의 분할 기대값을 새 산식으로 고친다.
+        <span class="files"><code>src/lib/sessionQueue.test.ts</code></span>
+        <span class="note"><b>실제:</b> 정렬 테스트 <code>:90</code>은 1건이 아니라 <b>2건으로 분리</b>했다 —
+          "적은 단어부터 채운다(방향)"와 "동률이면 시트 순서(stable sort)"는 한 케이스에 억지로 묶으면
+          어느 쪽이 깨졌는지 읽히지 않는다. <code>:137</code>·<code>:202</code>는 예측한 값(20/40, 9/21) 그대로 개정.</span>
+      </li>
+      <li class="done"><b>회귀 테스트 추가</b> — §6 테스트 계획의 신규 5건(신규 단어 진입 · 복습 몫 · 슬롯 낭비 없음 · <code>limit ≤ 3</code> 경계 · 홈-큐 불변식).
+        <span class="files"><code>src/lib/sessionQueue.test.ts</code></span>
+        <span class="note"><b>실제:</b> 5건이 아니라 <b>6건</b>을 넣었다. 플랜의 "실측 재현" 항목은
+          <i>"시트 마지막에 등록한 단어가 포함된다"</i>고 적었는데 <b>틀렸다</b> — 0점 풀(126개)이 상한(35)보다 크면
+          이번 세션에 들어가는 건 그 풀의 <b>시트 앞 35개</b>이고, 맞힌 단어가 1점으로 빠지며 프런티어가 세션마다 전진한다.
+          그래서 실측 테스트는 "큐 35개가 전부 0점"으로 단언을 고치고, 소유자 제보 시나리오(기존 학습 중 40개 시트에
+          5개 신규 등록 → 5개 전부 큐 진입)를 <b>별도 테스트로 추가</b>했다.</span>
+      </li>
+      <li class="done"><b>기능 PRD 개정</b> — §6.1-1을 "복습 대기 전부"에서 "세션 상한의 30%(최소 1문제), 학습이 남긴 슬롯은 회수"로,
+        §6.1-2 정렬을 "총 정답 수가 <b>적은</b> 단어 우선"으로 고친다. §12 결정표의 "세션 큐 우선순위"·"학습 중 단어 출제 순서" 두 행을
+        기존 개정 표기 스타일(취소선 + 날짜·이슈번호 주석)에 맞춰 갱신하고, 문서 상단에 <code>2026-07-30 개정 (4)</code> 항목을 추가한다.
+        <span class="files"><code>docs/PRD.md:8-16, 155-164, 336-337</code></span>
+      </li>
+      <li class="done"><b>디자인 PRD 개정</b> — 홈 "오늘 세션 · n문제" 산식 문자열을 <code>min(상한, 복습대기 + 학습중 단어 수)</code>로 고치고,
+        복습 몫 30%가 <b>총 문제 수를 바꾸지 않는다</b>는 점을 한 줄로 명시한다.
+        <span class="files"><code>docs/design-prd.md:75</code></span>
+      </li>
+      <li class="done"><b>검증</b> — <code>npm test</code>, <code>npm run lint</code>, <code>npm run build</code>(<code>tsc -b</code> 포함)를 모두 통과시킨 뒤
+        플랜 HTML 체크리스트를 반영해 커밋한다.
+        <span class="files"><code>package.json</code></span>
+      </li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">5</span>리스크</h2>
+    <div class="scroll-x">
+    <table>
+      <thead><tr><th>리스크</th><th>영향</th><th>완화책</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><b>R1</b> 고득점 단어 장기 미출제</td>
+          <td>순수 오름차순이라 4~5점 단어가 0점 126개를 한 바퀴 도는 <b>약 25세션</b> 동안 안 나온다. 졸업이 그만큼 늦어진다.</td>
+          <td>소유자가 트레이드오프를 확인하고 선택한 <b>의도된 동작</b>(결정 1). 쿼터는 두지 않는다 — 실사용에서 문제가 되면 별도 이슈로 재론.</td>
+        </tr>
+        <tr>
+          <td><b>R2</b> 기존 테스트 3건이 깨진다</td>
+          <td>이슈 완료 조건은 정렬 테스트(<code>:90</code>) 1건만 언급하지만, 복습 몫 도입으로 <code>:137</code>·<code>:202</code>의
+            복습/학습 분할 단언도 함께 바뀐다(§3-D 표).</td>
+          <td>세 건 모두 새 산식 기준으로 개정하고(작업 5) 커밋 메시지에 변경 사유를 남긴다. 나머지 24건은 그대로 통과해야 한다.</td>
+        </tr>
+        <tr>
+          <td><b>R3</b> 홈 표시와 큐 길이 어긋남</td>
+          <td>배분 구현을 잘못 짜면(예: 단순 <code>slice(0, floor(limit×0.3))</code>) 총합이 줄어
+            <code>HomeScreen.tsx:83</code>의 "빈 큐가 나올 수 없다" 불변식이 조용히 깨진다.</td>
+          <td>두 곳이 <b>같은 함수</b>를 호출하도록 통합(작업 1·4)하고, 조합 그리드로 <code>queue.length === sessionCount</code>를 고정하는 불변식 테스트를 넣는다.</td>
+        </tr>
+        <tr>
+          <td><b>R4</b> 정렬 키가 비활성 모드를 포함</td>
+          <td><code>m1 + m2</code>로 합산하므로 <code>M = {m1}</code> 프로필에서 E열에 잔존값이 있으면 그 단어가 신규 단어보다 뒤로 밀린다.
+            PRD-general §4.1의 "비활성 모드 열은 판정에서 무시"와 어긋난다.</td>
+          <td><b>이번 범위 밖</b> — 이슈 결정에 없고, Worker가 비활성 모드 열을 쓰지 않아 실제 잔존값은 수기 입력뿐이다.
+            현행 유지하고 후속 이슈 후보로 기록한다.</td>
+        </tr>
+        <tr>
+          <td><b>R5</b> "30"의 해석 (비율 vs 개수)</td>
+          <td>이슈 본문이 표기 주의를 남겼다. 개수 30 고정이라면 상한 35에서 복습이 30문제를 가져가 학습 슬롯이 5개로 줄어
+            <b>이번 수정의 취지와 정반대</b>가 된다.</td>
+          <td><b>30%(비율)</b>로 확정해 진행한다 — 선택지가 %였고, 개수 해석은 기아를 되레 악화시킨다. 승인 게이트에서 소유자에게 재확인한다.</td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">6</span>테스트 계획</h2>
+    <ul>
+      <li><b>기준선</b> — 변경 전 <code>sessionQueue</code>+<code>homeStats</code> 27/27 통과.
+        <b>결과:</b> 변경 후 두 파일 <b>34/34</b>, 전 스위트 <b>424/424 통과</b>(32개 파일).
+        예측대로 정확히 3건만 깨졌고(<code>:90</code>·<code>:137</code>·<code>:202</code>), 실패 값도 예측치(20/40, 9/21)와 일치했다.</li>
+      <li><b>[신규] 소유자 제보 재현</b> — 이미 학습 중인 단어 40개(상한 초과)가 있는 시트에 5개를 새로 등록, <code>limit = 35</code>.
+        신규 5개가 <b>전부 큐에 들어온다</b> — 종전 내림차순에서는 5개 모두 잘렸다. 이것이 "등록했는데 안 나온다"의 직접 회귀 테스트다.</li>
+      <li><b>[신규] 실측 분포 재현</b> — 학습 중 145개(5점 4 / 4점 4 / 3점 4 / 2점 3 / 1점 4 / 0점 126), <code>limit = 35</code>.
+        큐 35개가 <b>전부 0점 신규 단어</b>이고 점수 있는 19개는 밀린다.
+        <span class="note"><b>정정:</b> 플랜 초안은 "시트 마지막에 등록한 단어가 포함된다"고 적었으나 틀렸다 —
+        0점 풀이 상한보다 크면 이번 세션은 그 풀의 <b>시트 앞 35개</b>이고, 맞힌 단어가 빠지며 프런티어가 세션마다 전진한다.
+        가장 최근 등록분의 즉시 진입은 위 "소유자 제보 재현" 테스트가 담당한다.</span></li>
+      <li><b>[대체] 정렬 오름차순</b> — 기존 <code>:90</code>을 뒤집는다: 고득점 59개 + 0점 2개에서 남은 슬롯을 <b>0점 단어가</b> 가져가고,
+        0점끼리 동률이면 <b>시트 순서가 앞선 쪽</b>이 이긴다(stable sort 유지 확인).</li>
+      <li><b>[신규] 복습 몫 상한</b> — <code>limit = 35</code>, 복습 대기 100 / 학습 중 145 → 복습 <b>10</b> · 학습 <b>25</b>.
+        복습만으로 상한을 채우던 종전 동작이 사라졌음을 고정한다.</li>
+      <li><b>[신규] 슬롯 낭비 없음</b> — <code>limit = 35</code>, 복습 대기 100 / 학습 중 <b>0</b> → 복습 <b>35</b>(상한 전부).
+        몫이 상한으로 오작동하지 않는지 확인.</li>
+      <li><b>[신규] 경계 <code>limit ≤ 3</code></b> — <code>limit = 3</code>, 복습 5 / 학습 10 → 복습 <b>1</b> · 학습 2.
+        <code>floor(3 × 0.3) = 0</code>에서 복습이 굶지 않는다(PRD §12 "복습 누락 방지가 우선" 유지).</li>
+      <li><b>[신규] 홈-큐 불변식</b> — <code>limit ∈ {1, 3, 30, 35, 60}</code> × 복습/학습 개수 조합 그리드에서
+        <code>buildSessionQueue(...).length === computeHomeStats(...).sessionCount</code>. 두 산식이 다시 갈라지면 즉시 실패한다.</li>
+      <li><b>[개정] 기존 분할 테스트</b> — <code>:137</code>(60 / 30·40 → 복습 20 · 학습 40), <code>:202</code>(30 / 20·40 → 복습 9 · 학습 21).</li>
+      <li><b>[회귀] 그대로 통과해야 하는 것</b> — 복습 대기 61개 컷(<code>:51</code>), <code>nextReview: null</code> 데이터 이상 최우선(<code>:67</code>),
+        단어당 1문제·유일성(<code>:165</code>), 탭 구분(<code>:176</code>), M 파라미터화 4건, <code>homeStats</code> 7건 전부.</li>
+      <li><b>정적 검사</b> — <code>npm run lint</code>(oxlint) · <code>npm run build</code>(<code>tsc -b</code> + vite).</li>
+      <li><b>수동 확인(선택)</b> — <code>npm run dev</code> 후 zh 프로필 홈에서 "오늘 세션 · 35문제"가 <b>그대로</b>인지,
+        세션에 <b>최근 등록한 단어</b>가 실제로 나오는지 눈으로 확인.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">7</span>완료 조건</h2>
+    <ul class="done-list">
+      <li class="done">학습 중 정렬이 <code>D+E</code> <b>오름차순</b>이다 — 동률은 시트 순서 유지(stable sort).</li>
+      <li class="done">복습 몫 상한 30%가 <code>REVIEW_SHARE</code> 상수로 도입됐다 — 학습 중이 적으면 남는 슬롯을 복습이 회수하고(낭비 없음),
+        <code>limit ≤ 3</code>에서도 복습 대기가 있으면 최소 1문제가 확보된다.</li>
+      <li class="done"><code>homeStats.sessionCount</code>와 큐 길이가 <b>같은 함수</b>(<code>splitSessionSlots</code>)에서 나온다 — 산식 사본 제거.
+        홈 표시 숫자 자체는 변하지 않는다.</li>
+      <li class="done">학습 중 단어가 상한보다 많아도 0점 신규 단어가 큐에 포함됨을 테스트가 고정한다.</li>
+      <li class="done">복습 대기가 많아도 학습 슬롯이 확보되고, 학습 중이 0이면 복습이 상한 전부를 씀을 테스트가 고정한다.</li>
+      <li class="done">기존 정렬 테스트(<code>sessionQueue.test.ts:90</code>)가 오름차순 기준으로 대체됐고,
+        분할 기대값이 바뀐 <code>:137</code>·<code>:202</code>도 함께 개정됐다.</li>
+      <li class="done"><code>docs/PRD.md</code> §6.1-1(복습 전부 → 몫 상한)·§6.1-2(정렬 방향) 개정 +
+        §12 결정표 "학습 중 단어 출제 순서"·"세션 큐 우선순위" 행 갱신 + 상단 개정 이력 추가.</li>
+      <li class="done"><code>docs/design-prd.md</code> §3 세션 문제 수 산식 개정.</li>
+      <li class="done"><code>npm test</code> · <code>npm run lint</code> · <code>npm run build</code> 전부 통과.</li>
+    </ul>
+  </section>
+
+  <footer>issue-plan · <a href="https://github.com/damdam6/vocabulary-study/issues/128">#128</a> · 2026-07-30</footer>
+</main>
+</body>
+</html>
