@@ -72,9 +72,27 @@ describe("gradeMode2 — PRD §5.2 채점 규칙", () => {
     expect(gradeMode2("APPLE", "apple").correct).toBe(true);
   });
 
-  it("내부 연속 공백은 1개로 정규화 후 판정 — 느슨 채점(#123)", () => {
+  it("내부 공백 차이는 정답 — 공백 제거 후 판정(#123·#126)", () => {
     expect(gradeMode2("ice  cream", "ice cream").correct).toBe(true);
     expect(gradeMode2("ice cream", "ice  cream").correct).toBe(true);
+  });
+
+  it("한자 사이 공백은 정답 — 중국어는 띄어쓰기가 없다(#126)", () => {
+    expect(gradeMode2("你 好", "你好").correct).toBe(true);
+    expect(gradeMode2("不 好 意 思", "不好意思").correct).toBe(true);
+  });
+
+  it("전각 공백(U+3000, 중문 IME)도 제거 후 판정(#126)", () => {
+    expect(gradeMode2("你　好", "你好").correct).toBe(true);
+  });
+
+  it("한국어 띄어쓰기 실수는 정답(#126)", () => {
+    expect(gradeMode2("사과 나무", "사과나무").correct).toBe(true);
+  });
+
+  it("표제어 쪽 공백도 같이 제거 — 정규화는 양쪽 대칭(#126)", () => {
+    expect(gradeMode2("你好", "你 好").correct).toBe(true);
+    expect(gradeMode2("icecream", "ice cream").correct).toBe(true);
   });
 
   it("NFC/NFD 유니코드 표기 차이는 정답 — 느슨 채점(#123)", () => {
