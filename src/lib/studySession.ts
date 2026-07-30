@@ -26,14 +26,24 @@ export type RecordEffect =
   | { kind: "review-fail"; question: StudyQuestion }
   | { kind: "none" };
 
+/** #123 느슨 채점용 정규화: NFC → 소문자화 → 트림 + 내부 연속 공백 1개화. */
+function normalizeForGrading(value: string): string {
+  return value.normalize("NFC").toLowerCase().trim().replace(/\s+/g, " ");
+}
+
 /**
- * PRD §5.2 모드 2 채점: 트림한 입력이 A열 한자와 정확 일치해야만 정답 — 병음
- * 입력·부분 일치·이체자는 모두 오답, 빈 입력도 오답. 트림된 입력을 함께 돌려주는
- * 것은 오답 결과 화면의 "내 답" 표시(§4.3)가 같은 값을 쓰기 때문.
+ * PRD §5.2 모드 2 채점: 입력과 A열 표제어 양쪽을 동일 정규화(NFC·소문자화·공백
+ * 정규화)한 뒤 일치해야 정답(#123 느슨 채점) — 병음 입력·부분 일치·이체자는
+ * 여전히 오답, 빈 입력도 오답. 전 콘텐츠 타입 공통이며 한자는 대소문자·공백
+ * 개념이 없어 zh 판정은 불변. 트림된 원입력을 함께 돌려주는 것은 오답 결과
+ * 화면의 "내 답" 표시(§4.3)가 사용자 표기 그대로를 쓰기 때문.
  */
 export function gradeMode2(input: string, hanzi: string): { correct: boolean; answer: string } {
   const answer = input.trim();
-  return { correct: answer !== "" && answer === hanzi, answer };
+  return {
+    correct: answer !== "" && normalizeForGrading(input) === normalizeForGrading(hanzi),
+    answer,
+  };
 }
 
 /**
