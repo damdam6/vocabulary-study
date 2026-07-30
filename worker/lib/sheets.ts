@@ -68,6 +68,12 @@ export interface AddSheetRequest {
   };
 }
 
+export interface Rgb {
+  red: number;
+  green: number;
+  blue: number;
+}
+
 export interface RepeatCellRequest {
   repeatCell: {
     range: {
@@ -77,7 +83,7 @@ export interface RepeatCellRequest {
       startColumnIndex?: number;
       endColumnIndex?: number;
     };
-    cell: { userEnteredFormat: { backgroundColor: { red: number; green: number; blue: number } } };
+    cell: { userEnteredFormat: { backgroundColor: Rgb } };
     fields: string;
   };
 }

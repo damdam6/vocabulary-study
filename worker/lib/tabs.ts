@@ -9,15 +9,15 @@
  * 무서식 addSheet를 그대로 쓴다.
  */
 
-import { batchUpdateSpreadsheet, getValues, updateValues, type RepeatCellRequest } from "./sheets.ts";
+import {
+  batchUpdateSpreadsheet,
+  getValues,
+  updateValues,
+  type RepeatCellRequest,
+  type Rgb,
+} from "./sheets.ts";
 import { DEFAULT_TAB_HEADERS } from "./register.ts";
 import type { ContentType } from "./profiles.ts";
-
-interface Rgb {
-  red: number;
-  green: number;
-  blue: number;
-}
 
 // 참조 시트 실측 서식(#122): A1·C1 노랑, B1 연두, D열부터 우측 전체 진회색(글자색은 지정 안 함).
 const HEADER_YELLOW: Rgb = { red: 255 / 255, green: 217 / 255, blue: 102 / 255 }; // #FFD966
@@ -57,7 +57,9 @@ export async function createWordTab(
       : ((await getValues(env, sheetId, wordTabs[0], "1:1"))[0] ?? []);
   // 같은 배치의 서식 request가 새 탭을 참조해야 하므로 sheetId(gid)를 직접 지정한다
   // (batchUpdate 안에서는 addSheet 응답을 참조할 수 없다). 기존 탭과의 충돌 확률은
-  // 탭 수/2^31로 무시 가능 — 충돌하면 batchUpdate가 400으로 실패하고 재시도로 해소된다.
+  // 탭 수/2^31로 무시 가능해 자동 재시도는 두지 않았다 — 충돌 시 SheetsApiError로
+  // 실패해 호출자에게 그대로 노출되고, 호출자가 다시 시도하면(예: 버튼 재클릭) 새
+  // 무작위 gid로 재요청된다.
   const gid = crypto.getRandomValues(new Uint32Array(1))[0] & 0x7fffffff;
   await batchUpdateSpreadsheet(env, sheetId, [
     { addSheet: { properties: { sheetId: gid, title: tab, gridProperties: { frozenRowCount: 1 } } } },
