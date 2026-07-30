@@ -66,6 +66,28 @@ describe("gradeMode2 — PRD §5.2 채점 규칙", () => {
   it("이체자(번체) 입력은 오답 — A열 표기와 자소까지 같아야 한다", () => {
     expect(gradeMode2("經濟", "经济").correct).toBe(false);
   });
+
+  it("대소문자 차이는 정답 — 느슨 채점(#123)", () => {
+    expect(gradeMode2("Apple", "apple").correct).toBe(true);
+    expect(gradeMode2("APPLE", "apple").correct).toBe(true);
+  });
+
+  it("내부 연속 공백은 1개로 정규화 후 판정 — 느슨 채점(#123)", () => {
+    expect(gradeMode2("ice  cream", "ice cream").correct).toBe(true);
+    expect(gradeMode2("ice cream", "ice  cream").correct).toBe(true);
+  });
+
+  it("NFC/NFD 유니코드 표기 차이는 정답 — 느슨 채점(#123)", () => {
+    const nfc = "café".normalize("NFC");
+    const nfd = "café".normalize("NFD");
+    expect(nfd).not.toBe(nfc); // 전제: 두 표기는 코드포인트가 다르다
+    expect(gradeMode2(nfd, nfc).correct).toBe(true);
+    expect(gradeMode2(nfc, nfd).correct).toBe(true);
+  });
+
+  it("오답의 내 답은 트림된 원입력 그대로 — 정규화 값은 비교 전용(#123)", () => {
+    expect(gradeMode2(" Aple ", "apple")).toEqual({ correct: false, answer: "Aple" });
+  });
 });
 
 describe("startSession / currentQuestion / isDone", () => {
