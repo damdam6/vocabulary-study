@@ -56,12 +56,53 @@ export async function getSheetTitles(env: Env, sheetId: string): Promise<string[
     .filter((title): title is string => !!title);
 }
 
-// 값(`/values:batchUpdate`)이 아니라 스프레드시트 구조 자체(탭 추가)를 바꾸는 별도 엔드포인트.
-/** 새 탭을 생성한다. 등록 API의 `createTab` 처리(플랜 §6)가 사용한다. */
+// Sheets API batchUpdate request 형태 — 이 코드베이스가 실제로 보내는 두 종류만 다룬다.
+// https://developers.google.com/workspace/sheets/api/reference/rest/v4/spreadsheets/batchUpdate
+export interface AddSheetRequest {
+  addSheet: {
+    properties: {
+      title: string;
+      sheetId?: number;
+      gridProperties?: { frozenRowCount?: number };
+    };
+  };
+}
+
+export interface Rgb {
+  red: number;
+  green: number;
+  blue: number;
+}
+
+export interface RepeatCellRequest {
+  repeatCell: {
+    range: {
+      sheetId: number;
+      startRowIndex?: number;
+      endRowIndex?: number;
+      startColumnIndex?: number;
+      endColumnIndex?: number;
+    };
+    cell: { userEnteredFormat: { backgroundColor: Rgb } };
+    fields: string;
+  };
+}
+
+export type SpreadsheetRequest = AddSheetRequest | RepeatCellRequest;
+
+// 값(`/values:batchUpdate`)이 아니라 스프레드시트 구조·서식을 바꾸는 별도 엔드포인트.
+/** 구조/서식 request 배열을 한 번의 batchUpdate로 전송한다. request는 배열 순서대로 처리된다. */
+export async function batchUpdateSpreadsheet(
+  env: Env,
+  sheetId: string,
+  requests: SpreadsheetRequest[],
+): Promise<void> {
+  await sheetsFetch(env, sheetId, "POST", ":batchUpdate", { requests });
+}
+
+/** 서식 없는 새 탭을 생성한다. `_정보` 탭 생성(settings)이 사용한다 — 단어 탭은 lib/tabs.ts가 서식과 함께 만든다(#122). */
 export async function addSheet(env: Env, sheetId: string, title: string): Promise<void> {
-  await sheetsFetch(env, sheetId, "POST", ":batchUpdate", {
-    requests: [{ addSheet: { properties: { title } } }],
-  });
+  await batchUpdateSpreadsheet(env, sheetId, [{ addSheet: { properties: { title } } }]);
 }
 
 /** 지정 범위에 값을 덮어쓴다. RAW: 문자열을 그대로 저장 (PRD의 `날짜|간격` 같은 텍스트 계약 보호). */
