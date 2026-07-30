@@ -26,17 +26,25 @@ export type RecordEffect =
   | { kind: "review-fail"; question: StudyQuestion }
   | { kind: "none" };
 
-/** #123 느슨 채점용 정규화: NFC → 소문자화 → 트림 + 내부 연속 공백 1개화. */
+/**
+ * 느슨 채점용 정규화: NFC → 소문자화 → 공백 전면 제거(#123, #126). 공백을 1개로
+ * 축약하지 않고 아예 지우는 이유(#126): 띄어쓰기가 없는 중국어·한국어 표제어는
+ * 글자 사이에 공백이 하나만 끼어도(`你 好`) 시트 표제어와 영원히 불일치한다.
+ * `\s`가 전각 공백(U+3000, 중문 IME)·탭도 포함하므로 IME 공백까지 함께 풀리고,
+ * 앞뒤 공백도 같이 사라져 별도 트림은 불필요하다.
+ */
 function normalizeForGrading(value: string): string {
-  return value.normalize("NFC").toLowerCase().trim().replace(/\s+/g, " ");
+  return value.normalize("NFC").toLowerCase().replace(/\s+/g, "");
 }
 
 /**
  * PRD §5.2 모드 2 채점: 입력과 A열 표제어 양쪽을 동일 정규화(NFC·소문자화·공백
- * 정규화)한 뒤 일치해야 정답(#123 느슨 채점) — 병음 입력·부분 일치·이체자는
- * 여전히 오답, 빈 입력도 오답. 전 콘텐츠 타입 공통이며 한자는 대소문자·공백
- * 개념이 없어 zh 판정은 불변. 트림된 원입력을 함께 돌려주는 것은 오답 결과
- * 화면의 "내 답" 표시(§4.3)가 사용자 표기 그대로를 쓰기 때문.
+ * 제거)한 뒤 일치해야 정답(#123 느슨 채점, #126 공백 제거) — 병음 입력·부분
+ * 일치·이체자는 여전히 오답, 빈 입력·공백만 입력도 오답. 전 콘텐츠 타입 공통이라
+ * 영어에서 `icecream`이 `ice cream`의 정답이 되지만, 모드2가 검증하는 것은 공백
+ * 표기가 아니라 단어를 아는지이므로 수용한 트레이드오프다(#126). 트림된 원입력을
+ * 함께 돌려주는 것은 오답 결과 화면의 "내 답" 표시(§4.3)가 사용자 표기 그대로를
+ * 쓰기 때문.
  */
 export function gradeMode2(input: string, hanzi: string): { correct: boolean; answer: string } {
   const answer = input.trim();
