@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>#122 새 단어 탭 생성 시 시트 서식 자동 적용 — 작업 플랜</title>
+<style>
+  :root {
+    --bg: #f7f7f8; --card: #ffffff; --ink: #1c1c1e; --muted: #6e6e73;
+    --line: #e3e3e6; --accent: #3b6ef5; --accent-soft: #e8eefe;
+    --ok: #2e8b57; --warn: #b25e09; --code-bg: #f0f0f2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161618; --card: #202024; --ink: #ececf0; --muted: #98989f;
+      --line: #333338; --accent: #7a9bff; --accent-soft: #26304a;
+      --ok: #58c088; --warn: #e0a35c; --code-bg: #2a2a2f;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 40px 20px 80px; background: var(--bg); color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+                 "Segoe UI", "Noto Sans KR", sans-serif;
+    line-height: 1.65;
+  }
+  main { max-width: 860px; margin: 0 auto; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code {
+    font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 0.86em;
+    background: var(--code-bg); border-radius: 5px; padding: 2px 6px;
+  }
+  header { margin-bottom: 28px; }
+  .issue-chip {
+    display: inline-block; font-weight: 700; color: var(--accent);
+    background: var(--accent-soft); border-radius: 999px;
+    padding: 3px 14px; font-size: 0.95rem; margin-bottom: 10px;
+  }
+  .type-chip {
+    display: inline-block; font-weight: 600; color: var(--muted);
+    border: 1px solid var(--line); border-radius: 999px;
+    padding: 3px 12px; font-size: 0.8rem; margin-left: 8px; vertical-align: 2px;
+  }
+  h1 { font-size: 1.7rem; margin: 0 0 14px; letter-spacing: -0.02em; }
+  .meta {
+    display: flex; flex-wrap: wrap; gap: 6px 22px;
+    color: var(--muted); font-size: 0.87rem;
+  }
+  .meta b { color: var(--ink); font-weight: 600; }
+  section.card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 24px 28px; margin-top: 18px;
+  }
+  h2 {
+    font-size: 1.05rem; margin: 0 0 14px; letter-spacing: -0.01em;
+    display: flex; align-items: center; gap: 8px;
+  }
+  h2 .no {
+    color: var(--accent); font-size: 0.8rem; font-weight: 700;
+    border: 1.5px solid var(--accent); border-radius: 6px; padding: 0 6px;
+  }
+  ul, ol { margin: 0; padding-left: 22px; }
+  li { margin: 6px 0; }
+  .steps { list-style: none; padding: 0; counter-reset: step; }
+  .steps li {
+    counter-increment: step; position: relative; padding: 10px 0 10px 44px;
+    border-bottom: 1px dashed var(--line);
+  }
+  .steps li:last-child { border-bottom: none; }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 10px;
+    width: 28px; height: 28px; border-radius: 8px; background: var(--accent-soft);
+    color: var(--accent); font-weight: 700; font-size: 0.85rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .steps .files { display: block; margin-top: 4px; font-size: 0.85rem; color: var(--muted); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 0.82rem; }
+  .done-list { list-style: none; padding: 0; }
+  .done-list li { padding-left: 30px; position: relative; }
+  .done-list li::before {
+    content: ""; position: absolute; left: 2px; top: 7px; width: 15px; height: 15px;
+    border: 2px solid var(--ok); border-radius: 5px;
+  }
+  .scroll-x { overflow-x: auto; }
+  footer { margin-top: 30px; color: var(--muted); font-size: 0.8rem; text-align: center; }
+  .swatch {
+    display: inline-block; width: 0.9em; height: 0.9em; border-radius: 3px;
+    border: 1px solid var(--line); vertical-align: -0.1em; margin-right: 4px;
+  }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <span class="issue-chip"><a href="https://github.com/damdam6/vocabulary-study/issues/122">#122</a></span><span class="type-chip">기능 개선</span>
+    <h1>새 단어 탭 생성 시 시트 서식 자동 적용 — 헤더 색상·1행 고정·기록 열 회색 배경</h1>
+    <div class="meta">
+      <span><b>damdam6/vocabulary-study</b></span>
+      <span>브랜치 <b><code>feat/122-new-tab-sheet-styling</code></b> ← <code>main</code></span>
+      <span>라벨 <b>enhancement</b></span>
+      <span>2026-07-30</span>
+    </div>
+  </header>
+
+  <section class="card">
+    <h2><span class="no">1</span>요약</h2>
+    <p>새 단어 탭 생성(<code>createWordTab</code>)이 지금은 탭 추가와 1행 헤더 값만 쓰고 서식을 적용하지 않는다.
+    이번 작업에서 <b>한 번의 <code>:batchUpdate</code></b>로 탭 추가 + 1행 고정 + 헤더 색상 + D열 이후 기록 영역 배경을 함께 적용한다.
+    적용할 서식 값은 추측이 아니라 <b>참조 시트(en 프로필의 '단어1' 탭)를 Sheets API로 실측</b>해 확정했다:
+    A1·C1 <span class="swatch" style="background:#FFD966"></span><code>#FFD966</code>,
+    B1 <span class="swatch" style="background:#D9EAD3"></span><code>#D9EAD3</code>,
+    D열부터 전 행 <span class="swatch" style="background:#666666"></span><code>#666666</code>(진회색), 1행 고정.
+    <code>_정보</code> 탭 생성 경로는 기존 그대로 무서식으로 유지한다.</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">2</span>현황 분석</h2>
+    <ul>
+      <li><b>생성 흐름</b>: <code>worker/lib/tabs.ts:13</code> <code>createWordTab</code>이
+        ① 헤더 결정(첫 탭 1:1 복사 또는 기본 헤더) → ② <code>addSheet</code> → ③ <code>updateValues</code>로 A1 헤더 쓰기 순서로 동작한다.</li>
+      <li><b>addSheet</b>: <code>worker/lib/sheets.ts:61</code> — <code>{ addSheet: { properties: { title } } }</code> 단일 request만 보내는
+        <code>POST :batchUpdate</code>. 서식·행 고정·sheetId 지정 없음.</li>
+      <li><b>호출 경로 2곳</b>: POST <code>/api/tabs</code>(<code>worker/routes/tabs.ts:40</code>, 등록 화면 "생성" 버튼)와
+        POST <code>/api/words/register</code>의 <code>createTab</code> 계약 호환 경로(<code>worker/routes/register.ts:67</code>).
+        둘 다 <code>createWordTab</code>을 공유하므로 한 곳만 고치면 된다.</li>
+      <li><b>무서식 유지 대상</b>: <code>_정보</code> 탭 생성(<code>worker/routes/settings.ts:58</code>)도 같은 <code>addSheet</code>를 쓴다 —
+        시그니처를 바꾸지 않으면 자동으로 기존 동작 유지.</li>
+      <li><b>서식 실측</b> (서비스 계정으로 두 시트 조회):
+        zh 시트의 <code>HSK6급</code> 탭은 볼드 헤더 + 1행 고정만 있고 배경색이 없다.
+        이슈의 참조 스크린샷 서식은 <b>en 프로필 시트의 '단어1' 탭</b>과 일치 —
+        A1 <code>#FFD966</code> / B1 <code>#D9EAD3</code> / C1 <code>#FFD966</code>,
+        D열부터 우측·아래 전체 <code>#666666</code>, <code>frozenRowCount: 1</code>.
+        글자색·볼드는 지정돼 있지 않다(배경만) — 그대로 재현한다.</li>
+      <li><b>테스트 현황</b>: <code>worker/routes/tabs.test.ts:51</code> 등 5개 suite(tabs·tabs.generic·register·register.generic·settings)의
+        fetch 스텁이 <code>:batchUpdate</code> body에서 <code>addSheet</code> request만 골라 처리하고 나머지는 무시한다 —
+        서식 request가 추가돼도 기존 스텁은 깨지지 않지만, 서식을 <b>검증</b>하는 assertion은 어디에도 없다.</li>
+      <li><b>권한</b>: OAuth 스코프가 이미 <code>spreadsheets</code> 전체 권한이라 추가 설정 불요.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">3</span>설계</h2>
+    <ul>
+      <li><b>레이어 분리</b>: <code>sheets.ts</code>(전송 래퍼)에 범용
+        <code>batchUpdateSpreadsheet(env, sheetId, requests)</code>를 추가하고, 기존 <code>addSheet</code>는 그 위의 thin wrapper로 재구현한다
+        (settings 경로 시그니처·동작 불변). 서식 내용(색·범위)은 단어 탭 도메인 지식이므로 <code>tabs.ts</code>가 request 배열을 구성한다.</li>
+      <li><b>sheetId 선지정</b>: 같은 배치의 <code>repeatCell</code>이 새 탭을 참조하려면 응답을 기다릴 수 없으므로,
+        <code>crypto.getRandomValues</code>로 31비트 양의 정수 <code>gid</code>를 만들어 <code>addSheet.properties.sheetId</code>에 직접 지정한다
+        (이슈 기대 동작 1). Workers 런타임에서 <code>crypto.getRandomValues</code>는 표준 지원.</li>
+      <li><b>request 구성</b> (순서 보장 — API는 배열 순서대로 처리):
+        <ol>
+          <li><code>addSheet</code>: <code>{ sheetId: gid, title, gridProperties: { frozenRowCount: 1 } }</code> — 1행 고정을 생성 시점에 포함.</li>
+          <li><code>repeatCell</code> ×3: 1행의 A(노랑)·B(연두)·C(노랑) 각 1셀,
+            <code>fields: "userEnteredFormat.backgroundColor"</code>.</li>
+          <li><code>repeatCell</code> ×1: <code>{ sheetId: gid, startColumnIndex: 3 }</code> — 행 범위·끝 열 생략 = D열부터 그리드 전체(open-ended),
+            배경 <code>#666666</code>. 헤더 D1도 포함되는 것이 참조 시트와 동일.</li>
+        </ol></li>
+      <li><b>색상 상수</b>: <code>{ red: 255/255, green: 217/255, blue: 102/255 }</code>처럼 255분수로 표기해 hex와의 대응을 코드에서 바로 읽게 한다.</li>
+      <li><b>기각한 대안</b>:
+        (a) <code>addSheet</code> 응답에서 sheetId를 읽어 2번째 batchUpdate로 서식 적용 — 왕복 2회 + 탭만 생기고 서식은 실패하는 부분 실패 창이 생겨, 이슈가 명시한 "한 번의 batchUpdate"에 반함.
+        (b) 서식 내용을 <code>sheets.ts</code>에 하드코딩한 <code>addFormattedSheet</code> — 도메인 지식이 전송 래퍼로 새는 구조라 기각.
+        (c) gid 충돌 시 재시도 로직 — 충돌 확률이 기존 탭 수/2<sup>31</sup>로 무시 가능해 단순성 우선으로 미도입.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">4</span>작업 단계</h2>
+    <ol class="steps">
+      <li style="list-style:none">✅ <code>batchUpdateSpreadsheet(env, sheetId, requests)</code> 추가, <code>addSheet</code>를 그 wrapper로 재구현 — settings 경로는 무변경.
+        <span class="files"><code>worker/lib/sheets.ts</code></span>
+        <span class="files" style="color:var(--ok)">✅ 완료</span>
+      </li>
+      <li style="list-style:none">✅ <code>createWordTab</code>에서 gid 생성 + addSheet(1행 고정 포함) + repeatCell 4건을 단일 배치로 구성해 <code>batchUpdateSpreadsheet</code> 호출. 색상 상수·범위 헬퍼 정의.
+        <span class="files"><code>worker/lib/tabs.ts</code></span>
+        <span class="files" style="color:var(--ok)">✅ 완료</span>
+      </li>
+      <li style="list-style:none">✅ 탭 생성 suite의 스텁을 batchUpdate 요청 전체를 기록하도록 확장하고, 생성 테스트에 서식 assertion 추가 —
+        단일 batchUpdate 안에 addSheet(숫자 sheetId·frozenRowCount 1) + 같은 sheetId를 참조하는 repeatCell 4건(A1/B1/C1 색상, D+ open-ended <code>#666666</code>).
+        멱등 경로(created: false)는 batchUpdate 0건 유지.
+        <span class="files"><code>worker/routes/tabs.test.ts</code></span>
+        <span class="files" style="color:var(--ok)">✅ 완료 — 서식 전용 테스트 1건 신설, 멱등 경로에 batchUpdate 0건 assertion 추가</span>
+      </li>
+      <li style="list-style:none">✅ <code>_정보</code> 탭 생성이 서식 없는 <code>{ addSheet: { properties: { title } } }</code> 단일 request임을 고정하는 assertion 추가.
+        <span class="files"><code>worker/routes/settings.test.ts</code></span>
+        <span class="files" style="color:var(--ok)">✅ 완료 — 생성 테스트에 batchUpdateCalls 정확 일치 assertion</span>
+      </li>
+      <li style="list-style:none">✅ 나머지 스텁 suite(레지스터·generic 계열)는 repeatCell 무시 루프라 통과 예상 — 실행으로 확인하고, 스텁 주석의 요청 목록만 실제와 맞게 갱신.
+        <span class="files"><code>worker/routes/register.test.ts</code>, <code>worker/routes/register.generic.test.ts</code>, <code>worker/routes/tabs.generic.test.ts</code></span>
+        <span class="files" style="color:var(--ok)">✅ 완료 — 예상대로 무변경 통과, 주석도 여전히 정확해 갱신 불필요</span>
+      </li>
+      <li style="list-style:none">✅ 전체 검증: <code>npm test</code> · <code>npm run lint</code> · <code>npm run build</code>.
+        <span class="files">전체</span>
+        <span class="files" style="color:var(--ok)">✅ 완료 — 32 파일 418 테스트·lint·build 전부 통과 (워크트리 node_modules 불완전으로 npm install 선행)</span>
+      </li>
+      <li style="list-style:none">✅ 실제 시트 스모크: 메인 체크아웃의 <code>.dev.vars</code>로 <code>wrangler dev</code> 기동 → POST <code>/api/tabs</code>로 임시 탭 생성 →
+        Sheets API로 frozenRowCount·색상 4종 실측 검증 → <code>deleteSheet</code>로 임시 탭 정리 (기존 탭·값 불가침).
+        <span class="files"><code>scratchpad</code> 검증 스크립트</span>
+        <span class="files" style="color:var(--ok)">✅ 완료 — '스모크122' 탭 생성 후 실측: 1행 고정·A1/C1 #FFD966·B1 #D9EAD3·D열 이후 #666666 전부 일치, 헤더는 HSK6급 1행 복사 확인, deleteSheet로 정리</span>
+      </li>
+      <li style="list-style:none">✅ 플랜 체크 반영 후 repo 스타일 커밋 → push → PR 생성 (<code>Closes #122</code>).
+        <span class="files">git</span>
+        <span class="files" style="color:var(--ok)">✅ 완료 — 이 커밋에 최종 상태로 동봉</span>
+      </li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">5</span>리스크</h2>
+    <div class="scroll-x">
+    <table>
+      <thead><tr><th>리스크</th><th>영향</th><th>완화책</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>무작위 gid가 기존 sheetId와 충돌</td>
+          <td>batchUpdate 400 → 탭 생성 실패(500 응답)</td>
+          <td>확률 ≈ 기존 탭 수/2<sup>31</sup>로 무시 가능. 실패해도 <code>SheetsApiError</code>로 관측되고 재시도(버튼 재클릭)로 해소 — 재시도 로직 미도입은 의도된 단순화.</td>
+        </tr>
+        <tr>
+          <td>D열 이후 <code>#666666</code> + 기본 검정 글자의 낮은 대비</td>
+          <td>기록 열 텍스트 가독성 저하</td>
+          <td>참조 시트가 실사용 중인 동일 서식(글자색 미지정)이므로 그대로 재현 — 이슈 스펙. 변경 원하면 후속 이슈.</td>
+        </tr>
+        <tr>
+          <td>서식 request가 늘어난 batchUpdate에 기존 테스트 스텁이 반응</td>
+          <td>무관 suite 실패</td>
+          <td>모든 스텁이 <code>addSheet</code>만 골라 처리하는 무시 루프임을 확인함(<code>register.test.ts:44</code> 등) — 전체 테스트로 재확인.</td>
+        </tr>
+        <tr>
+          <td>실 시트 스모크가 사용자 시트에 흔적을 남김</td>
+          <td>임시 탭 잔존</td>
+          <td>검증 직후 <code>deleteSheet</code>로 해당 탭만 제거. 기존 탭·기존 값 경로(<code>values.update/append</code>)는 건드리지 않음.</td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">6</span>테스트 계획</h2>
+    <ul>
+      <li><b>신규(핵심)</b>: <code>tabs.test.ts</code> — 새 이름 생성 시 <b>단일</b> batchUpdate에 addSheet(숫자 <code>sheetId</code>, <code>frozenRowCount: 1</code>) +
+        repeatCell 4건이 모두 같은 sheetId를 참조하고, A1/C1 노랑·B1 연두·D열 open-ended <code>#666666</code>임을 검증. A1 헤더 PUT은 기존대로 유지.</li>
+      <li><b>신규(경계)</b>: <code>settings.test.ts</code> — <code>_정보</code> 탭 생성 request가 서식 없는 <code>{ addSheet: { properties: { title } } }</code>임을 고정.</li>
+      <li><b>회귀</b>: 멱등 경로(기존 탭 이름 → created: false)에서 batchUpdate 미발생, 0개 부트스트랩·<code>_</code> 접두 제외·register createTab 경로 등 기존 테스트 전부 통과.</li>
+      <li><b>정적 검증</b>: <code>npm run lint</code>, <code>npm run build</code>(tsc -b 포함).</li>
+      <li><b>실 시트 스모크</b>: wrangler dev로 임시 탭 생성 → Sheets API 실측으로 1행 고정 + 색상 4종이 참조 값과 일치함을 확인 → 탭 정리.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">7</span>완료 조건</h2>
+    <ul class="done-list">
+      <li>새 단어 탭 생성이 <b>한 번의 batchUpdate</b>로 탭 추가 + 1행 고정 + 헤더 색(A1·C1 <code>#FFD966</code>, B1 <code>#D9EAD3</code>) + D열 이후 <code>#666666</code> 배경을 적용한다.</li>
+      <li><code>_정보</code>(<code>_settings</code>) 탭 생성은 기존과 동일하게 무서식이다.</li>
+      <li>기존 탭·기존 값 쓰기 경로(<code>values.update</code>/<code>append</code>)에 영향이 없다.</li>
+      <li>addSheet를 스텁하는 기존 테스트가 갱신되고 전체 테스트·lint·build가 통과한다.</li>
+      <li>실제 시트 스모크로 새 탭의 서식(고정·색상)이 참조 시트 실측치와 일치함을 확인했다 (스모크 탭은 정리).</li>
+    </ul>
+  </section>
+
+  <footer>issue-plan · <a href="https://github.com/damdam6/vocabulary-study/issues/122">#122</a> · 2026-07-30</footer>
+</main>
+</body>
+</html>
