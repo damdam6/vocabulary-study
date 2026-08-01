@@ -8,6 +8,9 @@
 //   POST /api/tabs로 시트에 실제 탭을 만든 뒤(서버 성공 후)에만 선택지 추가·선택
 //   전환(#120), 이름 선검증, 로딩 중 재클릭 방지, 실패 시 오류·입력 유지, 확정 전
 //   제출 차단, 제출 바디에 createTab 부재를 고정한다.
+// - 오류 행 직접 수정 (#127) — 오류 배너 노출/소멸, 모달 편집→저장 시 배치 전체
+//   재검증(valid 승격·duplicate 전환·입력 내 중복 동반 해소), '직접수정' 태그,
+//   타이핑 중 포커스 유지, 편집 오버레이의 초기화(재확인)/유지(탭 변경), 제출 payload.
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import RegisterScreen from "./RegisterScreen.tsx";
 import { fire, flush, renderComponent } from "../test-utils.tsx";
@@ -92,6 +95,17 @@ function setup() {
     newTabErrors: () =>
       Array.from(container.querySelectorAll(".register-field .register-error")).map((el) => el.textContent),
     submitButton: () => container.querySelector<HTMLButtonElement>(".primary-button"),
+    duplicateBanner: () => container.querySelector(".register-confirm-banner"),
+    errorBanner: () => container.querySelector(".register-error-banner"),
+    fixButton: () => container.querySelector<HTMLButtonElement>(".register-error-fix-button"),
+    modal: () => container.querySelector(".register-modal"),
+    modalInputs: () => Array.from(container.querySelectorAll<HTMLInputElement>(".register-modal-input")),
+    modalSave: () => container.querySelector<HTMLButtonElement>(".register-modal-save")!,
+    modalCancel: () => container.querySelector<HTMLButtonElement>(".register-modal-cancel")!,
+    statusCells: () =>
+      Array.from(container.querySelectorAll("tbody tr")).map((tr) =>
+        Array.from(tr.querySelectorAll(".register-status")).map((el) => el.textContent),
+      ),
   };
 }
 
@@ -367,6 +381,223 @@ describe("RegisterScreen 탭 우선 흐름 (#118·#120)", () => {
     expect(registerWordsMock).toHaveBeenCalledWith({
       tab: "HSK6",
       words: [{ hanzi: "经济", pinyin: "jīngjì", meaning: "경제" }],
+    });
+  });
+});
+
+describe("RegisterScreen 오류 행 직접 수정 (#127)", () => {
+  // 병음이 한자와 어긋나 blocked가 되는 행 + 정상 행 하나.
+  const MIXED_BATCH = JSON.stringify({
+    version: 1,
+    words: [
+      { hanzi: "经济", pinyin: "wrong", meaning: "경제" },
+      { hanzi: "社会", pinyin: "shèhuì", meaning: "사회" },
+    ],
+  });
+
+  function wordIn(tab: string, hanzi: string, pinyin: string, meaning: string) {
+    return { tab, hanzi, pinyin, meaning, m1: 0, m2: 0, nextReview: null, interval: null };
+  }
+
+  // 탭이 선택된 상태에서 텍스트를 확인까지 마친 화면을 만든다(제출 게이트를 열어 두려고).
+  async function confirmed(batch: string, tabs: string[] = ["HSK6"]) {
+    fetchTabsMock.mockResolvedValue(tabs);
+    const api = setup();
+    await flush();
+    fire(() => setNativeValue(api.textarea(), batch));
+    fire(() => api.confirmButton().click());
+    return api;
+  }
+
+  it("blocked 행이 있으면 오류 배너가 뜨지만 제출은 막지 않는다", async () => {
+    const { errorBanner, fixButton, submitButton } = await confirmed(MIXED_BATCH);
+
+    expect(errorBanner()?.textContent).toContain("오류 1건은 등록되지 않습니다.");
+    expect(fixButton()).not.toBeNull();
+    // 중복 배너와 달리 오류 배너는 확인 대상이 아니다 — 정상 행이 있으면 그대로 제출 가능.
+    expect(submitButton()!.disabled).toBe(false);
+  });
+
+  it("blocked 행이 없으면 오류 배너가 뜨지 않는다", async () => {
+    const { errorBanner } = await confirmed(VALID_BATCH);
+
+    expect(errorBanner()).toBeNull();
+  });
+
+  it("모달에서 값을 고쳐 저장하면 정상으로 승격되고 배너가 사라지며 '직접수정' 태그가 병기된다", async () => {
+    const { fixButton, modal, modalInputs, modalSave, errorBanner, statusCells } =
+      await confirmed(MIXED_BATCH);
+
+    fire(() => fixButton()!.click());
+    // 모달에는 blocked 행만 — 행 하나 × 세 입력.
+    expect(modalInputs()).toHaveLength(3);
+    expect(modal()?.textContent).toContain("한자와 병음이 일치하지 않습니다");
+
+    fire(() => setNativeValue(modalInputs()[1], "jīngjì"));
+    fire(() => modalSave().click());
+
+    expect(modal()).toBeNull();
+    expect(errorBanner()).toBeNull();
+    // 상태 배지를 대체하지 않고 그 옆에 붙는다. 손대지 않은 둘째 행에는 태그가 없다.
+    expect(statusCells()).toEqual([["정상", "직접수정"], ["정상"]]);
+  });
+
+  it("취소하면 편집값을 버린다", async () => {
+    const { fixButton, modal, modalInputs, modalCancel, errorBanner, statusCells } =
+      await confirmed(MIXED_BATCH);
+
+    fire(() => fixButton()!.click());
+    fire(() => setNativeValue(modalInputs()[1], "jīngjì"));
+    fire(() => modalCancel().click());
+
+    expect(modal()).toBeNull();
+    expect(errorBanner()).not.toBeNull();
+    expect(statusCells()).toEqual([["오류"], ["정상"]]);
+  });
+
+  it("고쳐도 여전히 blocked면 오류로 남고 사유가 갱신된다", async () => {
+    const { fixButton, modalInputs, modalSave, errorBanner, container, statusCells } =
+      await confirmed(MIXED_BATCH);
+
+    // 병음은 그대로 틀린 채 뜻을 비운다 — 사유가 "빈 값" 쪽으로 늘어난다.
+    fire(() => fixButton()!.click());
+    fire(() => setNativeValue(modalInputs()[2], ""));
+    fire(() => modalSave().click());
+
+    expect(errorBanner()).not.toBeNull();
+    expect(container.textContent).toContain("뜻이 비어 있습니다");
+    expect(statusCells()).toEqual([["오류", "직접수정"], ["정상"]]);
+  });
+
+  it("표제어를 시트에 있는 값으로 고치면 중복으로 전환되고 중복 확인이 다시 요구된다", async () => {
+    fetchWordsMock.mockResolvedValue({ ...wordsResponse, words: [wordIn("HSK6", "文化", "wénhuà", "문화")] });
+    const { fixButton, modalInputs, modalSave, duplicateBanner, submitButton, statusCells } =
+      await confirmed(MIXED_BATCH);
+
+    expect(duplicateBanner()).toBeNull();
+
+    fire(() => fixButton()!.click());
+    fire(() => setNativeValue(modalInputs()[0], "文化"));
+    fire(() => setNativeValue(modalInputs()[1], "wénhuà"));
+    fire(() => modalSave().click());
+
+    expect(statusCells()).toEqual([["중복", "직접수정"], ["정상"]]);
+    // 중복 서명이 생겼으니 확인 전까지 제출이 막힌다.
+    expect(duplicateBanner()).not.toBeNull();
+    expect(submitButton()!.disabled).toBe(true);
+  });
+
+  it("입력 내 중복 두 행 중 하나만 고치면 손대지 않은 짝 행의 오류도 함께 풀린다", async () => {
+    const duplicatedBatch = JSON.stringify({
+      version: 1,
+      words: [
+        { hanzi: "经济", pinyin: "jīngjì", meaning: "경제" },
+        { hanzi: "经济", pinyin: "jīngjì", meaning: "경제(중복)" },
+      ],
+    });
+    const { fixButton, modalInputs, modalSave, errorBanner, statusCells } = await confirmed(duplicatedBatch);
+
+    expect(statusCells()).toEqual([["오류"], ["오류"]]);
+
+    // 모달에는 blocked 두 행이 모두 뜬다 — 첫 행만 다른 한자로 고친다.
+    fire(() => fixButton()!.click());
+    expect(modalInputs()).toHaveLength(6);
+    fire(() => setNativeValue(modalInputs()[0], "文化"));
+    fire(() => setNativeValue(modalInputs()[1], "wénhuà"));
+    fire(() => setNativeValue(modalInputs()[2], "문화"));
+    fire(() => modalSave().click());
+
+    expect(errorBanner()).toBeNull();
+    // 태그는 실제로 고친 행에만 — 짝 행은 손대지 않았지만 중복이 풀려 정상이 된다.
+    expect(statusCells()).toEqual([["정상", "직접수정"], ["정상"]]);
+  });
+
+  it("모달 입력은 타이핑 중 포커스를 유지한다 (index 고정 key)", async () => {
+    const { fixButton, modalInputs } = await confirmed(MIXED_BATCH);
+
+    fire(() => fixButton()!.click());
+    const headword = modalInputs()[0];
+    fire(() => headword.focus());
+    fire(() => setNativeValue(headword, "文"));
+
+    // key에 값이 섞이면 input이 re-mount되어 포커스가 body로 떨어진다.
+    expect(modalInputs()[0]).toBe(headword);
+    expect(document.activeElement).toBe(headword);
+    expect(modalInputs()[0].value).toBe("文");
+  });
+
+  it("텍스트를 고쳐 재확인하면 편집 오버레이가 초기화된다", async () => {
+    const { fixButton, modalInputs, modalSave, textarea, confirmButton, statusCells } =
+      await confirmed(MIXED_BATCH);
+
+    fire(() => fixButton()!.click());
+    fire(() => setNativeValue(modalInputs()[1], "jīngjì"));
+    fire(() => modalSave().click());
+    expect(statusCells()).toEqual([["정상", "직접수정"], ["정상"]]);
+
+    // 분류 결과가 같아지는 변경(공백 추가)이라도 텍스트가 달라졌으면 오버레이는 버린다.
+    fire(() => setNativeValue(textarea(), `${MIXED_BATCH} `));
+    fire(() => confirmButton().click());
+
+    expect(statusCells()).toEqual([["오류"], ["정상"]]);
+  });
+
+  it("탭만 바꾸면 편집 오버레이가 유지된다", async () => {
+    const { fixButton, modalInputs, modalSave, tabTrigger, tabOptions, statusCells } = await confirmed(
+      MIXED_BATCH,
+      ["HSK6", "HSK7"],
+    );
+
+    fire(() => fixButton()!.click());
+    fire(() => setNativeValue(modalInputs()[1], "jīngjì"));
+    fire(() => modalSave().click());
+
+    fire(() => tabTrigger().click());
+    fire(() => tabOptions().find((el) => el.textContent === "HSK7")!.click());
+
+    // 탭 변경은 텍스트 게이트 밖 — 분류만 다시 돌고 편집값·태그는 살아 있다.
+    expect(statusCells()).toEqual([["정상", "직접수정"], ["정상"]]);
+  });
+
+  it("전 행이 blocked라 막혀 있던 제출이 수정으로 valid가 생기면 활성화된다", async () => {
+    const allBlocked = JSON.stringify({ version: 1, words: [{ hanzi: "经济", pinyin: "wrong", meaning: "경제" }] });
+    const { submitButton, fixButton, modalInputs, modalSave } = await confirmed(allBlocked);
+
+    expect(submitButton()!.disabled).toBe(true);
+
+    fire(() => fixButton()!.click());
+    fire(() => setNativeValue(modalInputs()[1], "jīngjì"));
+    fire(() => modalSave().click());
+
+    expect(submitButton()!.disabled).toBe(false);
+  });
+
+  it("제출 payload는 편집 후 값 기준이고 blocked 행은 그대로 제외된다", async () => {
+    registerWordsMock.mockResolvedValue({ tab: "HSK6", created: false, added: [], skipped: [] });
+    const batch = JSON.stringify({
+      version: 1,
+      words: [
+        { hanzi: "经济", pinyin: "wrong", meaning: "경제" },
+        { hanzi: "社会", pinyin: "shèhuì", meaning: "사회" },
+        { hanzi: "文化", pinyin: "nope", meaning: "문화" },
+      ],
+    });
+    const { fixButton, modalInputs, modalSave, submitButton } = await confirmed(batch);
+
+    // 첫 blocked 행만 고치고 둘째(文化)는 오류로 남긴다.
+    fire(() => fixButton()!.click());
+    fire(() => setNativeValue(modalInputs()[1], "jīngjì"));
+    fire(() => modalSave().click());
+    fire(() => submitButton()!.click());
+    await flush();
+
+    // 정확 일치 — '직접수정'은 표시 전용이라 와이어에 실리지 않는다.
+    expect(registerWordsMock).toHaveBeenCalledWith({
+      tab: "HSK6",
+      words: [
+        { hanzi: "经济", pinyin: "jīngjì", meaning: "경제" },
+        { hanzi: "社会", pinyin: "shèhuì", meaning: "사회" },
+      ],
     });
   });
 });
