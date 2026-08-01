@@ -6,6 +6,7 @@ vi.mock("../lib/google-auth.ts", () => ({ getAccessToken: async () => "test-toke
 
 import worker from "../index.ts";
 import { MAX_REGISTER_WORDS } from "../lib/register.ts";
+import { makeEnv } from "../test-utils.ts";
 
 const PASSWORD = "test-password";
 type WorkerRequest = Parameters<typeof worker.fetch>[0];
@@ -119,7 +120,12 @@ function registerRequest(body: unknown): WorkerRequest {
   }) as WorkerRequest;
 }
 
-const env = { APP_PASSWORD: PASSWORD, SHEET_ID: "test-sheet-id" } as unknown as Env;
+// 이 스위트는 프로필 경계를 검증하지 않으므로 단일 zh 프로필 하나면 충분하다
+// (generic 분기는 register.generic.test.ts).
+const PROFILES = [
+  { id: "zh", name: "중국어 단어", password: PASSWORD, sheetId: "test-sheet-id", modes: ["m1", "m2"], contentType: "zh" },
+];
+const env = makeEnv({ PROFILES: JSON.stringify(PROFILES) });
 
 afterEach(() => {
   vi.unstubAllGlobals();
