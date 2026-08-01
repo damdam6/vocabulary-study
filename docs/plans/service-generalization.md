@@ -34,7 +34,7 @@
 
 | 파일 | 변경 |
 |---|---|
-| `worker/lib/profiles.ts` **(신규)** | `PROFILES` 파싱·검증(중복 password/id·빈 modes·잘못된 contentType 거부, contentType 생략 시 `"zh"`)·isolate 캐시, `APP_PASSWORD`+`SHEET_ID` 폴백 합성. 구성 오류는 구분 가능한 에러로 던져 index.ts가 500으로 변환 |
+| `worker/lib/profiles.ts` **(신규)** | `PROFILES` 파싱·검증(중복 password/id·빈 modes·잘못된 contentType 거부, contentType 생략 시 `"zh"`)·isolate 캐시, ~~`APP_PASSWORD`+`SHEET_ID` 폴백 합성~~(작업 7에서 제거, #82 — 미설정도 설정 오류). 구성 오류는 구분 가능한 에러로 던져 index.ts가 500으로 변환 |
 | `worker/lib/auth.ts` | `isAuthorized(request, env): boolean` → `resolveProfile(request, env): Profile \| null`. 다이제스트 캐시를 프로필 배열 기준으로 확장, 상수시간 비교는 그대로 |
 | `worker/index.ts` | 인증 분기에서 프로필 해석 → 각 핸들러에 전달. 설정 오류 500 분기 추가. `/api/health` 응답에 `profile` 블록 |
 | `worker/lib/sheets.ts` | 전 함수의 `env.SHEET_ID` → `sheetId` 파라미터화 (`sheetsFetch` 시그니처 변경이 근원, 나머지는 전파) |
@@ -68,7 +68,7 @@
 |---|---|
 | `docs/PRD.md` | 머리에 범용화 개정 포인터 (이 브랜치에서 반영) |
 | `docs/design-prd.md` | §2 로그인(프로필 저장)·§3 홈(이름 표기·전환 링크·등록 링크 zh 전용) 개정은 작업 4(Q5 확정 포함), §4 학습(zh/generic 렌더링·B열 빈칸 숨김) 개정은 작업 6 |
-| `wrangler.jsonc` | `SHEET_ID` var에 폴백 전용 주석 → 정리 단계(작업 6)에서 제거 |
+| `wrangler.jsonc` | `SHEET_ID` var에 폴백 전용 주석 → ~~정리 단계에서 제거~~ **완료** (작업 7, #82 — var 제거 + `worker-configuration.d.ts` 재생성) |
 | `scripts/deploy-auth-smoke.sh` · `.github/workflows/smoke.yml` | **불변** — 무인증 401 검사 그대로, `SMOKE_PASSWORD`는 아무 프로필의 비밀번호로 유효 |
 | `docs/registration-kit/` | 불변 |
 
@@ -83,21 +83,23 @@
 | 4 | **클라이언트 프로필 컨텍스트** — api/wordsApi 프로필 수신·저장, Login/Home/App 배선, 프로필 이름 표기(타이틀 아래 저강조, Q5 확정값)·전환 링크(비밀번호 재입력 방식), 등록 링크 `zh` 전용 노출, design-prd §2·§3 개정 | 화면 개정 + 문서 | 2, 3 |
 | 5 | **재시도 큐 프로필 태깅** — profileId 태깅·필터 flush·레거시 승격·4xx 폐기 | retryQueue 개정 + 테스트 | 4 |
 | 6 | **`generic` 콘텐츠 렌더링 대응** — StudyScreen·Mode1/2Card의 zh/generic 분기(`lang`·크기·입력란 속성·칩 문구), B열 빈칸 숨김(공통), design-prd 해당 절 개정 | 화면 개정 + 문서 | 4 |
-| 7 | **운영 전환·정리** — `PROFILES` 설정(1번 프로필 = 현 값), 새 프로필 시트 생성·서비스 계정 공유, 안정화 후 구 변수·폴백 제거 | 운영 체크리스트 실행 + 정리 PR | 5·6 |
+| 7 | ~~**운영 전환·정리**~~ — **완료** (전환 #81 / 정리 #82, 2026-08-02): `PROFILES` 설정·새 프로필 준비 후 폴백 합성·`SHEET_ID` var·`APP_PASSWORD` 시크릿 제거 | 운영 체크리스트 실행 + 정리 PR | 5·6 |
 
 의존 그래프: `0 → 1 → 2 → 4 → {5, 6} → 7`, `0 → 3 → 4`. 각 작업은 단독 배포 가능하게 자른다 — 1·2가 머지돼도 폴백 프로필로 기존 동작이 유지되고, 3은 M = {m1,m2} 고정 호출로 시작해 4에서 실제 modes가 연결되며, 6 전까지 `generic` 프로필은 (등록 링크만 없을 뿐) zh 스타일로 렌더링돼도 기능상 동작한다.
 
 ## 5. 마이그레이션·롤백
 
+> **2026-08-02 — 전환 종료.** 아래 순서대로 ①~④를 모두 마쳤다(#81 전환, #82 정리). 지금은 `PROFILES`가 유일한 구성 소스이고, 미설정은 `500` fail closed다 — 폴백을 전제로 한 아래 성질(순서 제약 없음·코드 롤백만으로 v1 복귀)은 더 이상 성립하지 않는다.
+
 - **배포 순서 제약 없음**: 폴백(§PRD-general 3.2) 덕에 코드 먼저든 시크릿 먼저든 안전. Workers Builds(#67)가 머지 즉시 배포하는 환경에서 이 성질이 필수다.
-- **권장 전환 순서**: ① 작업 1~5 머지(폴백으로 무변화 동작) → ② `PROFILES` 설정 — 1번 프로필에 현 `APP_PASSWORD`·`SHEET_ID`를 그대로 옮겨 기존 사용자 재로그인 불필요 → ③ 새 프로필 추가(시트 생성 → 서비스 계정 편집자 공유 → 시크릿 갱신) → ④ 안정화 후 작업 6(구 변수·폴백 제거).
+- **권장 전환 순서**: ① 작업 1~5 머지(폴백으로 무변화 동작) → ② `PROFILES` 설정 — 1번 프로필에 현 `APP_PASSWORD`·`SHEET_ID`를 그대로 옮겨 기존 사용자 재로그인 불필요 → ③ 새 프로필 추가(시트 생성 → 서비스 계정 편집자 공유 → 시크릿 갱신) → ④ 안정화 후 작업 7(구 변수·폴백 제거).
 - **롤백**: 구 코드는 `PROFILES`를 읽지 않으므로 코드 롤백만으로 v1 복귀. 시트 데이터는 계약 불변이라 영향 없음.
 - **클라이언트 캐시**: 기존 사용자의 localStorage에는 비밀번호만 있고 프로필 캐시가 없다 — 다음 `/api/words` 응답에서 자연 충전되므로 마이그레이션 코드 불필요. 재시도 큐의 무태그 항목은 현재 프로필로 승격(§3.2 retryQueue).
 
 ## 6. 테스트 전략
 
 - **기준선**: 기존 vitest 스위트가 M = {m1,m2} 경로로 그대로 통과해야 한다 (동작 보존 증명). 시그니처 변경으로 인한 테스트 수정은 modes 인자 추가에 국한.
-- **profiles.ts**: 정상 파싱 / JSON 깨짐 / password·id 중복 / modes 빈 배열·잘못된 값 / 폴백 합성 / 캐시.
+- **profiles.ts**: 정상 파싱 / JSON 깨짐 / password·id 중복 / modes 빈 배열·잘못된 값 / `PROFILES` 미설정(작업 7 이전에는 폴백 합성, 이후에는 설정 오류 — #82) / 캐시.
 - **auth**: 프로필별 비밀번호 → 해당 프로필 해석, 전 불일치 401, 설정 오류 500 (worker/index.test.ts 통합 케이스).
 - **학습 로직**: {m1} / {m2} / {m1,m2} 세 구성 × 상태 판정·큐 모드 선택·졸업 전이. 특히 단일 모드 졸업(D≥3만으로 F열 기록)과 §4.3 재해석 엣지(축소 후 F 빈칸 → 복습 대기).
 - **answer 라우트**: 비활성 모드 400, M 기준 졸업 시 F열 `내일|1`, 프로필 sheetId로 호출됐는지 (mock fetch의 URL 검증).
