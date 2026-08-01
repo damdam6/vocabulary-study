@@ -14,7 +14,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import RegisterScreen from "./RegisterScreen.tsx";
 import { fire, flush, renderComponent } from "../test-utils.tsx";
-import type { PublicProfile } from "../lib/api.ts";
+import type { ContentType, PublicProfile } from "../lib/api.ts";
 import type { WordsResponse } from "../lib/wordsApi.ts";
 
 const { fetchWordsMock, fetchTabsMock, createTabMock, registerWordsMock, postSettingsMock } = vi.hoisted(() => ({
@@ -72,9 +72,9 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-function setup() {
+function setup(contentType: ContentType = "zh") {
   const onGoHome = vi.fn();
-  const { container, unmount } = renderComponent(<RegisterScreen contentType="zh" onGoHome={onGoHome} />);
+  const { container, unmount } = renderComponent(<RegisterScreen contentType={contentType} onGoHome={onGoHome} />);
   unmountCurrent = unmount;
 
   return {
@@ -400,9 +400,9 @@ describe("RegisterScreen 오류 행 직접 수정 (#127)", () => {
   }
 
   // 탭이 선택된 상태에서 텍스트를 확인까지 마친 화면을 만든다(제출 게이트를 열어 두려고).
-  async function confirmed(batch: string, tabs: string[] = ["HSK6"]) {
+  async function confirmed(batch: string, tabs: string[] = ["HSK6"], contentType: ContentType = "zh") {
     fetchTabsMock.mockResolvedValue(tabs);
-    const api = setup();
+    const api = setup(contentType);
     await flush();
     fire(() => setNativeValue(api.textarea(), batch));
     fire(() => api.confirmButton().click());
@@ -510,6 +510,22 @@ describe("RegisterScreen 오류 행 직접 수정 (#127)", () => {
     expect(errorBanner()).toBeNull();
     // 태그는 실제로 고친 행에만 — 짝 행은 손대지 않았지만 중복이 풀려 정상이 된다.
     expect(statusCells()).toEqual([["정상", "직접수정"], ["정상"]]);
+  });
+
+  it("generic 프로필에서는 모달 라벨이 표제어/보조 표기/뜻으로 갈린다", async () => {
+    const genericBatch = JSON.stringify({
+      version: 1,
+      contentType: "generic",
+      words: [{ term: "take off", note: "구동사", meaning: "" }],
+    });
+    const { fixButton, container, modalInputs } = await confirmed(genericBatch, ["HSK6"], "generic");
+
+    fire(() => fixButton()!.click());
+
+    expect(
+      Array.from(container.querySelectorAll(".register-modal-field-label")).map((el) => el.textContent),
+    ).toEqual(["표제어", "보조 표기", "뜻"]);
+    expect(modalInputs().map((input) => input.value)).toEqual(["take off", "구동사", ""]);
   });
 
   it("모달 입력은 타이핑 중 포커스를 유지한다 (index 고정 key)", async () => {
