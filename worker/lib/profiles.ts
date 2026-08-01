@@ -1,7 +1,7 @@
 /**
  * 프로필 구성 파서 — Worker 시크릿 `PROFILES`(JSON 배열)를 파싱·검증하고 isolate 수명
  * 동안 캐시한다 (범용화 PRD `docs/PRD-general.md` §3). 여기는 순수 로직만 둔다 —
- * 비밀번호 → 프로필 해석(resolveProfile)과 설정 오류의 500 변환은 후속 이슈에서 배선한다.
+ * 비밀번호 → 프로필 해석은 auth.ts, 설정 오류의 500 변환은 index.ts가 맡는다.
  *
  * 오류 메시지에는 비밀번호 값을 절대 싣지 않는다 — 프로필 지목은 비밀이 아닌 `id`로만 한다.
  */
@@ -20,7 +20,7 @@ export interface Profile {
   sheetId: string;
   /** 활성 모드 집합 M — "m1"/"m2"의 비어 있지 않은 부분집합, 중복 없음. */
   modes: QuizMode[];
-  /** 콘텐츠 타입 — 생략 시 "zh" (폴백 프로필 포함 하위 호환). */
+  /** 콘텐츠 타입 — 생략 시 "zh" (v1 시절 프로필과의 하위 호환). */
   contentType: ContentType;
 }
 
@@ -41,14 +41,12 @@ export function toPublicProfile(profile: Profile): PublicProfile {
 }
 
 /**
- * 이 모듈이 읽는 env 조각. 생성 파일(worker-configuration.d.ts)에는 `PROFILES` 시크릿이
- * 아직 없으므로(미설정 상태에서는 `wrangler types`가 만들지 않음) 필요한 필드만 구조적으로
- * 선언한다 — 실제 `Env`는 그대로 대입 가능하고, 시크릿 설정 후 재생성돼도 충돌하지 않는다.
+ * 이 모듈이 읽는 env 조각. `PROFILES`를 선택 필드로 두는 이유는 미설정 상태를 값으로
+ * 표현해 설정 오류 경로를 단위 테스트하기 위함이다 — 생성 타입의 `Env`(필수 문자열)는
+ * 그대로 대입 가능하다.
  */
 export interface ProfilesEnv {
   PROFILES?: string;
-  APP_PASSWORD?: string;
-  SHEET_ID?: string;
 }
 
 /** 설정 오류를 비밀번호 불일치(401)와 구분해 500으로 관측하기 위한 전용 오류 (PRD-general §3.2). */
@@ -71,10 +69,12 @@ export function getProfiles(env: ProfilesEnv): Profile[] {
   return cachedProfiles;
 }
 
-/** 캐시 없는 순수 파싱·검증·폴백 합성. 검증 실패는 전부 ProfileConfigError로 던진다. */
+/** 캐시 없는 순수 파싱·검증. 검증 실패는 전부 ProfileConfigError로 던진다. */
 export function parseProfiles(env: ProfilesEnv): Profile[] {
   if (!env.PROFILES) {
-    return [synthesizeFallbackProfile(env)];
+    // 전환기의 APP_PASSWORD+SHEET_ID 폴백 합성은 운영 전환 완료 후 제거했다(#82) —
+    // 이제 PROFILES가 유일한 구성 소스이고, 미설정은 인증 불능이 아니라 설정 오류다.
+    throw new ProfileConfigError("PROFILES가 설정되지 않았습니다");
   }
   let raw: unknown;
   try {
@@ -90,31 +90,6 @@ export function parseProfiles(env: ProfilesEnv): Profile[] {
   const profiles = raw.map(parseProfileEntry);
   assertUniqueAcrossProfiles(profiles);
   return profiles;
-}
-
-/**
- * PRD-general §3.2 폴백: `PROFILES` 미설정이면 기존 `APP_PASSWORD`+`SHEET_ID`로 단일
- * 프로필을 합성한다 — Workers Builds 자동 배포(#67)와 시크릿 설정 간 순서 제약을 없애고
- * 코드 롤백을 안전하게 한다. 운영 전환 완료 후 정리 단계(§9)에서 구 변수와 함께 제거한다.
- */
-function synthesizeFallbackProfile(env: ProfilesEnv): Profile {
-  if (!env.APP_PASSWORD || !env.SHEET_ID) {
-    const missing = [
-      ...(env.APP_PASSWORD ? [] : ["APP_PASSWORD"]),
-      ...(env.SHEET_ID ? [] : ["SHEET_ID"]),
-    ];
-    throw new ProfileConfigError(
-      `PROFILES가 설정되지 않았고, 폴백 합성에 필요한 ${missing.join("·")}도 없습니다`,
-    );
-  }
-  return {
-    id: "default",
-    name: "단어 암기",
-    password: env.APP_PASSWORD,
-    sheetId: env.SHEET_ID,
-    modes: ["m1", "m2"],
-    contentType: "zh",
-  };
 }
 
 function parseProfileEntry(item: unknown, index: number): Profile {
