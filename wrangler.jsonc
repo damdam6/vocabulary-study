@@ -22,11 +22,8 @@
 	"upload_source_maps": true,
 	"compatibility_flags": [
 		"nodejs_compat"
-	],
-	"vars": {
-		// 시트 ID는 URL에 노출되는 값이라 var로 관리. 서비스 계정 키는 시크릿(GOOGLE_SERVICE_ACCOUNT_KEY)으로만.
-		"SHEET_ID": "1WEo1b15RRq2NfrJqzsLA1_-6Rs3nIZl2q5sn7doBvw8"
-	}
+	]
+	// 평문 var 없음 — 시트 ID는 프로필별 값이라 PROFILES 시크릿 안에 있다 (PRD-general §5.1).
 	/**
 	 * Smart Placement
 	 * https://developers.cloudflare.com/workers/configuration/smart-placement/#smart-placement
