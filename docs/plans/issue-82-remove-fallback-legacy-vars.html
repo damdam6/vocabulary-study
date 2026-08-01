@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>#82 정리 — 폴백 합성·구 변수(APP_PASSWORD·SHEET_ID) 제거 — 작업 플랜</title>
+<style>
+  :root {
+    --bg: #f7f7f8; --card: #ffffff; --ink: #1c1c1e; --muted: #6e6e73;
+    --line: #e3e3e6; --accent: #3b6ef5; --accent-soft: #e8eefe;
+    --ok: #2e8b57; --warn: #b25e09; --code-bg: #f0f0f2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161618; --card: #202024; --ink: #ececf0; --muted: #98989f;
+      --line: #333338; --accent: #7a9bff; --accent-soft: #26304a;
+      --ok: #58c088; --warn: #e0a35c; --code-bg: #2a2a2f;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 40px 20px 80px; background: var(--bg); color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+                 "Segoe UI", "Noto Sans KR", sans-serif;
+    line-height: 1.65;
+  }
+  main { max-width: 860px; margin: 0 auto; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code {
+    font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 0.86em;
+    background: var(--code-bg); border-radius: 5px; padding: 2px 6px;
+  }
+  header { margin-bottom: 28px; }
+  .issue-chip {
+    display: inline-block; font-weight: 700; color: var(--accent);
+    background: var(--accent-soft); border-radius: 999px;
+    padding: 3px 14px; font-size: 0.95rem; margin-bottom: 10px;
+  }
+  .type-chip {
+    display: inline-block; font-weight: 600; color: var(--muted);
+    border: 1px solid var(--line); border-radius: 999px;
+    padding: 3px 12px; font-size: 0.8rem; margin-left: 8px; vertical-align: 2px;
+  }
+  h1 { font-size: 1.7rem; margin: 0 0 14px; letter-spacing: -0.02em; }
+  .meta {
+    display: flex; flex-wrap: wrap; gap: 6px 22px;
+    color: var(--muted); font-size: 0.87rem;
+  }
+  .meta b { color: var(--ink); font-weight: 600; }
+  section.card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 24px 28px; margin-top: 18px;
+  }
+  h2 {
+    font-size: 1.05rem; margin: 0 0 14px; letter-spacing: -0.01em;
+    display: flex; align-items: center; gap: 8px;
+  }
+  h2 .no {
+    color: var(--accent); font-size: 0.8rem; font-weight: 700;
+    border: 1.5px solid var(--accent); border-radius: 6px; padding: 0 6px;
+  }
+  ul, ol { margin: 0; padding-left: 22px; }
+  li { margin: 6px 0; }
+  .steps { list-style: none; padding: 0; counter-reset: step; }
+  .steps li {
+    counter-increment: step; position: relative; padding: 10px 0 10px 44px;
+    border-bottom: 1px dashed var(--line);
+  }
+  .steps li:last-child { border-bottom: none; }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 10px;
+    width: 28px; height: 28px; border-radius: 8px; background: var(--accent-soft);
+    color: var(--accent); font-weight: 700; font-size: 0.85rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .steps li::marker { content: none; }
+  .done-mark { color: var(--ok); font-weight: 700; margin-right: 6px; }
+  .note { display: block; margin-top: 4px; font-size: 0.85rem; color: var(--warn); }
+  .steps .files { display: block; margin-top: 4px; font-size: 0.85rem; color: var(--muted); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 0.82rem; }
+  .done-list { list-style: none; padding: 0; }
+  .done-list li { padding-left: 30px; position: relative; }
+  .done-list li::before {
+    content: ""; position: absolute; left: 2px; top: 7px; width: 15px; height: 15px;
+    border: 2px solid var(--ok); border-radius: 5px;
+  }
+  .scroll-x { overflow-x: auto; }
+  footer { margin-top: 30px; color: var(--muted); font-size: 0.8rem; text-align: center; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <span class="issue-chip"><a href="https://github.com/damdam6/vocabulary-study/issues/82">#82</a></span><span class="type-chip">정리 · 리팩토링</span>
+    <h1>정리 — 폴백 합성·구 변수(APP_PASSWORD·SHEET_ID) 제거</h1>
+    <div class="meta">
+      <span><b>damdam6/vocabulary-study</b></span>
+      <span>브랜치 <b><code>feat/82-remove-fallback-legacy-vars</code></b> ← <code>main</code></span>
+      <span>라벨 <b>enhancement</b></span>
+      <span>2026-08-02</span>
+    </div>
+  </header>
+
+  <section class="card">
+    <h2><span class="no">1</span>요약</h2>
+    <p>
+      범용화 전환(#81)이 끝나 프로덕션이 <code>PROFILES</code>로 돌고 있으므로, 전환 안전장치였던
+      폴백 합성 경로와 구 변수를 걷어낸다. <code>worker/lib/profiles.ts</code>의
+      <code>synthesizeFallbackProfile</code>을 제거해 <code>PROFILES</code> 미설정을 인증 불능이 아닌
+      <b>설정 오류(500, fail closed)</b>로 확정하고, <code>wrangler.jsonc</code>의 <code>SHEET_ID</code> var를
+      지운 뒤 <code>worker-configuration.d.ts</code>를 재생성한다. 폴백 env로 워커를 통과시키던
+      테스트 3개 파일(<code>index.test.ts</code> · <code>routes/register.test.ts</code> ·
+      <code>routes/tabs.test.ts</code>)은 단일 <code>PROFILES</code> 구성으로 옮겨야 하며 — 이게 이 작업에서
+      가장 실질적인 변경분이다 — 문서(PRD-general §3.2·§5.1·§9, 범용화 플랜 작업 7)에 제거 완료를
+      반영한다. 프로덕션 <code>APP_PASSWORD</code> 시크릿 삭제는 소유자 수동 단계로 PR 본문에 남긴다.
+    </p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">2</span>현황 분석</h2>
+    <p><b>인증 흐름.</b> <code>worker/index.ts:20</code>이 모든 <code>/api/*</code>에서
+      <code>resolveProfile</code>(<code>worker/lib/auth.ts:19</code>)을 부르고, 그 안에서
+      <code>getProfiles(env)</code>(<code>worker/lib/profiles.ts:67</code>)가 isolate 캐시에 프로필 배열을
+      고정한다. <code>ProfileConfigError</code>는 <code>worker/index.ts:22-32</code>에서 500으로,
+      비밀번호 불일치는 401로 갈린다 — 이 계약은 이미 완성돼 있고 이번 작업이 건드리지 않는다.</p>
+
+    <p><b>남아 있는 폴백.</b> <code>parseProfiles</code>(<code>worker/lib/profiles.ts:75-78</code>)는
+      <code>env.PROFILES</code>가 없으면 <code>synthesizeFallbackProfile</code>
+      (<code>worker/lib/profiles.ts:100-118</code>)로 <code>APP_PASSWORD</code>+<code>SHEET_ID</code>에서
+      <code>{ id: "default", name: "단어 암기", modes: ["m1","m2"], contentType: "zh" }</code>를 합성한다.
+      두 값 중 하나라도 없을 때만 <code>ProfileConfigError</code>다. 폴백 env 조각은
+      <code>ProfilesEnv</code>(<code>worker/lib/profiles.ts:48-52</code>)에도 선언돼 있다.</p>
+
+    <p><b>설정 잔재.</b> <code>wrangler.jsonc:26-29</code>의 <code>vars</code> 블록이
+      <code>SHEET_ID</code> 하나만 담고 있고, 생성 파일 <code>worker-configuration.d.ts:4-22</code>의
+      <code>__BaseEnv_Env</code>·<code>NodeJS.ProcessEnv</code>에 <code>SHEET_ID</code> 리터럴 타입과
+      <code>APP_PASSWORD</code>가 박혀 있다. 코드에서 <code>env.SHEET_ID</code>를 읽는 곳은 폴백 합성이
+      유일하다 — 모든 Sheets 호출은 이미 <code>profile.sheetId</code> 파라미터를 받는다.</p>
+
+    <p><b>테스트가 실제 제약이다.</b> 워커를 통과하는 테스트 중 세 파일이 아직 폴백 env로 인증을
+      통과한다:</p>
+    <ul>
+      <li><code>worker/index.test.ts:14</code> — 파일 전체가 폴백 스위트다
+        (<code>makeEnv({ APP_PASSWORD, SHEET_ID })</code>). 다만 담고 있는 커버리지는 폴백 고유가 아니라
+        <b>인증 게이트 순서(#23)·<code>X-Worker-Version</code> 헤더·health 응답 형태</b>로, 폴백을 지운
+        뒤에도 남겨야 할 계약이다.</li>
+      <li><code>worker/routes/register.test.ts:122</code>, <code>worker/routes/tabs.test.ts:9</code> —
+        <code>{ APP_PASSWORD, SHEET_ID } as unknown as Env</code> 손수 캐스트. Sheets 스텁은 URL의 시트 ID를
+        보지 않으므로(<code>stubSheetsFetch</code>는 경로 패턴만 분기) 프로필 env로 갈아끼우면 그만이다.</li>
+      <li><code>worker/lib/profiles.test.ts:129-151</code> — 폴백 합성 단위 테스트 3개.</li>
+    </ul>
+    <p>나머지 워커 테스트(<code>index.profiles</code> · <code>index.sheet-isolation</code> ·
+      <code>index.config-error</code> · <code>routes/answer</code> · <code>routes/words</code> ·
+      <code>routes/settings</code> · <code>routes/*.generic</code>)는 이미
+      <code>makeEnv({ PROFILES })</code>를 쓴다 — 옮길 때 그 형식을 그대로 따르면 된다.
+      <code>worker/index.config-error.test.ts:47</code>은 이미 "PROFILES 미설정 → 500"을 검증하지만
+      <b>구 변수가 함께 없을 때</b>만 확인한다 — 폴백 제거 후에는 구 변수가 있어도 500이어야 한다.</p>
+
+    <p><b>파일당 단일 구성 규약.</b> <code>getProfiles</code>와 비밀번호 다이제스트 캐시가 isolate
+      수명 동안 첫 성공 구성을 고정하므로, 워커 통합 테스트는 "파일 = isolate = 구성 하나" 규약을
+      따른다(<code>worker/test-utils.ts:1-5</code>의 주석). 테스트 이관은 이 규약을 깨지 않아야 한다.</p>
+
+    <p><b>문서.</b> <code>docs/PRD-general.md</code>의 §3.1 <code>contentType</code> 행(60행대) ·
+      §3.2 폴백 항목(74행) · §5.1 환경변수 표(134행) · §9 전환 순서(186·188행)와
+      <code>docs/plans/service-generalization.md</code>(37·71·80·86·88·92·93·100행)가 폴백을 현재 사양으로
+      서술한다. <code>docs/PRD.md</code>는 v1 문서로, 상단(8행)에 "충돌 시 PRD-general 우선"이 이미
+      명시돼 있다.</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">3</span>설계</h2>
+    <p><b>결정 1 — <code>PROFILES</code> 미설정 = 설정 오류.</b> <code>parseProfiles</code>의 첫 분기를
+      폴백 합성 대신 <code>ProfileConfigError("PROFILES가 설정되지 않았습니다")</code>로 바꾼다.
+      500 변환·로그·캐시 정책(실패는 캐시하지 않음)은 이미 상위에 있으므로 이 한 줄로 fail closed가
+      완성된다. <code>ProfilesEnv</code>는 <code>{ PROFILES?: string }</code>만 남긴다 — 선택 필드를 유지하는
+      이유는 미설정 경로를 단위 테스트에서 그대로 표현하기 위함이다.</p>
+
+    <p><b>결정 2 — 폴백 테스트는 지우지 말고 이관한다.</b> <code>worker/index.test.ts</code>는 파일을
+      삭제하는 대신 단일 프로필 <code>PROFILES</code> 구성으로 갈아끼운다. 담긴 계약(무헤더 401 ·
+      틀린 토큰 401이 health 분기보다 먼저 · 401/200 모두 <code>X-Worker-Version</code> ·
+      <code>CF_VERSION_METADATA</code> 부재 시 <code>"unknown"</code> · 응답에 <code>sheetId</code>/비밀번호 미노출)은
+      폴백과 무관하게 지켜야 하는 것들이고, <code>index.profiles.test.ts</code>(2프로필 해석)와도
+      역할이 겹치지 않는다. 대안(파일 삭제 후 커버리지를 <code>index.profiles.test.ts</code>에 합치기)은
+      한 파일이 두 구성을 갖게 돼 isolate 캐시 규약과 충돌하므로 기각.</p>
+
+    <p><b>결정 3 — 생성 타입은 재생성하되 <code>PROFILES</code>를 포함시킨다.</b>
+      <code>wrangler types</code>는 <code>wrangler.jsonc</code>의 vars와 <b>로컬 <code>.dev.vars</code>의 키</b>로
+      Env를 만든다. 워크트리에는 <code>.dev.vars</code>가 없으므로(메인 체크아웃에만 존재, gitignore됨)
+      그대로 돌리면 <code>GOOGLE_SERVICE_ACCOUNT_KEY</code>까지 사라진 잘못된 타입이 나온다. 실제 운영
+      시크릿 구성(<code>GOOGLE_SERVICE_ACCOUNT_KEY</code> + <code>PROFILES</code>)을 담은 워크트리 로컬
+      <code>.dev.vars</code>(gitignore 대상, 커밋 금지)를 두고 재생성해 Env를
+      <code>CF_VERSION_METADATA</code> · <code>GOOGLE_SERVICE_ACCOUNT_KEY</code> · <code>PROFILES</code>로 맞춘다.
+      <code>PROFILES</code>가 생성 타입에 들어오면 "생성 파일에 PROFILES가 아직 없다"는
+      <code>worker/lib/profiles.ts:44-47</code> 주석도 사실이 아니게 되므로 함께 고친다.
+      wrangler 버전은 메인 체크아웃과 동일한 4.110.0이라 런타임 타입 본문 diff는 발생하지 않아야 한다 —
+      발생하면 리스크 표의 완화책을 따른다.</p>
+
+    <p><b>결정 4 — 프로덕션 시크릿 삭제는 자동화하지 않는다.</b> <code>wrangler secret delete
+      APP_PASSWORD</code>는 되돌리기 어려운 운영 변경이고 이슈에도 "(수동)"으로 적혀 있다. PR 본문에
+      배포 후 체크리스트로 남기고, 코드가 그 시크릿을 더는 읽지 않으므로 삭제 시점에 제약이 없다는
+      점을 명시한다.</p>
+
+    <p><b>결정 5 — <code>docs/PRD.md</code>는 개정하지 않는다.</b> v1 사양의 역사 기록이고 상단에 우선순위
+      선언이 있다. 다만 §7.2 환경변수 표에 "현재는 <code>PROFILES</code>로 대체(PRD-general §5.1)"
+      한 줄 주석만 더해 grep 잔재가 현행 사양으로 오독되지 않게 한다.</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">4</span>작업 단계</h2>
+    <ol class="steps">
+      <li><span class="done-mark">✔</span><b>폴백 합성 제거</b> — <code>synthesizeFallbackProfile</code> 삭제,
+        <code>parseProfiles</code>의 <code>!env.PROFILES</code> 분기를 <code>ProfileConfigError</code>로 전환,
+        <code>ProfilesEnv</code>에서 <code>APP_PASSWORD</code>·<code>SHEET_ID</code> 제거. 모듈 헤더 주석과
+        <code>contentType</code>의 "폴백 프로필 포함 하위 호환" 문구도 현행화.
+        <span class="files"><code>worker/lib/profiles.ts</code></span>
+      </li>
+      <li><span class="done-mark">✔</span><b>파서 단위 테스트 이관</b> — "폴백 합성" describe를 "PROFILES 미설정 = 설정 오류"로 교체:
+        <code>parseProfiles({})</code>가 던지는 것에 더해 <b><code>APP_PASSWORD</code>·<code>SHEET_ID</code>가
+        있어도</b> 던진다는 회귀 방지 케이스를 넣는다.
+        <span class="files"><code>worker/lib/profiles.test.ts</code></span>
+      </li>
+      <li><span class="done-mark">✔</span><b>인증 게이트 스위트 이관</b> — <code>makeEnv({ APP_PASSWORD, SHEET_ID })</code>를 단일 프로필
+        <code>makeEnv({ PROFILES: JSON.stringify([...]) })</code>로 교체하고 헤더 주석의 "폴백 경로(#70)"
+        설명을 "단일 프로필 구성"으로 갱신. health 응답의 <code>profile</code> 기대값도 그 프로필로 맞춘다.
+        <span class="files"><code>worker/index.test.ts</code></span>
+      </li>
+      <li><span class="done-mark">✔</span><b>라우트 테스트 env 이관</b> — 손수 캐스트한 폴백 env를 <code>../test-utils.ts</code>의
+        <code>makeEnv({ PROFILES })</code>로 교체(비밀번호·시트 ID 값은 유지해 스텁·단언 무변경).
+        <span class="files"><code>worker/routes/register.test.ts</code>, <code>worker/routes/tabs.test.ts</code></span>
+      </li>
+      <li><span class="done-mark">✔</span><b>fail closed 계약 보강</b> — "PROFILES 미설정 + 구 변수 존재 → 여전히 500" 케이스 추가,
+        기존 47행 케이스의 폴백 언급 주석 현행화. <code>test-utils.ts</code> 주석의
+        <code>SHEET_ID</code> 리터럴 타입·파일별 구성 목록도 갱신.
+        <span class="files"><code>worker/index.config-error.test.ts</code>, <code>worker/test-utils.ts</code></span>
+        <span class="note">실행 노트 — <code>index.test.ts</code>의 지역 상수 <code>SHEET_ID</code>도
+          <code>SHEET</code>로 개명했다(값 상수일 뿐이지만 완료 조건의 grep 확인을 흐리지 않도록).</span>
+      </li>
+      <li><span class="done-mark">✔</span><b><code>SHEET_ID</code> var 제거</b> — <code>vars</code> 블록을 통째로(주석 포함) 삭제.
+        <span class="files"><code>wrangler.jsonc</code></span>
+      </li>
+      <li><span class="done-mark">✔</span><b>생성 타입 재생성</b> — <code>npm ci</code> 후 워크트리 로컬 <code>.dev.vars</code>
+        (<code>GOOGLE_SERVICE_ACCOUNT_KEY</code>·<code>PROFILES</code>, 커밋 금지)를 두고
+        <code>npm run cf-typegen</code>. diff가 Env 헤더 블록에 한정되는지 확인.
+        <span class="files"><code>worker-configuration.d.ts</code></span>
+        <span class="note">실행 노트 — 값은 자리표시자(<code>"{}"</code>·<code>"[]"</code>)로 충분했고,
+          diff는 <code>__BaseEnv_Env</code>·<code>ProcessEnv</code>·해시 3줄에 한정됐다(런타임 타입 변동 없음).</span>
+      </li>
+      <li><span class="done-mark">✔</span><b>검증</b> — <code>npm run test</code> · <code>npm run lint</code> · <code>npm run build</code>
+        (<code>tsc -b</code> 포함) 전부 통과. 이어서 <code>APP_PASSWORD</code>/<code>SHEET_ID</code> grep으로
+        코드·설정 잔재 0 확인.
+      </li>
+      <li><span class="done-mark">✔</span><b>문서 개정</b> — PRD-general §3.1 <code>contentType</code> 문구 · §3.2 폴백 항목 제거(제거 완료
+        기록) · §5.1 표에서 구 변수 행 삭제 · §9 전환 순서 4단계 완료 표기, 범용화 플랜의 작업 7·폴백
+        서술에 완료 반영, PRD.md §7.2 표에 대체 주석 한 줄.
+        <span class="files"><code>docs/PRD-general.md</code>, <code>docs/plans/service-generalization.md</code>, <code>docs/PRD.md</code></span>
+        <span class="note">실행 노트 — 계획에 없던 두 곳을 함께 고쳤다: PRD-general §9의 롤백 문구
+          (폴백 전제가 깨졌으므로 "코드 롤백만으로 v1 복귀"는 더 이상 사실이 아니다)와, 범용화 플랜 §5의
+          "작업 6(구 변수·폴백 제거)" 오기를 작업 7로 정정.</span>
+      </li>
+      <li><span class="done-mark">✔</span><b>커밋·PR</b> — 레포 스타일(한국어 요약 + <code>(#82)</code>)로 파일 단위 커밋, 플랜 HTML 최종
+        상태 포함. PR 본문에 <b>배포 후 수동 단계</b>(프로덕션 <code>APP_PASSWORD</code> 시크릿 삭제 +
+        프로필 로그인·학습·기록 스모크)를 체크리스트로 남긴다.
+      </li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">5</span>리스크</h2>
+    <div class="scroll-x">
+    <table>
+      <thead><tr><th>리스크</th><th>영향</th><th>완화책</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>프로덕션 <code>PROFILES</code>가 어떤 이유로 비면 전 <code>/api/*</code>가 500</td>
+          <td>서비스 전면 중단 (폴백이 있던 지금은 구 변수로 연명)</td>
+          <td>#81에서 <code>PROFILES</code> 설정·스모크 완료 확인됨(2026-07-27 클로즈). 이 PR은 시크릿을
+            건드리지 않으며, <code>APP_PASSWORD</code> 삭제는 배포 후 수동 단계로 분리해 되돌릴 여지를 남긴다.
+            사고 시 롤백은 이 PR revert(폴백 복귀)로 가능.</td>
+        </tr>
+        <tr>
+          <td><code>wrangler types</code>가 로컬 <code>.dev.vars</code>에 좌우돼 엉뚱한 Env를 생성</td>
+          <td><code>GOOGLE_SERVICE_ACCOUNT_KEY</code>가 타입에서 사라져 <code>tsc -b</code> 실패 또는
+            거짓 통과</td>
+          <td>재생성 전 워크트리 로컬 <code>.dev.vars</code>에 운영과 동일한 키 집합을 채운다. 생성 후
+            <code>git diff</code>로 Env 헤더 블록만 바뀌었는지 눈으로 확인.</td>
+        </tr>
+        <tr>
+          <td>wrangler/workerd 버전 차이로 런타임 타입 55만 줄이 통째로 재작성</td>
+          <td>리뷰 불가능한 diff</td>
+          <td>메인 체크아웃과 같은 4.110.0을 <code>npm ci</code>로 설치. 그래도 대량 diff가 나면 재생성을
+            버리고 <code>__BaseEnv_Env</code>·<code>ProcessEnv</code> 두 블록만 손으로 수정한 뒤 그 사유를
+            플랜에 기록.</td>
+        </tr>
+        <tr>
+          <td>테스트 이관 시 한 파일에 두 프로필 구성이 섞임</td>
+          <td>isolate 캐시가 첫 구성을 고정해 이후 테스트가 헛통과</td>
+          <td>"파일 = 구성 하나" 규약 준수 — <code>index.test.ts</code>는 단일 프로필,
+            <code>index.config-error.test.ts</code>에는 성공 구성을 넣지 않는다.</td>
+        </tr>
+        <tr>
+          <td>구 비밀번호 사용자 재로그인 필요 여부</td>
+          <td>사용자 이탈</td>
+          <td>없음 — #81에서 1번 프로필에 기존 <code>APP_PASSWORD</code> 값을 그대로 옮겼으므로 비밀번호는
+            동일하다(PRD-general §9).</td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">6</span>테스트 계획</h2>
+    <ul>
+      <li><span class="done-mark">✔</span><b>단위(파서)</b> — <code>parseProfiles({})</code> → <code>ProfileConfigError</code>,
+        <code>parseProfiles({ APP_PASSWORD, SHEET_ID })</code> → <b>합성하지 않고</b>
+        <code>ProfileConfigError</code>. 정상 <code>PROFILES</code> 파싱·검증·캐시 테스트는 무변경 통과.</li>
+      <li><span class="done-mark">✔</span><b>통합(fail closed)</b> — <code>makeEnv({})</code> 및 구 변수만 있는 env로 <code>/api/health</code>,
+        <code>/api/words</code> 호출 → 토큰 유무와 무관하게 <b>500</b> + <code>console.error</code> +
+        <code>X-Worker-Version</code> 헤더. 이슈 완료 조건 "PROFILES 미설정 시 500 fail closed"의 직접 근거.</li>
+      <li><span class="done-mark">✔</span><b>통합(정상 경로 회귀)</b> — 이관한 <code>worker/index.test.ts</code>가 단일 프로필로
+        무헤더 401 · 틀린 토큰 401(health 분기보다 먼저) · 정상 토큰 200 + <code>profile</code> 블록 ·
+        응답 본문에 <code>sheetId</code>/비밀번호 미포함 · <code>CF_VERSION_METADATA</code> 부재 시
+        <code>"unknown"</code>을 그대로 검증.</li>
+      <li><span class="done-mark">✔</span><b>라우트 회귀</b> — <code>routes/register.test.ts</code>·<code>routes/tabs.test.ts</code>가 env만
+        바꾼 채 전부 통과(단언·스텁 무변경). 나머지 워커·클라 스위트도 전체 통과.</li>
+      <li><span class="done-mark">✔</span><b>전체</b> — <code>npm run test</code>(vitest 전 파일) · <code>npm run lint</code>(oxlint) ·
+        <code>npm run build</code>(<code>tsc -b</code> + vite) 그린.</li>
+      <li><span class="done-mark">✔</span><b>grep</b> — <code>grep -rn "APP_PASSWORD\|SHEET_ID" --exclude-dir=node_modules</code> 결과가
+        <code>docs/PRD.md</code>(v1 역사 기록 + 대체 주석)와 플랜 HTML 외에는 없어야 한다.</li>
+      <li><span class="done-mark" style="color: var(--warn)">☐</span><b>배포 후(수동, PR 본문 체크리스트)</b> — 프로덕션 <code>APP_PASSWORD</code> 시크릿 삭제 후
+        각 프로필 로그인 → 학습 1문제 → 기록 반영까지 확인. 무인증 <code>401</code> 스모크(#23/#67)는
+        자동으로 돈다.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">7</span>완료 조건</h2>
+    <ul class="done-list">
+      <li>코드·설정에 <code>APP_PASSWORD</code>/<code>SHEET_ID</code> 참조 없음 — grep으로 확인
+        (예외: <code>docs/PRD.md</code>의 v1 사양 기록, 대체 주석 병기).</li>
+      <li><code>PROFILES</code> 미설정이 500 fail closed임을 단위·통합 테스트가 고정. 구 변수가 있어도
+        합성되지 않는다는 회귀 케이스 포함.</li>
+      <li><code>wrangler.jsonc</code>에 <code>vars</code> 없음, <code>worker-configuration.d.ts</code>의 Env가
+        <code>CF_VERSION_METADATA</code>·<code>GOOGLE_SERVICE_ACCOUNT_KEY</code>·<code>PROFILES</code>만 선언.</li>
+      <li><code>npm run test</code>·<code>npm run lint</code>·<code>npm run build</code> 그린.</li>
+      <li>PRD-general §3.2·§5.1·§9와 범용화 플랜에 폴백·구 변수 제거가 반영됨.</li>
+      <li>PR 본문에 배포 후 수동 단계(프로덕션 <code>APP_PASSWORD</code> 시크릿 삭제 + 프로필 스모크)가
+        체크리스트로 남아 있음 — 이 항목만 머지 후 소유자 확인 사항이다.</li>
+    </ul>
+  </section>
+
+  <footer>issue-plan · <a href="https://github.com/damdam6/vocabulary-study/issues/82">#82</a> · 2026-08-02</footer>
+</main>
+</body>
+</html>

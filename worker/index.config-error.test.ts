@@ -44,13 +44,24 @@ describe("프로필 설정 오류 → /api/* 500 (401 아님)", () => {
     expect(res.status).toBe(500);
   });
 
-  it("PROFILES 미설정 + 폴백 변수 부재도 500 — #71 이전의 401 계약을 재정의", async () => {
-    // 구 isAuthorized는 APP_PASSWORD 미설정을 401로 눌렀다(구 index.test.ts). 이제는
-    // 인증 불능이 아니라 설정 오류로 관측한다.
+  it("PROFILES 미설정이면 500 — #71 이전의 401 계약을 재정의", async () => {
+    // 구 isAuthorized는 APP_PASSWORD 미설정을 401로 눌렀다. 이제는 인증 불능이 아니라
+    // 설정 오류로 관측한다.
     spyConsoleError();
     const res = await worker.fetch(
       healthRequest({ Authorization: "Bearer any-token" }),
       makeEnv({}),
+    );
+    expect(res.status).toBe(500);
+  });
+
+  it("구 변수(APP_PASSWORD·SHEET_ID)만 있어도 500 — 폴백 합성은 제거됐다(#82)", async () => {
+    // 프로덕션에서 구 시크릿을 미처 지우지 못한 상태로 PROFILES가 비면, 조용히 옛 단일
+    // 프로필로 되살아나는 대신 설정 오류로 드러나야 한다.
+    spyConsoleError();
+    const res = await worker.fetch(
+      healthRequest({ Authorization: "Bearer legacy-password" }),
+      makeEnv({ APP_PASSWORD: "legacy-password", SHEET_ID: "legacy-sheet" }),
     );
     expect(res.status).toBe(500);
   });

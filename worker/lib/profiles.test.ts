@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { getProfiles, parseProfiles, ProfileConfigError, toPublicProfile } from "./profiles.ts";
+import {
+  getProfiles,
+  parseProfiles,
+  ProfileConfigError,
+  toPublicProfile,
+  type ProfilesEnv,
+} from "./profiles.ts";
 
 function makeProfile(overrides: Record<string, unknown> = {}): Record<string, unknown> {
   return {
@@ -126,27 +132,15 @@ describe("parseProfiles — 설정 오류", () => {
   });
 });
 
-describe("parseProfiles — 폴백 합성 (PROFILES 미설정)", () => {
-  it("APP_PASSWORD+SHEET_ID가 있으면 default 단일 프로필을 합성한다", () => {
-    const result = parseProfiles({ APP_PASSWORD: "legacy-pw", SHEET_ID: "legacy-sheet" });
-    expect(result).toEqual([
-      {
-        id: "default",
-        name: "단어 암기",
-        password: "legacy-pw",
-        sheetId: "legacy-sheet",
-        modes: ["m1", "m2"],
-        contentType: "zh",
-      },
-    ]);
-  });
-
-  it("PROFILES·APP_PASSWORD 모두 미설정이면 ProfileConfigError", () => {
+describe("parseProfiles — PROFILES 미설정 (fail closed)", () => {
+  it("PROFILES가 없으면 ProfileConfigError — 인증 불능이 아니라 설정 오류", () => {
     expect(() => parseProfiles({})).toThrow(ProfileConfigError);
   });
 
-  it("SHEET_ID만 없어도 ProfileConfigError", () => {
-    expect(() => parseProfiles({ APP_PASSWORD: "legacy-pw" })).toThrow(ProfileConfigError);
+  it("구 변수(APP_PASSWORD·SHEET_ID)가 있어도 프로필을 합성하지 않는다", () => {
+    // 폴백 합성 제거(#82)의 회귀 방지 — 구 시크릿이 환경에 남아 있어도 되살아나면 안 된다.
+    const legacyEnv = { APP_PASSWORD: "legacy-pw", SHEET_ID: "legacy-sheet" } as unknown as ProfilesEnv;
+    expect(() => parseProfiles(legacyEnv)).toThrow(ProfileConfigError);
   });
 });
 

@@ -3,10 +3,15 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 vi.mock("../lib/google-auth.ts", () => ({ getAccessToken: async () => "test-token" }));
 
 import worker from "../index.ts";
+import { makeEnv } from "../test-utils.ts";
 
 const PASSWORD = "test-password";
 type WorkerRequest = Parameters<typeof worker.fetch>[0];
-const env = { APP_PASSWORD: PASSWORD, SHEET_ID: "test-sheet-id" } as unknown as Env;
+// 이 스위트는 프로필 경계를 검증하지 않으므로 단일 프로필 하나면 충분하다 (모드는 둘 다 활성).
+const PROFILES = [
+  { id: "zh", name: "중국어 단어", password: PASSWORD, sheetId: "test-sheet-id", modes: ["m1", "m2"], contentType: "zh" },
+];
+const env = makeEnv({ PROFILES: JSON.stringify(PROFILES) });
 
 function stubTitlesFetch(titles: string[]) {
   vi.stubGlobal(
