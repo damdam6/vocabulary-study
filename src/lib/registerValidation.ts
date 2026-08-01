@@ -12,6 +12,11 @@
  * term/note/meaning)만 다르고, 내부 표현(ParsedWord/ValidatedRow)과 와이어
  * (registerApi.ts)는 항상 hanzi/pinyin/meaning 운반자로 통일한다 — 등록 일반화
  * 플랜 §3.3(단일 와이어 계약 유지).
+ *
+ * 파싱(parseRegistrationInput)과 분류(classifyRegistrationRows)는 별도 진입점으로
+ * 나뉘어 있다(#127) — 등록 화면의 오류 행 직접 수정이 "이미 파싱된 ParsedWord[]를
+ * 편집값으로 갈아끼운 뒤 다시 분류"해야 하기 때문이다. validateRegistrationInput은
+ * 둘을 잇는 합성 함수로, rawText 하나로 끝내는 기존 호출부의 계약을 그대로 유지한다.
  */
 
 import type { ContentType } from "./api";
@@ -34,6 +39,11 @@ export interface ValidatedRow extends ParsedWord {
 export type RegisterValidationResult =
   | { ok: false; error: string }
   | { ok: true; rows: ValidatedRow[] };
+
+/** 파싱 단계 결과 — 분류 전, 필드만 뽑아낸 상태. */
+export type RegisterParseResult =
+  | { ok: false; error: string }
+  | { ok: true; words: ParsedWord[] };
 
 // 한자 유니코드 범위(플랜 §3, 기본 블록만 허용) — worker/lib/register.ts HANZI_RE와
 // 동일해야 드리프트가 없다(#57). CJK 확장 A(U+3400–)는 의도적으로 제외.
@@ -90,11 +100,14 @@ function headwordNoun(contentType: ContentType): string {
   return contentType === "zh" ? "한자" : "표제어";
 }
 
-export function validateRegistrationInput(
+/**
+ * 붙여넣은 텍스트를 ParsedWord[]까지만 끌고 간다 — JSON 파싱, 스키마(버전·words
+ * 배열·contentType 오배치) 검사, 필드 추출·트림. 행 분류는 하지 않는다.
+ */
+export function parseRegistrationInput(
   rawText: string,
-  existingHanziInTab: ReadonlySet<string>,
   contentType: ContentType = "zh",
-): RegisterValidationResult {
+): RegisterParseResult {
   let parsed: unknown;
   try {
     parsed = JSON.parse(rawText);
@@ -117,14 +130,25 @@ export function validateRegistrationInput(
     return { ok: false, error: mismatch };
   }
 
-  const parsedWords = body.words.map((raw) => extract(raw, contentType));
+  return { ok: true, words: body.words.map((raw) => extract(raw, contentType)) };
+}
 
+/**
+ * 파싱된 행들을 정상/오류/중복으로 분류한다. 입력 내 중복 카운트(hanziCounts)는
+ * 매 호출마다 words 배열 전체 기준으로 다시 집계된다 — 등록 화면이 오류 행을
+ * 고쳐 넘길 때(#127) 손대지 않은 짝 행의 중복 오류까지 함께 풀리는 근거다.
+ */
+export function classifyRegistrationRows(
+  words: readonly ParsedWord[],
+  existingHanziInTab: ReadonlySet<string>,
+  contentType: ContentType = "zh",
+): ValidatedRow[] {
   const hanziCounts = new Map<string, number>();
-  for (const { hanzi } of parsedWords) {
+  for (const { hanzi } of words) {
     if (hanzi !== "") hanziCounts.set(hanzi, (hanziCounts.get(hanzi) ?? 0) + 1);
   }
 
-  const rows: ValidatedRow[] = parsedWords.map(({ hanzi, pinyin, meaning }): ValidatedRow => {
+  return words.map(({ hanzi, pinyin, meaning }): ValidatedRow => {
     const reasons: string[] = [];
 
     const noun = headwordNoun(contentType);
@@ -156,8 +180,17 @@ export function validateRegistrationInput(
     }
     return { hanzi, pinyin, meaning, status: "valid", reasons: [] };
   });
+}
 
-  return { ok: true, rows };
+/** 파싱 + 분류를 한 번에 — rawText 하나로 끝내는 기존 호출부용 합성 함수. */
+export function validateRegistrationInput(
+  rawText: string,
+  existingHanziInTab: ReadonlySet<string>,
+  contentType: ContentType = "zh",
+): RegisterValidationResult {
+  const parsed = parseRegistrationInput(rawText, contentType);
+  if (!parsed.ok) return parsed;
+  return { ok: true, rows: classifyRegistrationRows(parsed.words, existingHanziInTab, contentType) };
 }
 
 /**

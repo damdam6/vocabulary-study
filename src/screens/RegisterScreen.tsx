@@ -19,6 +19,15 @@
 // 바꾸는 것은 이 게이트 밖이라 텍스트는 그대로 둔 채 분류(특히 중복)만 즉시
 // 다시 계산된다.
 //
+// blocked(오류) 행은 조용히 빠지지 않는다(#127) — 있으면 중복 배너와 같은 자리에 오류
+// 배너가 뜨고, "오류 수정" 버튼이 여는 모달에서 행마다 세 값을 고칠 수 있다. 편집값은
+// 원본 텍스트를 건드리지 않고 별도 오버레이(행 index → 편집값)에 담기므로 위의 isDirty
+// 게이트가 걸리지 않는다. 파생은 2단이다: 파싱(confirmedText 의존) → 오버레이 덮어쓰기 →
+// 분류(선택 탭 의존). 그래서 탭만 바꾸면 분류만 다시 돌고 편집은 살아남고, 텍스트를 고쳐
+// 재확인하면(행 구성이 달라져 index가 어긋나므로) 오버레이를 비운다. 오버레이에 키가
+// 있다는 것 자체가 "원본과 다르다"는 뜻이라 '직접수정' 태그의 근거로 그대로 쓴다 —
+// 저장 시 원본과 같아진 행은 엔트리를 지워 플래그가 어긋날 여지를 없앤다.
+//
 // 제출 대상은 valid+duplicate 행 전체다 — blocked 행만 제외한다. 시트 내 중복의
 // 최종 스킵 판단은 Worker(#48) 책임(플랜 §2 신뢰 경계)이라, 여기서 표시한
 // duplicate 행도 그대로 보내 Worker가 실제로 스킵하게 한다. 중복 확인은
@@ -38,13 +47,19 @@
 // 같다. 현재값은 이 화면이 이미 부르는 fetchWords의 settings에서 오며, 별도
 // 표시 없이 입력란을 그 값으로 프리필하는 것으로 "현재값 표시"를 겸한다.
 import { useEffect, useMemo, useState } from 'react'
+import RegisterErrorModal, { type BlockedRow } from './RegisterErrorModal.tsx'
 import RegisterTable from './RegisterTable.tsx'
 import Dropdown from '../components/Dropdown.tsx'
 import { postSettings, type ContentType, type WordEntry } from '../lib/api.ts'
 import { registerPlaceholder } from '../lib/contentLabels.ts'
 import { fetchWords } from '../lib/wordsApi.ts'
 import { createTab, fetchTabs, registerWords, type RegisterResult } from '../lib/registerApi.ts'
-import { validateNewTabName, validateRegistrationInput } from '../lib/registerValidation.ts'
+import {
+  classifyRegistrationRows,
+  parseRegistrationInput,
+  validateNewTabName,
+  type ParsedWord,
+} from '../lib/registerValidation.ts'
 
 interface RegisterScreenProps {
   contentType: ContentType
@@ -89,6 +104,9 @@ function RegisterScreen({ contentType, onGoHome }: RegisterScreenProps) {
   const [text, setText] = useState('')
   const [confirmedText, setConfirmedText] = useState<string | null>(null)
   const [acknowledgedDuplicateKey, setAcknowledgedDuplicateKey] = useState<string | null>(null)
+  // 오류 행 직접 수정(#127) — 행 index → 편집값. 키가 있다 = 원본과 다르다('직접수정').
+  const [editOverlay, setEditOverlay] = useState<Record<number, ParsedWord>>({})
+  const [errorModalOpen, setErrorModalOpen] = useState(false)
 
   const [submitPhase, setSubmitPhase] = useState<SubmitPhase>('idle')
   const [submitError, setSubmitError] = useState<string | null>(null)
@@ -164,15 +182,24 @@ function RegisterScreen({ contentType, onGoHome }: RegisterScreenProps) {
 
   const isDirty = confirmedText !== null && text !== confirmedText
 
+  // 1단: 파싱 — 텍스트에만 의존한다. 탭을 바꿔도 다시 돌지 않으므로 오버레이의 index가
+  // 가리키는 행 구성이 유지된다.
   const parseResult = useMemo(
     () =>
       confirmedText === null || confirmedText.trim() === ''
         ? null
-        : validateRegistrationInput(confirmedText, existingHanziInTab, contentType),
-    [confirmedText, existingHanziInTab, contentType],
+        : parseRegistrationInput(confirmedText, contentType),
+    [confirmedText, contentType],
   )
 
-  const duplicateRows = parseResult?.ok ? parseResult.rows.filter((row) => row.status === 'duplicate') : []
+  // 2단: 오버레이를 덮어쓴 값으로 분류 — 선택 탭(시트 중복)까지 여기서 반영된다.
+  const rows = useMemo(() => {
+    if (!parseResult?.ok) return []
+    const effectiveWords = parseResult.words.map((word, index) => editOverlay[index] ?? word)
+    return classifyRegistrationRows(effectiveWords, existingHanziInTab, contentType)
+  }, [parseResult, editOverlay, existingHanziInTab, contentType])
+
+  const duplicateRows = rows.filter((row) => row.status === 'duplicate')
   const duplicateKey = duplicateRows
     .map((row) => row.hanzi)
     .sort()
@@ -180,9 +207,16 @@ function RegisterScreen({ contentType, onGoHome }: RegisterScreenProps) {
   const hasDuplicates = duplicateKey !== ''
   const duplicatesAcknowledged = !hasDuplicates || acknowledgedDuplicateKey === duplicateKey
 
-  const submittableRows = parseResult?.ok ? parseResult.rows.filter((row) => row.status !== 'blocked') : []
-  const validCount = parseResult?.ok ? parseResult.rows.filter((row) => row.status === 'valid').length : 0
-  const blockedCount = parseResult?.ok ? parseResult.rows.filter((row) => row.status === 'blocked').length : 0
+  const submittableRows = rows.filter((row) => row.status !== 'blocked')
+  const validCount = rows.filter((row) => row.status === 'valid').length
+  const blockedRows: BlockedRow[] = rows
+    .map((row, index) => ({ index, row }))
+    .filter(({ row }) => row.status === 'blocked')
+  const blockedCount = blockedRows.length
+  const editedIndexes = useMemo(
+    () => new Set(Object.keys(editOverlay).map(Number)),
+    [editOverlay],
+  )
 
   const canSubmit =
     submitPhase === 'idle' &&
@@ -192,8 +226,40 @@ function RegisterScreen({ contentType, onGoHome }: RegisterScreenProps) {
     !isNewTab &&
     duplicatesAcknowledged
 
+  // 텍스트가 실제로 달라진 재확인만 오버레이를 버린다 — 행 구성이 바뀌어 index 기반
+  // 오버레이가 어긋나기 때문. 같은 텍스트로 다시 눌렀을 때 편집이 통째로 날아가지는 않는다.
   const handleConfirm = () => {
+    if (text !== confirmedText) setEditOverlay({})
     setConfirmedText(text)
+  }
+
+  // 모달 저장 — 편집값을 원본(파싱 결과)과 비교해 달라진 행만 오버레이에 남긴다.
+  // 되돌린 행의 엔트리를 지우므로 "오버레이 키 = '직접수정' 대상"이 항상 성립한다.
+  const handleErrorEditsSave = (edits: Record<number, ParsedWord>) => {
+    if (parseResult?.ok) {
+      const originals = parseResult.words
+      setEditOverlay((prev) => {
+        const next = { ...prev }
+        for (const [key, edited] of Object.entries(edits)) {
+          const index = Number(key)
+          const original = originals[index]
+          const trimmed: ParsedWord = {
+            hanzi: edited.hanzi.trim(),
+            pinyin: edited.pinyin.trim(),
+            meaning: edited.meaning.trim(),
+          }
+          const unchanged =
+            original !== undefined &&
+            trimmed.hanzi === original.hanzi &&
+            trimmed.pinyin === original.pinyin &&
+            trimmed.meaning === original.meaning
+          if (unchanged) delete next[index]
+          else next[index] = trimmed
+        }
+        return next
+      })
+    }
+    setErrorModalOpen(false)
   }
 
   const handleNewTabNameChange = (value: string) => {
@@ -414,10 +480,24 @@ function RegisterScreen({ contentType, onGoHome }: RegisterScreenProps) {
 
       {!isDirty && parseResult?.ok && (
         <>
-          <RegisterTable rows={parseResult.rows} contentType={contentType} />
+          <RegisterTable rows={rows} contentType={contentType} editedIndexes={editedIndexes} />
           <p className="register-summary">
             정상 {validCount}건 · 오류 {blockedCount}건 · 중복 {duplicateRows.length}건
           </p>
+
+          {/* 오류 배너(#127) — dismiss 없이 blocked가 0이 되면 사라지고, 제출은 막지 않는다. */}
+          {blockedCount > 0 && (
+            <div className="register-error-banner">
+              <p>오류 {blockedCount}건은 등록되지 않습니다.</p>
+              <button
+                type="button"
+                className="register-error-fix-button"
+                onClick={() => setErrorModalOpen(true)}
+              >
+                오류 수정
+              </button>
+            </div>
+          )}
 
           {hasDuplicates && !duplicatesAcknowledged && (
             <div className="register-confirm-banner">
@@ -437,6 +517,15 @@ function RegisterScreen({ contentType, onGoHome }: RegisterScreenProps) {
           <button type="button" className="primary-button" disabled={!canSubmit} onClick={handleSubmit}>
             {submitPhase === 'submitting' ? '제출 중…' : '제출'}
           </button>
+
+          {errorModalOpen && blockedCount > 0 && (
+            <RegisterErrorModal
+              rows={blockedRows}
+              contentType={contentType}
+              onCancel={() => setErrorModalOpen(false)}
+              onSave={handleErrorEditsSave}
+            />
+          )}
         </>
       )}
     </div>

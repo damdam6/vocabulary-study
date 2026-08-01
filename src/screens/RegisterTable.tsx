@@ -15,9 +15,14 @@ const STATUS_LABEL: Record<ValidatedRow['status'], string> = {
 interface RegisterTableProps {
   rows: ValidatedRow[]
   contentType: ContentType
+  /**
+   * 모달에서 값을 고쳐 원본과 달라진 행의 index(#127). 표시 전용이라 ValidatedRow(검증
+   * 라이브러리의 계약)에 얹지 않고 prop으로 분리한다 — 와이어에도 실리지 않는다.
+   */
+  editedIndexes?: ReadonlySet<number>
 }
 
-function RegisterTable({ rows, contentType }: RegisterTableProps) {
+function RegisterTable({ rows, contentType, editedIndexes }: RegisterTableProps) {
   const headers = registerTableHeaders(contentType)
   const headwordLangAttr = headwordLang(contentType)
   return (
@@ -41,6 +46,8 @@ function RegisterTable({ rows, contentType }: RegisterTableProps) {
                 <span className={`register-status register-status--${row.status}`}>
                   {STATUS_LABEL[row.status]}
                 </span>
+                {/* 상태 배지를 대체하지 않고 병기한다 — 상태는 제출 여부를 결정하는 정보다. */}
+                {editedIndexes?.has(index) && <span className="register-status register-status--edited">직접수정</span>}
                 {row.reasons.length > 0 && (
                   <ul className="register-reasons">
                     {row.reasons.map((reason) => (

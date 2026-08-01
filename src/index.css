@@ -1219,6 +1219,13 @@ button {
   color: var(--accent-light);
 }
 
+/* '직접수정' 태그(#127) — 상태 배지와 같은 칩 형태로 그 옆에 병기된다. */
+.register-status--edited {
+  margin-left: 6px;
+  background: var(--bg-panel);
+  color: var(--text-muted);
+}
+
 .register-reasons {
   margin: 4px 0 0;
   padding-left: 16px;
@@ -1242,6 +1249,157 @@ button {
   padding: 14px 16px;
   font-size: 13px;
   color: var(--text);
+}
+
+/* 오류 배너(#127) — 중복 배너와 같은 레이아웃 토큰을 쓰되 red 틴트로 구분한다.
+   클래스를 분리한 이유: 두 배너가 동시에 뜰 수 있어 선택자가 겹치면 안 된다. */
+.register-error-banner {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: rgba(240, 101, 90, 0.1);
+  border: 1px solid var(--border-card);
+  border-radius: 14px;
+  padding: 14px 16px;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.register-error-banner p {
+  margin: 0;
+}
+
+.register-error-fix-button {
+  align-self: flex-start;
+  min-height: 40px;
+  padding: 0 18px;
+  border: 1px solid var(--border-input);
+  border-radius: 12px;
+  background: var(--bg-panel);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* 오류 수정 모달(#127) — 화면 전체를 덮는 유일한 오버레이라 z-index는 드롭다운(20) 위. */
+.register-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.55);
+}
+
+.register-modal {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 100%;
+  max-width: 520px;
+  max-height: 100%;
+  padding: 20px;
+  border: 1px solid var(--border-card);
+  border-radius: 18px;
+  background: var(--bg-card);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+}
+
+.register-modal-title {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.register-modal-hint {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.register-modal-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  overflow-y: auto;
+}
+
+.register-modal-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px;
+  border: 1px solid var(--border-card);
+  border-radius: 14px;
+  background: var(--bg-panel);
+}
+
+.register-modal-row .register-reasons {
+  margin: 0;
+}
+
+.register-modal-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.register-modal-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.register-modal-field-label {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.register-modal-input {
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--border-input);
+  border-radius: 12px;
+  background: var(--bg-app);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 15px;
+}
+
+.register-modal-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.register-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.register-modal-cancel,
+.register-modal-save {
+  min-height: 44px;
+  padding: 0 20px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.register-modal-cancel {
+  border: 1px solid var(--border-input);
+  background: transparent;
+  color: var(--text-muted);
+}
+
+.register-modal-save {
+  border: none;
+  background: var(--accent);
+  color: #fff;
 }
 
 .register-result {
