@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { validateNewTabName, validateRegistrationInput } from "./registerValidation";
+import {
+  classifyRegistrationRows,
+  parseRegistrationInput,
+  validateNewTabName,
+  validateRegistrationInput,
+} from "./registerValidation";
 
 const EMPTY = new Set<string>();
 
@@ -266,6 +271,80 @@ describe("validateRegistrationInput — generic contentType", () => {
       "zh",
     );
     expect(result).toEqual({ ok: false, error: expect.stringContaining("generic") });
+  });
+});
+
+// 등록 화면의 오류 행 직접 수정(#127)은 "파싱 결과를 편집값으로 갈아끼운 뒤 다시
+// 분류"하는 구조라, 분류 단계가 rawText 없이 ParsedWord[]만으로 도는 것이 전제다.
+describe("parseRegistrationInput / classifyRegistrationRows 분리", () => {
+  it("파싱 단계는 필드를 트림해 뽑기만 하고 분류하지 않는다", () => {
+    const result = parseRegistrationInput(
+      batch([{ hanzi: "  经济  ", pinyin: " jīngjì ", meaning: " 경제 " }]),
+    );
+    expect(result).toEqual({ ok: true, words: [{ hanzi: "经济", pinyin: "jīngjì", meaning: "경제" }] });
+  });
+
+  it("파싱 단계는 스키마 오류를 그대로 낸다", () => {
+    expect(parseRegistrationInput("not json").ok).toBe(false);
+    expect(parseRegistrationInput(batch([], 1)).ok).toBe(false);
+    expect(parseRegistrationInput(batch([{ hanzi: "经济" }], 2)).ok).toBe(false);
+  });
+
+  it("분류 단계는 ParsedWord[]만 받아 정상/오류/중복을 가른다", () => {
+    const rows = classifyRegistrationRows(
+      [
+        { hanzi: "经济", pinyin: "jīngjì", meaning: "경제" },
+        { hanzi: "文化", pinyin: "wénhuà", meaning: "문화" },
+        { hanzi: "社会", pinyin: "wrong", meaning: "사회" },
+      ],
+      new Set(["文化"]),
+    );
+    expect(rows.map((row) => row.status)).toEqual(["valid", "duplicate", "blocked"]);
+  });
+
+  it("입력 내 중복은 매 호출마다 배열 전체 기준으로 다시 집계된다", () => {
+    const duplicated = [
+      { hanzi: "经济", pinyin: "jīngjì", meaning: "경제" },
+      { hanzi: "经济", pinyin: "jīngjì", meaning: "경제(중복)" },
+    ];
+    expect(classifyRegistrationRows(duplicated, EMPTY).map((row) => row.status)).toEqual([
+      "blocked",
+      "blocked",
+    ]);
+
+    // 한 행의 한자만 고쳐 다시 분류하면 손대지 않은 짝 행의 중복 오류도 함께 풀린다.
+    const fixed = [duplicated[0], { hanzi: "文化", pinyin: "wénhuà", meaning: "문화" }];
+    expect(classifyRegistrationRows(fixed, EMPTY).map((row) => row.status)).toEqual(["valid", "valid"]);
+  });
+
+  it("generic 분기도 분류 단계만으로 동작한다 — 보조 표기는 비어도 정상", () => {
+    const rows = classifyRegistrationRows(
+      [
+        { hanzi: "take off", pinyin: "", meaning: "이륙하다" },
+        { hanzi: "", pinyin: "구동사", meaning: "뜻만 있음" },
+      ],
+      EMPTY,
+      "generic",
+    );
+    expect(rows[0].status).toBe("valid");
+    expect(rows[1].status).toBe("blocked");
+    expect(rows[1].reasons).toContain("표제어가 비어 있습니다");
+  });
+
+  it("validateRegistrationInput은 두 단계를 이어 붙인 것과 같은 결과를 낸다", () => {
+    const raw = batch([
+      { hanzi: "经济", pinyin: "jīngjì", meaning: "경제" },
+      { hanzi: "文化", pinyin: "wénhuà", meaning: "문화" },
+    ]);
+    const existing = new Set(["文化"]);
+    const parsed = parseRegistrationInput(raw);
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+
+    expect(validateRegistrationInput(raw, existing)).toEqual({
+      ok: true,
+      rows: classifyRegistrationRows(parsed.words, existing),
+    });
   });
 });
 
