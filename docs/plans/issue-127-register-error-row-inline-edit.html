@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>#127 등록 화면 오류 행 직접 수정 — 오류 알림 배너 + 수정 모달 + &#39;직접수정&#39; 태그 — 작업 플랜</title>
+<style>
+  :root {
+    --bg: #f7f7f8; --card: #ffffff; --ink: #1c1c1e; --muted: #6e6e73;
+    --line: #e3e3e6; --accent: #3b6ef5; --accent-soft: #e8eefe;
+    --ok: #2e8b57; --warn: #b25e09; --code-bg: #f0f0f2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161618; --card: #202024; --ink: #ececf0; --muted: #98989f;
+      --line: #333338; --accent: #7a9bff; --accent-soft: #26304a;
+      --ok: #58c088; --warn: #e0a35c; --code-bg: #2a2a2f;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 40px 20px 80px; background: var(--bg); color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+                 "Segoe UI", "Noto Sans KR", sans-serif;
+    line-height: 1.65;
+  }
+  main { max-width: 860px; margin: 0 auto; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code {
+    font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 0.86em;
+    background: var(--code-bg); border-radius: 5px; padding: 2px 6px;
+  }
+  header { margin-bottom: 28px; }
+  .issue-chip {
+    display: inline-block; font-weight: 700; color: var(--accent);
+    background: var(--accent-soft); border-radius: 999px;
+    padding: 3px 14px; font-size: 0.95rem; margin-bottom: 10px;
+  }
+  .type-chip {
+    display: inline-block; font-weight: 600; color: var(--muted);
+    border: 1px solid var(--line); border-radius: 999px;
+    padding: 3px 12px; font-size: 0.8rem; margin-left: 8px; vertical-align: 2px;
+  }
+  h1 { font-size: 1.7rem; margin: 0 0 14px; letter-spacing: -0.02em; }
+  .meta {
+    display: flex; flex-wrap: wrap; gap: 6px 22px;
+    color: var(--muted); font-size: 0.87rem;
+  }
+  .meta b { color: var(--ink); font-weight: 600; }
+  section.card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 24px 28px; margin-top: 18px;
+  }
+  h2 {
+    font-size: 1.05rem; margin: 0 0 14px; letter-spacing: -0.01em;
+    display: flex; align-items: center; gap: 8px;
+  }
+  h2 .no {
+    color: var(--accent); font-size: 0.8rem; font-weight: 700;
+    border: 1.5px solid var(--accent); border-radius: 6px; padding: 0 6px;
+  }
+  ul, ol { margin: 0; padding-left: 22px; }
+  li { margin: 6px 0; }
+  .steps { list-style: none; padding: 0; counter-reset: step; }
+  .steps li {
+    counter-increment: step; position: relative; padding: 10px 0 10px 44px;
+    border-bottom: 1px dashed var(--line);
+  }
+  .steps li:last-child { border-bottom: none; }
+  .steps li.done::before { content: "✓"; background: var(--ok); color: #fff; }
+  .steps li.done { color: var(--muted); }
+  .steps li.done b { color: var(--ink); }
+  .note {
+    display: block; margin-top: 6px; font-size: 0.85rem; color: var(--warn);
+  }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 10px;
+    width: 28px; height: 28px; border-radius: 8px; background: var(--accent-soft);
+    color: var(--accent); font-weight: 700; font-size: 0.85rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .steps .files { display: block; margin-top: 4px; font-size: 0.85rem; color: var(--muted); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 0.82rem; }
+  .done-list { list-style: none; padding: 0; }
+  .done-list li { padding-left: 30px; position: relative; }
+  .done-list li::before {
+    content: ""; position: absolute; left: 2px; top: 7px; width: 15px; height: 15px;
+    border: 2px solid var(--ok); border-radius: 5px;
+  }
+  .scroll-x { overflow-x: auto; }
+  footer { margin-top: 30px; color: var(--muted); font-size: 0.8rem; text-align: center; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <span class="issue-chip"><a href="https://github.com/damdam6/vocabulary-study/issues/127">#127</a></span><span class="type-chip">기능 개선</span>
+    <h1>등록 화면 오류 행 직접 수정 — 오류 알림 배너 + 수정 모달 + &#39;직접수정&#39; 태그</h1>
+    <div class="meta">
+      <span><b>damdam6/vocabulary-study</b></span>
+      <span>브랜치 <b><code>feat/127-register-error-row-inline-edit</code></b> ← <code>main</code></span>
+      <span>라벨 <b>enhancement</b></span>
+      <span>2026-08-01</span>
+    </div>
+  </header>
+
+  <section class="card">
+    <h2><span class="no">1</span>요약</h2>
+    <p>등록 화면에서 오류(blocked) 행이 아무 안내 없이 제출에서 빠지는 문제를 없앤다. blocked 행이 있으면 중복 확인 배너와 같은 자리에 인라인 오류 배너를 띄우고, "오류 수정" 버튼으로 여는 모달에서 행마다 세 값을 모두 고칠 수 있게 한다. 저장하면 편집값으로 배치 전체가 재검증되고(표제어가 바뀌면 중복 판정도 달라지므로), 실제로 값이 바뀐 행에는 '직접수정' 태그가 상태 배지와 나란히 붙는다. 구현의 뼈대는 두 가지 — 원본 텍스트를 건드리지 않는 <b>편집 오버레이 상태</b>(행 index → 편집값)와, <code>validateRegistrationInput</code>을 <b>파싱 단계 / 분류 단계</b>로 쪼개 오버레이가 적용된 <code>ParsedWord[]</code>만 다시 분류하는 진입점이다. Worker·와이어 계약 변경은 없다.</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">2</span>현황 분석</h2>
+    <p>등록 화면의 검증 결과는 <b>읽기 전용 파생 상태</b>다.
+<code>src/screens/RegisterScreen.tsx:167-173</code>의 <code>useMemo</code>가
+<code>confirmedText</code>·<code>existingHanziInTab</code>·<code>contentType</code>만 보고
+<code>validateRegistrationInput</code>을 통째로 다시 돌린다 — 행 단위로 고친 값을 담아둘 곳이 없다.</p>
+
+<ul>
+  <li><b>오류 행은 조용히 빠진다.</b> 제출 대상은
+    <code>rows.filter((row) =&gt; row.status !== 'blocked')</code>
+    (<code>RegisterScreen.tsx:183</code>) — 사용자 확인 절차가 없다. 중복은
+    <code>hasDuplicates &amp;&amp; !duplicatesAcknowledged</code> 배너
+    (<code>:422-433</code>)로 명시적 확인을 받는데, 오류에는 대응 UI가 없다.</li>
+  <li><b>고칠 수단은 원본 JSON뿐.</b> textarea를 고치면
+    <code>isDirty = confirmedText !== null &amp;&amp; text !== confirmedText</code>
+    (<code>:165</code>) 게이트가 걸려 "확인"을 다시 눌러야 하고, 그때 배치 전체가 새로 파싱된다.
+    한 글자 오타 때문에 붙여넣은 JSON 전체를 뒤져야 한다.</li>
+  <li><b>검증 함수가 파싱과 분류를 한 덩어리로 묶고 있다.</b>
+    <code>validateRegistrationInput</code>(<code>src/lib/registerValidation.ts:93-161</code>)은
+    <code>rawText</code>만 받아 JSON 파싱 → <code>extract()</code> 필드 추출 →
+    <code>hanziCounts</code> 집계 → 행별 분류를 순서대로 수행한다.
+    이미 파싱된 <code>ParsedWord[]</code>를 재검증할 진입점이 없다.</li>
+  <li><b>중복 확인은 서명 비교라 자동 리셋된다.</b>
+    <code>duplicateKey</code>(<code>:176-181</code>)는 duplicate 행의 표제어를 정렬·조인한 문자열이고,
+    <code>acknowledgedDuplicateKey</code>와 같을 때만 확인된 것으로 본다 —
+    중복 집합이 달라지면 별도 리셋 코드 없이 재확인이 요구된다.
+    <b>편집으로 표제어가 바뀌어도 이 메커니즘이 그대로 작동한다.</b></li>
+  <li><b>표시는 순수 컴포넌트.</b> <code>src/screens/RegisterTable.tsx:35-53</code>이
+    상태 배지 + 사유 목록만 그린다. 행 key는 <code>`${row.hanzi}-${index}`</code>(값 포함) —
+    입력 필드가 없는 표시 전용 테이블이라 무해하지만, <b>같은 전략을 모달 입력에 쓰면
+    타이핑마다 re-mount되어 포커스가 날아간다</b>(이슈 §4 경고).</li>
+  <li><b>컴포넌트 테스트 하네스는 이미 있다.</b>
+    <code>src/test-utils.tsx</code>(react-dom/client + React 19 <code>act</code>)와
+    <code>src/screens/RegisterScreen.test.tsx</code>(jsdom, 15개 케이스)가 존재한다 —
+    <code>contentLabels.ts</code>·<code>RegisterTable.tsx</code> 주석의
+    "컴포넌트 테스트 하네스가 없어"는 #105 이전 기준의 낡은 서술이다.
+    <b>모달·배너 동작을 DOM 테스트로 직접 고정할 수 있다.</b></li>
+</ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">3</span>설계</h2>
+    <p>편집값을 담는 자리를 <b>원본 텍스트 밖</b>에 만들고, 검증 함수를
+<b>파싱 단계</b>와 <b>분류 단계</b>로 쪼개 분류만 다시 돌리는 구조로 간다.
+<code>text</code>/<code>confirmedText</code>를 건드리지 않으므로 <code>isDirty</code> 게이트(#55)와
+중복 서명 비교 로직이 손대지 않은 채 그대로 유지된다.</p>
+
+<h3 style="font-size:0.95rem;margin:18px 0 8px">A. 검증 함수 2단 분리</h3>
+<p><code>src/lib/registerValidation.ts</code>에 두 함수를 노출하고, 기존
+<code>validateRegistrationInput</code>은 <b>둘을 이어 붙인 얇은 합성 함수</b>로 남긴다 —
+시그니처·반환 타입·기존 테스트 전부 불변.</p>
+<ul>
+  <li><code>parseRegistrationInput(rawText, contentType)</code> →
+    <code>{ ok: false; error } | { ok: true; words: ParsedWord[] }</code>
+    (JSON 파싱 · <code>version</code> · <code>words</code> 배열 · 스키마 오배치 검사 · <code>extract()</code>)</li>
+  <li><code>classifyRegistrationRows(words, existingHanziInTab, contentType)</code> →
+    <code>ValidatedRow[]</code>
+    (<code>hanziCounts</code> 재집계 + 행별 오류/중복/정상 분류)</li>
+</ul>
+<p><code>hanziCounts</code>가 <b>분류 단계에서 배열 전체 기준으로 다시 계산</b>되는 것이 핵심이다 —
+같은 한자로 둘 다 blocked였던 A·B 중 A만 고치면 손대지 않은 B의 "입력 내 중복" 오류도 함께 풀린다(의도된 동작).</p>
+
+<h3 style="font-size:0.95rem;margin:18px 0 8px">B. 편집 오버레이 상태</h3>
+<p><code>RegisterScreen</code>에 <code>editOverlay: Record&lt;number, ParsedWord&gt;</code>를 둔다(행 index → 편집값).
+파생 파이프라인을 <b>2단 memo</b>로 재구성한다:</p>
+<ul>
+  <li><code>parseResult</code> = <code>parseRegistrationInput(confirmedText, contentType)</code>
+    — deps: <code>confirmedText</code>, <code>contentType</code></li>
+  <li><code>effectiveWords</code> = <code>parseResult.words.map((w, i) =&gt; editOverlay[i] ?? w)</code></li>
+  <li><code>rows</code> = <code>classifyRegistrationRows(effectiveWords, existingHanziInTab, contentType)</code>
+    — deps에 <code>existingHanziInTab</code>이 있어 <b>탭 변경 시 분류만 재계산되고 오버레이는 유지</b>된다</li>
+</ul>
+<p><b>'직접수정' 플래그는 별도 상태로 두지 않는다</b> — 저장 시 편집값을 원본 <code>parseResult.words[i]</code>와
+비교해 <b>같으면 오버레이 엔트리를 지우고</b> 다르면 넣는다. 그러면
+"오버레이에 키가 있다 = 원본과 다르다 = 태그 대상"이 항상 참이라 플래그가 어긋날 여지가 없다.</p>
+<p>오버레이 초기화는 <code>handleConfirm</code>에서 <code>text !== confirmedText</code>일 때만 —
+행 구성이 달라져 index 기반 오버레이가 어긋나기 때문이다. 같은 텍스트로 "확인"을 다시 눌러
+편집이 통째로 날아가는 사고를 막으려고 조건을 붙인다.</p>
+
+<h3 style="font-size:0.95rem;margin:18px 0 8px">C. 배너 + 모달</h3>
+<ul>
+  <li><b>오류 배너</b>: <code>blockedCount &gt; 0</code>이면 항상 렌더 — dismiss 없음, 제출 차단 없음.
+    중복 배너와 같은 자리·같은 레이아웃 토큰을 쓰되 <b>클래스는 분리</b>
+    (<code>.register-error-banner</code>, red 틴트). 기존 테스트가
+    <code>.register-confirm-banner</code>로 중복 배너를 특정하고 있어(<code>RegisterScreen.test.tsx:313</code>)
+    같은 클래스를 재사용하면 선택자가 오염된다. 배치는 <b>오류 배너가 위</b>.</li>
+  <li><b>수정 모달</b>: 신규 <code>src/screens/RegisterErrorModal.tsx</code>
+    (<code>RegisterTable.tsx</code>와 같은 계층 — 등록 화면 전용 표시 컴포넌트).
+    blocked 행마다 <code>registerTableHeaders(contentType)</code> 라벨로 세 입력 + 현재 <code>reasons</code> 노출.
+    <b>입력 <code>key</code>는 행 index 고정</b>(값 포함 금지 — 포커스 유실 방지).
+    내부 draft 상태를 갖고 저장 시에만 부모로 올린다(취소 = draft 폐기).</li>
+  <li><b>저장 시 모달을 닫는다.</b> 열어둔 채 재검증하면, 방금 valid가 된 행이 편집 도중
+    모달 목록에서 사라지는 어긋남이 생긴다. 닫은 뒤에도 blocked가 남아 있으면
+    배너가 그대로 있으므로 "오류 수정"으로 다시 열어 이어서 고칠 수 있다.</li>
+  <li><b>'직접수정' 태그</b>: <code>RegisterTable</code>에
+    <code>editedIndexes: ReadonlySet&lt;number&gt;</code> prop을 추가해
+    상태 배지 <b>옆에 병기</b>한다. <code>ValidatedRow</code>에 표시용 필드를 얹지 않는 이유는
+    그 타입이 검증 라이브러리의 계약이기 때문 — 표시 관심사는 컴포넌트 prop으로 분리한다.</li>
+</ul>
+
+<h3 style="font-size:0.95rem;margin:18px 0 8px">기각한 대안</h3>
+<ul>
+  <li><b>편집 결과를 textarea 원본 JSON에 되쓰기</b> — <code>text</code>가 바뀌면 <code>isDirty</code>가 켜져
+    재확인을 요구하고, 그 순간 오버레이의 존재 이유가 사라진다. 사용자가 손으로 쓴 포맷도 파괴한다.</li>
+  <li><b>테이블 셀 인라인 편집(모달 없이)</b> — 소유자가 2026-07-30에 "배너 → 모달"로 확정.
+    좁은 화면에서 4열 테이블에 입력 3개를 넣으면 가로 스크롤이 심해지는 실무 이유도 같은 방향.</li>
+  <li><b><code>ValidatedRow</code>에 <code>edited: boolean</code> 추가</b> — 분류 함수가 편집 이력을 알아야 해서
+    순수 분류 책임이 오염된다. 오버레이 키 존재 여부로 이미 유도 가능.</li>
+  <li><b>제출 결과 화면에 "미수정 오류 N건" 표기</b> — 이슈가 명시적으로 범위 밖으로 뺐다(별건).</li>
+</ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">4</span>작업 단계</h2>
+    <ol class="steps">
+      <li class="done"><b>검증 함수 2단 분리</b> — <code>parseRegistrationInput</code>(파싱·스키마) /
+        <code>classifyRegistrationRows</code>(<code>hanziCounts</code> 집계 + 행 분류)를 export하고,
+        <code>validateRegistrationInput</code>은 두 함수를 잇는 합성 함수로 축소한다.
+        시그니처·반환 타입·기존 테스트 전부 불변.
+        <span class="files"><code>src/lib/registerValidation.ts</code></span>
+      </li>
+      <li class="done"><b>분리 검증 테스트</b> — 기존 <code>validateRegistrationInput</code> 테스트가 그대로 통과하는지 확인하고,
+        <code>classifyRegistrationRows</code> 직접 호출 케이스를 추가한다(정상/오류/중복 분류,
+        입력 내 중복이 배열 전체 기준으로 재집계되는 것, zh·generic 분기).
+        <span class="files"><code>src/lib/registerValidation.test.ts</code></span>
+      </li>
+      <li class="done"><b>편집 오버레이 상태 + 파생 파이프라인 재구성</b> —
+        <code>editOverlay: Record&lt;number, ParsedWord&gt;</code> 도입,
+        <code>parseResult</code>(파싱) → <code>effectiveWords</code>(오버레이 덮어쓰기) →
+        <code>rows</code>(분류) 2단 memo로 교체. <code>submittableRows</code>·<code>validCount</code>·
+        <code>blockedCount</code>·<code>duplicateRows</code>·<code>duplicateKey</code>를 새 <code>rows</code> 기준으로 옮기고,
+        <code>handleConfirm</code>에서 <code>text !== confirmedText</code>일 때 오버레이를 비운다.
+        <span class="files"><code>src/screens/RegisterScreen.tsx</code></span>
+      </li>
+      <li class="done"><b>오류 수정 모달 컴포넌트</b> — blocked 행 목록 + 행별 세 입력(<code>key</code>는 index 고정) +
+        <code>reasons</code> 표시, <code>registerTableHeaders(contentType)</code> 라벨 분기,
+        저장/취소 버튼, Escape = 취소. 내부 draft 상태만 갖는 제어 컴포넌트.
+        <span class="files"><code>src/screens/RegisterErrorModal.tsx</code> (신규)</span>
+        <span class="note">진행 메모: 플랜의 3·5단계(RegisterScreen 상태·배선)는 4단계(모달)를 먼저 만든 뒤 한 번에 편집했다 — 같은 파일을 두 번 헤집지 않으려는 순서 조정이고 결과물은 동일하다.</span>
+      </li>
+      <li class="done"><b>오류 배너 + 모달 배선</b> — <code>blockedCount &gt; 0</code>이면 배너 렌더(중복 배너 위, 제출 비차단),
+        "오류 수정" 클릭 시 모달 열기, 저장 시 원본 대비 diff로 오버레이 갱신(같으면 엔트리 삭제) 후 모달 닫기.
+        <span class="files"><code>src/screens/RegisterScreen.tsx</code></span>
+      </li>
+      <li class="done"><b>'직접수정' 태그</b> — <code>RegisterTable</code>에 <code>editedIndexes</code> prop을 추가해
+        상태 배지와 병기 렌더.
+        <span class="files"><code>src/screens/RegisterTable.tsx</code>, <code>src/screens/RegisterScreen.tsx</code></span>
+      </li>
+      <li class="done"><b>스타일</b> — <code>.register-error-banner</code>(red 틴트, 중복 배너와 같은 레이아웃 토큰),
+        <code>.register-modal-backdrop</code>/<code>.register-modal</code>/모달 행·입력,
+        <code>.register-tag--edited</code>를 기존 <code>.register-status</code> 계열 톤에 맞춰 추가.
+        <span class="files"><code>src/index.css</code></span>
+      </li>
+      <li class="done"><b>화면 테스트</b> — 배너 노출/소멸, 모달 편집→저장 재검증(valid 승격·duplicate 전환·여전히 blocked),
+        입력 내 중복 짝 행 동반 해소, 태그 표시 범위, 포커스 유지, 오버레이 초기화(재확인)/유지(탭 변경),
+        전 행 blocked 해소 시 제출 활성화, 제출 payload가 편집값 기준인지 고정.
+        <span class="files"><code>src/screens/RegisterScreen.test.tsx</code></span>
+      </li>
+      <li class="done"><b>문서 개정</b> — <code>docs/design-prd.md</code> §6에 오류 배너·수정 모달·'직접수정' 태그 사양을 신설하고
+        "검증 규칙" 불릿의 "오류 행은 제출에서 제외" 서술을 개정, §9 결정 로그에 행 추가.
+        <span class="files"><code>docs/design-prd.md</code></span>
+      </li>
+      <li class="done"><b>전체 검증</b> — <code>npm test</code> · <code>npm run lint</code> · <code>npm run build</code> 그린 확인 후
+        레포 스타일 커밋 → 푸시 → PR(<code>Closes #127</code>).
+        <span class="files">—</span>
+      </li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">5</span>리스크</h2>
+    <div class="scroll-x">
+    <table>
+      <thead><tr><th>리스크</th><th>영향</th><th>완화책</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>모달 입력이 타이핑마다 포커스를 잃음</td>
+          <td>사실상 사용 불가 — 한 글자씩 다시 클릭해야 함</td>
+          <td>입력 <code>key</code>를 행 index로 고정(값 포함 금지). 포커스 유지 자체를 DOM 테스트로 고정한다.</td>
+        </tr>
+        <tr>
+          <td>오버레이 index가 행 구성과 어긋남</td>
+          <td>엉뚱한 행에 편집값이 덮어씌워짐</td>
+          <td>index 기반 오버레이는 <code>parseResult</code>가 유효한 동안만 의미가 있다 —
+              <code>text !== confirmedText</code> 재확인 시 초기화. 탭 변경은 파싱을 건드리지 않아 유지.</td>
+        </tr>
+        <tr>
+          <td>편집으로 중복 서명이 바뀌었는데 이전 확인이 유효한 것으로 남음</td>
+          <td>확인 없이 중복이 제출에 포함됨</td>
+          <td>기존 <code>duplicateKey</code>(표제어 정렬·조인) 비교 방식을 그대로 쓴다 —
+              편집된 <code>rows</code>에서 파생되므로 서명이 바뀌면 자동으로 재확인이 요구된다. 테스트로 고정.</td>
+        </tr>
+        <tr>
+          <td>새 배너 클래스가 기존 중복 배너 선택자를 오염</td>
+          <td><code>RegisterScreen.test.tsx:313</code>의 중복 배너 단언이 오류 배너로도 통과</td>
+          <td><code>.register-error-banner</code>로 클래스를 완전히 분리(레이아웃 토큰만 공유).</td>
+        </tr>
+        <tr>
+          <td><code>validateRegistrationInput</code> 분리 중 동작 드리프트</td>
+          <td>기존 검증 규칙이 조용히 달라짐</td>
+          <td>기존 테스트를 한 줄도 고치지 않은 채 통과시키는 것을 분리의 합격 기준으로 삼는다(순수 리팩터).</td>
+        </tr>
+        <tr>
+          <td>'직접수정' 태그가 상태 배지를 가림</td>
+          <td>제출 여부 판단 정보가 사라짐</td>
+          <td>대체가 아니라 병기 — 상태 배지는 항상 먼저 렌더한다.</td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">6</span>테스트 계획</h2>
+    <ul>
+      <li><code>npm test</code> — <b>기존 <code>registerValidation.test.ts</code>를 수정 없이 통과</b>시키는 것이
+        함수 분리의 합격 기준. 실패하면 분리가 동작을 바꾼 것이다.</li>
+      <li><code>classifyRegistrationRows</code> 단위 테스트 — <code>ParsedWord[]</code>를 직접 넣어
+        정상/오류/중복 분류, 입력 내 중복이 <b>배열 전체 기준</b>으로 재집계되는지, zh·generic 분기를 고정.</li>
+      <li>화면: blocked 행이 있으면 오류 배너 + "오류 수정" 버튼이 뜨고,
+        <b>제출 버튼은 비활성화되지 않는다</b>(정상 행이 하나라도 있을 때).</li>
+      <li>화면: 모달에서 병음을 올바른 값으로 고치고 저장 → 그 행이 <code>정상</code>으로 승격,
+        오류 배너가 사라지고, 테이블에 <code>직접수정</code> 태그가 <b>상태 배지와 함께</b> 노출된다.</li>
+      <li>화면: 표제어를 시트에 이미 있는 값으로 고치면 <code>중복</code>으로 전환되고
+        <b>중복 확인 배너가 다시 뜬다</b>(이전 확인이 무효화).</li>
+      <li>화면: 같은 한자 두 행이 모두 blocked인 상태에서 <b>한 행만</b> 고치면
+        손대지 않은 짝 행의 "입력 내 중복" 오류도 함께 풀리고, <code>직접수정</code> 태그는 고친 행에만 붙는다.</li>
+      <li>화면: 모달 표제어 입력에 포커스를 준 뒤 값을 바꿔도
+        <code>document.activeElement</code>가 같은 입력 노드로 유지된다(index key 회귀).</li>
+      <li>화면: 편집 후 textarea를 고쳐 다시 "확인"하면 <b>오버레이가 초기화</b>되어 태그가 사라진다.
+        탭 선택만 바꾸면 태그·편집값이 <b>유지</b>된다.</li>
+      <li>화면: 전 행 blocked라 비활성이던 제출 버튼이 모달 수정으로 valid가 생기면 <b>활성화</b>된다.</li>
+      <li>화면: 제출 payload(<code>registerWords</code> 인자)가 <b>편집 후 값</b>이고
+        blocked 행은 여전히 제외되며, 키는 <code>hanzi</code>/<code>pinyin</code>/<code>meaning</code> 그대로다
+        (와이어 계약·'직접수정' 미전송 고정).</li>
+      <li>화면: 취소하면 편집값이 버려지고 테이블·배너가 그대로다.</li>
+      <li><code>npm run lint</code>(oxlint) · <code>npm run build</code>(tsc -b + vite build) 그린.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">7</span>완료 조건</h2>
+    <ul class="done-list">
+      <li>blocked 행이 있으면 인라인 오류 배너 + "오류 수정" 버튼 노출 — 중복 배너와 공존(오류 배너가 위),
+        제출을 막지 않고, blocked가 0이 되면 사라진다(별도 dismiss 없음).</li>
+      <li>오류 수정 모달 — blocked 행마다 세 값 편집 + 현재 사유 표시,
+        <code>registerTableHeaders(contentType)</code> 라벨 분기, 저장/취소.</li>
+      <li><code>registerValidation.ts</code>에서 분류 단계가 <code>ParsedWord[]</code>를 받는
+        <code>classifyRegistrationRows</code>로 분리되고, <code>validateRegistrationInput</code>의
+        동작·시그니처·기존 테스트가 불변이다.</li>
+      <li>저장 시 편집값으로 배치 전체 재검증 — valid 승격 시 제출 포함, duplicate 전환 시 중복 재확인 요구,
+        여전히 blocked면 사유 갱신, 입력 내 중복 해소 시 손대지 않은 짝 행도 함께 풀림.</li>
+      <li>수정된 행에 '직접수정' 태그(상태 배지와 병기, 표시 전용).</li>
+      <li>모달 입력 필드가 타이핑 중 포커스를 유지한다(index 고정 key).</li>
+      <li>편집 오버레이가 <code>isDirty</code> 재확인 시 초기화되고, 탭 변경 시 유지된다.</li>
+      <li>제출 payload는 편집 후 값 기준 — blocked 제외 규칙·와이어 계약 불변(Worker 변경 없음).</li>
+      <li><code>registerValidation</code> / <code>RegisterScreen</code> 테스트 추가·통과,
+        <code>npm run lint</code>·<code>npm run build</code> 그린.</li>
+      <li><code>docs/design-prd.md</code> §6 개정(검증 규칙 · 오류 배너 · 수정 모달 절 신설) + §9 결정 로그 행 추가.</li>
+    </ul>
+  </section>
+
+  <footer>issue-plan · <a href="https://github.com/damdam6/vocabulary-study/issues/127">#127</a> · 2026-08-01</footer>
+</main>
+</body>
+</html>
