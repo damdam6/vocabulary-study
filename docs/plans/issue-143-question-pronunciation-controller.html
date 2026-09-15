@@ -225,7 +225,8 @@
     <h2><span class="no">8</span>구현 검증 기록</h2>
     <ul>
       <li><code>npm test -- src/lib/speak.test.ts src/lib/ttsApi.test.ts src/lib/ttsAudio.test.ts src/lib/ttsBlobCache.test.ts src/lib/ttsTypes.test.ts</code>: 5 files, 56 tests passed.</li>
-      <li><code>npm test</code>: 42 files, 539 tests passed. <code>npm run lint</code> and <code>npm run build</code>: passed.</li>
+      <li><code>npm test</code>: 42 files, 541 tests passed. <code>npm run lint</code> and <code>npm run build</code>: passed.</li>
+      <li>리뷰 r1 수정: 공개 전 manual intent가 응답 또는 cache hit로 먼저 준비된 경우에도 reveal에서 정확히 한 번 재생하도록 보완하고, 두 순서의 fetch 0회/auto 추가 0회 회귀를 추가했다.</li>
       <li>범위는 <code>src/lib/speak.ts</code>와 소유 테스트뿐이다. React/DOM, 전송, Audio, LRU 구현은 변경하지 않았다.</li>
       <li>실제 키, 유료 TTS 호출·청취, 모바일 자동재생, R2 접근과 실제 지연은 수행하지 않았으며 <code>TTS_ENABLED=false</code>를 유지한다.</li>
     </ul>

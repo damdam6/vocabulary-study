@@ -141,6 +141,34 @@ describe("PronunciationController", () => {
     expect(audio.blobs).toHaveLength(1);
   });
 
+  it("공개 전 manual 요청이 먼저 성공해도 reveal에서 한 번만 재생하고 auto를 추가하지 않는다", async () => {
+    const { controller, requests, audio } = setup();
+    controller.activate("q", { text: "中", pinyin: null });
+    controller.replay("q");
+    requests[0].pending.resolve(response());
+    await Promise.resolve();
+    expect(audio.blobs).toHaveLength(0);
+    controller.reveal("q");
+    controller.reveal("q");
+    expect(audio.blobs).toHaveLength(1);
+    expect(requests).toHaveLength(1);
+  });
+
+  it("공개 전 manual 캐시 hit는 reveal에서 한 번만 재생하고 fetch하지 않는다", () => {
+    const { controller, requests, cache, audio } = setup();
+    const key = JSON.stringify(["profile", "r1", "中", null]);
+    const cached = new Blob(["cached"]);
+    cache.values.set(key, cached);
+    controller.activate("q", { text: "中", pinyin: null });
+    controller.replay("q");
+    expect(audio.blobs).toHaveLength(0);
+    expect(requests).toHaveLength(0);
+    controller.reveal("q");
+    controller.reveal("q");
+    expect(audio.blobs).toEqual([cached]);
+    expect(requests).toHaveLength(0);
+  });
+
   it("캐시 hit replay는 반환 전 동기로 Audio를 호출하고 추가 요청하지 않는다", async () => {
     const { controller, requests, cache, audio } = setup();
     const key = JSON.stringify(["profile", "r1", "中", null]);

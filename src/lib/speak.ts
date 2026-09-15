@@ -313,8 +313,13 @@ export function createPronunciationController(options: CreatePronunciationContro
     reveal(expectedQuestionId) {
       if (disposed || expectedQuestionId !== questionId || !enabled || !input || hiddenStopped) return;
       viewReady = true;
+      // 공개 전 수동 클릭은 자동 기회를 소비하지만 intent는 Blob 준비까지 보존한다.
+      // 준비가 공개보다 빨랐을 때도 여기서 한 번만 실행하며 auto를 추가하지 않는다.
+      if (pendingIntent === "manual") {
+        if (blob || loadCachedBlob()) startPlay("manual");
+        return;
+      }
       if (autoConsumed) return;
-      if (pendingIntent === "manual") return;
       autoConsumed = true;
       if (blob || loadCachedBlob()) {
         startPlay("auto");
