@@ -227,6 +227,12 @@
     </ul>
   </section>
 
+  <section class="card">
+    <h2><span class="no">R1</span>독립 리뷰 수정 기록</h2>
+    <p>공식 서버 이벤트 계약상 <code>sentence-synthesis</code> 이벤트 직후 WebSocket binary 메시지 한 개가 대응하므로, 처리기에 해당 binary 대기 상태를 추가했다. 예고 없는 binary, binary 대기 중 JSON 또는 완료, 한 이벤트에 대한 중복 binary를 <code>tts_upstream_error</code>로 거부한다. <code>sentence-begin</code>/<code>sentence-end</code> 메타데이터와 유효한 누적 <code>usage.characters</code> 처리는 유지했다.</p>
+    <p><b>검증:</b> 정상 다중 프레임과 네 종류의 순서 위반 회귀를 포함한 전용 테스트 38개, 전체 테스트 513개, lint와 build가 통과했다. 소켓 수명·실제 제공자 호출·키·R2·배포·청취는 범위 밖으로 유지했다.</p>
+  </section>
+
   <footer>issue-plan · <a href="https://github.com/damdam6/vocabulary-study/issues/137">#137</a> · 2026-09-16</footer>
 </main>
 </body>
