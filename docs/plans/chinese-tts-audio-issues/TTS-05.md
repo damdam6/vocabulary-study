@@ -1,11 +1,11 @@
 # [TTS-05] 중국어 음성 조회·합성·저장 서비스를 연결한다
 
-> **17개 재편판**의 등록용 초안이다. 첫 줄을 제목으로, 이후 내용을 본문으로 사용한다. 실제 GitHub 번호는 미등록이며 이전 11개 초안과의 대응은 [태스크 지도](https://github.com/damdam6/vocabulary-study/blob/feat/ch-sound/docs/plans/chinese-tts-audio-tasks.md#8-이전-초안과의-대응)를 따른다.
+> **17개 재편판** · GitHub 이슈 [#139](https://github.com/damdam6/vocabulary-study/issues/139). 승인된 구현 범위와 의존 관계를 기록한다. 이전 11개 초안과의 대응은 [태스크 지도](https://github.com/damdam6/vocabulary-study/blob/feat/ch-sound/docs/plans/chinese-tts-audio-tasks.md#8-이전-초안과의-대응)를 따른다.
 
 ## 의존성
 
-직접 선행 이슈: **TTS-02, TTS-04**. 모든 선행 결과가 머지되어야 한다(AND).
-등록 시 임시 ID를 실제 `#이슈번호`로 바꾼다. 범위 크기: M. 이전 05의 서비스에서 재편했다.
+직접 선행 이슈: **[TTS-02 · #136](https://github.com/damdam6/vocabulary-study/issues/136), [TTS-04 · #138](https://github.com/damdam6/vocabulary-study/issues/138)**. 모든 선행 결과가 머지되어야 한다(AND).
+범위 크기: M. 이전 05의 서비스에서 재편했다.
 
 ## 공통 실행 조건
 
@@ -24,7 +24,7 @@ R2와 Qwen 모듈을 조합해 조회 실패에는 재합성하지 않고 저장
 ## 기대 동작
 
 1. 검증된 프로필·입력·설정·signal과 저장소/provider/clock/백그라운드 작업 등록 함수를 받는 서비스를 만든다. HTTP Request/Response와 인증 분기는 포함하지 않는다.
-2. TTS-03의 validateMp3를 R2 저장 모듈에 주입한다. 조회는 바디·검증 포함 2초이며 정상 null에만 제공자를 한 번 호출한다.
+2. [TTS-03 · #137](https://github.com/damdam6/vocabulary-study/issues/137)의 validateMp3를 R2 저장 모듈에 주입한다. 조회는 바디·검증 포함 2초이며 정상 null에만 제공자를 한 번 호출한다.
 3. 합성 시작 시 하나의 12초 deadline을 만들고 사용자 취소와 합쳐 adapter에 전파한다. timeout은 504용 tts_timeout으로 구분하고 정리한다.
 4. 생성 후 조건부 put과 경합 재조회를 합계 2초 안에서 처리한다. 반환 결과는 STORED/PRESENT, GENERATED/SAVED, GENERATED/UNCONFIRMED 중 하나다.
 5. 원래 put Promise를 백그라운드 작업 등록 함수로 넘겨 늦은 성공·실패를 관측한다. 조회 오류는 503, 저장 실패·대기 초과는 생성 MP3 반환이다. 합성 실패·부분 파일은 저장하지 않는다.

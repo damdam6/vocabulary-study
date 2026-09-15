@@ -1,11 +1,11 @@
 # [TTS-15] 중국어 TTS의 Worker 환경과 R2 바인딩을 연결한다
 
-> **17개 재편판**의 등록용 초안이다. 첫 줄을 제목으로, 이후 내용을 본문으로 사용한다. 실제 GitHub 번호는 미등록이며 이전 11개 초안과의 대응은 [태스크 지도](https://github.com/damdam6/vocabulary-study/blob/feat/ch-sound/docs/plans/chinese-tts-audio-tasks.md#8-이전-초안과의-대응)를 따른다.
+> **17개 재편판** · GitHub 이슈 [#149](https://github.com/damdam6/vocabulary-study/issues/149). 승인된 구현 범위와 의존 관계를 기록한다. 이전 11개 초안과의 대응은 [태스크 지도](https://github.com/damdam6/vocabulary-study/blob/feat/ch-sound/docs/plans/chinese-tts-audio-tasks.md#8-이전-초안과의-대응)를 따른다.
 
 ## 의존성
 
-직접 선행 이슈: **TTS-06**. 모든 선행 결과가 머지되어야 한다(AND).
-등록 시 임시 ID를 실제 `#이슈번호`로 바꾼다. 범위 크기: S. 이전 10의 환경에서 재편했다.
+직접 선행 이슈: **[TTS-06 · #140](https://github.com/damdam6/vocabulary-study/issues/140)**. 모든 선행 결과가 머지되어야 한다(AND).
+범위 크기: S. 이전 10의 환경에서 재편했다.
 
 ## 공통 실행 조건
 
@@ -25,7 +25,7 @@
 
 1. P2에 준비된 실제 검증/운영 버킷을 TTS_AUDIO로 연결한다. 버킷 이름을 추측하거나 만들어졌다고 기록하지 않는다. 준비가 없으면 이 이슈의 환경 연결은 대기 상태로 둔다.
 2. provider=qwen, model=qwen-audio-3.0-tts-flash, voice=longanfengyue, rate=1.0, revision=tts-v1을 명시하고 TTS_ENABLED=false를 유지한다.
-3. npm run cf-typegen으로 타입을 재생성한다. TTS-01의 optional TtsEnv는 그대로 사용하며 생성 타입을 수동 편집하지 않는다.
+3. npm run cf-typegen으로 타입을 재생성한다. [TTS-01 · #135](https://github.com/damdam6/vocabulary-study/issues/135)의 optional TtsEnv는 그대로 사용하며 생성 타입을 수동 편집하지 않는다.
 4. 환경별 바인딩·비공개·자동 만료 없음과 DASHSCOPE_API_KEY 주입 여부를 환경 기록에 적는다. 키 발급 완료·실제 주입·접근 성공을 구분한다. 확인하지 않은 상태는 미확인으로 남긴다.
 
 ## 변경 대상과 소유 경계
@@ -41,7 +41,7 @@
 - [ ] 실제 버킷 식별자와 바인딩이 준비 기록과 일치하며 운영 flag는 false다.
 - [ ] 생성 Env와 빌드가 통과하고 시크릿 값이 추적 파일·번들에 없다.
 - [ ] 검증/운영별 설정과 아직 필요한 키 주입·접근 확인이 명시돼 있다.
-- [ ] 환경 준비가 늦어도 TTS-16 자동 회귀를 막는 의존성을 만들지 않는다.
+- [ ] 환경 준비가 늦어도 [TTS-16 · #150](https://github.com/damdam6/vocabulary-study/issues/150) 자동 회귀를 막는 의존성을 만들지 않는다.
 - [ ] 소유 범위의 구현·테스트·관련 계약을 함께 완료하고 미검증 항목을 표시한다.
 - [ ] `feat/ch-sound`를 PR base로 사용하고 변경 범위·검증 결과를 기록한다.
 

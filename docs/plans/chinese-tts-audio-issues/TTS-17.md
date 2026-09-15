@@ -1,11 +1,11 @@
 # [TTS-17] 중국어 TTS 운영·출시 절차와 제품 문서를 완성한다
 
-> **17개 재편판**의 등록용 초안이다. 첫 줄을 제목으로, 이후 내용을 본문으로 사용한다. 실제 GitHub 번호는 미등록이며 이전 11개 초안과의 대응은 [태스크 지도](https://github.com/damdam6/vocabulary-study/blob/feat/ch-sound/docs/plans/chinese-tts-audio-tasks.md#8-이전-초안과의-대응)를 따른다.
+> **17개 재편판** · GitHub 이슈 [#151](https://github.com/damdam6/vocabulary-study/issues/151). 승인된 구현 범위와 의존 관계를 기록한다. 이전 11개 초안과의 대응은 [태스크 지도](https://github.com/damdam6/vocabulary-study/blob/feat/ch-sound/docs/plans/chinese-tts-audio-tasks.md#8-이전-초안과의-대응)를 따른다.
 
 ## 의존성
 
-직접 선행 이슈: **TTS-15, TTS-16**. 모든 선행 결과가 머지되어야 한다(AND).
-등록 시 임시 ID를 실제 `#이슈번호`로 바꾼다. 범위 크기: S. 이전 10의 문서에서 재편했다.
+직접 선행 이슈: **[TTS-15 · #149](https://github.com/damdam6/vocabulary-study/issues/149), [TTS-16 · #150](https://github.com/damdam6/vocabulary-study/issues/150)**. 모든 선행 결과가 머지되어야 한다(AND).
+범위 크기: S. 이전 10의 문서에서 재편했다.
 
 ## 공통 실행 조건
 
@@ -24,7 +24,7 @@
 ## 기대 동작
 
 1. 기존 PRD의 TTS 비목표·API·화면 설명을 개정하고 B열 미적용·capability·버튼 상태를 최종 구현과 맞춘다.
-2. TTS-15 환경 기록과 TTS-16 검증 결과를 운영 문서에서 연결한다. 버킷·시크릿 주입·연결의 확인 상태를 그대로 유지한다.
+2. [TTS-15 · #149](https://github.com/damdam6/vocabulary-study/issues/149) 환경 기록과 [TTS-16 · #150](https://github.com/damdam6/vocabulary-study/issues/150) 검증 결과를 운영 문서에서 연결한다. 버킷·시크릿 주입·연결의 확인 상태를 그대로 유지한다.
 3. R2 저장 재사용·Qwen task 완료·UNCONFIRMED·usage.characters 기반 비용·revision 롤백·이전 파일 정리를 실행 순서로 적는다.
 4. 실제 중국어 청취·iOS/Android 자동재생·비공개 R2 격리/재사용·지연 측정·활성화의 출시 체크리스트를 작성한다. 미실행 항목은 미완료로 둔다.
 5. 등록 직후 선생성·배치·강제 병음·자동 파일 삭제가 첫 범위에 포함되지 않았음을 문서 간 일치시킨다.

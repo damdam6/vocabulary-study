@@ -1,11 +1,11 @@
 # [TTS-01] 중국어 TTS 공통 계약·입력·설정·병음 정책을 정의한다
 
-> **17개 재편판**의 등록용 초안이다. 첫 줄을 제목으로, 이후 내용을 본문으로 사용한다. 실제 GitHub 번호는 미등록이며 이전 11개 초안과의 대응은 [태스크 지도](https://github.com/damdam6/vocabulary-study/blob/feat/ch-sound/docs/plans/chinese-tts-audio-tasks.md#8-이전-초안과의-대응)를 따른다.
+> **17개 재편판** · GitHub 이슈 [#135](https://github.com/damdam6/vocabulary-study/issues/135). 승인된 구현 범위와 의존 관계를 기록한다. 이전 11개 초안과의 대응은 [태스크 지도](https://github.com/damdam6/vocabulary-study/blob/feat/ch-sound/docs/plans/chinese-tts-audio-tasks.md#8-이전-초안과의-대응)를 따른다.
 
 ## 의존성
 
 직접 선행 이슈: **없음 — 자동 그래프의 루트**. 공유 문서·베이스(P0)와 확정 제공자(P1) 준비 후 시작한다.
-등록 시 임시 ID를 실제 `#이슈번호`로 바꾼다. 범위 크기: M. 이전 01 + 02에서 재편했다.
+범위 크기: M. 이전 01 + 02에서 재편했다.
 
 ## 공통 실행 조건
 
@@ -26,7 +26,7 @@
 1. TtsConfig·TtsEnv·SynthesisInput·PronunciationDecision·TtsProvider·TtsCapability와 오류/헤더 계약을 정의한다. provider 입력은 text만, 결과는 MP3와 선택적 billedCharacters다.
 2. NFC·trim·줄바꿈 정규화, 1~200 코드 포인트·한자 포함·허용 제어문자, JSON 객체·알 수 없는 필드·16KiB 바디·pinyin 1,000자 상한을 검증한다. Content-Length만 믿지 않는다.
 3. 병음 생략·빈칸은 absent, 값이 있으면 ignored/provider_hint_unsupported, effectiveHint=null로 반환한다. 정규화한 B열은 키 입력으로 보존하고 합성 입력과 분리한다.
-4. TTS_ENABLED=false, provider=qwen, 확정 모델·음색·유한 rate [0.5,2.0], revision 형식·키·R2 유무를 검증한다. optional TtsEnv를 기존 Env와 조합하고 실제 바인딩은 TTS-15에 맡긴다.
+4. TTS_ENABLED=false, provider=qwen, 확정 모델·음색·유한 rate [0.5,2.0], revision 형식·키·R2 유무를 검증한다. optional TtsEnv를 기존 Env와 조합하고 실제 바인딩은 [TTS-15 · #149](https://github.com/damdam6/vocabulary-study/issues/149)에 맡긴다.
 5. Worker의 MP3 검사 함수 주입 계약과 클라이언트 전송·Blob 캐시·Audio 출력·controller·카드 음성 prop 계약을 타입으로 명시한다. src/worker 빌드 경계를 유지한다. 후속 파일 구현은 포함하지 않는다.
 
 ## 변경 대상과 소유 경계

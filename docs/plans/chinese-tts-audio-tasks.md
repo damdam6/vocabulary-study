@@ -4,7 +4,7 @@
 >
 > 확정: QwenCloud / `qwen-audio-3.0-tts-flash`, 기본 음색 `longanfengyue`, 속도 1.0. API 키 발급 완료, Worker secret 이름은 `DASHSCOPE_API_KEY`. 실제 시크릿 주입·모델 접근·청취는 미검증이다.
 >
-> 이전 11개 초안을 이 문서와 TTS-01~17로 대체한다. 임시 번호는 재배정했으며 실제 GitHub 이슈 번호가 아니다. 현재는 **등록용 본문과 그래프 초안**이고 이슈 생성·실행 그래프 등록·구현을 시작하지 않았다.
+> 이전 11개 초안을 이 문서와 TTS-01~17로 대체한다. TTS-01~17은 문서 ID이며 실제 GitHub 번호는 **#135~#151**이다. 17개 이슈와 실행 그래프를 등록했으며 모든 노드는 `pending`이다. 구현은 시작하지 않았다.
 >
 > 제품 요구사항: [PRD](../PRD-chinese-tts-audio.md). 기술 계약: [아키텍처](../architecture/chinese-tts-audio.md).
 
@@ -16,7 +16,7 @@
 
 | 항목 | 필요한 결과 | 현재 상태 |
 |---|---|---|
-| P0 — 공유 베이스와 문서 | 문서를 후속 worktree에서 읽을 수 있는 커밋으로 공유. 출발점·PR base·머지·후속 갱신에 `feat/ch-sound` 전달 | 문서 작성 완료. 원격 공유·베이스 전달 확인 전 |
+| P0 — 공유 베이스와 문서 | 문서를 후속 worktree에서 읽을 수 있는 커밋으로 공유. 출발점·PR base·머지·후속 갱신에 `feat/ch-sound` 전달 | 문서 커밋 `0ac3ba6` 원격 공유 확인. 자동 실행 시 베이스 전달 확인 필요 |
 | P1 — 제공자 결정 | QwenCloud / `qwen-audio-3.0-tts-flash`, 기본 음색·속도·국제 endpoint | 선택 완료 |
 | P2 — 실제 환경 | 검증/운영 R2 이름·바인딩·비공개·보관 정책, 환경별 시크릿 주입·접근 상태 | 키 발급 완료. 나머지 미확인 |
 
@@ -28,72 +28,72 @@ P0·P1 뒤에는 실제 키 없이 구현과 자동 검증을 진행할 수 있�
 
 TTS-16은 코드 연결과 자동 회귀, TTS-15는 환경 설정, TTS-17은 이를 모은 운영·제품 문서다. **최종 합류는 TTS-17**이며 전체 그래프 완료가 곧 운영 활성화는 아니다. 청취·모바일·실제 R2·지연은 출시 체크리스트에 남기고 운영 flag는 false를 유지한다.
 
-## 2. 등록할 이슈 목록
+## 2. 등록한 이슈 목록
 
 S는 작은 전송/UI/설정 경계, M은 하나의 상태·저장·연결 경계다. 크기는 일정 약속이 아니다. R2는 실패·경합을 한 저장 모듈 안에서 검증할 수 있어 하나로 유지했다. Qwen·플레이어·세션·모드1은 책임별로 나눴다.
 
-| 임시 ID | 제목 / 등록용 본문 | 직접 선행 이슈 | 크기 | 상태 | GitHub 번호 |
+| 문서 ID | 제목 / 이슈 명세 | 직접 선행 이슈 | 크기 | 상태 | GitHub 번호 |
 |---|---|---|---|---|---|
-| TTS-01 | [중국어 TTS 공통 계약·입력·설정·병음 정책을 정의한다](chinese-tts-audio-issues/TTS-01.md) | 없음 | M | 미착수 | 미등록 |
-| TTS-02 | [중국어 MP3의 비공개 R2 조회·조건부 저장을 구현한다](chinese-tts-audio-issues/TTS-02.md) | TTS-01 | M | 미착수 | 미등록 |
-| TTS-03 | [Qwen 이벤트 검증과 MP3 조립을 구현한다](chinese-tts-audio-issues/TTS-03.md) | TTS-01 | M | 미착수 | 미등록 |
-| TTS-04 | [Qwen WebSocket 합성과 연결 수명을 구현한다](chinese-tts-audio-issues/TTS-04.md) | TTS-03 | M | 미착수 | 미등록 |
-| TTS-05 | [중국어 음성 조회·합성·저장 서비스를 연결한다](chinese-tts-audio-issues/TTS-05.md) | TTS-02, TTS-04 | M | 미착수 | 미등록 |
-| TTS-06 | [인증된 중국어 음성 API와 기능 활성 정보를 제공한다](chinese-tts-audio-issues/TTS-06.md) | TTS-05 | M | 미착수 | 미등록 |
-| TTS-07 | [중국어 음성 API의 클라이언트 전송을 구현한다](chinese-tts-audio-issues/TTS-07.md) | TTS-01 | S | 미착수 | 미등록 |
-| TTS-08 | [음성 출력과 세션 Blob 캐시의 자원을 관리한다](chinese-tts-audio-issues/TTS-08.md) | TTS-01 | M | 미착수 | 미등록 |
-| TTS-09 | [질문별 음성 재생과 늦은 응답을 제어한다](chinese-tts-audio-issues/TTS-09.md) | TTS-07, TTS-08 | M | 미착수 | 미등록 |
-| TTS-10 | [공통 발음 버튼과 재생 상태 표시를 구현한다](chinese-tts-audio-issues/TTS-10.md) | TTS-01 | S | 미착수 | 미등록 |
-| TTS-11 | [음성 capability와 플레이어를 학습 세션에 연결한다](chinese-tts-audio-issues/TTS-11.md) | TTS-09, TTS-10, TTS-12 | M | 미착수 | 미등록 |
-| TTS-12 | [모드1 카드 구조와 정답 공개 접근성을 정리한다](chinese-tts-audio-issues/TTS-12.md) | TTS-01 | M | 미착수 | 미등록 |
-| TTS-13 | [모드1 정답 공개 시 중국어 음성을 연결한다](chinese-tts-audio-issues/TTS-13.md) | TTS-11 | S | 미착수 | 미등록 |
-| TTS-14 | [모드2 오답 결과에 정답의 중국어 음성을 연결한다](chinese-tts-audio-issues/TTS-14.md) | TTS-11 | M | 미착수 | 미등록 |
-| TTS-15 | [중국어 TTS의 Worker 환경과 R2 바인딩을 연결한다](chinese-tts-audio-issues/TTS-15.md) | TTS-06 | S | 미착수 | 미등록 |
-| TTS-16 | [중국어 음성 기능의 대표 통합 흐름과 학습 회귀를 검증한다](chinese-tts-audio-issues/TTS-16.md) | TTS-06, TTS-13, TTS-14 | M | 미착수 | 미등록 |
-| TTS-17 | [중국어 TTS 운영·출시 절차와 제품 문서를 완성한다](chinese-tts-audio-issues/TTS-17.md) | TTS-15, TTS-16 | S | 미착수 | 미등록 |
+| TTS-01 | [중국어 TTS 공통 계약·입력·설정·병음 정책을 정의한다](chinese-tts-audio-issues/TTS-01.md) | 없음 | M | 미착수 | [#135](https://github.com/damdam6/vocabulary-study/issues/135) |
+| TTS-02 | [중국어 MP3의 비공개 R2 조회·조건부 저장을 구현한다](chinese-tts-audio-issues/TTS-02.md) | TTS-01 | M | 미착수 | [#136](https://github.com/damdam6/vocabulary-study/issues/136) |
+| TTS-03 | [Qwen 이벤트 검증과 MP3 조립을 구현한다](chinese-tts-audio-issues/TTS-03.md) | TTS-01 | M | 미착수 | [#137](https://github.com/damdam6/vocabulary-study/issues/137) |
+| TTS-04 | [Qwen WebSocket 합성과 연결 수명을 구현한다](chinese-tts-audio-issues/TTS-04.md) | TTS-03 | M | 미착수 | [#138](https://github.com/damdam6/vocabulary-study/issues/138) |
+| TTS-05 | [중국어 음성 조회·합성·저장 서비스를 연결한다](chinese-tts-audio-issues/TTS-05.md) | TTS-02, TTS-04 | M | 미착수 | [#139](https://github.com/damdam6/vocabulary-study/issues/139) |
+| TTS-06 | [인증된 중국어 음성 API와 기능 활성 정보를 제공한다](chinese-tts-audio-issues/TTS-06.md) | TTS-05 | M | 미착수 | [#140](https://github.com/damdam6/vocabulary-study/issues/140) |
+| TTS-07 | [중국어 음성 API의 클라이언트 전송을 구현한다](chinese-tts-audio-issues/TTS-07.md) | TTS-01 | S | 미착수 | [#141](https://github.com/damdam6/vocabulary-study/issues/141) |
+| TTS-08 | [음성 출력과 세션 Blob 캐시의 자원을 관리한다](chinese-tts-audio-issues/TTS-08.md) | TTS-01 | M | 미착수 | [#142](https://github.com/damdam6/vocabulary-study/issues/142) |
+| TTS-09 | [질문별 음성 재생과 늦은 응답을 제어한다](chinese-tts-audio-issues/TTS-09.md) | TTS-07, TTS-08 | M | 미착수 | [#143](https://github.com/damdam6/vocabulary-study/issues/143) |
+| TTS-10 | [공통 발음 버튼과 재생 상태 표시를 구현한다](chinese-tts-audio-issues/TTS-10.md) | TTS-01 | S | 미착수 | [#144](https://github.com/damdam6/vocabulary-study/issues/144) |
+| TTS-11 | [음성 capability와 플레이어를 학습 세션에 연결한다](chinese-tts-audio-issues/TTS-11.md) | TTS-09, TTS-10, TTS-12 | M | 미착수 | [#145](https://github.com/damdam6/vocabulary-study/issues/145) |
+| TTS-12 | [모드1 카드 구조와 정답 공개 접근성을 정리한다](chinese-tts-audio-issues/TTS-12.md) | TTS-01 | M | 미착수 | [#146](https://github.com/damdam6/vocabulary-study/issues/146) |
+| TTS-13 | [모드1 정답 공개 시 중국어 음성을 연결한다](chinese-tts-audio-issues/TTS-13.md) | TTS-11 | S | 미착수 | [#147](https://github.com/damdam6/vocabulary-study/issues/147) |
+| TTS-14 | [모드2 오답 결과에 정답의 중국어 음성을 연결한다](chinese-tts-audio-issues/TTS-14.md) | TTS-11 | M | 미착수 | [#148](https://github.com/damdam6/vocabulary-study/issues/148) |
+| TTS-15 | [중국어 TTS의 Worker 환경과 R2 바인딩을 연결한다](chinese-tts-audio-issues/TTS-15.md) | TTS-06 | S | 미착수 | [#149](https://github.com/damdam6/vocabulary-study/issues/149) |
+| TTS-16 | [중국어 음성 기능의 대표 통합 흐름과 학습 회귀를 검증한다](chinese-tts-audio-issues/TTS-16.md) | TTS-06, TTS-13, TTS-14 | M | 미착수 | [#150](https://github.com/damdam6/vocabulary-study/issues/150) |
+| TTS-17 | [중국어 TTS 운영·출시 절차와 제품 문서를 완성한다](chinese-tts-audio-issues/TTS-17.md) | TTS-15, TTS-16 | S | 미착수 | [#151](https://github.com/damdam6/vocabulary-study/issues/151) |
 
 ## 3. 의존성 그래프
 
-모든 의존성은 `issue-graph`의 **AND**다. 아래 ID는 실제 등록 번호로 일대일 치환한다. 등록 순서와 실행 순서는 다르며 TTS-12가 TTS-11보다 먼저 실행되는 것은 모드1 파일 수정 순서를 보장하기 위해서다.
+모든 의존성은 `issue-graph`의 **AND**다. 아래 ASCII에는 실제 GitHub 번호를 사용한다. 문서 ID와의 대응은 위 목록을 따른다. 등록 순서와 실행 순서는 다르며 TTS-12가 TTS-11보다 먼저 실행되는 것은 모드1 파일 수정 순서를 보장하기 위해서다.
 
 ```text
-TTS-01 -> TTS-02
-TTS-01 -> TTS-03
-TTS-03 -> TTS-04
-TTS-02, TTS-04 -> TTS-05
-TTS-05 -> TTS-06
-TTS-01 -> TTS-07
-TTS-01 -> TTS-08
-TTS-07, TTS-08 -> TTS-09
-TTS-01 -> TTS-10
-TTS-09, TTS-10, TTS-12 -> TTS-11
-TTS-01 -> TTS-12
-TTS-11 -> TTS-13
-TTS-11 -> TTS-14
-TTS-06 -> TTS-15
-TTS-06, TTS-13, TTS-14 -> TTS-16
-TTS-15, TTS-16 -> TTS-17
+#135 -> #136
+#135 -> #137
+#137 -> #138
+#136, #138 -> #139
+#139 -> #140
+#135 -> #141
+#135 -> #142
+#141, #142 -> #143
+#135 -> #144
+#143, #144, #146 -> #145
+#135 -> #146
+#145 -> #147
+#145 -> #148
+#140 -> #149
+#140, #147, #148 -> #150
+#149, #150 -> #151
 ```
 
 ```mermaid
 flowchart TD
-  T1["01 공통 계약·검증"]
-  T2["02 R2 저장"]
-  T3["03 Qwen 이벤트·MP3"]
-  T4["04 Qwen 연결·취소"]
-  T5["05 조회·합성 서비스"]
-  T6["06 인증 API·capability"]
-  T7["07 클라이언트 전송"]
-  T8["08 Audio·Blob 캐시"]
-  T9["09 질문별 재생 제어"]
-  T10["10 공통 발음 버튼"]
-  T11["11 세션 연결"]
-  T12["12 모드1 구조·접근성"]
-  T13["13 모드1 음성 연결"]
-  T14["14 모드2 음성 연결"]
-  T15["15 환경 설정"]
-  T16["16 통합 회귀"]
-  T17["17 운영·제품 문서"]
+  T1["#135 · 01 공통 계약·검증"]
+  T2["#136 · 02 R2 저장"]
+  T3["#137 · 03 Qwen 이벤트·MP3"]
+  T4["#138 · 04 Qwen 연결·취소"]
+  T5["#139 · 05 조회·합성 서비스"]
+  T6["#140 · 06 인증 API·capability"]
+  T7["#141 · 07 클라이언트 전송"]
+  T8["#142 · 08 Audio·Blob 캐시"]
+  T9["#143 · 09 질문별 재생 제어"]
+  T10["#144 · 10 공통 발음 버튼"]
+  T11["#145 · 11 세션 연결"]
+  T12["#146 · 12 모드1 구조·접근성"]
+  T13["#147 · 13 모드1 음성 연결"]
+  T14["#148 · 14 모드2 음성 연결"]
+  T15["#149 · 15 환경 설정"]
+  T16["#150 · 16 통합 회귀"]
+  T17["#151 · 17 운영·제품 문서"]
   T1 --> T2
   T1 --> T3
   T3 --> T4
@@ -123,16 +123,17 @@ flowchart TD
 
 TTS-11은 TTS-12를 기다린 뒤 두 카드의 선택적 prop을 추가하고 TTS-13/14가 각각 음성을 연결한다. **TTS-15와 TTS-16 사이에는 의존성이 없다.** 실제 버킷 준비 때문에 자동 회귀를 지연시키지 않는다.
 
-## 4. 이슈 등록과 그래프 등록에 사용할 절차
+## 4. 이슈·그래프 등록 기록
 
-1. TTS-01~17 파일의 제목·본문으로 이슈를 등록한다. 기존 라벨만 사용한다.
-2. 반환된 실제 GitHub 번호를 대응표에 기록하고 본문의 모든 선행 ID·관련 이슈 참조를 실제 번호로 연결한다. 이전 11개 초안의 번호를 사용하지 않는다.
-3. 동일 대응표로 ASCII를 치환한다. 모든 이슈와 의존 관계를 완성한 뒤 그래프를 등록한다.
-4. 메인 체크아웃의 지속되는 오케스트레이터 세션에서 `issue-graph`로 노드·간선을 확인한다. 기존 실행 그래프 상태와 landing mode를 먼저 확인하며 이 문서를 런타임 JSON으로 복사하지 않는다.
-5. P0·P1·베이스 전달과 P2 준비 범위를 확인하고 기존 실행 승인 범위에 따라 `issue-continue`로 시작한다. 실제 등록·실행은 해당 단계의 작업이며 이번 문서 개정에 포함하지 않는다.
-6. 선행 PR 생성만으로 후속을 열지 않는다. 같은 베이스 머지와 graph의 done 상태가 기준이다. 환경 대기나 실패를 완료로 처리하지 않는다.
+- 2026-09-15에 승인된 17개 명세를 GitHub **#135~#151**로 등록했다. 기존 `enhancement` 라벨을 사용했으며 운영·제품 문서 이슈 #151에는 `documentation`을 사용했다.
+- 각 이슈 본문의 직접 선행·관련 이슈 참조를 실제 GitHub 번호로 연결했다. 모든 의존성은 선행 이슈 전체의 완료를 기다리는 AND다.
+- 메인 체크아웃의 `.git/issue-graph.json`에 **17개 노드·23개 간선**, 루트 **#135**, 최종 합류 **#151**, `max_parallel=5`로 등록했다. 등록 당시 모든 노드는 `pending`이며 구현은 시작하지 않았다.
+- 기존 #127·#82의 완료 그래프는 사용자 확인 후 `.git/issue-graph-history/`에 백업했다. landing mode는 **GitHub PR + squash merge**다.
+- 오케스트레이터는 workspace `B01A3BBA-4B96-4D8C-81D8-0A1E1FA6D3EC`, terminal surface `1976924D-5F45-463C-A610-C517D7DF207F`다. 이 탭이 `/issue-continue` 완료 콜백을 받는다.
+- 시작 시 P0·P1·베이스 전달과 P2 준비 범위를 확인하고 `issue-continue`로 루트부터 진행한다. 출발점·PR base·머지·후속 갱신은 모두 **`feat/ch-sound`**여야 한다. 실행 모델은 시작 시 선택한다.
+- 선행 PR 생성만으로 후속을 시작하지 않는다. 같은 베이스로의 머지와 graph의 `done` 상태가 기준이다. 환경 대기나 실패를 완료로 처리하지 않는다.
 
-`max_parallel`·실행 모델·오케스트레이터 정보는 등록 시 설정한다. 모든 노드를 실제 이슈로 등록하므로 실행 도중 label 노드로 새 이슈를 생성하는 방식은 사용하지 않는다.
+모든 노드를 실제 이슈로 등록했으므로 실행 도중 label 노드로 새 이슈를 생성하지 않는다. 현재 실행 상태의 기준은 런타임 JSON이며 이 문서는 등록 당시의 기록이다.
 
 ## 5. 파일 소유와 병합 경계
 

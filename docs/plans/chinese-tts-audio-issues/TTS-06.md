@@ -1,11 +1,11 @@
 # [TTS-06] 인증된 중국어 음성 API와 기능 활성 정보를 제공한다
 
-> **17개 재편판**의 등록용 초안이다. 첫 줄을 제목으로, 이후 내용을 본문으로 사용한다. 실제 GitHub 번호는 미등록이며 이전 11개 초안과의 대응은 [태스크 지도](https://github.com/damdam6/vocabulary-study/blob/feat/ch-sound/docs/plans/chinese-tts-audio-tasks.md#8-이전-초안과의-대응)를 따른다.
+> **17개 재편판** · GitHub 이슈 [#140](https://github.com/damdam6/vocabulary-study/issues/140). 승인된 구현 범위와 의존 관계를 기록한다. 이전 11개 초안과의 대응은 [태스크 지도](https://github.com/damdam6/vocabulary-study/blob/feat/ch-sound/docs/plans/chinese-tts-audio-tasks.md#8-이전-초안과의-대응)를 따른다.
 
 ## 의존성
 
-직접 선행 이슈: **TTS-05**. 모든 선행 결과가 머지되어야 한다(AND).
-등록 시 임시 ID를 실제 `#이슈번호`로 바꾼다. 범위 크기: M. 이전 05의 HTTP 경계에서 재편했다.
+직접 선행 이슈: **[TTS-05 · #139](https://github.com/damdam6/vocabulary-study/issues/139)**. 모든 선행 결과가 머지되어야 한다(AND).
+범위 크기: M. 이전 05의 HTTP 경계에서 재편했다.
 
 ## 공통 실행 조건
 
@@ -23,7 +23,7 @@
 
 ## 기대 동작
 
-1. 기존 resolveProfile 블록 안에 POST /api/tts를 등록한다. 메서드·zh·설정·본문 검증 후 TTS-05 서비스에 전달한다.
+1. 기존 resolveProfile 블록 안에 POST /api/tts를 등록한다. 메서드·zh·설정·본문 검증 후 [TTS-05 · #139](https://github.com/damdam6/vocabulary-study/issues/139) 서비스에 전달한다.
 2. 성공 MP3와 source/storage/pronunciation/revision 헤더, private,no-store·nosniff를 응답한다. 서비스 결과의 HTTP 직렬화만 담당한다.
 3. 401의 기존 빈 본문·apiFetch 계약을 유지하고 provider 인증 오류는 503으로 응답한다. 모든 TTS 실패를 안정적인 코드·한국어 메시지로 반환한다.
 4. ExecutionContext를 전달하고 서비스의 작업 등록 함수를 ctx.waitUntil에 연결한다. 기존 worker.fetch 호출 테스트 더블을 함께 갱신한다.
@@ -49,7 +49,7 @@
 
 ## 검증
 
-Worker HTTP 테스트로 인증·메서드·capability·응답·작업 등록을 확인한다. 서비스 내부 경합 조합은 TTS-05 테스트를 재사용한다.
+Worker HTTP 테스트로 인증·메서드·capability·응답·작업 등록을 확인한다. 서비스 내부 경합 조합은 [TTS-05 · #139](https://github.com/damdam6/vocabulary-study/issues/139) 테스트를 재사용한다.
 
 개발 중 관련 테스트를 실행하고 이슈 완료 시 `npm test`, `npm run lint`, `npm run build`를 확인한다. 실제 키·청취·모바일·R2 접근 검증을 더블 통과로 대신하지 않는다.
 

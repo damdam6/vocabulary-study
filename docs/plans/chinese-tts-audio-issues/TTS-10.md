@@ -1,11 +1,11 @@
 # [TTS-10] 공통 발음 버튼과 재생 상태 표시를 구현한다
 
-> **17개 재편판**의 등록용 초안이다. 첫 줄을 제목으로, 이후 내용을 본문으로 사용한다. 실제 GitHub 번호는 미등록이며 이전 11개 초안과의 대응은 [태스크 지도](https://github.com/damdam6/vocabulary-study/blob/feat/ch-sound/docs/plans/chinese-tts-audio-tasks.md#8-이전-초안과의-대응)를 따른다.
+> **17개 재편판** · GitHub 이슈 [#144](https://github.com/damdam6/vocabulary-study/issues/144). 승인된 구현 범위와 의존 관계를 기록한다. 이전 11개 초안과의 대응은 [태스크 지도](https://github.com/damdam6/vocabulary-study/blob/feat/ch-sound/docs/plans/chinese-tts-audio-tasks.md#8-이전-초안과의-대응)를 따른다.
 
 ## 의존성
 
-직접 선행 이슈: **TTS-01**. 모든 선행 결과가 머지되어야 한다(AND).
-등록 시 임시 ID를 실제 `#이슈번호`로 바꾼다. 범위 크기: S. 이전 07의 공통 UI에서 재편했다.
+직접 선행 이슈: **[TTS-01 · #135](https://github.com/damdam6/vocabulary-study/issues/135)**. 모든 선행 결과가 머지되어야 한다(AND).
+범위 크기: S. 이전 07의 공통 UI에서 재편했다.
 
 ## 공통 실행 조건
 
@@ -23,7 +23,7 @@
 
 ## 기대 동작
 
-1. TTS-01의 상태·callback prop을 받는 표시 전용 버튼을 구현한다. provider·controller·API를 직접 만들거나 호출하지 않는다.
+1. [TTS-01 · #135](https://github.com/damdam6/vocabulary-study/issues/135)의 상태·callback prop을 받는 표시 전용 버튼을 구현한다. provider·controller·API를 직접 만들거나 호출하지 않는다.
 2. type=button, 44×44px 이상, SVG 20px, aria-label/aria-busy와 비활성 설명·수동 오류의 aria-live를 적용한다.
 3. 준비/재생/자동 차단/수동 오류/사용 불가 상태를 표시한다. 자동 실패에는 토스트·오류 알림을 추가하지 않는다.
 4. 기존 디자인 토큰을 쓰는 전용 CSS로 버튼·메시지 공간을 고정한다. src/index.css와 카드 레이아웃은 수정하지 않는다.

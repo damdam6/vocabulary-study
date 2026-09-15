@@ -1,11 +1,11 @@
 # [TTS-16] 중국어 음성 기능의 대표 통합 흐름과 학습 회귀를 검증한다
 
-> **17개 재편판**의 등록용 초안이다. 첫 줄을 제목으로, 이후 내용을 본문으로 사용한다. 실제 GitHub 번호는 미등록이며 이전 11개 초안과의 대응은 [태스크 지도](https://github.com/damdam6/vocabulary-study/blob/feat/ch-sound/docs/plans/chinese-tts-audio-tasks.md#8-이전-초안과의-대응)를 따른다.
+> **17개 재편판** · GitHub 이슈 [#150](https://github.com/damdam6/vocabulary-study/issues/150). 승인된 구현 범위와 의존 관계를 기록한다. 이전 11개 초안과의 대응은 [태스크 지도](https://github.com/damdam6/vocabulary-study/blob/feat/ch-sound/docs/plans/chinese-tts-audio-tasks.md#8-이전-초안과의-대응)를 따른다.
 
 ## 의존성
 
-직접 선행 이슈: **TTS-06, TTS-13, TTS-14**. 모든 선행 결과가 머지되어야 한다(AND).
-등록 시 임시 ID를 실제 `#이슈번호`로 바꾼다. 범위 크기: M. 이전 11에서 재편했다.
+직접 선행 이슈: **[TTS-06 · #140](https://github.com/damdam6/vocabulary-study/issues/140), [TTS-13 · #147](https://github.com/damdam6/vocabulary-study/issues/147), [TTS-14 · #148](https://github.com/damdam6/vocabulary-study/issues/148)**. 모든 선행 결과가 머지되어야 한다(AND).
+범위 크기: M. 이전 11에서 재편했다.
 
 ## 공통 실행 조건
 
@@ -35,7 +35,7 @@
 - `src/screens/StudyScreen.tts.integration.test.tsx`
 - `docs/plans/chinese-tts-audio-verification.md`
 
-해당 모듈의 테스트와 필요한 전용 fixture를 함께 소유한다. 예정 경로는 새로 생성할 수 있다. **범위 밖:** 실제 환경 연결(TTS-15), 청취·모바일 실측·배포, 무제한 전체 기능 재구현.
+해당 모듈의 테스트와 필요한 전용 fixture를 함께 소유한다. 예정 경로는 새로 생성할 수 있다. **범위 밖:** 실제 환경 연결([TTS-15 · #149](https://github.com/damdam6/vocabulary-study/issues/149)), 청취·모바일 실측·배포, 무제한 전체 기능 재구현.
 
 ## 완료 조건
 

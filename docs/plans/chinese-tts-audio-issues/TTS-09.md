@@ -1,11 +1,11 @@
 # [TTS-09] 질문별 음성 재생과 늦은 응답을 제어한다
 
-> **17개 재편판**의 등록용 초안이다. 첫 줄을 제목으로, 이후 내용을 본문으로 사용한다. 실제 GitHub 번호는 미등록이며 이전 11개 초안과의 대응은 [태스크 지도](https://github.com/damdam6/vocabulary-study/blob/feat/ch-sound/docs/plans/chinese-tts-audio-tasks.md#8-이전-초안과의-대응)를 따른다.
+> **17개 재편판** · GitHub 이슈 [#143](https://github.com/damdam6/vocabulary-study/issues/143). 승인된 구현 범위와 의존 관계를 기록한다. 이전 11개 초안과의 대응은 [태스크 지도](https://github.com/damdam6/vocabulary-study/blob/feat/ch-sound/docs/plans/chinese-tts-audio-tasks.md#8-이전-초안과의-대응)를 따른다.
 
 ## 의존성
 
-직접 선행 이슈: **TTS-07, TTS-08**. 모든 선행 결과가 머지되어야 한다(AND).
-등록 시 임시 ID를 실제 `#이슈번호`로 바꾼다. 범위 크기: M. 이전 06의 제어에서 재편했다.
+직접 선행 이슈: **[TTS-07 · #141](https://github.com/damdam6/vocabulary-study/issues/141), [TTS-08 · #142](https://github.com/damdam6/vocabulary-study/issues/142)**. 모든 선행 결과가 머지되어야 한다(AND).
+범위 크기: M. 이전 06의 제어에서 재편했다.
 
 ## 공통 실행 조건
 

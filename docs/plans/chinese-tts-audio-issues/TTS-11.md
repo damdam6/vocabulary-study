@@ -1,11 +1,11 @@
 # [TTS-11] 음성 capability와 플레이어를 학습 세션에 연결한다
 
-> **17개 재편판**의 등록용 초안이다. 첫 줄을 제목으로, 이후 내용을 본문으로 사용한다. 실제 GitHub 번호는 미등록이며 이전 11개 초안과의 대응은 [태스크 지도](https://github.com/damdam6/vocabulary-study/blob/feat/ch-sound/docs/plans/chinese-tts-audio-tasks.md#8-이전-초안과의-대응)를 따른다.
+> **17개 재편판** · GitHub 이슈 [#145](https://github.com/damdam6/vocabulary-study/issues/145). 승인된 구현 범위와 의존 관계를 기록한다. 이전 11개 초안과의 대응은 [태스크 지도](https://github.com/damdam6/vocabulary-study/blob/feat/ch-sound/docs/plans/chinese-tts-audio-tasks.md#8-이전-초안과의-대응)를 따른다.
 
 ## 의존성
 
-직접 선행 이슈: **TTS-09, TTS-10, TTS-12**. 모든 선행 결과가 머지되어야 한다(AND).
-등록 시 임시 ID를 실제 `#이슈번호`로 바꾼다. 범위 크기: M. 이전 07의 세션 연결에서 재편했다.
+직접 선행 이슈: **[TTS-09 · #143](https://github.com/damdam6/vocabulary-study/issues/143), [TTS-10 · #144](https://github.com/damdam6/vocabulary-study/issues/144), [TTS-12 · #146](https://github.com/damdam6/vocabulary-study/issues/146)**. 모든 선행 결과가 머지되어야 한다(AND).
+범위 크기: M. 이전 07의 세션 연결에서 재편했다.
 
 ## 공통 실행 조건
 
@@ -19,7 +19,7 @@
 
 ## 현상 / 배경
 
-완성된 controller와 UI 계약을 실제 세션에 연결하고 문제 이동·종료에서 즉시 정지시켜야 한다. 모드1 파일의 동시 수정을 피하려고 TTS-12 완료 후 시작한다.
+완성된 controller와 UI 계약을 실제 세션에 연결하고 문제 이동·종료에서 즉시 정지시켜야 한다. 모드1 파일의 동시 수정을 피하려고 [TTS-12 · #146](https://github.com/damdam6/vocabulary-study/issues/146) 완료 후 시작한다.
 
 ## 기대 동작
 
@@ -27,7 +27,7 @@
 2. Study 수명에서 controller를 생성·구독·dispose한다. usePronunciation은 controller와 카드 binding을 잇고 StrictMode 재설정에서도 disposed 객체를 재사용하지 않는다.
 3. 즉시 판정·다음·종료·완료·401 unmount·hidden·pagehide에서 동기 stop을 호출한다. 마지막 피드백 대기 중에도 정지한다.
 4. supportsPronunciation(contentType)와 capability를 함께 적용한다. generic/off에는 controller 요청과 버튼 binding이 없다.
-5. 두 카드에는 TTS-01의 선택적 음성 prop 타입만 추가하고 전달한다. 버튼 렌더·공개 시점 호출은 TTS-13/14에서 구현한다. CSS와 카드 내부 플립 상태는 수정하지 않는다.
+5. 두 카드에는 [TTS-01 · #135](https://github.com/damdam6/vocabulary-study/issues/135)의 선택적 음성 prop 타입만 추가하고 전달한다. 버튼 렌더·공개 시점 호출은 [TTS-13 · #147](https://github.com/damdam6/vocabulary-study/issues/147), [TTS-14 · #148](https://github.com/damdam6/vocabulary-study/issues/148)에서 구현한다. CSS와 카드 내부 플립 상태는 수정하지 않는다.
 
 ## 변경 대상과 소유 경계
 

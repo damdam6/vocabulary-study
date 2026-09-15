@@ -1,11 +1,11 @@
 # [TTS-04] Qwen WebSocket 합성과 연결 수명을 구현한다
 
-> **17개 재편판**의 등록용 초안이다. 첫 줄을 제목으로, 이후 내용을 본문으로 사용한다. 실제 GitHub 번호는 미등록이며 이전 11개 초안과의 대응은 [태스크 지도](https://github.com/damdam6/vocabulary-study/blob/feat/ch-sound/docs/plans/chinese-tts-audio-tasks.md#8-이전-초안과의-대응)를 따른다.
+> **17개 재편판** · GitHub 이슈 [#138](https://github.com/damdam6/vocabulary-study/issues/138). 승인된 구현 범위와 의존 관계를 기록한다. 이전 11개 초안과의 대응은 [태스크 지도](https://github.com/damdam6/vocabulary-study/blob/feat/ch-sound/docs/plans/chinese-tts-audio-tasks.md#8-이전-초안과의-대응)를 따른다.
 
 ## 의존성
 
-직접 선행 이슈: **TTS-03**. 모든 선행 결과가 머지되어야 한다(AND).
-등록 시 임시 ID를 실제 `#이슈번호`로 바꾼다. 범위 크기: M. 이전 04의 연결 처리에서 재편했다.
+직접 선행 이슈: **[TTS-03 · #137](https://github.com/damdam6/vocabulary-study/issues/137)**. 모든 선행 결과가 머지되어야 한다(AND).
+범위 크기: M. 이전 04의 연결 처리에서 재편했다.
 
 ## 공통 실행 조건
 
@@ -24,8 +24,8 @@
 ## 기대 동작
 
 1. 국제 endpoint에 Bearer secret과 Upgrade 헤더로 fetch한다. redirect를 거부하고 101/webSocket을 확인한다. 리스너 등록·accept 후 task를 시작한다.
-2. TTS-03 처리기가 요청한 순서대로 보내고 받은 text/binary를 처리기에 전달한다. task-started 후 원문 한 번과 finish-task를 보내며 task-finished까지 기다린다.
-3. 서비스에서 받은 AbortSignal을 handshake·열린 task에 연결한다. 이미 취소됐으면 연결하지 않고, 늦게 열린 socket도 닫는다. 12초 합성 deadline은 TTS-05가 생성한다.
+2. [TTS-03 · #137](https://github.com/damdam6/vocabulary-study/issues/137) 처리기가 요청한 순서대로 보내고 받은 text/binary를 처리기에 전달한다. task-started 후 원문 한 번과 finish-task를 보내며 task-finished까지 기다린다.
+3. 서비스에서 받은 AbortSignal을 handshake·열린 task에 연결한다. 이미 취소됐으면 연결하지 않고, 늦게 열린 socket도 닫는다. 12초 합성 deadline은 [TTS-05 · #139](https://github.com/damdam6/vocabulary-study/issues/139)가 생성한다.
 4. 성공·task-failed·조기 close·socket error·abort 모두 한 번만 settle하고 리스너·abort handler·socket을 정리한다. 취소 시 가능한 cancel 전송은 best effort로 하며 기다리지 않는다.
 5. handshake 인증/권한/429는 503, 5xx·잘못된 Upgrade/프로토콜은 502로 정규화한다. pronunciationMode=none인 TtsProvider를 반환한다. 자동 재연결·재합성·벤더 전환은 없다.
 

@@ -1,11 +1,11 @@
 # [TTS-02] 중국어 MP3의 비공개 R2 조회·조건부 저장을 구현한다
 
-> **17개 재편판**의 등록용 초안이다. 첫 줄을 제목으로, 이후 내용을 본문으로 사용한다. 실제 GitHub 번호는 미등록이며 이전 11개 초안과의 대응은 [태스크 지도](https://github.com/damdam6/vocabulary-study/blob/feat/ch-sound/docs/plans/chinese-tts-audio-tasks.md#8-이전-초안과의-대응)를 따른다.
+> **17개 재편판** · GitHub 이슈 [#136](https://github.com/damdam6/vocabulary-study/issues/136). 승인된 구현 범위와 의존 관계를 기록한다. 이전 11개 초안과의 대응은 [태스크 지도](https://github.com/damdam6/vocabulary-study/blob/feat/ch-sound/docs/plans/chinese-tts-audio-tasks.md#8-이전-초안과의-대응)를 따른다.
 
 ## 의존성
 
-직접 선행 이슈: **TTS-01**. 모든 선행 결과가 머지되어야 한다(AND).
-등록 시 임시 ID를 실제 `#이슈번호`로 바꾼다. 범위 크기: M. 이전 03에서 재편했다.
+직접 선행 이슈: **[TTS-01 · #135](https://github.com/damdam6/vocabulary-study/issues/135)**. 모든 선행 결과가 머지되어야 한다(AND).
+범위 크기: M. 이전 03에서 재편했다.
 
 ## 공통 실행 조건
 
@@ -27,7 +27,7 @@
 2. audio/v1/{profilePartition}/{revision}/{digest}.mp3를 만든다. 인증 프로필/시트, text/pinyin, provider/region/model/voice/rate/audioSettings/adapterVersion/pinyin-none-v1/revision을 안정적 튜플로 해시한다.
 3. R2 파일의 MIME·크기·바이트를 검사하고 정상 get null만 미존재로 반환한다. 힌트가 없어도 B열 변경은 키를 바꾼다.
 4. If-None-Match: * 조건부 put으로 성공/경합/실패를 구분한다. 비밀·원문·병음·시트 ID를 메타데이터에 넣지 않는다.
-5. 조회·put·재조회의 원래 Promise를 호출부가 관측할 수 있게 한다. 2초 deadline·경합 재조회·waitUntil·HTTP 결과 결정은 TTS-05가 소유한다. TTL·자동 삭제는 추가하지 않는다.
+5. 조회·put·재조회의 원래 Promise를 호출부가 관측할 수 있게 한다. 2초 deadline·경합 재조회·waitUntil·HTTP 결과 결정은 [TTS-05 · #139](https://github.com/damdam6/vocabulary-study/issues/139)가 소유한다. TTL·자동 삭제는 추가하지 않는다.
 
 ## 변경 대상과 소유 경계
 
@@ -46,7 +46,7 @@
 
 ## 검증
 
-R2와 validateAudio 더블로 조회·손상·조건부 put·실패·늦은 완료를 검증한다. 실제 MP3 검사 연결은 TTS-05에서 확인한다.
+R2와 validateAudio 더블로 조회·손상·조건부 put·실패·늦은 완료를 검증한다. 실제 MP3 검사 연결은 [TTS-05 · #139](https://github.com/damdam6/vocabulary-study/issues/139)에서 확인한다.
 
 개발 중 관련 테스트를 실행하고 이슈 완료 시 `npm test`, `npm run lint`, `npm run build`를 확인한다. 실제 키·청취·모바일·R2 접근 검증을 더블 통과로 대신하지 않는다.
 
