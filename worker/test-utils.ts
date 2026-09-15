@@ -10,8 +10,12 @@ import worker from "./index.ts";
 // (IncomingRequestCfProperties)을 기대한다 — 테스트에서는 cf를 쓰지 않으므로 캐스트.
 export type WorkerRequest = Parameters<typeof worker.fetch>[0];
 
-export function makeRequest(path: string, headers?: Record<string, string>): WorkerRequest {
-  return new Request(`https://example.com${path}`, { headers }) as WorkerRequest;
+export function makeRequest(
+  path: string,
+  headers?: Record<string, string>,
+  init: Omit<RequestInit, "headers"> = {},
+): WorkerRequest {
+  return new Request(`https://example.com${path}`, { ...init, headers }) as WorkerRequest;
 }
 
 export function healthRequest(headers?: Record<string, string>): WorkerRequest {
@@ -31,4 +35,19 @@ export function makeEnv(vars: Record<string, unknown> = {}): Env {
     CF_VERSION_METADATA: { id: "v-test", tag: "", timestamp: "" },
     ...vars,
   } as unknown as Env;
+}
+
+/** waitUntil에 넘긴 작업을 테스트에서 명시적으로 회수한다. */
+export function makeExecutionContext(): ExecutionContext & { readonly tasks: Promise<unknown>[]; drain(): Promise<void> } {
+  const tasks: Promise<unknown>[] = [];
+  return {
+    tasks,
+    waitUntil(task: Promise<unknown>) { tasks.push(task); },
+    passThroughOnException() {},
+    async drain() {
+      const settled = await Promise.allSettled(tasks);
+      const rejected = settled.find((result): result is PromiseRejectedResult => result.status === "rejected");
+      if (rejected) throw rejected.reason;
+    },
+  } as ExecutionContext & { readonly tasks: Promise<unknown>[]; drain(): Promise<void> };
 }
