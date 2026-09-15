@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>#137 Qwen 이벤트 검증과 MP3 조립을 구현한다 — 작업 플랜</title>
+<style>
+  :root {
+    --bg: #f7f7f8; --card: #ffffff; --ink: #1c1c1e; --muted: #6e6e73;
+    --line: #e3e3e6; --accent: #3b6ef5; --accent-soft: #e8eefe;
+    --ok: #2e8b57; --warn: #b25e09; --code-bg: #f0f0f2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161618; --card: #202024; --ink: #ececf0; --muted: #98989f;
+      --line: #333338; --accent: #7a9bff; --accent-soft: #26304a;
+      --ok: #58c088; --warn: #e0a35c; --code-bg: #2a2a2f;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 40px 20px 80px; background: var(--bg); color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+                 "Segoe UI", "Noto Sans KR", sans-serif;
+    line-height: 1.65;
+  }
+  main { max-width: 860px; margin: 0 auto; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code {
+    font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 0.86em;
+    background: var(--code-bg); border-radius: 5px; padding: 2px 6px;
+  }
+  header { margin-bottom: 28px; }
+  .issue-chip {
+    display: inline-block; font-weight: 700; color: var(--accent);
+    background: var(--accent-soft); border-radius: 999px;
+    padding: 3px 14px; font-size: 0.95rem; margin-bottom: 10px;
+  }
+  .type-chip {
+    display: inline-block; font-weight: 600; color: var(--muted);
+    border: 1px solid var(--line); border-radius: 999px;
+    padding: 3px 12px; font-size: 0.8rem; margin-left: 8px; vertical-align: 2px;
+  }
+  h1 { font-size: 1.7rem; margin: 0 0 14px; letter-spacing: -0.02em; }
+  .meta {
+    display: flex; flex-wrap: wrap; gap: 6px 22px;
+    color: var(--muted); font-size: 0.87rem;
+  }
+  .meta b { color: var(--ink); font-weight: 600; }
+  section.card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 24px 28px; margin-top: 18px;
+  }
+  h2 {
+    font-size: 1.05rem; margin: 0 0 14px; letter-spacing: -0.01em;
+    display: flex; align-items: center; gap: 8px;
+  }
+  h2 .no {
+    color: var(--accent); font-size: 0.8rem; font-weight: 700;
+    border: 1.5px solid var(--accent); border-radius: 6px; padding: 0 6px;
+  }
+  h3 { font-size: 0.96rem; margin: 20px 0 8px; }
+  ul, ol { margin: 0; padding-left: 22px; }
+  li { margin: 6px 0; }
+  .steps { list-style: none; padding: 0; counter-reset: step; }
+  .steps li {
+    counter-increment: step; position: relative; padding: 10px 0 10px 44px;
+    border-bottom: 1px dashed var(--line);
+  }
+  .steps li:last-child { border-bottom: none; }
+  .steps.done li::before { content: "✓"; background: var(--ok); color: white; }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 10px;
+    width: 28px; height: 28px; border-radius: 8px; background: var(--accent-soft);
+    color: var(--accent); font-weight: 700; font-size: 0.85rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .steps .files { display: block; margin-top: 4px; font-size: 0.85rem; color: var(--muted); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 0.82rem; }
+  .done-list { list-style: none; padding: 0; }
+  .done-list li { padding-left: 30px; position: relative; }
+  .done-list li::before {
+    content: ""; position: absolute; left: 2px; top: 7px; width: 15px; height: 15px;
+    border: 2px solid var(--ok); border-radius: 5px;
+  }
+  .done-list.done li::before { content: "✓"; color: white; background: var(--ok); text-align: center; line-height: 13px; font-size: 11px; }
+  .scroll-x { overflow-x: auto; }
+  .scope-note {
+    border-left: 3px solid var(--warn); padding-left: 14px; color: var(--muted);
+  }
+  footer { margin-top: 30px; color: var(--muted); font-size: 0.8rem; text-align: center; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <span class="issue-chip"><a href="https://github.com/damdam6/vocabulary-study/issues/137">#137</a></span><span class="type-chip">기능 개선</span>
+    <h1>Qwen 이벤트 검증과 MP3 조립을 구현한다</h1>
+    <div class="meta">
+      <span><b>damdam6/vocabulary-study</b></span>
+      <span>브랜치 <b><code>feat/137-qwen-audio-protocol</code></b> ← <code>feat/ch-sound</code></span>
+      <span>라벨 <b>enhancement</b></span>
+      <span>2026-09-16</span>
+    </div>
+  </header>
+
+  <section class="card">
+    <h2><span class="no">1</span>요약</h2>
+    <p>QwenCloud WebSocket과 분리된 순수 프로토콜 계층을 추가해 네 종류의 클라이언트 메시지를 직렬화하고, 서버 JSON 이벤트와 바이너리 조각을 제한 안에서 검증·조립한다. 완료는 올바른 <code>task-finished</code>와 구조가 유효한 비어 있지 않은 MP3가 모두 있을 때만 성립하며, 실패는 기존 공통 TTS 오류 코드로 정규화한다. 실제 Upgrade, 인증 헤더, socket·timer·AbortSignal 수명, R2 및 앱 경로는 후속 이슈의 소유 범위로 남긴다.</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">2</span>현황 분석</h2>
+    <p>선행 #135가 기준 커밋 <code>be74e1270be127a3252e2143e0b5f1560d21ef9c</code>에 합쳐져 있다. 현재 <code>worker/lib/tts/types.ts:6-16</code>에는 MP3 4MiB, JSON 단건 64KiB·누적 1MiB 상한이 있고, <code>worker/lib/tts/types.ts:18-44</code>에는 모델·음색·형식과 24kHz/128kbps/volume/rate/pitch/seed/language hint/SSML 설정이 고정되어 있다.</p>
+    <ul>
+      <li><code>worker/lib/tts/types.ts:46-77</code>의 기존 오류 계약은 제공자 사용 불가를 <code>tts_unavailable</code>, 형식·프로토콜 오류를 <code>tts_upstream_error</code>로 표현한다. 새 공개 오류 문자열이나 제공자 원문을 만들 필요가 없다.</li>
+      <li><code>worker/lib/tts/types.ts:100-125</code>의 <code>SynthesisInput</code>은 <code>text</code>만 허용하고 <code>TtsProvider</code> 결과는 MP3 바이트와 선택적 실제 <code>billedCharacters</code>를 받는다. <code>worker/lib/tts/pronunciation.ts:3-13</code>도 병음을 진단·저장 키에만 남기고 합성 입력에서 제거한다.</li>
+      <li><code>worker/lib/tts/config.ts:52-66</code>은 비밀 없는 검증 설정과 API 키/R2 의존성을 분리한다. 프로토콜 직렬화기는 <code>TtsConfig</code>와 <code>SynthesisInput</code>만 받아야 하며 <code>DASHSCOPE_API_KEY</code>나 환경 객체를 받을 이유가 없다.</li>
+      <li>계획 시점에는 <code>worker/lib/tts/audio.ts</code>와 <code>worker/lib/tts/providers/qwenProtocol.ts</code>가 존재하지 않는다. Vitest는 <code>vitest.config.ts:1-7</code>처럼 Vite/Cloudflare 플러그인 없이 순수 함수 테스트를 실행하므로 이 모듈도 네트워크 없는 Node 테스트로 완결할 수 있다.</li>
+    </ul>
+    <p>저장소 설계는 <code>docs/architecture/chinese-tts-audio.md:104-123</code>에서 <code>run-task → task-started → continue-task + finish-task → result-generated/binary → task-finished</code> 흐름, 상한, 실패 정규화를 정한다. 공식 <a href="https://docs.qwencloud.com/api-reference/speech-synthesis/cosyvoice/client-events">Qwen 클라이언트 이벤트</a>는 <code>run-task</code>와 <code>finish-task</code>의 빈 <code>input</code>, 취소의 <code>directive: "cancel"</code>을 요구하고, <a href="https://docs.qwencloud.com/api-reference/speech-synthesis/cosyvoice/server-events">서버 이벤트</a>는 <code>task-started</code>, <code>result-generated</code>, <code>task-finished</code>, <code>task-failed</code> 및 누적 <code>usage.characters</code>를 정의한다.</p>
+    <p class="scope-note"><b>소유 경계:</b> <code>docs/architecture/chinese-tts-audio.md:125-138</code>와 <code>docs/plans/chinese-tts-audio-issues/TTS-04.md:24-36</code>에 따라 이번 이슈는 메시지·상태·바이트만 다룬다. 실제 <code>fetch</code> Upgrade, Authorization, WebSocket 리스너와 close/error, abort, 12초 deadline, 한 번만 settle하는 연결 정리는 #138의 <code>worker/lib/tts/providers/qwen.ts</code>가 담당한다. R2 소비·서비스·HTTP 라우트도 구현하지 않는다.</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">3</span>설계</h2>
+    <h3>클라이언트 메시지</h3>
+    <p><code>worker/lib/tts/providers/qwenProtocol.ts</code>는 호출자가 생성한 UUID, 검증된 <code>TtsConfig</code>, <code>SynthesisInput</code>을 받아 JSON 문자열을 만드는 순수 API를 노출한다. 공통 header는 같은 <code>task_id</code>와 <code>streaming: "duplex"</code>를 쓰고, 메시지별 payload는 아래처럼 고정한다.</p>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>메시지</th><th>직렬화 계약</th><th>금지 필드</th></tr></thead>
+        <tbody>
+          <tr><td><code>run-task</code></td><td><code>audio / tts / SpeechSynthesizer</code>, 확정 model, <code>PlainText</code>, voice, mp3, sample_rate, bit_rate, volume, rate, pitch, seed, <code>language_hints: ["zh"]</code>, <code>enable_ssml: false</code>, 빈 input</td><td>API 키·endpoint·pinyin·instruction·hot_fix·SSML 본문</td></tr>
+          <tr><td><code>continue-task</code></td><td><code>payload.input.text</code>에 정규화된 A열 원문 전체를 한 번 넣음</td><td>pinyin·분할/절단·추가 지시</td></tr>
+          <tr><td><code>finish-task</code></td><td><code>payload.input</code>은 빈 객체</td><td>종료 외 데이터</td></tr>
+          <tr><td>cancel</td><td>action은 <code>finish-task</code>, <code>payload.input.directive</code>는 <code>cancel</code></td><td>별도 가상 action·대기 정책</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>수신 상태와 오류</h3>
+    <p>같은 파일의 factory는 <code>awaiting-start → streaming → finished/failed</code> 상태를 캡슐화하고 text 또는 <code>Uint8Array</code>만 받는다. <code>task-started</code>는 정확히 한 번, <code>result-generated</code>와 바이너리는 started 이후이자 terminal 이전, <code>task-finished</code>는 started 이후 정확히 한 번만 허용한다. <code>task-failed</code>는 성공 결과 대신 즉시 terminal 실패가 되며, terminal 뒤 추가 입력·중복 시작/완료·알 수 없는 이벤트·다른/비정상 task ID·스키마 오류는 모두 <code>tts_upstream_error</code>다.</p>
+    <ul>
+      <li>각 text 이벤트는 파싱 전에 <code>TextEncoder</code> 기준 UTF-8 바이트를 재고 단건 64KiB와 실행 누적 1MiB를 검사한다. primitive/null/array JSON, header/event/task_id 누락 및 잘못된 필드 타입은 성공 경로에 들어오지 못한다.</li>
+      <li>문서화된 인증·권한·할당량·요청 제한 <code>error_code</code>만 명시적 allowlist로 <code>tts_unavailable</code>에 매핑한다. <code>InvalidParameter</code>와 알 수 없는 값은 <code>tts_upstream_error</code>이며, 분류에 <code>error_message</code>를 사용하거나 반환 오류에 복사하지 않는다.</li>
+      <li><code>usage.characters</code>는 유한한 비음수 safe integer일 때만 최신 누적값으로 보존하고, 유효한 task-finished 값이 있으면 갱신한다. 누락·잘못된 값은 결과에서 생략하며 원문 길이로 추정하지 않는다.</li>
+      <li>바이너리는 받은 순서의 조각 배열로 보관하고 합계를 먼저 계산한다. 4MiB를 넘는 조각은 복사·추가 전에 거부하며, <code>task-finished</code>에서만 정확한 크기의 버퍼를 한 번 할당해 순서대로 복사한다. 부분 결과나 빈 배열은 절대 결과로 노출하지 않는다.</li>
+    </ul>
+
+    <h3>공용 MP3 검사</h3>
+    <p><code>worker/lib/tts/audio.ts</code>의 <code>validateMp3(audio, contentType)</code>는 기존 <code>ValidateAudio</code>와 호환되는 동기 boolean 함수로 만든다. MIME을 안전하게 정규화한 뒤 <code>audio/mpeg</code>만 허용하고, 1..4MiB 크기 안에서 optional ID3 메타데이터 길이를 경계 검사한 다음 MPEG Layer III frame header의 version/bitrate/sample-rate/padding으로 frame 길이를 계산해 끝까지 순회한다. 최소 한 개의 완전한 audio frame과 버퍼 경계의 정확한 종료를 요구해 ID3-only, 첫 sync만 맞는 바이트, 잘린 마지막 frame, reserved/free bitrate, trailing garbage를 거부한다.</p>
+    <p>작은 유효 MPEG frame으로 구성한 테스트 전용 fixture와 손상 변형을 <code>worker/lib/tts/fixtures/mp3.ts</code>에 둔다. 브라우저 계약 fixture인 <code>src/lib/ttsFixtures.ts:3-12</code>의 임의 문자열 Blob을 유효 MP3로 바꾸지 않으며, 후속 R2/provider 테스트가 같은 Worker fixture와 검사기를 재사용할 수 있게 한다.</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">4</span>작업 단계</h2>
+    <ol class="steps done">
+      <li><b>재사용 가능한 MP3 fixture와 공용 검사기를 구현한다.</b> 고정된 작은 Layer III frame fixture를 만들고 MIME·크기·ID3 길이·frame header와 계산된 frame 경계를 검사한다. 빈 바이트, HTML/JSON/WAV, metadata-only, reserved header, 중간/마지막 frame 절단, trailing garbage를 false로 반환하며 예외나 디코더·I/O를 사용하지 않는다.
+        <span class="files"><code>worker/lib/tts/audio.ts</code>, <code>worker/lib/tts/audio.test.ts</code>, <code>worker/lib/tts/fixtures/mp3.ts</code>, <code>worker/lib/tts/types.ts</code> (기존 상수·타입 import만)</span>
+      </li>
+      <li><b>Qwen 네 종류의 outbound 메시지 직렬화기를 추가한다.</b> 호출자 UUID와 검증 설정을 한 번 받아 공통 header를 유지하고, 공식 필드명과 빈 input 형태를 정확히 만든다. 중국어 따옴표·개행도 <code>JSON.stringify</code>로 안전하게 보존하고, API 키·socket·endpoint 및 pinyin/SSML/instruction/hot_fix가 결과의 어느 깊이에도 없는지 테스트한다.
+        <span class="files"><code>worker/lib/tts/providers/qwenProtocol.ts</code>, <code>worker/lib/tts/providers/qwenProtocol.test.ts</code>, <code>worker/lib/tts/types.ts</code>, <code>worker/lib/tts/pronunciation.ts</code> (기존 계약 소비)</span>
+      </li>
+      <li><b>서버 이벤트를 검증하는 순수 상태 처리기를 구현한다.</b> UTF-8 JSON 단건·누적 상한을 파싱 전에 검사하고, UUID 일치·이벤트 스키마·started/result/finished 순서를 강제한다. task-failed의 문서화된 code allowlist만 503 계열로 매핑하고 나머지 파싱·형식·순서 오류는 502 계열로 정규화하며 제공자 메시지를 폐기한다.
+        <span class="files"><code>worker/lib/tts/providers/qwenProtocol.ts</code>, <code>worker/lib/tts/providers/qwenProtocol.test.ts</code>, <code>worker/lib/tts/types.ts</code> (기존 상한·<code>TtsErrorCode</code> import)</span>
+      </li>
+      <li><b>바이너리 조립과 완료 게이트를 상태 처리기에 연결한다.</b> started 이후 binary만 순서대로 보관하고 4MiB 초과를 복사 전에 차단한다. task-finished에서 단 한 번 조립해 <code>validateMp3</code>를 통과한 비어 있지 않은 바이트만 반환하며, 사용량은 유효한 누적값만 선택적으로 넣는다. 정상 JSON/binary 교차 흐름, 조각 경계가 frame 내부인 흐름, 빈/손상/부분 MP3와 완료 누락을 순수 fixture로 검증한다.
+        <span class="files"><code>worker/lib/tts/providers/qwenProtocol.ts</code>, <code>worker/lib/tts/providers/qwenProtocol.test.ts</code>, <code>worker/lib/tts/audio.ts</code>, <code>worker/lib/tts/fixtures/mp3.ts</code></span>
+      </li>
+      <li><b>소유 범위와 회귀를 검증하고 구현 증거를 기록한다.</b> 전용 테스트에서 정상·오류·상한의 경계값을 확인한 뒤 전체 test/lint/build를 실행한다. 성공한 항목만 계획에 체크하고 실제 명령 결과 및 외부 미검증 사항을 남긴다. 구현 세션은 <code>feat/ch-sound</code> base의 ready PR을 만들지만, 이 계획 세션은 앱 코드·테스트 구현·commit/push/PR을 수행하지 않는다.
+        <span class="files"><code>worker/lib/tts/audio.test.ts</code>, <code>worker/lib/tts/providers/qwenProtocol.test.ts</code>, <code>docs/plans/issue-137-qwen-audio-protocol.html</code>, <code>.issue-codex/interactive-state.json</code></span>
+      </li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">5</span>리스크</h2>
+    <div class="scroll-x">
+    <table>
+      <thead><tr><th>리스크</th><th>영향</th><th>완화책</th></tr></thead>
+      <tbody>
+        <tr><td>MP3를 magic byte만 보고 허용</td><td>HTML/JSON, ID3-only, 잘린 frame이나 저장소 손상이 정상 음성으로 반환될 수 있다.</td><td>MIME·전체 크기·ID3 bounds·계산된 Layer III frame 경계를 모두 검사하고 최소 한 frame 및 정확한 종료를 요구한다.</td></tr>
+        <tr><td>유효 MP3 변형을 지나치게 좁게 해석</td><td>Qwen이 ID3 또는 가변 bitrate frame을 반환할 때 정상 결과를 거부할 수 있다.</td><td>고정 128kbps signature가 아니라 version별 bitrate/sample-rate 표와 frame 길이를 사용하고, 명시적으로 지원하는 metadata 변형을 fixture로 고정한다. 실제 제공자 출력 호환은 미검증으로 남긴다.</td></tr>
+        <tr><td>JSON/오디오 누적 중 메모리 증폭</td><td>상한을 넘긴 뒤 복사하면 Worker 메모리와 CPU를 불필요하게 소모한다.</td><td>UTF-8/바이너리 크기를 추가 전에 검사하고, 조각은 참조로 모아 완료 시 한 번만 합친다.</td></tr>
+        <tr><td>실패 메시지 문자열에 의존한 분류</td><td>문구 변경으로 502/503이 흔들리거나 원문·민감 데이터가 외부 오류에 섞일 수 있다.</td><td><code>error_code</code> exact allowlist만 사용하고 unknown은 502로 닫으며 <code>error_message</code>는 보관·출력하지 않는다.</td></tr>
+        <tr><td>#138 연결 수명 책임 선행 구현</td><td>socket close·abort·timeout 상태가 두 모듈에 중복되어 정리/settle 경쟁이 생긴다.</td><td>processor 입출력을 string/Uint8Array와 상태 update로 제한하고 fetch/WebSocket/timer/R2 import 부재를 코드 리뷰와 정적 검색으로 확인한다.</td></tr>
+        <tr><td>fixture 통과를 실제 음질·계정 검증으로 오인</td><td>형식 테스트가 모델 접근·과금·청취 품질·실환경 호환을 보장하지 못한다.</td><td>실제 키, 유료 합성, R2, 청취, 모바일, 지연은 실행하지 않고 후속 출시 검증으로 명시한다. <code>TTS_ENABLED=false</code>를 유지한다.</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">6</span>테스트 계획</h2>
+    <ul>
+      <li><b>직렬화:</b> <code>run-task</code>의 모델·설정·필드명과 <code>continue-task</code>의 원문, 정상 finish의 빈 input, cancel directive를 exact object로 비교한다. 중국어/따옴표/개행 round-trip과 네 메시지의 같은 UUID를 확인하고, 결과 전체에서 pinyin/API key/SSML text/instruction/hot_fix가 없음을 검사한다.</li>
+      <li><b>정상 수신:</b> task-started → result-generated → 여러 binary 조각 → result-generated → task-finished를 섞어 넣어 fixture MP3가 byte-for-byte 원래 순서로 복원되고 contentType이 <code>audio/mpeg</code>인지 확인한다. 조각 경계를 MPEG frame 중간에 두어 chunk 단위 검사를 하지 않음을 보장한다.</li>
+      <li><b>이벤트 순서/형식:</b> started 전 result/binary/finished, 중복 started/finished, terminal 후 추가 입력, 다른 UUID, 비-UUID task_id, unknown event, header/payload 누락, null/array/primitive/깨진 JSON을 각각 <code>tts_upstream_error</code>로 확인한다. task-failed는 started 전·후 모두 성공이 아니며 부분 바이트를 반환하지 않는다.</li>
+      <li><b>task 오류 분류:</b> 인증·권한·quota·throttling의 allowlist 대표 code는 <code>tts_unavailable</code>, <code>InvalidParameter</code>·빈 값·unknown은 <code>tts_upstream_error</code>인지 확인한다. sentinel <code>error_message</code>가 throw/result/직렬화된 오류 어디에도 포함되지 않는지 검사한다.</li>
+      <li><b>사용량:</b> result-generated의 누적값과 task-finished의 최종값을 처리하고, 누락·문자열·음수·소수·NaN 범주의 JSON 값·safe integer 초과는 생략한다. 어느 경우에도 입력 <code>text.length</code> 또는 코드 포인트 수를 fallback으로 넣지 않는다.</li>
+      <li><b>크기 상한:</b> UTF-8 text 이벤트 64KiB 정확히/초과, 여러 이벤트 누적 1MiB 정확히/초과를 검사한다. MP3 조각 합계는 4MiB 이하에서 구조 검증까지 진행하고 다음 조각이 상한을 넘으면 그 조각을 보관·복사하지 않은 채 실패한다.</li>
+      <li><b>MP3 구조:</b> 정확한 <code>audio/mpeg</code>과 안전한 대소문자/parameter 정규화, 최소 유효 frame, 여러 frame, 경계가 맞는 ID3 metadata를 통과시킨다. 잘못된 MIME, 0 byte, 4MiB 초과, HTML/JSON/WAV, ID3-only/과대 ID3, reserved/free header, 잘린 frame, trailing garbage는 모두 false여야 한다.</li>
+      <li><b>소유 테스트:</b> <code>npm test -- worker/lib/tts/audio.test.ts worker/lib/tts/providers/qwenProtocol.test.ts</code>를 실행한다. 네트워크·실제 키·R2 없이 결과가 결정되어야 한다.</li>
+      <li><b>전체 회귀:</b> <code>npm test</code>, <code>npm run lint</code>, <code>npm run build</code>를 실행한다. 타입 빌드는 protocol export가 기존 <code>TtsConfig</code>/<code>SynthesisInput</code>/<code>ValidateAudio</code>/<code>TtsErrorCode</code> 계약과 맞는지도 검증해야 한다.</li>
+      <li><b>정적 범위 확인:</b> 변경 파일과 import를 검토해 <code>fetch</code>, <code>WebSocket</code>, timer, R2, API key/env 접근이 없고 <code>worker/lib/tts/providers/qwen.ts</code>나 앱 경로를 선행 구현하지 않았는지 확인한다. 실제 DashScope 호출·리소스 생성·배포·청취·모바일 검증은 하지 않는다.</li>
+      <li><b>이 계획 단계의 검증:</b> HTML placeholder·구조·참조 경로·Git 변경 범위를 검사하고 공유 서버의 plan URL을 HTTP 200으로 확인한다. 앱 테스트는 구현 단계에서 실행하므로 현재 기능 통과를 주장하지 않는다.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">7</span>완료 조건</h2>
+    <ul class="done-list done">
+      <li>확정 <code>TtsConfig</code>, UUID, A열 <code>SynthesisInput.text</code>로 run/continue/finish/cancel JSON을 만들며 네 메시지의 ID와 공식 payload 형식이 일치한다.</li>
+      <li>직렬화 결과에 API 키·socket·pinyin·SSML 본문·instruction·hot_fix·대체 모델/endpoint가 없다.</li>
+      <li>task-started/result-generated/task-finished/task-failed의 스키마, UUID 일치, 허용 순서를 검사하고 malformed JSON·unknown/중복/역순 이벤트를 성공으로 처리하지 않는다.</li>
+      <li>JSON 단건 64KiB·누적 1MiB와 binary 누적 4MiB를 추가/복사 전에 강제하며, 실패 시 부분 결과를 노출하지 않는다.</li>
+      <li>JSON과 여러 binary 조각이 섞인 정상 흐름에서 원래 순서의 MP3를 한 번 조립하고, task-finished와 공용 <code>validateMp3</code> 통과가 함께 있을 때만 완료 결과를 반환한다.</li>
+      <li><code>validateMp3</code>가 <code>ValidateAudio</code> 포트와 호환되고 MIME·크기·metadata/frame 전체 경계를 검사해 빈 오디오, HTML/JSON/WAV, 손상·절단·trailing garbage를 거부한다. 재사용 가능한 최소 유효/손상 fixture가 있다.</li>
+      <li><code>usage.characters</code>는 유효한 제공자 누적값만 선택적으로 포함하고, 누락·잘못된 값을 원문 길이로 추정하지 않는다.</li>
+      <li>task-failed의 안정적 code allowlist만 <code>tts_unavailable</code>로 분류하고 다른 protocol/format 실패는 <code>tts_upstream_error</code>다. 제공자 원문 오류·입력·비밀은 공개 오류에 포함되지 않는다.</li>
+      <li>소유 모듈과 테스트는 socket·timer·fetch·R2를 사용하지 않으며 #138 이후 앱/저장/서비스 코드를 선행 구현하지 않는다. 운영 <code>TTS_ENABLED=false</code>와 graph JSON은 그대로다.</li>
+      <li>전용 테스트(34개), 전체 <code>npm test</code>(509개), <code>npm run lint</code>, <code>npm run build</code>가 통과했다. 실제 키·모델 접근·R2·청취·모바일·지연은 안전 조건에 따라 미검증이다.</li>
+      <li>구현 PR은 base <code>feat/ch-sound</code>, head <code>feat/137-qwen-audio-protocol</code>을 명시하고 변경 범위·검증·<code>Closes #137</code>를 기록한다.</li>
+    </ul>
+  </section>
+
+  <footer>issue-plan · <a href="https://github.com/damdam6/vocabulary-study/issues/137">#137</a> · 2026-09-16</footer>
+</main>
+</body>
+</html>
