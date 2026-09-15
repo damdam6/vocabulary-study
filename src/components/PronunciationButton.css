@@ -1,0 +1,92 @@
+.pronunciation-button {
+  display: inline-flex;
+  min-width: 44px;
+  min-height: 68px;
+  flex-direction: column;
+  align-items: center;
+  color: var(--text-muted);
+}
+
+.pronunciation-button__control {
+  display: inline-flex;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid var(--border-input);
+  border-radius: 50%;
+  color: inherit;
+  background: transparent;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+
+.pronunciation-button__control:hover:not(:disabled) {
+  border-color: var(--accent-light);
+  color: var(--accent-light);
+  background: color-mix(in srgb, var(--accent-light) 12%, transparent);
+}
+
+.pronunciation-button__control:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.pronunciation-button__control:disabled {
+  cursor: not-allowed;
+  border-color: var(--border-faint);
+  color: var(--text-faint);
+  background: var(--bg-disabled);
+}
+
+.pronunciation-button--playing .pronunciation-button__control {
+  border-color: var(--accent-light);
+  color: var(--accent-light);
+  background: color-mix(in srgb, var(--accent-light) 18%, transparent);
+}
+
+.pronunciation-button--loading .pronunciation-button__control {
+  color: var(--accent-light);
+}
+
+.pronunciation-button__icon {
+  width: 20px;
+  height: 20px;
+}
+
+.pronunciation-button__spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: pronunciation-button-spin 0.8s linear infinite;
+}
+
+.pronunciation-button__message {
+  width: max-content;
+  max-width: 220px;
+  min-height: 24px;
+  padding-top: 4px;
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  line-height: 1.35;
+  text-align: center;
+}
+
+@keyframes pronunciation-button-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pronunciation-button__control {
+    transition: none;
+  }
+
+  .pronunciation-button__spinner {
+    animation: none;
+  }
+}
