@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>#143 질문별 음성 재생과 늦은 응답을 제어한다 — 작업 플랜</title>
+<style>
+  :root {
+    --bg: #f7f7f8; --card: #ffffff; --ink: #1c1c1e; --muted: #6e6e73;
+    --line: #e3e3e6; --accent: #3b6ef5; --accent-soft: #e8eefe;
+    --ok: #2e8b57; --warn: #b25e09; --code-bg: #f0f0f2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161618; --card: #202024; --ink: #ececf0; --muted: #98989f;
+      --line: #333338; --accent: #7a9bff; --accent-soft: #26304a;
+      --ok: #58c088; --warn: #e0a35c; --code-bg: #2a2a2f;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 40px 20px 80px; background: var(--bg); color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+                 "Segoe UI", "Noto Sans KR", sans-serif;
+    line-height: 1.65;
+  }
+  main { max-width: 860px; margin: 0 auto; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code {
+    font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 0.86em;
+    background: var(--code-bg); border-radius: 5px; padding: 2px 6px;
+  }
+  header { margin-bottom: 28px; }
+  .issue-chip {
+    display: inline-block; font-weight: 700; color: var(--accent);
+    background: var(--accent-soft); border-radius: 999px;
+    padding: 3px 14px; font-size: 0.95rem; margin-bottom: 10px;
+  }
+  .type-chip {
+    display: inline-block; font-weight: 600; color: var(--muted);
+    border: 1px solid var(--line); border-radius: 999px;
+    padding: 3px 12px; font-size: 0.8rem; margin-left: 8px; vertical-align: 2px;
+  }
+  h1 { font-size: 1.7rem; margin: 0 0 14px; letter-spacing: -0.02em; }
+  .meta {
+    display: flex; flex-wrap: wrap; gap: 6px 22px;
+    color: var(--muted); font-size: 0.87rem;
+  }
+  .meta b { color: var(--ink); font-weight: 600; }
+  section.card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 24px 28px; margin-top: 18px;
+  }
+  h3 { font-size: 1rem; margin: 24px 0 10px; }
+  code { overflow-wrap: anywhere; }
+  p { margin: 10px 0; }
+  h2 {
+    font-size: 1.05rem; margin: 0 0 14px; letter-spacing: -0.01em;
+    display: flex; align-items: center; gap: 8px;
+  }
+  h2 .no {
+    color: var(--accent); font-size: 0.8rem; font-weight: 700;
+    border: 1.5px solid var(--accent); border-radius: 6px; padding: 0 6px;
+  }
+  ul, ol { margin: 0; padding-left: 22px; }
+  li { margin: 6px 0; }
+  .steps { list-style: none; padding: 0; counter-reset: step; }
+  .steps li {
+    counter-increment: step; position: relative; padding: 10px 0 10px 44px;
+    border-bottom: 1px dashed var(--line);
+  }
+  .steps li:last-child { border-bottom: none; }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 10px;
+    width: 28px; height: 28px; border-radius: 8px; background: var(--accent-soft);
+    color: var(--accent); font-weight: 700; font-size: 0.85rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .steps .files { display: block; margin-top: 4px; font-size: 0.85rem; color: var(--muted); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 0.82rem; }
+  .done-list { list-style: none; padding: 0; }
+  .done-list li { padding-left: 30px; position: relative; }
+  .done-list li::before {
+    content: ""; position: absolute; left: 2px; top: 7px; width: 15px; height: 15px;
+    border: 2px solid var(--ok); border-radius: 5px;
+  }
+  .scroll-x { overflow-x: auto; }
+  footer { margin-top: 30px; color: var(--muted); font-size: 0.8rem; text-align: center; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <span class="issue-chip"><a href="https://github.com/damdam6/vocabulary-study/issues/143">#143</a></span><span class="type-chip">기능 개선 · TTS-09</span>
+    <h1>질문별 음성 재생과 늦은 응답을 제어한다</h1>
+    <div class="meta">
+      <span><b>damdam6/vocabulary-study</b></span>
+      <span>브랜치 <b><code>feat/143-question-pronunciation-controller</code></b> ← <code>feat/ch-sound</code></span>
+      <span>라벨 <b>enhancement</b></span>
+      <span>2026-09-16</span>
+    </div>
+  </header>
+
+  <section class="card">
+    <h2><span class="no">1</span>요약</h2>
+    <p>주입된 전송·Audio·Blob 캐시를 연결하는 React 비의존 PronunciationController를 src/lib/speak.ts에 만든다. 질문 ID와 작업 세대로 늦은 응답을 차단하고, 공개당 자동 기회 1회와 수동 재생 의도 1개를 관리한다. 준비된 음성은 동기 클릭 경로에서 즉시 재생하고 숨김·문제 이동·종료에서 작업을 무효화한다. 이 문서는 계획 산출물이며 구현·독립 리뷰·GitHub squash merge는 오케스트레이터가 지정한 별도 대화형 모델로 인계한다.</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">2</span>현황 분석</h2>
+
+
+<p>조사 기준 HEAD: <code>84669f090bba4d2e43406a748c7f12ad5fc0b8e1</code>. GitHub 이슈 본문·댓글 조회 완료(댓글 0개). 선행 #141의 <a href="https://github.com/damdam6/vocabulary-study/pull/153">PR #153</a>(<code>a1f152d</code>)와 #142의 <a href="https://github.com/damdam6/vocabulary-study/pull/156">PR #156</a>(<code>84669f0</code>)는 모두 <code>feat/ch-sound</code>에 MERGED이며 현재 HEAD의 조상이다. 워크트리·상위 디렉터리·docs/src 범위에서 적용 AGENTS.md는 발견되지 않았다.</p>
+<ul>
+<li><code>src/lib/ttsTypes.ts:39</code>에 전송 포트, <code>:48</code>에 Audio 포트, <code>:56</code>에 캐시 포트, <code>:67</code>부터 snapshot/controller/binding 계약이 이미 있다. 실제 <code>speak.ts</code>는 아직 없다. 실제 activate 입력은 <code>PronunciationInput { text, pinyin: string | null }</code>로, 아키텍처 의사 코드의 optional pinyin보다 현재 공개 타입을 우선한다.</li>
+<li><code>src/lib/ttsApi.ts:118</code>의 <code>fetchTtsAudio</code>는 AbortSignal·20초 준비 제한·bounded Blob 읽기와 오류 분류를 담당한다. 응답은 이미 완성된 Blob이므로 controller에서 fetch·Blob 변환·timeout을 중복 구현하지 않는다. <code>src/lib/api.ts:90</code>의 기존 401·성공 콜백도 전송 계층에 남긴다.</li>
+<li><code>src/lib/ttsAudio.ts:102</code>의 play는 기존 source를 취소하고 같은 스택에서 native play를 시작한다(<code>:159</code>). 결과는 started/blocked/cancelled/error이며 source 세대와 URL 정리는 이 모듈 소유다. ended/error는 구독 이벤트(<code>:134</code>), 질문 세대는 controller 책임이다.</li>
+<li><code>src/lib/ttsBlobCache.ts:26</code>의 get은 동기, set은 보관 여부를 반환한다. pin은 존재하는 항목만 보호하는 boolean(<code>:64</code>)이므로 get/set 성공 후 pin해야 한다. dispose는 영구 종료(<code>:82</code>), URL은 보관하지 않는다.</li>
+<li><code>src/screens/StudyScreen.tsx:46</code>에서 세션을 소유하고 <code>:139</code>에서 session.pos를 카드 key로 쓴다. 기록 응답은 word 객체를 갱신(<code>:70</code>)하므로 객체 참조나 표제어로 질문을 식별하면 안 된다. <code>src/lib/studySession.ts:14</code>에는 pos는 있지만 세션 UUID는 없다. 세션 ID 생성·pos 결합과 DOM 사건 연결은 #145가 담당한다.</li>
+<li>규범: <a href="chinese-tts-audio-issues/TTS-09.md">TTS-09</a>, <a href="../PRD-chinese-tts-audio.md">PRD §3~4·AC-06~10·AC-16</a>, <a href="../architecture/chinese-tts-audio.md">아키텍처 §6.3·7.1~7.4</a>. 브라우저 UI·StrictMode 검증은 후속 이슈와 구분한다.</li>
+</ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">3</span>설계</h2>
+
+
+<h3>1. 생성 계약과 소유 범위</h3>
+<p><code>createPronunciationController({ profileId, capability, transport, audio, cache }): PronunciationController</code>를 export한다. options 타입은 <code>speak.ts</code>에 정의하며 <code>capability: TtsCapability</code> 및 세 포트를 필수로 주입한다. controller 한 개는 세션 한 개에 속하고 주입된 Audio/cache의 정리도 소유한다. 모듈 로드·생성만으로 네트워크·재생을 시작하지 않는다. React·DOM·Worker·retryQueue를 import하지 않는다. <code>contentType === "zh"</code> 확인과 capability 전달은 #145가 맡으며 여기서는 enabled=false를 방어한다.</p>
+<h3>2. 입력·식별·캐시</h3>
+<ul>
+<li>activate는 외부에서 만든 <code>sessionId + pos</code> 문자열을 불투명한 질문 ID로 받는다. 동일 활성 ID 재호출은 입력 객체가 새로 와도 no-op이며 자동 기회를 초기화하지 않는다. 다른 ID를 활성화하면 기존 작업을 먼저 무효화하고 새 질문의 플래그·안내를 초기화한다. 같은 표제어가 새 ID로 나오면 Blob은 재사용하고 공개 기회는 새로 부여한다.</li>
+<li>브라우저용 최소 정규화·유효성 검사 함수를 <code>speak.ts</code> 내부에 둔다. <code>worker/lib/tts/input.ts:30</code> 계약과 맞춰 text/pinyin의 CRLF·CR→LF, NFC·trim, 빈 pinyin→null을 적용한다. text는 trim 전 금지 C0 확인, Han 포함, 1~200 코드 포인트 확인; 201자는 text_too_long, 빈 값·Han 없음·금지 제어문자는 invalid_text다. pinyin 1,000자 상한 위반도 invalid_text로 다루되 병음 의미 검사·강제 적용은 하지 않는다. 정상 내부 공백·tab·LF·문장부호는 보존한다. transport에는 null pinyin 필드를 생략한다.</li>
+<li>캐시 키는 <code>JSON.stringify([profileId, effectiveRevision, normalizedText, normalizedPinyin])</code>로 만든다. questionId·word identity·원문 단순 이어붙이기는 키에 쓰지 않는다. get/set 성공 후 pin하고 준비·차단·재생 동안 보호한다. 현재 Blob 참조를 별도로 보유해 <code>set(...).stored === false</code>여도 현재 질문에서 재생·반복 재생이 가능하다.</li>
+<li>질문 변경·stop·dispose에서 현재 pin과 Blob 참조를 해제하되 stop은 캐시 전체를 지우지 않는다. 차단/ended는 현재 Blob을 유지한다. 응답 revision이 현재 revision과 다르면 유효한 현재 응답에 한해 기존 캐시를 clear하고 effectiveRevision을 응답 값으로 바꾼 후 새 키로 보관한다. 오래된 응답은 revision·캐시도 바꾸지 않는다. 이 정책을 factory JSDoc과 테스트로 고정한다.</li>
+</ul>
+<h3>3. 작업 세대와 의도</h3>
+<p>내부 상태는 현재 질문, generation, viewReady, autoConsumed, prepareAttempted, 요청 레코드(AbortController 포함), pendingIntent(null/auto/manual), 현재 Blob·pin, 재생 시도 토큰, disposed를 갖는다. 준비 요청은 활성 작업당 한 개이며 완료 처리는 한 곳에만 붙인다. 클릭마다 then(play)를 추가하지 않는다. 공개 기회와 UI status를 독립적으로 유지한다.</p>
+<div class="scroll-x"><table><thead><tr><th>명령 / 사건</th><th>전이와 정책</th></tr></thead><tbody>
+<tr><td>activate(new ID)</td><td>generation 증가→이전 요청/재생 무효화·abort/stop·unpin→새 질문 idle. prepare/reveal/replay 전까지 요청 0회. 동일 ID는 모든 플래그 유지.</td></tr>
+<tr><td>prepare(ID)</td><td>현재·유효·활성 질문만 처리. 캐시 hit는 ready, miss는 요청 한 개 시작. 자동 재생 의도는 만들지 않으며 viewReady 전에는 소리 0회. 이미 시도한 준비·실패는 prepare 반복으로 재시도하지 않는다.</td></tr>
+<tr><td>reveal(ID)</td><td>viewReady=true. autoConsumed가 false일 때 먼저 소비한다. 이미 prepare 실패면 재요청 없이 종료. pending manual이면 보존하고 새 auto는 만들지 않는다. 그 외 준비된 Blob 또는 최초/진행 중 요청에 auto 의도 한 개를 연결한다. 반복 reveal은 no-op.</td></tr>
+<tr><td>replay(ID)</td><td>명시적 수동 의도가 자동 기회를 즉시 소비한다. 공개 전 호출은 준비/수동 의도를 합치되 viewReady 전 재생하지 않는다. 공개 후 Blob이 있으면 await/예약 없이 audio.play(blob)를 호출한다. miss면 새 요청 또는 기존 요청 한 개를 공유한다. 로딩 중 연속 클릭은 manual 의도 한 개로 합친다. 이미 재생 중이면 Audio 포트의 처음부터 재생 계약을 사용한다.</td></tr>
+<tr><td>요청 성공 / 실패</td><td>현재 질문·generation·요청 identity·생존 검증 후에만 Blob·캐시·status를 갱신한다. 성공은 ready 및 viewReady+의도가 있으면 한 번 재생. 실패는 autoConsumed=true, 의도 소거; 최신 의도가 manual일 때만 오류 안내. prepare 실패도 공개 기회를 소진한다. 재시도는 replay로만 가능.</td></tr>
+<tr><td>play 결과 / 이벤트</td><td>질문·generation·재생 시도 토큰을 모두 확인한다. started→playing, blocked→blocked, error→error, ended→ready. cancelled는 오류 안내 없이 현재 Blob에 맞는 대기 상태로 정리한다. 이벤트 처리 시 해당 시도 완료를 표시해 뒤늦은 started가 playing을 되살리지 않게 한다. blocked/error는 자동 재시도하지 않는다.</td></tr>
+<tr><td>stop(hidden)</td><td>세대 무효화, 요청 abort, Audio stop, pending 의도/오류 안내 제거, unpin, status=idle, autoConsumed=true. 현재 ID·입력·공개 여부는 유지한다. 중복 activate/prepare/reveal로 자동 요청/재생이 돌아오지 않게 억제하며 수동 replay만 다시 준비·재생할 수 있다.</td></tr>
+<tr><td>stop(advance / exit)</td><td>같은 동기 정리 후 활성 ID를 null로 해제한다. 옛 ID의 prepare/reveal/replay는 무시한다. 후속 새 질문 activate가 다음 사용 시작점이다.</td></tr>
+<tr><td>disabled / dispose</td><td>현재 응답의 tts_disabled 또는 tts_not_configured는 세션 enabled=false로 고정하고 요청·재생·의도 및 캐시를 정리한다. 새 activate/replay로 복구하지 않는다. dispose는 생존 플래그를 먼저 끄고 모든 구독·요청·Audio·cache를 정리하며 반복 호출과 이후 명령은 no-op이다.</td></tr>
+</tbody></table></div>
+<h3>4. 비동기 완료와 구독의 경계</h3>
+<p>요청을 abort해도 더블/브라우저의 늦은 완료는 가능하다. 성공·실패·finally가 모두 캡처한 질문 ID+generation+작업 identity와 생존을 확인해야 한다. 같은 질문의 반복 재생도 별도 시도 토큰으로 구분한다. Audio 구독 callback은 시도 토큰을 캡처하고 새 시도/정리 때 해제한다. Audio 포트는 자체 source 세대를 보장하므로 controller가 native 이벤트·URL을 재구현하지 않는다.</p>
+<p>getSnapshot은 변경이 없으면 같은 객체를 반환하고 공개 필드가 바뀔 때 새 객체를 발행한다. 외부가 내부 상태를 바꾸지 못하도록 snapshot을 보호한다. subscribe는 상태 변경 통지와 멱등 unsubscribe를 제공하며 초기 값은 getSnapshot으로 읽는다. 구독자 예외가 정리를 중단하지 않게 하고, 구독자가 stop/activate/dispose로 재진입하면 통지 뒤 이어지는 play/cache 갱신 전에 토큰을 재확인한다.</p>
+<p>수동 실패 안내는 <code>발음을 불러오지 못했어요. 다시 눌러 주세요.</code>, 수동 차단은 <code>발음이 준비됐어요. 다시 눌러 주세요.</code>로 고정한다. 자동 실패·차단의 message는 null이다. <code>GENERATED/UNCONFIRMED</code>도 정상 재생하며 서버 원문 message를 그대로 UI에 노출하지 않는다. 401의 로그인 전환과 성공 콜백은 기존 전송이 담당하고, 화면 exit/dispose 연결은 #145에서 검증한다.</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">4</span>작업 단계</h2>
+    <ol class="steps">
+
+      <li><label><input type="checkbox" checked disabled> <b>생성 계약·입력·snapshot 골격</b></label> — 완료: 필수 주입 factory, Worker와 같은 입력 정규화/비활성 사유, 동결된 안정 snapshot/subscribe 및 JSON tuple 캐시 키 JSDoc을 구현했다.<span class="files"><code>src/lib/speak.ts, src/lib/speak.test.ts</code></span></li>
+<li><label><input type="checkbox" checked disabled> <b>질문 활성화와 준비 요청 수명</b></label> — 완료: 동일 ID 멱등, generation·request identity 검증, cache get/set/pin/unpin, stored:false Blob 보존 및 현재 응답만의 revision 전환을 구현했다.<span class="files"><code>src/lib/speak.ts, src/lib/speak.test.ts</code></span></li>
+<li><label><input type="checkbox" checked disabled> <b>공개·수동 의도와 단일 재생</b></label> — 완료: viewReady/autoConsumed/prepareAttempted와 단일 pendingIntent, 동기 캐시 재생, 수동 재시도, play attempt/event 역전 차단을 구현했다.<span class="files"><code>src/lib/speak.ts, src/lib/speak.test.ts</code></span></li>
+<li><label><input type="checkbox" checked disabled> <b>숨김·종료·기능 비활성·dispose</b></label> — 완료: 세대 우선 무효화, hidden 수동 복귀, advance/exit 옛 ID 차단, disabled latch, 구독 재진입·예외 및 멱등 정리를 구현했다.<span class="files"><code>src/lib/speak.ts, src/lib/speak.test.ts</code></span></li>
+<li><label><input type="checkbox" checked disabled> <b>제어 가능한 경쟁 상태 회귀</b></label> — 완료: 포트 더블과 deferred Promise로 늦은 응답, 중복 의도, cache/revision, play 결과·이벤트 역전, stop/dispose를 검증했다.<span class="files"><code>src/lib/speak.test.ts</code></span></li>
+<li><label><input type="checkbox" checked disabled> <b>전체 검증·계획 갱신·구현 인계</b></label> — 완료: 관련 TTS 회귀와 전체 test/lint/build를 통과했다. 아래 실제 결과를 기록하고 base <code>feat/ch-sound</code> ready PR로 독립 리뷰에 인계한다.<span class="files"><code>docs/plans/issue-143-question-pronunciation-controller.html, src/lib/speak.ts, src/lib/speak.test.ts</code></span></li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">5</span>리스크</h2>
+    <div class="scroll-x">
+    <table>
+      <thead><tr><th>리스크</th><th>영향</th><th>완화책</th></tr></thead>
+      <tbody>
+
+        <tr><td>요청 취소만 믿는 구현</td><td>A의 성공·실패·finally가 B를 재생하거나 B 요청을 지움</td><td>현재 질문·세대·작업 identity를 모든 완료 지점에서 검증</td></tr>
+<tr><td>동일 질문 내 오래된 play 결과</td><td>빠른 replay나 ended 뒤에 playing/error로 되돌아감</td><td>별도 재생 시도 토큰과 terminal 표시, 과거 listener 캡처 테스트</td></tr>
+<tr><td>숨김 뒤 effect 재실행</td><td>자동 기회 초기화·숨겨진 준비 재시작</td><td>동일 activate 멱등 + hidden 억제 latch + 수동 replay만 해제</td></tr>
+<tr><td>입력/캐시 계약 차이</td><td>내부 공백 손실·B열 충돌·다른 revision 재사용</td><td>Worker 계약과 대표 입력 비교, JSON tuple, 현재 응답만 revision 갱신</td></tr>
+<tr><td>자원 정리와 구독 재진입</td><td>pin 누수·dispose 뒤 통지·stop 직후 play</td><td>무효화 우선 정리, 통지 이후 재검증, unsubscribe/정리 멱등</td></tr>
+<tr><td>범위 확대</td><td>React·전송·Audio·LRU까지 중복 구현</td><td>speak.ts와 소유 테스트 중심. 공유 타입 변경은 필요성이 확인된 최소 보완만; 포트/화면 변경은 계획 이탈로 기록</td></tr>
+<tr><td>더블과 실제 환경의 차이</td><td>단위 통과를 모바일·청취 성공으로 오인</td><td>유료 호출·배포·R2 생성 없이 미검증 명시, TTS_ENABLED=false 유지</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">6</span>테스트 계획</h2>
+    <ul>
+
+      <li><b>기본/입력:</b> disabled 생성, activate만 호출 시 transport/play 0회; 동일 ID 반복·새 객체 입력 no-op; 다른 ID 동일 표제어는 새 공개 기회. 200/201 코드 포인트·확장 Han·빈 text·금지 C0·CRLF/tab/LF·NFC·빈/긴 pinyin 및 입력 사유 확인.</li>
+<li><b>공개 타이밍:</b> prepare 성공→reveal 전 play 0회→reveal 1회; reveal→준비 성공 1회; 반복 prepare/reveal도 1회. prepare 실패→reveal 자동 재요청 0회→replay 재시도 1회. 공개 전 manual 의도도 viewReady를 기다린다.</li>
+<li><b>의도 병합 / AC-07:</b> prepare/reveal/replay를 로딩 중 여러 순서로 호출해 transport 1회·최종 play 1회. 수동이 먼저면 뒤의 reveal이 재생을 추가하지 않는다. 로딩 중 manual로 바뀐 뒤 실패는 수동 안내를 낸다.</li>
+<li><b>캐시·수동 동기 경로 / AC-06·09:</b> replay가 반환하기 전에 Audio 더블의 play가 호출되는지 microtask flush 없이 검사. 이미 준비한 질문 5회 클릭은 fetch 추가 0회이며 각 play는 같은 Blob. blocked 후 Blob 유지·추가 요청 없이 수동 재생, stored:false도 현재 Blob 재사용.</li>
+<li><b>실패 / AC-09·10:</b> timeout/network/invalid_response 및 HTTP unavailable/storage_unavailable/upstream 오류, blocked/error/cancelled play 결과를 제어한다. 자동 message=null·재시도 0회; 수동 안내 고정·재시도 가능. UNCONFIRMED 성공은 정상 재생. unknown reject/sync throw도 명령 호출을 깨거나 미처리 rejection을 만들지 않는다.</li>
+<li><b>늦은 응답 / AC-08:</b> A 요청→B activate/reveal→B 성공→A 성공/실패/disabled를 각각 완료한다. A play/cache set/통지/revision 변경 0회, B snapshot·요청 identity 유지. abort를 무시하는 더블을 사용한다. A→B→같은 A ID 재활성도 이전 세대를 재사용하지 않는다.</li>
+<li><b>play·이벤트 역전:</b> 동일 질문 replay 1→2 뒤 1의 started/blocked/reject, 다른 질문 전환 뒤 옛 이벤트, ended/error가 play 결과보다 먼저 도착하는 순서를 검증한다. 저장한 옛 callback도 실행해 현재 snapshot 불변을 확인한다.</li>
+<li><b>중단 / AC-16:</b> loading/ready/playing/blocked 상태에서 hidden·advance·exit·dispose를 적용. signal abort·Audio stop·unpin 확인, 늦은 완료 무시. hidden 뒤 동일 activate/reveal/prepare는 요청·자동 play 0회, 공개된 질문의 replay는 정상. advance/exit 뒤 옛 ID 명령 무시.</li>
+<li><b>세션 자원·revision:</b> get/set 성공 후 pin 순서, 질문 전환/stop의 unpin, 차단 시 pin 유지, dispose 시 cache/audio 정리·구독 해제. 다른 text/pinyin/profile/revision 키 분리, NFC/trim 같은 입력은 재사용. 응답 revision 변경 시 clear 후 새 키 사용; stale 응답은 cache/revision 불변.</li>
+<li><b>disabled·구독:</b> 현재 tts_disabled/tts_not_configured 응답은 enabled=false이며 후속 질문도 요청 0회. snapshot 참조 안정성·값 변경 통지·unsubscribe·dispose 후 no-op. 구독자에서 stop/activate/dispose 또는 예외 발생 시 현재 상태/자원 일관성.</li>
+<li><b>실행 명령:</b> 개발 중 <code>npm test -- src/lib/speak.test.ts</code>. 연동 회귀 <code>npm test -- src/lib/speak.test.ts src/lib/ttsApi.test.ts src/lib/ttsAudio.test.ts src/lib/ttsBlobCache.test.ts src/lib/ttsTypes.test.ts</code>. 구현 완료 시 <code>npm test</code>, <code>npm run lint</code>, <code>npm run build</code>. 타입 검증은 build에 포함된다.</li>
+<li><b>계획 단계 검증:</b> placeholder·HTML 구조·파일/행 참조·체크리스트·범위·HTTP 본문 해시·cmux 렌더를 확인한다. 애플리케이션 테스트는 계획 단계에서 실행하지 않았으며 기능 통과를 주장하지 않는다. 실제 키·유료 TTS·청취·모바일 자동재생·R2 접근·지연은 미검증이다.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">7</span>완료 조건</h2>
+    <ul class="done-list">
+
+      <li>A 응답이 B 이후 도착해도 A를 재생하거나 B 상태·캐시·세션 기능을 바꾸지 않는다.</li>
+<li>로딩 중 유효 요청 한 개·재생 의도 한 개, 준비된 음성 재생의 추가 요청 0회와 동기 Audio 호출을 증명한다.</li>
+<li>자동 실패·차단 후 자동 재시도 0회, 수동 재시도와 blocked Blob 재사용이 가능하다.</li>
+<li>공개·수동·숨김 교차, 같은 질문 재활성, 늦은 play 완료/이벤트에도 자동 기회·단일 재생·정리가 지켜진다.</li>
+<li>speak.ts와 소유 테스트·factory 계약을 완료한다. DOM·React·카드·Audio/LRU/전송 재구현은 포함하지 않는다.</li>
+<li>전체 test/lint/build 결과와 실환경 미검증을 기록한다. feat/ch-sound base ready PR 후 독립 리뷰와 squash merge는 각 지정 모델/오케스트레이터가 진행한다.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">8</span>구현 검증 기록</h2>
+    <ul>
+      <li><code>npm test -- src/lib/speak.test.ts src/lib/ttsApi.test.ts src/lib/ttsAudio.test.ts src/lib/ttsBlobCache.test.ts src/lib/ttsTypes.test.ts</code>: 5 files, 56 tests passed.</li>
+      <li><code>npm test</code>: 42 files, 541 tests passed. <code>npm run lint</code> and <code>npm run build</code>: passed.</li>
+      <li>리뷰 r1 수정: 공개 전 manual intent가 응답 또는 cache hit로 먼저 준비된 경우에도 reveal에서 정확히 한 번 재생하도록 보완하고, 두 순서의 fetch 0회/auto 추가 0회 회귀를 추가했다.</li>
+      <li>범위는 <code>src/lib/speak.ts</code>와 소유 테스트뿐이다. React/DOM, 전송, Audio, LRU 구현은 변경하지 않았다.</li>
+      <li>실제 키, 유료 TTS 호출·청취, 모바일 자동재생, R2 접근과 실제 지연은 수행하지 않았으며 <code>TTS_ENABLED=false</code>를 유지한다.</li>
+    </ul>
+  </section>
+
+  <footer>issue-plan · <a href="https://github.com/damdam6/vocabulary-study/issues/143">#143</a> · 2026-09-16</footer>
+</main>
+</body>
+</html>
