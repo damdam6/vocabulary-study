@@ -440,15 +440,8 @@ button {
 .flip-card {
   position: absolute;
   inset: 0;
-  padding: 0;
-  border: none;
-  background: none;
   transform-style: preserve-3d;
   transition: transform 0.55s cubic-bezier(0.3, 0.7, 0.2, 1);
-}
-
-.flip-card:disabled {
-  cursor: default;
 }
 
 .flip-card--revealed {
@@ -473,9 +466,30 @@ button {
   color: var(--text);
 }
 
+.flip-face--front {
+  width: 100%;
+  font: inherit;
+  text-align: center;
+}
+
 .flip-face--back {
   transform: rotateX(180deg);
   gap: 12px;
+  min-width: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overflow-wrap: anywhere;
+  scrollbar-gutter: stable;
+}
+
+.flip-face--back > * {
+  max-width: 100%;
+}
+
+.flip-face--back .mode-card-pinyin,
+.flip-face--back .mode-card-meaning {
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .flip-hanzi {
@@ -512,11 +526,18 @@ button {
 
 /* 목업 판정 영역(min-height 132/padding-top 18)에서 mode-area gap 14px만큼 차감 */
 .judge-zone {
+  flex: none;
   min-height: 118px;
   padding-top: 4px;
   display: flex;
   align-items: flex-end;
   justify-content: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flip-card {
+    transition-duration: 0s;
+  }
 }
 
 .judge-row {
