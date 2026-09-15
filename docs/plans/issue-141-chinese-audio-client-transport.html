@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>#141 중국어 음성 API의 클라이언트 전송을 구현한다 — 작업 플랜</title>
+<style>
+  :root {
+    --bg: #f7f7f8; --card: #ffffff; --ink: #1c1c1e; --muted: #6e6e73;
+    --line: #e3e3e6; --accent: #3b6ef5; --accent-soft: #e8eefe;
+    --ok: #2e8b57; --warn: #b25e09; --code-bg: #f0f0f2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161618; --card: #202024; --ink: #ececf0; --muted: #98989f;
+      --line: #333338; --accent: #7a9bff; --accent-soft: #26304a;
+      --ok: #58c088; --warn: #e0a35c; --code-bg: #2a2a2f;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 40px 20px 80px; background: var(--bg); color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+                 "Segoe UI", "Noto Sans KR", sans-serif;
+    line-height: 1.65;
+  }
+  main { max-width: 860px; margin: 0 auto; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code {
+    font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 0.86em;
+    background: var(--code-bg); border-radius: 5px; padding: 2px 6px;
+  }
+  header { margin-bottom: 28px; }
+  .issue-chip {
+    display: inline-block; font-weight: 700; color: var(--accent);
+    background: var(--accent-soft); border-radius: 999px;
+    padding: 3px 14px; font-size: 0.95rem; margin-bottom: 10px;
+  }
+  .type-chip {
+    display: inline-block; font-weight: 600; color: var(--muted);
+    border: 1px solid var(--line); border-radius: 999px;
+    padding: 3px 12px; font-size: 0.8rem; margin-left: 8px; vertical-align: 2px;
+  }
+  h1 { font-size: 1.7rem; margin: 0 0 14px; letter-spacing: -0.02em; }
+  .meta {
+    display: flex; flex-wrap: wrap; gap: 6px 22px;
+    color: var(--muted); font-size: 0.87rem;
+  }
+  .meta b { color: var(--ink); font-weight: 600; }
+  section.card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 24px 28px; margin-top: 18px;
+  }
+  h2 {
+    font-size: 1.05rem; margin: 0 0 14px; letter-spacing: -0.01em;
+    display: flex; align-items: center; gap: 8px;
+  }
+  h2 .no {
+    color: var(--accent); font-size: 0.8rem; font-weight: 700;
+    border: 1.5px solid var(--accent); border-radius: 6px; padding: 0 6px;
+  }
+  ul, ol { margin: 0; padding-left: 22px; }
+  li { margin: 6px 0; }
+  .steps { list-style: none; padding: 0; counter-reset: step; }
+  .steps li {
+    counter-increment: step; position: relative; padding: 10px 0 10px 44px;
+    border-bottom: 1px dashed var(--line);
+  }
+  .steps li:last-child { border-bottom: none; }
+  .steps li.completed { color: var(--muted); }
+  .steps li.completed::before { content: "✓"; background: var(--ok); color: white; }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 10px;
+    width: 28px; height: 28px; border-radius: 8px; background: var(--accent-soft);
+    color: var(--accent); font-weight: 700; font-size: 0.85rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .steps .files { display: block; margin-top: 4px; font-size: 0.85rem; color: var(--muted); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 0.82rem; }
+  .done-list { list-style: none; padding: 0; }
+  .done-list li { padding-left: 30px; position: relative; }
+  .done-list li::before {
+    content: ""; position: absolute; left: 2px; top: 7px; width: 15px; height: 15px;
+    border: 2px solid var(--ok); border-radius: 5px;
+  }
+  .scroll-x { overflow-x: auto; }
+  footer { margin-top: 30px; color: var(--muted); font-size: 0.8rem; text-align: center; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <span class="issue-chip"><a href="https://github.com/damdam6/vocabulary-study/issues/141">#141</a></span><span class="type-chip">기능 개선</span>
+    <h1>중국어 음성 API의 클라이언트 전송을 구현한다</h1>
+    <div class="meta">
+      <span><b>damdam6/vocabulary-study</b></span>
+      <span>브랜치 <b><code>feat/141-chinese-audio-client-transport</code></b> ← <code>feat/ch-sound</code></span>
+      <span>라벨 <b>enhancement</b></span>
+      <span>2026-09-16</span>
+    </div>
+  </header>
+
+  <section class="card">
+    <h2><span class="no">1</span>요약</h2>
+    <p>브라우저용 TTS 전송 모듈을 추가해 기존 <code>apiFetch</code>의 Bearer·401·성공 콜백 계약을 그대로 사용하면서 <code>POST /api/tts</code>를 한 번만 호출한다. 응답은 공개 TTS 오류 또는 검증된 MP3 <code>Blob</code>으로 정규화하며, 외부 취소와 20초 준비 제한을 fetch부터 스트림 바디 완료까지 하나의 수명으로 묶는다. Audio·Blob 캐시·자동재생·React·재시도 큐는 후속 이슈의 책임으로 남기고, 실제 서버·키·R2 없이 제어 가능한 fetch/stream/clock 더블로 계약을 검증한다.</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">2</span>현황 분석</h2>
+    <ul>
+      <li>모든 인증 API의 공통 입구인 <code>src/lib/api.ts:90-103</code>은 저장된 비밀번호를 Bearer로 붙이고, 401이면 자격 정보 삭제와 로그인 복귀 핸들러를, 성공 응답이면 기존 성공 핸들러를 호출한 뒤 원본 <code>Response</code>를 반환한다. TTS도 이 함수를 거쳐야 이 앱 전역 계약이 보존된다.</li>
+      <li><code>src/lib/api.ts:75-83</code>의 성공 핸들러는 이미 쌓인 학습 기록 flush를 촉발할 수 있지만, 이는 정상 API 응답의 기존 동작이다. <code>src/lib/ttsApi.ts</code>가 <code>retryQueue</code>를 import하거나 TTS 실패를 적재해서는 안 된다.</li>
+      <li>선행 #135가 <code>src/lib/ttsTypes.ts:15-39</code>에 요청, 허용 오류 코드, 성공 진단의 가능한 조합, <code>TtsTransportFailure</code>, <code>TtsTransport</code> 포트를 정의했다. 새 모듈은 이 타입을 재정의하지 않고 구현해야 하며, <code>STORED/PRESENT</code>와 <code>GENERATED/SAVED|UNCONFIRMED</code> 외 조합은 잘못된 응답이다.</li>
+      <li>서버 계약은 성공 시 <code>audio/mpeg</code>과 <code>X-TTS-Source</code>, <code>X-TTS-Storage</code>, <code>X-TTS-Pronunciation</code>, <code>X-TTS-Revision</code>을 반환한다(<code>docs/architecture/chinese-tts-audio.md:166-183</code>). 현재 클라이언트에는 이 헤더와 스트림을 검증해 <code>TtsAudioResponse</code>로 만드는 구현이 없다.</li>
+      <li><code>src/lib/wordsApi.ts:41-48</code>와 <code>src/lib/registerApi.ts:31-84</code>는 <code>apiFetch</code>를 재사용하고 비정상 응답을 호출자용 오류로 바꾸는 선례지만, JSON 전체 읽기만 사용한다. TTS는 <code>Content-Length</code>가 없거나 거짓이어도 실제 스트림 누적값으로 빈 바디와 4MiB 초과를 판정해야 하므로 별도 bounded reader가 필요하다.</li>
+      <li>Vitest는 node 환경에서 fetch·localStorage를 전역 더블로 주입하는 패턴을 쓴다(<code>src/lib/api.test.ts:21-39</code>, <code>src/lib/wordsApi.test.ts:5-21</code>). 이슈 전용 테스트도 실제 네트워크 대신 <code>Response</code>, <code>ReadableStream</code>, fake timer를 제어할 수 있다.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">3</span>설계</h2>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>경계</th><th>선택한 설계</th></tr></thead>
+        <tbody>
+          <tr><td>공개 함수와 실패</td><td><code>src/lib/ttsApi.ts</code>에 기존 <code>TtsTransport</code> 포트를 만족하는 전송 함수를 두고, 예상 실패는 기존 <code>TtsTransportFailure</code> 형태로 reject한다. 새 오류 enum이나 서버 타입을 복제하지 않는다.</td></tr>
+          <tr><td>요청</td><td>허용된 <code>text</code>와 정의된 경우의 <code>pinyin</code>만 새 객체로 구성해 JSON POST한다. provider·profile·음색·URL 등 원본 객체의 다른 값은 전송할 수 없게 하고, 자동 재요청은 만들지 않는다.</td></tr>
+          <tr><td>deadline·취소</td><td>호출 시작 시 내부 <code>AbortController</code> 하나를 만들고 외부 signal과 20초 timer를 연결한다. 이미 취소된 입력은 fetch 전에 중단하며, deadline은 헤더 수신이 아니라 스트림 읽기와 진단 검증이 끝난 뒤에만 해제한다. 대기 중인 reader도 abort와 경쟁시키고 종료 경로에서 timer·외부 listener·reader를 정리한다.</td></tr>
+          <tr><td>바디 상한</td><td><code>arrayBuffer()</code>로 전체를 먼저 할당하지 않고 reader chunk마다 누적 크기를 검사해 4MiB를 넘기기 전에 실패·취소한다. 유효한 과대 <code>Content-Length</code>는 조기 거부 힌트로만 사용하고, 누락·비정상·작게 거짓인 값은 신뢰하지 않은 채 실제 바이트로 최종 판정한다.</td></tr>
+          <tr><td>성공 검증</td><td>media type이 <code>audio/mpeg</code>인지, 실제 바디가 1바이트 이상 4MiB 이하인지, 네 진단 헤더가 허용 값이며 source/storage 조합이 가능한지, revision이 비어 있지 않은지 확인한 뒤 <code>audio/mpeg</code> Blob과 진단을 반환한다. 계약에 HTTP 헤더가 없는 <code>billedCharacters</code>는 추정하지 않는다.</td></tr>
+          <tr><td>오류 검증</td><td>비정상 HTTP 응답의 공개 <code>{ error, message }</code>를 안전하게 읽고 <code>TTS_ERROR_CODES</code>에 있는 코드만 <code>kind: "http"</code>로 전달한다. JSON이 아니거나 알 수 없는 코드·메시지·성공 헤더 조합은 <code>invalid_response</code>, fetch 자체 실패는 <code>network</code>, 외부 취소는 <code>aborted</code>, 내부 deadline은 <code>timeout</code>으로 구분한다. 빈 본문 401도 먼저 <code>apiFetch</code>의 기존 로그아웃 부수효과를 수행하며 공개 TTS 코드를 꾸며내지 않는다.</td></tr>
+          <tr><td>소유 경계</td><td>MP3 구조 파싱, Audio/Object URL/LRU, 요청 합치기와 질문 generation, 사용자 메시지, React 연결은 각각 #137·#142·#143 이후 이슈의 책임이다. 이번 모듈은 HTTP 전송 한 건의 수명만 소유한다.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">4</span>작업 단계</h2>
+    <ol class="steps">
+      <li class="completed"><code>TtsRequest</code>에서 허용 필드만 직렬화하고 <code>apiFetch("/api/tts", ...)</code>를 정확히 한 번 호출하는 전송 진입점을 만든다. 기존 Bearer·401·성공 콜백을 우회하지 않고, 외부 signal과 내부 20초 deadline의 원인을 구분하는 요청 수명 및 공통 정리 경로를 함께 구성한다.
+        <span class="files"><code>src/lib/ttsApi.ts</code>, <code>src/lib/api.ts</code> (기존 계약 참조만)</span>
+      </li>
+      <li class="completed">비정상 응답은 공개 JSON을 bounded하게 해석해 기존 <code>TtsTransportFailure</code>로 정규화한다. <code>tts_disabled</code>와 <code>tts_not_configured</code>를 다른 503과 구별하고, 알 수 없는 코드·깨진 JSON·빈 401에는 서버 오류를 발명하지 않으며 retryQueue나 자동 재시도 경로를 추가하지 않는다.
+        <span class="files"><code>src/lib/ttsApi.ts</code>, <code>src/lib/ttsTypes.ts</code> (기존 타입 재사용)</span>
+      </li>
+      <li class="completed">성공 응답의 MIME과 TTS 진단 헤더를 허용 조합으로 검증하고, <code>ReadableStream</code>을 chunk 단위로 읽어 실제 1..4MiB만 <code>audio/mpeg</code> Blob으로 조립한다. header 수신 뒤 멈춘 바디에도 외부 취소·20초 제한이 작동하게 하며 과대·실패 시 reader를 취소한다.
+        <span class="files"><code>src/lib/ttsApi.ts</code>, <code>src/lib/ttsTypes.ts</code> (성공 진단 union 참조)</span>
+      </li>
+      <li class="completed">실제 서버가 필요 없는 응답/스트림/clock 더블로 요청·정상 진단·HTTP 오류·MIME·빈/과대 바디·거짓 Content-Length·fetch 및 바디 읽기 취소/timeout·정리 계약을 고정한다. 테스트용 응답 생성기는 전용 테스트 파일 안에 두어 공유 fixture와 후속 이슈의 파일 충돌을 피한다.
+        <span class="files"><code>src/lib/ttsApi.test.ts</code>, <code>src/lib/api.test.ts</code> (공통 콜백 회귀 선례 참조)</span>
+      </li>
+      <li class="completed">전용 테스트 후 전체 test/lint/build를 실행해 타입 포트 호환성과 기존 앱 회귀를 확인한다. 운영 설정 파일은 수정하지 않고 <code>TTS_ENABLED=false</code>를 유지하며, 실제 키·유료 합성·청취·모바일·R2 접근은 미검증으로 명시한다.
+        <span class="files"><code>package.json</code>, <code>docs/plans/issue-141-chinese-audio-client-transport.html</code></span>
+      </li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">5</span>리스크</h2>
+    <div class="scroll-x">
+    <table>
+      <thead><tr><th>리스크</th><th>영향</th><th>완화책</th></tr></thead>
+      <tbody>
+        <tr><td>외부 취소와 20초 timer가 같은 시점에 경쟁</td><td><code>aborted</code>와 <code>timeout</code>이 비결정적으로 바뀌거나 Promise가 두 번 끝날 수 있다.</td><td>첫 종료 원인을 한 번만 기록하고 단일 finalize 경로에서 timer·listener·reader를 정리하는 테스트를 둔다.</td></tr>
+        <tr><td>fetch 응답 뒤 body stream이 영원히 대기</td><td>fetch에 signal을 전달한 것만으로는 커스텀/이상 스트림의 <code>reader.read()</code>가 즉시 끝난다고 보장할 수 없다.</td><td>각 read를 abort 알림과 경쟁시키고 취소/timeout 테스트에 never-resolving stream을 사용한다.</td></tr>
+        <tr><td><code>Content-Length</code>를 신뢰하거나 <code>arrayBuffer()</code> 후 검사</td><td>헤더 누락·축소 거짓값으로 4MiB 상한을 우회하거나 과대 응답을 메모리에 먼저 적재한다.</td><td>헤더는 과대 조기 거부에만 쓰고 모든 성공은 chunk 누적값으로 검사하며 초과 즉시 reader를 취소한다.</td></tr>
+        <tr><td>진단 헤더의 불가능한 조합을 타입 단언으로 통과</td><td>예: <code>STORED/SAVED</code>를 정상 응답으로 오인해 후속 controller의 진단과 정책이 왜곡된다.</td><td>런타임 allowlist와 source/storage 조합 검증을 테스트하고 검증 이후에만 기존 discriminated union을 구성한다.</td></tr>
+        <tr><td>TTS 성공 콜백과 학습 retryQueue의 책임 혼동</td><td>TTS 실패가 학습 기록 큐에 들어가거나 성공 콜백 회귀를 막을 수 있다.</td><td><code>apiFetch</code> 성공 콜백은 유지하되 <code>ttsApi.ts</code>는 retryQueue를 import하지 않으며 자동 재요청이 0회인지 검증한다.</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">6</span>테스트 계획</h2>
+    <ul>
+      <li><code>npm test -- src/lib/ttsApi.test.ts</code>: text만인 요청은 pinyin을 생략하고, pinyin이 있으면 두 필드만 JSON POST되는지, <code>apiFetch</code>를 통해 Authorization과 정상 응답 콜백이 유지되며 fetch 호출은 1회인지 확인한다.</li>
+      <li>정상 계약 fixture: <code>STORED/PRESENT</code>, <code>GENERATED/SAVED</code>, <code>GENERATED/UNCONFIRMED</code> 및 absent/ignored 헤더를 각각 Blob과 진단 union으로 반환하고 <code>billedCharacters</code>를 추정하지 않는지 확인한다.</li>
+      <li>응답 방어 fixture: 잘못된/누락 MIME, null/빈 바디, 비어 있는 revision, 알 수 없는 진단값, 불가능한 source/storage 조합을 <code>invalid_response</code>로 거부한다.</li>
+      <li>크기 fixture: <code>Content-Length</code> 없음, 실제보다 작은 거짓값, chunk 경계의 정확히 4MiB는 실제 누적값으로 성공하며 4MiB+1은 전부 조립하기 전에 실패하고 reader가 취소되는지 확인한다. 유효한 과대 Content-Length도 조기 거부한다.</li>
+      <li>오류 fixture: 모든 공개 TTS 코드, 특히 <code>tts_disabled</code>/<code>tts_not_configured</code>가 status·code·message를 보존하고, 알 수 없는/깨진 오류 본문은 <code>invalid_response</code>인지 확인한다. 빈 본문 401에서는 기존 비밀번호 삭제·unauthorized handler 호출을 회귀 검증한다.</li>
+      <li>취소/시간 fixture: fetch 대기 중과 body read 대기 중 각각 외부 abort는 <code>aborted</code>, 20초 경과는 <code>timeout</code>으로 끝나며, 이미 취소된 signal은 fetch 0회다. 완료·HTTP 실패·network 실패·취소·timeout마다 pending timer와 외부 abort listener가 남지 않고 재요청도 없는지 fake timer로 확인한다.</li>
+      <li><code>npm test</code>, <code>npm run lint</code>, <code>npm run build</code>: 전체 회귀와 TypeScript의 <code>TtsTransport</code> 호환성을 확인한다. 실제 키·Qwen 호출·R2·청취·모바일 브라우저는 이 단계의 자동 테스트 결과로 검증됐다고 기록하지 않는다.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">7</span>완료 조건</h2>
+    <ul class="done-list">
+      <li><code>src/lib/ttsApi.ts</code>가 <code>TtsTransport</code> 계약을 만족하고 <code>apiFetch</code>로만 <code>POST /api/tts</code>를 호출하며 요청 바디에 text/pinyin 외 필드가 없다.</li>
+      <li>Bearer 첨부, 앱 401 정리·로그인 복귀, 정상 응답 콜백이 유지되고 TTS 실패가 retryQueue에 적재되거나 자동 재요청되지 않는다.</li>
+      <li>공개 HTTP 오류가 기존 오류 코드로 전달되며 <code>tts_disabled</code>와 <code>tts_not_configured</code>를 호출자가 구별할 수 있다. 깨진/알 수 없는 응답은 안전하게 <code>invalid_response</code>가 된다.</li>
+      <li><code>audio/mpeg</code>, 진단 헤더의 값·조합, 비어 있지 않은 실제 바디를 모두 검증한 뒤에만 기존 <code>TtsAudioResponse</code> 형태의 Blob을 반환한다.</li>
+      <li><code>Content-Length</code> 누락·거짓값으로 실제 4MiB 상한을 우회할 수 없고, 과대 응답은 chunk 누적 중 즉시 중단된다.</li>
+      <li>fetch 중과 body read 중 외부 취소·20초 timeout이 각각 끝나며 모든 완료·실패 경로에서 timer·listener·reader가 정리된다.</li>
+      <li>실제 서버 없이 계약 fixture로 전용 테스트가 통과하고 <code>npm test</code>, <code>npm run lint</code>, <code>npm run build</code>가 모두 성공한다.</li>
+      <li>Audio·Blob 캐시·자동재생·React·사용자 메시지·후속 controller를 선행 구현하지 않고, 운영 <code>TTS_ENABLED=false</code>와 비밀값 비노출을 유지한다.</li>
+      <li>PR은 <code>feat/ch-sound</code>를 base로 하며 변경 범위·자동 검증 결과와 실제 키·청취·모바일·R2 미검증 항목을 기록한다.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">✓</span>구현 결과</h2>
+    <p><code>2026-09-16</code> 기준 전용 테스트 32개와 전체 테스트 507개, lint, production build가 모두 통과했다. 실제 키·Qwen 유료 합성·청취·모바일 브라우저·R2 접근은 이 작업에서 검증하지 않았으며 운영 설정은 변경하지 않았다.</p>
+  </section>
+
+  <footer>issue-plan · <a href="https://github.com/damdam6/vocabulary-study/issues/141">#141</a> · 2026-09-16</footer>
+</main>
+</body>
+</html>
