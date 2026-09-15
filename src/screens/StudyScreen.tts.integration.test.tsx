@@ -1,10 +1,12 @@
 // @vitest-environment jsdom
 import { StrictMode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import App from "../App.tsx";
 import StudyScreen from "./StudyScreen.tsx";
 import { fire, flush, renderComponent } from "../test-utils.tsx";
 import type { PublicProfile, WordEntry } from "../lib/api.ts";
 import type { SessionQuestion } from "../lib/sessionQueue.ts";
+import { RETRY_QUEUE_STORAGE_KEY } from "../lib/retryQueue.ts";
 
 const profile: PublicProfile = { id: "zh", name: "중국어", modes: ["m1", "m2"], contentType: "zh" };
 const enabled = { enabled: true as const, revision: "tts-v1", maxTextLength: 200 as const };
@@ -37,6 +39,14 @@ let fetchMock: ReturnType<typeof vi.fn>;
 let revoked: string[];
 let unmountCurrent: (() => void) | null = null;
 let nextTtsStatus = 200;
+let answerStatus = 200;
+let pendingTts: Promise<Response> | null = null;
+
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((done) => { resolve = done; });
+  return { promise, resolve };
+}
 
 function ttsResponse(status = 200) {
   if (status !== 200) return new Response(JSON.stringify({ error: "tts_unavailable", message: "발음을 불러올 수 없습니다." }), {
@@ -54,6 +64,24 @@ function question(mode: "m1" | "m2"): SessionQuestion<WordEntry> {
 
 function ttsRequestCount() {
   return fetchMock.mock.calls.filter(([path]) => path === "/api/tts").length;
+}
+
+function wordsResponse(tts = enabled) {
+  return Response.json({
+    profile,
+    words: [{ ...word, m1: 0, m2: 3, nextReview: null, interval: null }],
+    settings: { sessionLimit: 1 },
+    tts,
+  });
+}
+
+async function startApp() {
+  const rendered = renderComponent(<App />);
+  unmountCurrent = rendered.unmount;
+  await vi.waitFor(() => expect(rendered.container.querySelector<HTMLButtonElement>(".start-button")?.disabled).toBe(false));
+  fire(() => rendered.container.querySelector<HTMLButtonElement>(".start-button")!.click());
+  await flush();
+  return rendered;
 }
 
 function transitionEnd(target: Element) {
@@ -74,8 +102,9 @@ beforeEach(() => {
   audio = new NativeAudioDouble();
   revoked = [];
   fetchMock = vi.fn(async (path: string) => {
-    if (path === "/api/tts") return ttsResponse(nextTtsStatus);
-    if (path === "/api/answer" || path === "/api/review-fail") return new Response(JSON.stringify(word), { status: 200 });
+    if (path === "/api/words") return wordsResponse();
+    if (path === "/api/tts") return pendingTts ?? ttsResponse(nextTtsStatus);
+    if (path === "/api/answer" || path === "/api/review-fail") return new Response(JSON.stringify(word), { status: answerStatus });
     throw new Error(`unexpected request: ${path}`);
   });
   vi.stubGlobal("fetch", fetchMock);
@@ -87,6 +116,8 @@ beforeEach(() => {
   vi.stubGlobal("matchMedia", vi.fn(() => ({ matches: false })));
   Object.defineProperty(document, "visibilityState", { configurable: true, value: "visible" });
   nextTtsStatus = 200;
+  answerStatus = 200;
+  pendingTts = null;
 });
 
 afterEach(() => {
@@ -118,6 +149,30 @@ describe("StudyScreen 중국어 음성 실제 연결 (#150)", () => {
     fire(() => transitionEnd(firstCard));
     await flush();
     expect(audio.calls.filter((call) => call === "play")).toHaveLength(1);
+  });
+
+  it("C1: 준비 중 판정 또는 실제 unmount 뒤 늦은 TTS 응답은 재생하지 않는다", async () => {
+    const grading = deferred<Response>();
+    pendingTts = grading.promise;
+    const first = renderComponent(<StudyScreen queue={[question("m1"), question("m2")]} profile={profile} tts={enabled} onExit={vi.fn()} onComplete={vi.fn()} />);
+    const firstCard = first.container.querySelector(".flip-card")!;
+    fire(() => first.container.querySelector<HTMLButtonElement>(".flip-face--front")!.click());
+    fire(() => transitionEnd(firstCard));
+    fire(() => first.container.querySelector<HTMLButtonElement>(".judge--o")!.click());
+    grading.resolve(ttsResponse());
+    await flush();
+    expect(audio.calls.filter((call) => call === "play")).toHaveLength(0);
+    first.unmount();
+
+    const leaving = deferred<Response>();
+    pendingTts = leaving.promise;
+    const second = renderComponent(<StudyScreen queue={[question("m1")]} profile={profile} tts={enabled} onExit={vi.fn()} onComplete={vi.fn()} />);
+    fire(() => second.container.querySelector<HTMLButtonElement>(".flip-face--front")!.click());
+    fire(() => transitionEnd(second.container.querySelector(".flip-card")!));
+    second.unmount();
+    leaving.resolve(ttsResponse());
+    await flush();
+    expect(audio.calls.filter((call) => call === "play")).toHaveLength(0);
   });
 
   it("C2/C5: 모드2 빈 오답만 정답 표제어를 요청하며 정답·off는 기존 학습 진행을 막지 않는다", async () => {
@@ -161,6 +216,42 @@ describe("StudyScreen 중국어 음성 실제 연결 (#150)", () => {
     fire(() => rendered.container.querySelector<HTMLButtonElement>('[aria-label="발음 듣기"]')!.click());
     await vi.waitFor(() => expect(audio.calls.filter((call) => call === "play")).toHaveLength(2));
     expect(fetchMock).toHaveBeenCalledTimes(beforeVisible);
+  });
+
+  it("C4: 실제 App/Home/Study 경계에서 provider 503은 로그인 상태를 보존하고 앱 401은 Login으로 전환한다", async () => {
+    nextTtsStatus = 503;
+    const rendered = await startApp();
+    fire(() => rendered.container.querySelector<HTMLButtonElement>(".flip-face--front")!.click());
+    fire(() => transitionEnd(rendered.container.querySelector(".flip-card")!));
+    await vi.waitFor(() => expect(ttsRequestCount()).toBe(1));
+    await flush();
+    expect(localStorage.getItem("app-password")).toBe("test-password");
+    expect(rendered.container.querySelector(".study")).not.toBeNull();
+
+    // 실제 apiFetch의 401 handler가 App state를 바꾸고 Study 수명 정리를 시작한다.
+    nextTtsStatus = 401;
+    fire(() => rendered.container.querySelector<HTMLButtonElement>('[aria-label="발음 듣기"]')!.click());
+    await vi.waitFor(() => expect(rendered.container.querySelector(".login")).not.toBeNull());
+    expect(localStorage.getItem("app-password")).toBeNull();
+    expect(rendered.container.querySelector(".study")).toBeNull();
+  });
+
+  it("C7: 실제 App success callback은 TTS 200 뒤 기존 answer retry를 flush하고 TTS 자체는 queue에 넣지 않는다", async () => {
+    localStorage.setItem("vocab-study:profile", JSON.stringify(profile));
+    localStorage.setItem(RETRY_QUEUE_STORAGE_KEY, JSON.stringify([{
+      kind: "answer", profileId: profile.id,
+      record: { tab: "HSK4", hanzi: "기존", mode: "m1", timestamp: "2026-01-01 00:00", isReview: false },
+    }]));
+    answerStatus = 500;
+    const rendered = await startApp();
+    await vi.waitFor(() => expect(fetchMock.mock.calls.filter(([path]) => path === "/api/answer")).toHaveLength(1));
+    expect(JSON.parse(localStorage.getItem(RETRY_QUEUE_STORAGE_KEY)!)).toHaveLength(1);
+    answerStatus = 200;
+    fire(() => rendered.container.querySelector<HTMLButtonElement>(".flip-face--front")!.click());
+    fire(() => transitionEnd(rendered.container.querySelector(".flip-card")!));
+    await vi.waitFor(() => expect(fetchMock.mock.calls.filter(([path]) => path === "/api/answer")).toHaveLength(2));
+    expect(localStorage.getItem(RETRY_QUEUE_STORAGE_KEY)).toBe("[]");
+    expect(fetchMock.mock.calls.filter(([path]) => path === "/api/tts")).toHaveLength(1);
   });
 
   it("C6: TTS 성공·실패·off 모두 같은 모드1 채점 기록을 남긴다", async () => {
