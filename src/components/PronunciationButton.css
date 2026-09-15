@@ -25,7 +25,7 @@
 .pronunciation-button__control:hover:not(:disabled) {
   border-color: var(--accent-light);
   color: var(--accent-light);
-  background: rgba(47, 99, 230, 0.12);
+  background: color-mix(in srgb, var(--accent-light) 12%, transparent);
 }
 
 .pronunciation-button__control:focus-visible {
@@ -43,7 +43,7 @@
 .pronunciation-button--playing .pronunciation-button__control {
   border-color: var(--accent-light);
   color: var(--accent-light);
-  background: rgba(47, 99, 230, 0.18);
+  background: color-mix(in srgb, var(--accent-light) 18%, transparent);
 }
 
 .pronunciation-button--loading .pronunciation-button__control {

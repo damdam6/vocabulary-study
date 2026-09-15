@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { FormEvent } from "react";
+import type { ReactElement } from "react";
 import type { PronunciationSnapshot } from "../lib/ttsTypes.ts";
 import { fire, renderComponent } from "../test-utils.tsx";
 import PronunciationButton from "./PronunciationButton.tsx";
@@ -21,20 +22,50 @@ const snapshot = (overrides: Partial<PronunciationSnapshot> = {}): Pronunciation
   ...overrides,
 });
 
-function setup(current = snapshot()) {
+function setup(current = snapshot(), render?: (replay: () => void) => ReactElement) {
   const replay = vi.fn();
-  const { container, unmount } = renderComponent(<PronunciationButton snapshot={current} replay={replay} />);
+  const element = render?.(replay) ?? <PronunciationButton snapshot={current} replay={replay} />;
+  const { container, unmount } = renderComponent(element);
   unmountCurrent = unmount;
   return { container, replay, button: container.querySelector<HTMLButtonElement>("button")! };
 }
 
 describe("PronunciationButton", () => {
-  it.each(["idle", "ready", "playing", "blocked", "error"] as const)("%s 상태를 표시한다", (status) => {
-    const { button } = setup(snapshot({ status }));
+  it("공통 접근성 속성과 type을 표시한다", () => {
+    const { button } = setup();
 
-    expect(button).not.toBeNull();
     expect(button.getAttribute("aria-label")).toBe("발음 듣기");
     expect(button.type).toBe("button");
+  });
+
+  it.each([
+    ["idle", "pronunciation-button", false],
+    ["ready", "pronunciation-button", false],
+    ["playing", "pronunciation-button pronunciation-button--playing", false],
+    ["blocked", "pronunciation-button", false],
+    ["error", "pronunciation-button", false],
+  ] as const)("%s 상태의 modifier와 busy 속성을 표시한다", (status, className, busy) => {
+    const { button, container } = setup(snapshot({ status }));
+
+    expect(container.firstElementChild?.className).toBe(className);
+    expect(button.getAttribute("aria-busy")).toBe(busy ? "true" : null);
+  });
+
+  it("loading은 상태 설명을 연결하고 busy를 표시한다", () => {
+    const { button, container } = setup(snapshot({ status: "loading" }));
+
+    expect(button.getAttribute("aria-busy")).toBe("true");
+    const descriptionId = button.getAttribute("aria-describedby");
+    expect(descriptionId).not.toBeNull();
+    expect(container.querySelector(`#${descriptionId}`)?.textContent).toBe("발음을 준비하고 있어요.");
+  });
+
+  it("playing은 상태 설명을 연결한다", () => {
+    const { button, container } = setup(snapshot({ status: "playing" }));
+
+    const descriptionId = button.getAttribute("aria-describedby");
+    expect(descriptionId).not.toBeNull();
+    expect(container.querySelector(`#${descriptionId}`)?.textContent).toBe("발음을 재생하고 있어요.");
   });
 
   it("loading은 스피커 대신 busy 상태를 표시하고 replay는 그대로 전달한다", () => {
@@ -103,15 +134,12 @@ describe("PronunciationButton", () => {
   });
 
   it("form 안에서 클릭해도 replay 외 submit은 발생하지 않는다", () => {
-    const replay = vi.fn();
     const submit = vi.fn((event: FormEvent<HTMLFormElement>) => event.preventDefault());
-    const { container, unmount } = renderComponent(
+    const { button, replay } = setup(snapshot(), (onReplay) => (
       <form onSubmit={submit}>
-        <PronunciationButton snapshot={snapshot()} replay={replay} />
-      </form>,
-    );
-    unmountCurrent = unmount;
-    const button = container.querySelector<HTMLButtonElement>("button")!;
+        <PronunciationButton snapshot={snapshot()} replay={onReplay} />
+      </form>
+    ));
 
     fire(() => button.click());
 

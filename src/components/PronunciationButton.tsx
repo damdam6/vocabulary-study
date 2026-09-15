@@ -45,18 +45,18 @@ function statusDescription(status: PronunciationStatus) {
 export default function PronunciationButton({ snapshot, replay }: PronunciationButtonProps) {
   const descriptionId = `pronunciation-button-description-${useId().replace(/:/g, "")}`;
   const inputMessage = snapshot.inputReason ? inputReasonMessage[snapshot.inputReason] : null;
-  const description = inputMessage ?? statusDescription(snapshot.status);
+  const message = snapshot.message ?? inputMessage ?? statusDescription(snapshot.status);
   const disabled = !snapshot.enabled || snapshot.inputReason !== null;
-  const message = snapshot.message ?? inputMessage;
+  const styledStatus = snapshot.status === "loading" || snapshot.status === "playing" ? snapshot.status : null;
 
   return (
-    <div className={`pronunciation-button pronunciation-button--${snapshot.status}`}>
+    <div className={`pronunciation-button${styledStatus ? ` pronunciation-button--${styledStatus}` : ""}`}>
       <button
         type="button"
         className="pronunciation-button__control"
         aria-label="발음 듣기"
         aria-busy={snapshot.status === "loading" ? "true" : undefined}
-        aria-describedby={description ? descriptionId : undefined}
+        aria-describedby={message ? descriptionId : undefined}
         disabled={disabled}
         onClick={replay}
       >
