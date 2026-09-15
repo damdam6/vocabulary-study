@@ -62,6 +62,31 @@ describe("PronunciationButton", () => {
     expect(message?.textContent).toBe("발음을 다시 눌러 주세요.");
   });
 
+  it("여러 인스턴스가 각자의 설명 ID를 참조한다", () => {
+    const first = snapshot({ enabled: false, inputReason: "text_too_long" });
+    const second = snapshot({ enabled: false, inputReason: "invalid_text" });
+    const replay = vi.fn();
+    const { container, unmount } = renderComponent(
+      <>
+        <PronunciationButton snapshot={first} replay={replay} />
+        <PronunciationButton snapshot={second} replay={replay} />
+      </>,
+    );
+    unmountCurrent = unmount;
+
+    const buttons = [...container.querySelectorAll<HTMLButtonElement>("button")];
+    const descriptions = [...container.querySelectorAll<HTMLElement>(".pronunciation-button__message")];
+    const describedBy = buttons.map((button) => button.getAttribute("aria-describedby"));
+
+    expect(buttons).toHaveLength(2);
+    expect(descriptions).toHaveLength(2);
+    expect(new Set(describedBy).size).toBe(2);
+    for (const [index, id] of describedBy.entries()) {
+      expect(id).not.toBeNull();
+      expect(container.querySelector(`#${id}`)).toBe(descriptions[index]);
+    }
+  });
+
   it.each([
     ["text_too_long", "발음은 200자까지 지원해요."],
     ["invalid_text", "읽을 표제어가 없어요."],
@@ -69,7 +94,9 @@ describe("PronunciationButton", () => {
     const { container, button, replay } = setup(snapshot({ enabled: false, inputReason }));
 
     expect(button.disabled).toBe(true);
-    expect(button.getAttribute("aria-describedby")).toBe("pronunciation-button-description");
+    const descriptionId = button.getAttribute("aria-describedby");
+    expect(descriptionId).not.toBeNull();
+    expect(container.querySelector(`#${descriptionId}`)).not.toBeNull();
     expect(container.textContent).toContain(expectedMessage);
     fire(() => button.click());
     expect(replay).not.toHaveBeenCalled();

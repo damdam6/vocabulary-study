@@ -1,3 +1,4 @@
+import { useId } from "react";
 import type { PronunciationButtonProps, PronunciationStatus } from "../lib/ttsTypes.ts";
 import "./PronunciationButton.css";
 
@@ -42,6 +43,7 @@ function statusDescription(status: PronunciationStatus) {
 }
 
 export default function PronunciationButton({ snapshot, replay }: PronunciationButtonProps) {
+  const descriptionId = `pronunciation-button-description-${useId().replace(/:/g, "")}`;
   const inputMessage = snapshot.inputReason ? inputReasonMessage[snapshot.inputReason] : null;
   const description = inputMessage ?? statusDescription(snapshot.status);
   const disabled = !snapshot.enabled || snapshot.inputReason !== null;
@@ -54,14 +56,14 @@ export default function PronunciationButton({ snapshot, replay }: PronunciationB
         className="pronunciation-button__control"
         aria-label="발음 듣기"
         aria-busy={snapshot.status === "loading" ? "true" : undefined}
-        aria-describedby={description ? "pronunciation-button-description" : undefined}
+        aria-describedby={description ? descriptionId : undefined}
         disabled={disabled}
         onClick={replay}
       >
         {snapshot.status === "loading" ? <LoadingIcon /> : <SpeakerIcon />}
       </button>
       <div
-        id="pronunciation-button-description"
+        id={descriptionId}
         className="pronunciation-button__message"
         aria-live={snapshot.message ? "polite" : undefined}
       >
