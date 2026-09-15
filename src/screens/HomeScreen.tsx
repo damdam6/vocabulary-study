@@ -10,10 +10,17 @@ import { RETRY_QUEUE_CHANGED_EVENT, RETRY_QUEUE_STORAGE_KEY, getRetryQueueLength
 import { buildSessionQueue, SESSION_CAP, type SessionQuestion } from "../lib/sessionQueue.ts";
 import { getSeoulToday } from "../lib/wordState.ts";
 import { fetchWords } from "../lib/wordsApi.ts";
+import type { TtsCapability } from "../lib/ttsTypes.ts";
+
+/** Home의 단일 words 응답에서 확정해 App이 Study 수명 동안 고정하는 값이다. */
+export interface StudySessionContext {
+  profile: PublicProfile
+  tts: TtsCapability
+}
 
 interface HomeScreenProps {
   /** 큐는 시트 문제 수 설정 상한까지 잘라서 올린다 — 세션 문제 수는 이 큐로 확정된다(#116). */
-  onStart: (queue: SessionQuestion<WordEntry>[]) => void
+  onStart: (queue: SessionQuestion<WordEntry>[], context: StudySessionContext) => void
   onNavigateRegister: () => void
   onSwitchProfile: () => void
 }
@@ -30,6 +37,7 @@ function HomeScreen({ onStart, onNavigateRegister, onSwitchProfile }: HomeScreen
   const [retryQueueLength, setRetryQueueLength] = useState(0);
   // 시트별 세션 문제 수(세션 설정 플랜 §3.2) — words 응답 동봉값, 미동봉 시 fetchWords가 SESSION_CAP으로 폴백.
   const [sessionLimit, setSessionLimit] = useState(SESSION_CAP);
+  const [tts, setTts] = useState<TtsCapability>({ enabled: false });
 
   // App.tsx가 홈 화면을 조건부로만 렌더링하므로, 홈을 벗어났다 돌아올 때마다
   // 이 컴포넌트가 새로 마운트되어 design-prd §3의 "홈 진입 시마다 재조회"를 만족한다.
@@ -38,12 +46,13 @@ function HomeScreen({ onStart, onNavigateRegister, onSwitchProfile }: HomeScreen
     const controller = new AbortController();
     setStatus("loading");
     fetchWords(controller.signal)
-      .then(({ profile: fetchedProfile, words: fetched, settings }) => {
+      .then(({ profile: fetchedProfile, words: fetched, settings, tts: fetchedTts }) => {
         if (cancelled) return;
         setWords(fetched);
         setProfile(fetchedProfile);
         saveProfile(fetchedProfile);
         setSessionLimit(settings.sessionLimit);
+        setTts(fetchedTts);
         setStats(computeHomeStats(fetched, getSeoulToday(), fetchedProfile.modes, settings.sessionLimit));
         setStatus("ready");
       })
@@ -81,7 +90,8 @@ function HomeScreen({ onStart, onNavigateRegister, onSwitchProfile }: HomeScreen
 
   const handleStart = () => {
     // canStart(sessionCount>0)와 같은 단어 집합·같은 산식(같은 sessionLimit)이므로 빈 큐가 나올 수 없다
-    onStart(buildSessionQueue(words, getSeoulToday(), profile?.modes ?? [], undefined, sessionLimit));
+    if (profile === null) return;
+    onStart(buildSessionQueue(words, getSeoulToday(), profile.modes, undefined, sessionLimit), { profile, tts });
   };
 
   return (

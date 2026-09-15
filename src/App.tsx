@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useState } from 'react'
 import LoginScreen from './screens/LoginScreen.tsx'
-import HomeScreen from './screens/HomeScreen.tsx'
+import HomeScreen, { type StudySessionContext } from './screens/HomeScreen.tsx'
 import StudyScreen, { type SessionResult } from './screens/StudyScreen.tsx'
 import DoneScreen from './screens/DoneScreen.tsx'
 import {
@@ -13,6 +13,7 @@ import {
 } from './lib/api.ts'
 import { flushRetryQueue } from './lib/retryQueue.ts'
 import { type SessionQuestion } from './lib/sessionQueue.ts'
+import type { TtsCapability } from './lib/ttsTypes.ts'
 
 // pinyin-pro(gzip 약 145KB) 의존성이 등록 화면에만 있어(#49) 학습 플로우 번들에서
 // 제외되도록 지연 로딩한다 — 등록 화면은 홈의 저강조 링크로만 진입하는 비핵심 경로.
@@ -20,11 +21,17 @@ const RegisterScreen = lazy(() => import('./screens/RegisterScreen.tsx'))
 
 type Screen = 'login' | 'home' | 'study' | 'done' | 'register'
 
+interface ActiveStudySession {
+  queue: SessionQuestion<WordEntry>[]
+  profile: StudySessionContext['profile']
+  tts: TtsCapability
+}
+
 function App() {
   // 새로고침 시 저장된 비밀번호가 있으면 재입력 없이 통과 (PRD §8)
   const [screen, setScreen] = useState<Screen>(() => (getStoredPassword() ? 'home' : 'login'))
   // 세션 큐는 홈이 만들고(PRD §6.1) 셸이 소비한다(§6.2) — App은 화면 간 전달만 담당
-  const [sessionQueue, setSessionQueue] = useState<SessionQuestion<WordEntry>[]>([])
+  const [activeStudy, setActiveStudy] = useState<ActiveStudySession | null>(null)
   const [sessionResult, setSessionResult] = useState<SessionResult>({ correct: 0, wrong: 0 })
 
   // 어느 API든 401 수신 시 로그인 화면 복귀 — 저장값 삭제는 apiFetch가 이미 수행
@@ -41,8 +48,8 @@ function App() {
     return () => setApiSuccessHandler(null)
   }, [])
 
-  const startSession = (queue: SessionQuestion<WordEntry>[]) => {
-    setSessionQueue(queue)
+  const startSession = (queue: SessionQuestion<WordEntry>[], context: StudySessionContext) => {
+    setActiveStudy({ queue, ...context })
     setScreen('study')
   }
 
@@ -68,10 +75,11 @@ function App() {
             onSwitchProfile={switchProfile}
           />
         )}
-        {screen === 'study' && (
+        {screen === 'study' && activeStudy !== null && (
           <StudyScreen
-            queue={sessionQueue}
-            contentType={getStoredProfile()?.contentType ?? 'zh'}
+            queue={activeStudy.queue}
+            profile={activeStudy.profile}
+            tts={activeStudy.tts}
             onExit={() => setScreen('home')}
             onComplete={completeSession}
           />

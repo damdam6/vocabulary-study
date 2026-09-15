@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>#145 음성 capability와 플레이어를 학습 세션에 연결한다 — 작업 플랜</title>
+<style>
+  :root {
+    --bg: #f7f7f8; --card: #ffffff; --ink: #1c1c1e; --muted: #6e6e73;
+    --line: #e3e3e6; --accent: #3b6ef5; --accent-soft: #e8eefe;
+    --ok: #2e8b57; --warn: #b25e09; --code-bg: #f0f0f2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161618; --card: #202024; --ink: #ececf0; --muted: #98989f;
+      --line: #333338; --accent: #7a9bff; --accent-soft: #26304a;
+      --ok: #58c088; --warn: #e0a35c; --code-bg: #2a2a2f;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 40px 20px 80px; background: var(--bg); color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+                 "Segoe UI", "Noto Sans KR", sans-serif;
+    line-height: 1.65; overflow-wrap: anywhere;
+  }
+  main { max-width: 860px; margin: 0 auto; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code {
+    font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 0.86em;
+    background: var(--code-bg); border-radius: 5px; padding: 2px 6px;
+  }
+  header { margin-bottom: 28px; }
+  .issue-chip {
+    display: inline-block; font-weight: 700; color: var(--accent);
+    background: var(--accent-soft); border-radius: 999px;
+    padding: 3px 14px; font-size: 0.95rem; margin-bottom: 10px;
+  }
+  .type-chip {
+    display: inline-block; font-weight: 600; color: var(--muted);
+    border: 1px solid var(--line); border-radius: 999px;
+    padding: 3px 12px; font-size: 0.8rem; margin-left: 8px; vertical-align: 2px;
+  }
+  h1 { font-size: 1.7rem; margin: 0 0 14px; letter-spacing: -0.02em; }
+  .meta {
+    display: flex; flex-wrap: wrap; gap: 6px 22px;
+    color: var(--muted); font-size: 0.87rem;
+  }
+  .meta b { color: var(--ink); font-weight: 600; }
+  section.card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 24px 28px; margin-top: 18px;
+  }
+  h2 {
+    font-size: 1.05rem; margin: 0 0 14px; letter-spacing: -0.01em;
+    display: flex; align-items: center; gap: 8px;
+  }
+  h3 { font-size: 1rem; margin: 22px 0 8px; }
+  input[type="checkbox"] { margin-right: 6px; }
+  h2 .no {
+    color: var(--accent); font-size: 0.8rem; font-weight: 700;
+    border: 1.5px solid var(--accent); border-radius: 6px; padding: 0 6px;
+  }
+  ul, ol { margin: 0; padding-left: 22px; }
+  li { margin: 6px 0; }
+  .steps { list-style: none; padding: 0; counter-reset: step; }
+  .steps li {
+    counter-increment: step; position: relative; padding: 10px 0 10px 44px;
+    border-bottom: 1px dashed var(--line);
+  }
+  .steps li:last-child { border-bottom: none; }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 10px;
+    width: 28px; height: 28px; border-radius: 8px; background: var(--accent-soft);
+    color: var(--accent); font-weight: 700; font-size: 0.85rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .steps .files { display: block; margin-top: 4px; font-size: 0.85rem; color: var(--muted); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 0.82rem; }
+  .done-list { list-style: none; padding: 0; }
+  .done-list li { padding-left: 30px; position: relative; }
+  .done-list li::before {
+    content: ""; position: absolute; left: 2px; top: 7px; width: 15px; height: 15px;
+    border: 2px solid var(--ok); border-radius: 5px;
+  }
+  .scroll-x { overflow-x: auto; }
+  footer { margin-top: 30px; color: var(--muted); font-size: 0.8rem; text-align: center; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <span class="issue-chip"><a href="https://github.com/damdam6/vocabulary-study/issues/145">#145</a></span><span class="type-chip">기능 개선 · 구현·검증 완료</span>
+    <h1>음성 capability와 플레이어를 학습 세션에 연결한다</h1>
+    <div class="meta">
+      <span><b>damdam6/vocabulary-study</b></span>
+      <span>브랜치 <b><code>feat/145-pronunciation-study-session</code></b> ← <code>feat/ch-sound</code></span>
+      <span>라벨 <b>enhancement</b></span>
+      <span>2026-09-16</span>
+    </div>
+  </header>
+
+  <section class="card">
+    <h2><span class="no">1</span>요약</h2>
+    <p>홈의 words 응답에서 검증한 profile·tts를 큐와 함께 세션에 고정하고, Study 수명에 기존 음성 controller를 연결한다. 질문 이동·종료·완료·401 언마운트·탭 숨김에서 동기 정지하고 StrictMode 재설정 뒤 새 controller 한 개만 유지한다. 두 카드에는 선택적 PronunciationBinding prop만 선언·전달한다. 실제 버튼과 공개 시점 호출은 #147·#148이 맡으며, 이 계획 탭은 산출물 검증 뒤 root에 인계한다.</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">2</span>현황 분석</h2>
+
+
+<p><strong>조사 기준:</strong> HEAD <code>e575e66b20f2f3d6ac6217f43436080291660f2f</code>, 준비된 worktree·브랜치 일치, 초기 git 변경 없음. 상위 경로와 worktree의 적용 가능한 <code>AGENTS.md</code>는 발견되지 않았다. GitHub #145 본문과 댓글 조회 완료(댓글 0개).</p>
+<p>직접 선행 #143 / PR <a href="https://github.com/damdam6/vocabulary-study/pull/159">#159</a> (<code>188b316</code>), #144 / PR <a href="https://github.com/damdam6/vocabulary-study/pull/154">#154</a> (<code>f46080a</code>), #146 / PR <a href="https://github.com/damdam6/vocabulary-study/pull/158">#158</a> (<code>e7b4ed1</code>)의 MERGED·base=feat/ch-sound를 확인했고 세 커밋 모두 HEAD의 조상이다. 서버 capability #140은 직접 선행이 아니며 클라이언트 계약 fixture로 구현 가능하다.</p>
+<ul>
+<li><code>src/lib/wordsApi.ts:17</code> 응답은 profile·words·settings만 정의하고, <code>:41</code>에서 settings만 정규화한다. tts를 현재 버린다.</li>
+<li><code>src/screens/HomeScreen.tsx:36</code> 조회 성공 후 profile을 state와 기존 저장소에 반영한다. <code>:82</code>의 onStart는 큐만 전달한다. 같은 성공 응답의 capability를 함께 보관해야 한다.</li>
+<li><code>src/App.tsx:27</code> 세션 state는 큐뿐이고 <code>:74</code>에서 Study의 contentType을 저장소에서 다시 읽는다. 세션 도중 재렌더가 홈에서 확정한 프로필과 다른 값을 사용할 수 있는 경계다.</li>
+<li><code>src/screens/StudyScreen.tsx:46</code>은 세션 큐·집계·피드백을 소유한다. <code>:93</code> 판정은 기록을 발사한 뒤 모드2 오답만 머물고 나머지는 진행한다. <code>:78</code> 마지막 즉시 판정은 완료를 보류하며 <code>:109</code> animationend까지 셸이 남는다. 종료 버튼 <code>:123</code>은 onExit를 직접 호출한다.</li>
+<li><code>src/lib/speak.ts:54</code>의 생성자는 profileId·capability·transport·audio·cache를 받는다. <code>:290</code> activate는 같은 questionId에 멱등이고, <code>:350</code> hidden 정지는 질문을 보존하지만 advance/exit 정지는 질문을 비운다. <code>:368</code> dispose는 audio·cache와 구독을 정리한다.</li>
+<li><code>src/lib/ttsTypes.ts:79</code> 입력은 <code>{text, pinyin: string | null}</code>, <code>:96</code> 카드 binding은 snapshot·prepare·reveal·replay다. 문서의 간략 의사코드보다 이 실제 공통 타입을 따른다.</li>
+<li><code>src/screens/Mode1Card.tsx:9</code>, <code>src/screens/Mode2Card.tsx:12</code>에는 음성 prop이 없다. #146의 viewReady·접근성은 이미 존재하며 이번에는 건드리지 않는다. <code>src/lib/contentLabels.ts:10</code>은 콘텐츠별 표시 helper를 모은다.</li>
+<li><code>src/lib/api.ts:90</code>의 apiFetch는 401에서 인증값 제거·App callback을 실행한다. <code>src/App.tsx:30</code>의 로그인 전환으로 Study가 언마운트된다. 성공 callback의 기존 retryQueue flush는 유지한다.</li>
+<li><code>src/test-utils.tsx:18</code>의 React act/jsdom 도구를 재사용한다. Home 테스트 <code>src/screens/HomeScreen.test.tsx:135</code>의 기존 단일 큐 인자 assertion과 <code>src/lib/wordsApi.test.ts:54</code>의 응답 전체 비교는 새 계약으로 갱신해야 한다.</li>
+</ul>
+<p><strong>근거 문서:</strong> <a href="chinese-tts-audio-issues/TTS-11.md">TTS-11</a>, <a href="../PRD-chinese-tts-audio.md">PRD §3·4·8</a>, <a href="../architecture/chinese-tts-audio.md">아키텍처 §3.3·7.1·7.5</a>, <a href="chinese-tts-audio-tasks.md">태스크 지도 §3·5·6</a>. 계획·구현·독립 리뷰의 모델 분리는 지정 interactive.md/config.json을 따른다.</p>
+
+  </section>
+
+  <section class="card">
+    <h2><span class="no">3</span>설계</h2>
+
+
+<h3>1. 홈 응답을 세션 시작 값으로 고정</h3>
+<p><code>WordsResponse.tts: TtsCapability</code>를 필수 정규화 결과로 추가하고 raw의 <code>tts?: unknown</code>을 검증한다. enabled가 정확한 true이며 revision이 서버 계약의 <code>^[A-Za-z0-9_-]{1,64}$</code>, maxTextLength가 공통 <code>TTS_MAX_TEXT_LENGTH</code>(200)일 때만 켠다. 누락·null·배열·원시값·잘못된 enabled/revision/상한은 <code>{enabled:false}</code>로 만든다. 응답 나머지 필드는 기존대로 처리한다.</p>
+<p>Home의 <code>onStart(queue, context)</code>에서 context는 <code>{profile: PublicProfile, tts: TtsCapability}</code>다. 성공 응답의 profile·tts를 함께 보관하고 ready이며 profile이 있는 경우에만 시작한다. context 타입은 HomeScreen에서 export해 App이 재사용할 수 있다. App은 큐와 context를 하나의 세션 state로 저장하고 Study에 <code>queue, profile, tts</code>를 전달한다. Study의 contentType은 profile.contentType에서 얻는다. 별도 TTS localStorage·재조회·캐시 변경은 추가하지 않는다. 기존 등록 화면의 저장 프로필 사용은 이번 경계 밖이다.</p>
+<h3>2. hook이 Study의 React 수명에 controller를 연결</h3>
+<p>신규 <code>src/hooks/usePronunciation.ts</code>은 <code>{profileId, contentType, capability, questionId, input}</code>을 받고 <code>{pronunciation: PronunciationBinding | undefined, stop}</code>을 반환한다. Study는 mount마다 고유 세션 ID를 만들고 질문 ID를 <code>세션 ID + ':' + session.pos</code>로 구성한다. 순수 ID는 useState initializer에 보관할 수 있지만 controller·Audio·cache를 render/useMemo/useState initializer에서 만들지 않는다. word 참조·뜻·기록 응답 갱신으로 질문이나 controller를 교체하지 않는다.</p>
+<p>가벼운 layout effect setup에서 <code>createPronunciationController</code>에 <code>fetchTtsAudio</code>, <code>createTtsAudioOutput()</code>, <code>createTtsBlobCache()</code>를 조합한다. 한 controller가 이 자원을 소유하며 cleanup에서 구독 해제·<code>stop('exit')</code>·dispose·ref 초기화를 수행한다. layout cleanup은 로그인 전환 등 언마운트에서 정지를 늦추지 않기 위한 선택이다. 생성·구독 effect의 의존성은 세션의 profile ID·지원 여부·capability 원시값으로 한정하여 snapshot·feedback·pos 변화로 재생성하지 않는다.</p>
+<p>별도의 질문 활성화 effect는 같은 controller와 questionId를 사용하고 A열 <code>word.hanzi</code>, B열 <code>word.pinyin</code>을 전달한다. activate 자체는 요청하지 않는다. 구독을 먼저 연결하고 activate/getSnapshot 결과를 반영한다. 현재 인스턴스의 snapshot.questionId가 현재 질문과 일치할 때만 binding을 제공하여, 새 카드 effect가 활성화 전 이전 질문에 reveal을 보내는 유실을 막는다. 생성 초기·전환 중의 빈 binding은 정상이다.</p>
+<p>binding callback은 생성 당시 controller와 질문 ID에 묶고 현재 인스턴스/질문인지 검사한다. 오래된 callback이 새 controller ref를 따라가거나 질문을 다시 activate해서는 안 된다. prepare/reveal/replay는 controller의 동기 명령을 그대로 잇고 replay 앞에 await·timer를 두지 않는다. snapshot 변경이 prepare/reveal/replay 함수 identity를 불필요하게 바꾸지 않게 한다. 초기/실행 중 hidden이면 요청 명령을 막고 controller에 hidden 정지를 적용한다.</p>
+<p><code>supportsPronunciation(contentType)</code>은 zh만 true다. capability와 함께 검사하여 generic/off는 controller 생성·요청과 binding이 없다. controller가 503 disabled/not_configured 뒤 snapshot.enabled=false를 알리면 binding을 제거하며, 같은 세션에서 새 controller를 만들어 다시 켜지 않는다. 텍스트 오류로 inputReason이 설정된 경우에는 binding을 유지해 후속 카드가 비활성 안내를 표시할 수 있게 한다.</p>
+<p>StrictMode의 첫 setup은 cleanup으로 폐기되고 두 번째 setup은 새 controller·구독을 만든다. disposed 객체가 남은 ref를 생성 가드로 삼지 않는다. React의 추가 setup/cleanup은 <a href="https://react.dev/reference/react/StrictMode">공식 StrictMode 문서</a>, commit 수명 및 정리 시점은 <a href="https://react.dev/reference/react/useLayoutEffect">useLayoutEffect 문서</a>를 참고했다. 카드 공개의 취소 가능한 예약은 #148 소유이며 이 hook에서 자동 공개를 생성하지 않는다.</p>
+<h3>3. 동기 정지 위치</h3>
+<div class="scroll-x"><table><thead><tr><th>사건</th><th>정지와 순서</th></tr></thead><tbody>
+<tr><td>모드1 O/X·모드2 정답</td><td>handleJudged의 즉시 진행 분기에서 stop('advance')를 기록 발사·setState·진행 전에 호출. TTS Promise를 기다리지 않음.</td></tr>
+<tr><td>모드2 일반/빈 오답</td><td>기존 기록·집계 후 현재 질문 유지. stop('advance')·reveal을 여기서 호출하지 않음. 공개는 #148 책임.</td></tr>
+<tr><td>오답 결과의 다음</td><td>handleProceed에서 stop('advance') 후 proceed. 마지막 다음도 동일.</td></tr>
+<tr><td>종료·완료</td><td>onExit 직전 stop('exit'). 완료 callback 직전에도 stop('exit'). 마지막 즉시 판정은 animationend 대기 이전에 이미 정지.</td></tr>
+<tr><td>401·일반 언마운트</td><td>기존 인증 callback으로 Study 제거 → hook cleanup에서 동기 stop('exit')·구독 해제·dispose. apiFetch 인증 처리 중복 없음.</td></tr>
+<tr><td>visibilitychange(hidden)·pagehide</td><td>각 DOM 이벤트 handler에서 stop('hidden'). visible/pageshow는 자동 activate/prepare/reveal/replay를 하지 않음. 리스너를 cleanup에서 제거.</td></tr>
+</tbody></table></div>
+<h3>4. 카드 인계 계약과 소유 범위</h3>
+<p>두 카드 props에 <code>pronunciation?: PronunciationBinding</code> import·선언만 추가하고 Study에서 전달한다. 카드의 함수 인자에 미사용 binding을 억지로 구조 분해하지 않는다. 버튼 import/렌더, prepare/reveal 호출, 모드2 오답 공개 예약, focus·플립·CSS는 #147/#148에 맡긴다. 따라서 #145 단독 완료에서는 실제 카드 음성 요청이 아직 발생하지 않는 것이 정상이다.</p>
+<p>state machine·입력 검증·자동재생 기회·Blob/revision·요청 취소의 내부 정책은 기존 controller를 재사용한다. 새 의존성, Worker·설정·생성 타입·studySession/sessionQueue/기록 알고리즘 수정은 필요하지 않다. 관련 테스트용 controller 더블은 subscribe 통지·dispose 후 거부·현재 질문/stop semantics를 재현하는 전용 fixture로 한정한다.</p>
+
+  </section>
+
+  <section class="card">
+    <h2><span class="no">4</span>작업 단계</h2>
+    <ol class="steps">
+
+
+<li><label><input type="checkbox" checked> words capability를 방어적으로 정규화하고 콘텐츠 지원 helper를 추가한다.</label><span class="files"><code>src/lib/wordsApi.ts</code>, <code>src/lib/wordsApi.test.ts</code>, <code>src/lib/contentLabels.ts</code>, <code>src/lib/contentLabels.test.ts</code></span></li>
+<li><label><input type="checkbox" checked> Home 성공 응답의 profile·tts를 큐와 함께 전달하고 App이 세션 context를 고정해 Study props로 전달한다. 기존 typed fixture·단일 인자 assertion을 새 계약으로 바꾼다.</label><span class="files"><code>src/screens/HomeScreen.tsx</code>, <code>src/screens/HomeScreen.test.tsx</code>, <code>src/App.tsx</code>, <code>src/screens/StudyScreen.tsx</code></span></li>
+<li><label><input type="checkbox" checked> Study 수명의 controller 생성·구독·질문 활성화·cleanup·hidden/pagehide를 hook으로 연결한다. StrictMode 재생성 및 오래된 binding 차단을 구현한다.</label><span class="files">신규 <code>src/hooks/usePronunciation.ts</code>, <code>src/hooks/usePronunciation.test.tsx</code></span></li>
+<li><label><input type="checkbox" checked> 세션 ID+pos를 질문 ID로 사용하고 즉시 판정·다음·종료·완료에 정지 handler를 연결한다. 모드2 오답 유지와 기존 fire-and-forget 기록 계약을 보존한다.</label><span class="files"><code>src/screens/StudyScreen.tsx</code>, 신규 <code>src/screens/StudyScreen.test.tsx</code></span></li>
+<li><label><input type="checkbox" checked> 공통 PronunciationBinding을 두 카드의 선택적 prop으로 선언하고 Study에서 전달한다. 카드 공개·스타일 구현은 추가하지 않는다.</label><span class="files"><code>src/screens/Mode1Card.tsx</code>, <code>src/screens/Mode2Card.tsx</code>, <code>src/screens/StudyScreen.test.tsx</code></span></li>
+<li><label><input type="checkbox" checked> 경계 테스트와 전체 test/lint/build를 완료하고 근거·미검증 항목을 계획에 갱신한다. 실제 구현 담당만 커밋·push·ready PR을 만든다.</label><span class="files">전체 <code>npm test</code> 49 files/634 tests 통과, <code>npm run lint</code>, <code>npm run build</code> 통과; PR base <code>feat/ch-sound</code>, head <code>feat/145-pronunciation-study-session</code>, 본문 <code>Closes #145</code></span></li>
+
+    </ol>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">5</span>리스크</h2>
+    <div class="scroll-x">
+    <table>
+      <thead><tr><th>리스크</th><th>영향</th><th>완화책</th></tr></thead>
+      <tbody>
+
+
+<tr><td>StrictMode·effect 실행 순서</td><td>폐기 controller 재사용 또는 최초 reveal 유실</td><td>새 인스턴스 생성·현재 snapshot 일치 전 binding 미노출; child effect harness로 실제 hook 연결 검증.</td></tr>
+<tr><td>stop 이후 재활성화</td><td>마지막 피드백·숨김에서 이전 요청 재시작</td><td>질문 effect를 snapshot/feedback에 종속시키지 않고 old callback 차단; visible에서 명령 0회 확인.</td></tr>
+<tr><td>모드2 오답을 즉시 진행과 혼동</td><td>후속 정답 공개 재생이 사라짐</td><td>오답 onJudged는 질문 유지; 다음에서만 advance 정지.</td></tr>
+<tr><td>기록 응답이 word 객체 갱신</td><td>질문 수명·캐시 초기화</td><td>세션 ID+pos와 원시 의존값 사용; 동일 pos의 word 교체에도 controller 1개 유지.</td></tr>
+<tr><td>API mock과 반환 타입 변경</td><td>기존 Home 테스트/빌드 실패</td><td>WordsResponse typed fixture와 onStart 호출 형태를 함께 갱신; 기존 문제 수 상한·통계 assertion 유지.</td></tr>
+<tr><td>더블의 검증 한계</td><td>실제 청취·브라우저 정책·R2 검증으로 과장</td><td>이번 증거는 React·세션 연결이며 실제 API 키·모바일·음질·R2 접근은 미검증으로 표시.</td></tr>
+
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">6</span>테스트 계획</h2>
+    <ul>
+
+
+<li><strong>words/contentLabels:</strong> tts 누락·null·배열·문자열·enabled 문자열·revision 누락/빈값/허용문자 위반/65자·상한 199/201은 off, 정확한 true/revision/200만 on. settings 폴백·AbortSignal·오류 동작 유지. generic은 한자가 있어도 supportsPronunciation=false.</li>
+<li><strong>Home/App:</strong> 서버 profile과 저장 profile이 다를 때 서버 값 전달; 홈 재진입은 새 tts를 사용하되 진행 중 session은 저장소 변경·재렌더에 영향 없음. 누락/disabled/generic에서 기존 시작·등록·종료 동작 유지. 큐는 시트 상한 35를 유지하고 별도 TTS 저장 키를 만들지 않음.</li>
+<li><strong>hook 더블:</strong> StrictMode setup→cleanup→setup 후 생성 2/폐기 1/생존 1, 최종 unmount 후 생존·구독·이벤트 리스너 0. 첫 disposed controller에 명령이 가지 않고 두 번째에 activate/binding이 연결됨. generic/off는 생성·명령·binding 0.</li>
+<li><strong>hook·카드 경계 harness:</strong> 활성화된 snapshot이 나온 후 child effect에서 reveal 명령을 전달할 수 있음. StrictMode 재설정의 오래된 binding과 pos 변경 전 callback은 무효. 모드2용 취소 가능한 공개 예약은 테스트 harness에서만 모사하고 production 카드에는 추가하지 않음. 자동재생 알고리즘 자체의 1회 보장은 기존 speak.test.ts 증거에 연결.</li>
+<li><strong>질문/구독:</strong> 같은 pos의 word 객체 교체·snapshot 갱신으로 controller를 재생성하지 않음. 같은 표제어의 다른 pos는 다른 ID, 새 세션 pos=0은 이전과 다른 ID. 빈 pinyin은 null로 전달, text는 정답 word.hanzi. runtime snapshot.enabled=false면 binding 제거, inputReason만 있으면 binding 유지.</li>
+<li><strong>정지 순서:</strong> 더블 event log로 즉시 판정·다음 handler 안에서 stop이 기록 호출/진행보다 앞섬을 확인. 마지막 판정은 animationend 없이도 정지하고 완료 callback만 대기. 종료·완료 callback 내부에서 정지 상태 확인. App의 기존 unauthorized callback을 통해 로그인 DOM으로 전환하면 hook cleanup 완료.</li>
+<li><strong>hidden/pagehide:</strong> 실제 DOM 이벤트로 즉시 stop('hidden'), visible/pageshow로 명령·controller 재생성 없음. hidden 중 현재 binding 호출도 요청 없음. 복귀 후 같은 질문 수동 replay는 동기 전달 가능. unmount 뒤 이벤트가 controller를 호출하지 않음.</li>
+<li><strong>세션·기록 회귀:</strong> controller snapshot loading/error 상태와 해결하지 않은 음성 작업 중에도 판정·다음·종료·완료 가능. 모드1 정오, 모드2 정답·일반/빈 오답, 복습 오답의 집계·pos·postAnswer/postReviewFail·학습 큐/재시도 큐 결과가 off와 같음. 오답 판정 자체는 advance stop을 하지 않음. 카드 prop 전달은 카드 더블로 관찰하고 실제 Mode1 접근성 회귀도 기존 테스트로 확인.</li>
+<li><strong>개발 중:</strong> <code>npm test -- src/lib/wordsApi.test.ts src/lib/contentLabels.test.ts src/screens/HomeScreen.test.tsx src/App.test.tsx src/hooks/usePronunciation.test.tsx src/screens/StudyScreen.test.tsx</code>. 이 테스트는 새로 구현한 뒤 실행한다.</li>
+<li><strong>구현 완료:</strong> <code>npm test</code>, <code>npm run lint</code>, <code>npm run build</code>. 기존 <code>studySession.test.ts</code>, <code>sessionQueue.test.ts</code>, <code>retryQueue.test.ts</code>, <code>api.test.ts</code>, <code>Mode1Card.test.tsx</code> 포함. node_modules가 현재 없으므로 구현 담당이 lockfile 기준 npm ci로 의존성을 준비한다. 실제 환경 파일·키 원문을 열지 않고 build 과정도 TTS flag를 켜지 않는다.</li>
+<li><strong>이 계획 단계의 검증:</strong> 이슈/댓글·소스·공통 타입·직접 선행 PR MERGED/base와 HEAD 조상 관계 확인. HTML placeholder·섹션/파일 참조·HTTP 동일 바이트·cmux 렌더를 확인하고 interactive-state에 결과·SHA-256 기록. 앱 테스트/lint/build는 계획 단계에서 실행하지 않으며 기능 구현 통과로 보고하지 않는다.</li>
+<li><strong>구현 검증 결과 (2026-09-16):</strong> <code>npm test</code> 49 files/634 tests 통과, <code>npm run lint</code> 통과, <code>npm run build</code> 통과. 실제 키·유료 TTS·청취·모바일·R2 접근·배포는 실시하지 않았으며 <code>TTS_ENABLED=false</code>를 유지했다.</li>
+
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">7</span>완료 조건</h2>
+    <ul class="done-list">
+
+
+<li>구 서버·generic·disabled에서 학습 유지, 홈 응답의 profile/tts로 세션 고정. PRD AC-01·18.</li>
+<li>StrictMode 재설정 뒤 controller 1개만 생존하고 unmount 후 자원·구독이 남지 않음.</li>
+<li>판정/다음·종료·마지막 피드백 대기·완료·401·hidden/pagehide에서 이전 음성을 정지하고 자동 복귀 없음. PRD AC-08·16.</li>
+<li>음성 작업이 채점·큐·기록 전송을 기다리게 하지 않으며 TTS는 retryQueue에 넣지 않음. PRD AC-10·17.</li>
+<li>카드 음성 prop은 공통 타입의 선택 필드; 내부 공개·버튼·CSS 변경 없이 #147/#148이 소비할 준비 완료.</li>
+<li>소유 모듈 테스트와 test/lint/build 통과 근거를 기록하고 실제 키·유료 TTS·청취·모바일·R2 검증은 미실시로 명시. 운영 TTS_ENABLED=false 유지.</li>
+<li>Terra/high 구현 담당이 이 HTML의 체크리스트·테스트를 갱신하고 커밋·push·ready PR까지 완료한다. 독립 리뷰와 GitHub squash merge는 별도 담당이며, 이 탭에서는 graph 수정이나 머지를 하지 않는다.</li>
+
+    </ul>
+  </section>
+
+  <footer>issue-plan · <a href="https://github.com/damdam6/vocabulary-study/issues/145">#145</a> · 2026-09-16</footer>
+</main>
+</body>
+</html>
