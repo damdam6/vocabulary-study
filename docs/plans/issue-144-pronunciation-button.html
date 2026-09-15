@@ -56,7 +56,8 @@
 
   <section class="card">
     <h2><span class="no">4</span>작업 단계</h2>
-    <p><strong>구현 상태: 전체 단계 완료.</strong> 컴포넌트·전용 CSS·jsdom 테스트를 추가했고 전체 테스트 486개, 린트, 빌드를 통과했다. 계획 서버는 로컬 tmux 권한 오류로 열지 못했다.</p>
+    <p><strong>구현 상태: 전체 단계 완료.</strong> 컴포넌트·전용 CSS·jsdom 테스트를 추가했고 전체 테스트 487개, 린트, 빌드를 통과했다. 계획 서버는 로컬 tmux 권한 오류로 열지 못했다.</p>
+    <p><strong>리뷰 수정 기록:</strong> PR #154 리뷰에서 지적된 다중 인스턴스 설명 ID 충돌을 <code>useId()</code> 기반 인스턴스별 안정 ID로 수정했고, 두 버튼이 각자의 <code>aria-describedby</code> 설명을 참조하는 회귀 테스트를 추가했다.</p>
     <ol class="steps">
       <li><code>PronunciationButtonProps</code>를 그대로 소비하는 표시 전용 React 컴포넌트를 추가한다. 상태별 class/아이콘/로딩 표시, <code>type=&quot;button&quot;</code>, 20px 장식 SVG, <code>aria-label</code>·<code>aria-busy</code>·<code>aria-describedby</code>를 정하고, 활성 클릭은 한 번의 <code>replay()</code> 외에 어떤 판단·submit·서비스 호출도 하지 않게 한다. <code>message</code>가 있을 때만 polite live 영역을 렌더한다.
         <span class="files"><code>src/components/PronunciationButton.tsx</code></span>
