@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>#139 [TTS-05] 중국어 음성 조회·합성·저장 서비스를 연결한다 — 작업 플랜</title>
+<style>
+  :root {
+    --bg: #f7f7f8; --card: #ffffff; --ink: #1c1c1e; --muted: #6e6e73;
+    --line: #e3e3e6; --accent: #3b6ef5; --accent-soft: #e8eefe;
+    --ok: #2e8b57; --warn: #b25e09; --code-bg: #f0f0f2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161618; --card: #202024; --ink: #ececf0; --muted: #98989f;
+      --line: #333338; --accent: #7a9bff; --accent-soft: #26304a;
+      --ok: #58c088; --warn: #e0a35c; --code-bg: #2a2a2f;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 40px 20px 80px; background: var(--bg); color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+                 "Segoe UI", "Noto Sans KR", sans-serif;
+    line-height: 1.65;
+  }
+  main { max-width: 860px; margin: 0 auto; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code {
+    font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 0.86em;
+    background: var(--code-bg); border-radius: 5px; padding: 2px 6px;
+  }
+  header { margin-bottom: 28px; }
+  .issue-chip {
+    display: inline-block; font-weight: 700; color: var(--accent);
+    background: var(--accent-soft); border-radius: 999px;
+    padding: 3px 14px; font-size: 0.95rem; margin-bottom: 10px;
+  }
+  .type-chip {
+    display: inline-block; font-weight: 600; color: var(--muted);
+    border: 1px solid var(--line); border-radius: 999px;
+    padding: 3px 12px; font-size: 0.8rem; margin-left: 8px; vertical-align: 2px;
+  }
+  h1 { font-size: 1.7rem; margin: 0 0 14px; letter-spacing: -0.02em; }
+  .meta {
+    display: flex; flex-wrap: wrap; gap: 6px 22px;
+    color: var(--muted); font-size: 0.87rem;
+  }
+  .meta b { color: var(--ink); font-weight: 600; }
+  section.card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 24px 28px; margin-top: 18px;
+  }
+  h2 {
+    font-size: 1.05rem; margin: 0 0 14px; letter-spacing: -0.01em;
+    display: flex; align-items: center; gap: 8px;
+  }
+  h2 .no {
+    color: var(--accent); font-size: 0.8rem; font-weight: 700;
+    border: 1.5px solid var(--accent); border-radius: 6px; padding: 0 6px;
+  }
+  ul, ol { margin: 0; padding-left: 22px; }
+  li { margin: 6px 0; }
+  .steps { list-style: none; padding: 0; counter-reset: step; }
+  .steps li {
+    counter-increment: step; position: relative; padding: 10px 0 10px 44px;
+    border-bottom: 1px dashed var(--line);
+  }
+  .steps li:last-child { border-bottom: none; }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 10px;
+    width: 28px; height: 28px; border-radius: 8px; background: var(--accent-soft);
+    color: var(--accent); font-weight: 700; font-size: 0.85rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .steps .files { display: block; margin-top: 4px; font-size: 0.85rem; color: var(--muted); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 0.82rem; }
+  .done-list { list-style: none; padding: 0; }
+  .done-list li { padding-left: 30px; position: relative; }
+  .done-list li::before {
+    content: ""; position: absolute; left: 2px; top: 7px; width: 15px; height: 15px;
+    border: 2px solid var(--ok); border-radius: 5px;
+  }
+  .scroll-x { overflow-x: auto; }
+  footer { margin-top: 30px; color: var(--muted); font-size: 0.8rem; text-align: center; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <span class="issue-chip"><a href="https://github.com/damdam6/vocabulary-study/issues/139">#139</a></span><span class="type-chip">기능 개선 · 구현·검증 완료</span>
+    <h1>[TTS-05] 중국어 음성 조회·합성·저장 서비스를 연결한다</h1>
+    <div class="meta">
+      <span><b>damdam6/vocabulary-study</b></span>
+      <span>브랜치 <b><code>feat/139-chinese-audio-service</code></b> ← <code>feat/ch-sound</code></span>
+      <span>라벨 <b>enhancement</b></span>
+      <span>2026-09-16</span>
+    </div>
+  </header>
+
+  <section class="card">
+    <h2><span class="no">1</span>요약</h2>
+    <p>검증된 입력으로 비공개 R2를 먼저 조회하고 정상 miss에서만 Qwen을 한 번 호출하는 서비스를 만든다. 조회 2초·합성 12초·저장과 경합 재조회 합계 2초의 예산을 적용하며, 저장 실패에도 검증된 생성 MP3를 반환한다. 이 문서는 구현 전 계획이며 실제 키·R2·음질·모바일 검증은 수행하지 않았다. 계획 완료 후 root가 별도 Terra high 구현 탭으로 인계한다.</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">2</span>현황 분석</h2>
+    
+    <ul>
+<li><b>기준과 선행 결과.</b> HEAD는 <code>e575e66b20f2f3d6ac6217f43436080291660f2f</code>. #136의 PR <a href="https://github.com/damdam6/vocabulary-study/pull/155">#155</a>와 #138의 PR <a href="https://github.com/damdam6/vocabulary-study/pull/160">#160</a>는 모두 <code>feat/ch-sound</code>에 MERGED이며 graph도 done이다. 시작 시 작업 트리는 clean, 적용되는 상위·하위 AGENTS.md는 없었다. 이슈 본문과 comments를 조회했으며 댓글은 0개다.</li>
+<li><b>서비스만 미구현.</b> <code>worker/lib/tts/service.ts</code>는 아직 없다. <code>docs/architecture/chinese-tts-audio.md:125</code>·<code>:221</code>은 서비스가 조합 정책을, #140이 인증·HTTP·ctx를 소유한다고 정한다. 현재 <code>worker/index.ts:10</code>의 fetch는 ctx 없이 기존 인증·학습 라우트를 처리한다.</li>
+<li><b>저장 모듈은 개별 작업만 제공.</b> <code>worker/lib/tts/storage.ts:50</code>의 buildAudioObjectKey는 프로필·시트·정규화 A/B열·설정을 해시한다. <code>:79</code>의 createTtsAudioMetadata는 코드 포인트 수와 허용 설정을 만든다. <code>:89</code>의 createTtsAudioStorage는 주입된 검사기로 바디 전체를 검증하고 null만 miss로 반환한다. <code>:111</code>의 putIfAbsent는 saved/conflict를 반환하고 원래 비동기 작업의 실패를 전파한다. timer·재조회·재시도는 없다.</li>
+<li><b>공통 MP3 검사·제공자.</b> <code>worker/lib/tts/audio.ts:14</code>의 validateMp3는 MIME·4MiB 한도·전체 MP3 frame 경계를 검사한다. <code>worker/lib/tts/providers/qwen.ts:49</code>의 createQwenTtsProvider는 합성 완료 후 audio/contentType/billedCharacters를 반환하며, <code>:60</code>·<code>:145</code>는 취소 reason을 보존한다. adapter에는 자체 12초 timer가 없어 서비스가 이를 소유해야 한다.</li>
+<li><b>재사용할 계약.</b> <code>worker/lib/tts/types.ts:12</code>의 시간 상수, <code>:65</code>의 오류 코드·안내, <code>:112</code>의 세 가지 응답 진단 조합, <code>:119</code>의 TtsProvider를 그대로 사용한다. <code>worker/lib/tts/pronunciation.ts:4</code>·<code>:11</code>은 absent/ignored 진단과 text 전용 합성 입력을 제공한다.</li>
+<li><b>테스트 기반과 현재 한계.</b> <code>worker/lib/tts/storage.test.ts:83</code>의 저장 단위 테스트는 주로 검사 더블을 사용한다. <code>worker/lib/tts/fixtures/mp3.ts:2</code>의 구조 유효 fixture와 실제 storage·validateMp3를 서비스 테스트에 함께 연결해야 한다. <code>vitest.config.ts:1</code>은 Cloudflare 플러그인 없이 node 테스트를 실행한다. 계획 워크트리에는 node_modules가 없고 기능 테스트는 실행하지 않았다.</li>
+<li><b>실행 제약.</b> <code>worker/lib/tts/config.ts:27</code>은 flag 미설정/false를 disabled로 처리한다. 현재 <code>wrangler.jsonc</code>에는 TTS vars/binding이 없다. 이 계획은 설정을 활성화하지 않으며 실제 운영 flag 상태는 조회하지 않았다. 실제 유료 호출·리소스 생성·수동 배포는 금지다.</li>
+</ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">3</span>설계</h2>
+    
+    <h3>1. 서비스 포트와 생산용 연결</h3>
+<p><code>worker/lib/tts/service.ts</code>에서 서비스 전용 타입과 팩터리를 내보낸다. 핵심 팩터리 <code>createTtsAudioService</code>는 <code>storage: ReturnType&lt;typeof createTtsAudioStorage&gt;</code>, <code>provider: TtsProvider</code>, clock, <code>registerBackgroundTask: (promise: Promise&lt;unknown&gt;) =&gt; void</code>를 받는다. clock은 <code>now / setTimeout / clearTimeout</code>의 최소 포트이며 기본 구현은 단조 시간과 런타임 timer를 사용한다. 서비스 호출 입력은 <code>{ profile: Pick&lt;Profile, "id" | "sheetId"&gt;, input: NormalizedTtsInput, config: TtsConfig, signal: AbortSignal }</code>이다.</p>
+<p>같은 파일의 얇은 생산용 팩터리 <code>createR2TtsAudioService</code>는 bucket을 받아 <code>createTtsAudioStorage(bucket, validateMp3)</code>를 구성하고 핵심 서비스에 위임한다. provider는 이미 검증된 설정과 시크릿으로 구성되어 주입된다. 설정 검증·인증·키 조회·Request/Response는 서비스에 넣지 않는다. #140은 이 팩터리와 현재 config/provider를 연결하며 두 설정이 일치하도록 한다. 함수 이름은 구현에서 일관되게 조정할 수 있으나 실제 검사기 연결과 테스트용 저장 포트는 반드시 남긴다.</p>
+<p>결과는 <code>TtsResponseDiagnostics &amp; { audio: Uint8Array; contentType: "audio/mpeg"; pronunciationDecision: PronunciationDecision; billedCharacters?: number }</code> 형태로 정한다. pronunciation/revision은 현재 요청에서 계산한다. billedCharacters는 실제 합성 결과에 있을 때만 유지하며 경합 승자 바이트를 반환해도 이번 요청에서 발생한 합성 계량은 관측할 수 있게 한다. 저장 객체의 과거 진단 metadata를 응답으로 복사하지 않는다.</p>
+<p><code>TtsServiceError</code>는 기존 <code>TTS_ERROR_RESPONSES</code>의 code/status/message를 사용한다. 초기 조회 실패는 <code>tts_storage_unavailable</code>, 합성 deadline은 <code>tts_timeout</code>이다. Qwen의 정규화된 <code>tts_unavailable / tts_upstream_error</code>는 유지하고 알려지지 않은 제공자 실패는 안전한 <code>tts_upstream_error</code>로 바꾼다. 사용자 취소는 signal.reason을 보존하고 timeout이나 저장소 오류로 바꾸지 않는다. HTTP 직렬화는 #140의 책임이다.</p>
+<h3>2. 단계와 시간 예산</h3>
+<div class="scroll-x"><table><thead><tr><th>단계</th><th>예산·행동</th><th>종료 결과</th></tr></thead><tbody>
+<tr><td>준비</td><td>진입 및 키 해시 await 이후 취소 확인. buildAudioObjectKey·decidePronunciation·createSynthesisInput 재사용.</td><td>취소되면 get/provider/put 모두 시작하지 않음.</td></tr>
+<tr><td>최초 조회</td><td>storage.get 호출 직전부터 하나의 2초 deadline. metadata·stream read·MP3 검사까지 포함.</td><td>유효 hit → STORED/PRESENT. 정상 null만 합성. 예외·timeout·손상 → 503용 코드, 합성 0회.</td></tr>
+<tr><td>합성</td><td>miss 후 시작 직전에 12초 deadline/timer 하나 생성. 요청 취소와 합성 timeout을 하나의 AbortController에 연결해 provider에 전달. await 이후 실제 MP3도 검사하고 만료·취소 재확인.</td><td>완성 MP3만 저장. 제공자 실패·부분/빈/과대/비 MP3는 put 0회. timeout → 504용 코드.</td></tr>
+<tr><td>저장</td><td>검증된 생성 바이트의 putIfAbsent 시작부터 하나의 2초 deadline. put 경합 시 같은 deadline의 남은 시간으로 get 한 번.</td><td>saved → GENERATED/SAVED. conflict 후 유효 hit → 승자 bytes, STORED/PRESENT. put 실패·초과 또는 경합 재조회 실패/null/손상/초과 → 생성 bytes, GENERATED/UNCONFIRMED.</td></tr>
+</tbody></table></div>
+<p>deadline을 절대 시각으로 보관하고 각 await 완료 시 <code>clock.now() &gt;= deadline</code> 여부를 확인한다. event loop 지연·동기 검증 때문에 timer callback보다 늦은 성공이 먼저 관측돼도 예산 초과를 성공 처리하지 않는다. 경합 재조회에 새 2초를 부여하지 않으며 남은 시간이 0이면 get을 시작하지 않는다. 세 I/O 단계 예산은 최대 16초이고 키 해시·HTTP 전송은 이 수치와 구분한다.</p>
+<p>서비스가 기다리는 Promise는 취소·deadline에서도 종료되도록 한다. signal을 무시하는 provider/저장 더블의 늦은 resolve/reject가 다음 단계를 재개하거나 미처리 rejection을 만들면 안 된다. 합성 timer는 adapter가 만들지 않으며 모든 정상·오류·취소 경로에서 timer·요청 abort listener를 제거한다. 이미 만료된 합성 signal을 저장 단계에 재사용하지 않는다.</p>
+<h3>3. 원래 put의 수명과 관측</h3>
+<p>원래 <code>putPromise = storage.putIfAbsent(...)</code>를 보관하고 즉시 양쪽 settle handler를 붙인다. <code>putPromise.then(onSavedOrConflict, onFailure)</code>로 파생한 관측 Promise를 작업 등록 포트에 <b>저장 시작마다 한 번</b> 넘긴다. 제한 시간용 race Promise를 등록해서는 안 된다. foreground 결과와 관계없이 등록된 Promise는 원래 put이 끝날 때까지 pending이어야 한다.</p>
+<p>서비스 전용 관측 포트는 saved/conflict/failed와 elapsedMs, 요청 상관 식별자 및 허용된 설정 진단만 받게 한다. 기본 동작도 안전한 구조화 로그로 실제 결과를 남기고 테스트는 observer를 주입한다. 원문·병음·시트 ID·시크릿·원래 예외 객체를 관측 데이터에 넣지 않는다. observer 또는 등록 함수가 예외를 던져도 이미 검증한 생성 음성을 버리지 않고 원래 Promise의 rejection handler를 유지한다. 등록 실패는 관측하고 백그라운드 실행 보장을 주장하지 않는다.</p>
+<p>저장 대기 중 사용자 취소는 foreground를 취소 reason으로 종료하되 이미 시작한 put의 관측 Promise를 유지한다. 취소 후 경합 재조회·재합성·추가 put은 하지 않는다. MP3 완성과 put 시작 전 취소가 관측되면 새 저장은 시작하지 않는다. timeout 뒤 늦게 저장되어도 이미 반환한 UNCONFIRMED 결과를 바꾸지 않는다. R2 기다리기 중단은 원격 R2 작업 자체의 취소를 의미하지 않는다.</p>
+<h3>4. 범위와 후속 소비자</h3>
+<p>주 변경은 <code>service.ts</code>·<code>service.test.ts</code>와 이 계획 파일이다. 필요하면 서비스 전용 테스트 fixture를 추가하고 아키텍처 §2.5/§4/§6.1의 서비스 계약만 보충한다. 공통 타입·MP3 파서·저장소·Qwen을 중복 구현하지 않는다. #140의 라우트·인증·headers·words·ctx wiring, #149의 실제 binding·생성 Env, UI/Sheets/학습 큐는 범위 밖이다. 전역 in-flight 맵·Cache API·자동 재합성·TTL·삭제·다른 제공자로의 전환은 추가하지 않는다.</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">4</span>작업 단계</h2>
+    <ol class="steps">
+      
+      <li><label><input type="checkbox" checked> 서비스 타입·팩터리·오류와 생산용 storage+validateMp3 연결을 작성했다.</label><span class="files"><code>worker/lib/tts/service.ts</code> (신규), 참조: <code>types.ts</code>·<code>storage.ts</code>·<code>audio.ts</code>·<code>pronunciation.ts</code></span></li>
+<li><label><input type="checkbox" checked> 주입 clock으로 단계 deadline/취소 대기를 구현하고 2초 조회의 hit/null/오류 분기를 고정했다. 해시 이후 취소와 늦은 조회 결과를 차단했다.</label><span class="files"><code>worker/lib/tts/service.ts</code>, <code>worker/lib/tts/service.test.ts</code> (신규)</span></li>
+<li><label><input type="checkbox" checked> 정상 miss에서만 12초 합성을 한 번 실행하고 text 전용 입력·결과 MP3 검증·오류 매핑·signal 정리를 연결했다.</label><span class="files"><code>worker/lib/tts/service.ts</code>, <code>worker/lib/tts/service.test.ts</code>; 실제 adapter 참조 <code>providers/qwen.ts</code></span></li>
+<li><label><input type="checkbox" checked> 하나의 2초 예산에 조건부 저장·경합 재조회를 묶고 원래 put의 늦은 성공/실패 관측을 등록했다.</label><span class="files"><code>worker/lib/tts/service.ts</code>, <code>worker/lib/tts/service.test.ts</code></span></li>
+<li><label><input type="checkbox" checked> 실제 storage+validateMp3와 실제 Qwen adapter 조합을 포함한 서비스 테스트를 구현했다.</label><span class="files"><code>worker/lib/tts/service.test.ts</code>, 재사용 <code>worker/lib/tts/fixtures/mp3.ts</code></span></li>
+<li><label><input type="checkbox" checked> 관련 테스트와 전체 test/lint/build를 실행하고 결과·미검증 사항과 #140 소비 계약을 기록했다.</label><span class="files"><code>docs/plans/issue-139-chinese-audio-service.html</code>, 로컬 기록 <code>.issue-codex/interactive-state.json</code></span></li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">5</span>구현·검증 기록</h2>
+    <ul>
+      <li><b>구현.</b> <code>createTtsAudioService</code>가 R2 hit/miss·합성·조건부 저장과 경합 재조회 정책을 소유하고, <code>createR2TtsAudioService</code>가 실제 storage와 <code>validateMp3</code>를 연결한다. HTTP·인증·ctx 연결은 #140의 소유로 남겼다.</li>
+      <li><b>자동 검증.</b> <code>npm test -- worker/lib/tts/service.test.ts worker/lib/tts/storage.test.ts worker/lib/tts/audio.test.ts worker/lib/tts/providers/qwen.test.ts</code>는 4 파일·40 테스트, <code>npm test</code>, <code>npm run lint</code>, <code>npm run build</code>는 통과했다. build는 권한 있는 로컬 환경에서 Wrangler 로그 기록까지 재확인했다.</li>
+      <li><b>미검증.</b> 실제 <code>DASHSCOPE_API_KEY</code> 주입·유료 모델 호출/과금·실제 비공개 R2의 읽기·쓰기·경합·지연, 청취/디코딩 품질, 모바일 브라우저는 수행하지 않았다. <code>TTS_ENABLED=false</code>를 유지했고 배포·리소스 생성은 하지 않았다.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">6</span>리스크</h2>
+    <div class="scroll-x">
+    <table>
+      <thead><tr><th>리스크</th><th>영향</th><th>완화책</th></tr></thead>
+      <tbody>
+        
+        <tr><td>조회 장애를 miss로 오인</td><td>불필요한 유료 합성·손상 반환</td><td>null만 miss, 실제 stream/검사기 통합 테스트에서 provider 0회 확인.</td></tr>
+<tr><td>단계 deadline 재설정</td><td>2+12+2초보다 대기 증가</td><td>절대 시각·남은 예산 사용, put 1.8초 + reget 0.2초 경계 검증.</td></tr>
+<tr><td>timeout race만 waitUntil에 등록</td><td>늦은 저장 작업과 실패 유실</td><td>원래 put 기반 관측 Promise를 시작 즉시 등록하고 pending→late settle 검증.</td></tr>
+<tr><td>취소/late 결과 경쟁</td><td>추가 합성·저장 또는 timeout 오분류</td><td>한 번만 settle, abort reason 보존, 단계 경계 재확인, 모든 timer/listener 정리.</td></tr>
+<tr><td>저장 성공 관측과 응답 결과 혼동</td><td>UNCONFIRMED를 확정 저장 실패/성공으로 해석</td><td>foreground source/storage와 late put 상태를 별도로 기록.</td></tr>
+<tr><td>동시 최초 요청</td><td>중복 합성 과금 가능</td><td>조건부 put으로 덮어쓰기 방지. 전역 합성 1회는 보장하지 않고 테스트도 그렇게 해석하지 않음.</td></tr>
+<tr><td>더블과 합성 MP3 fixture의 한계</td><td>실환경 품질·연결·R2 수명을 증명하지 못함</td><td>키 주입·모델 접근·실제 R2·청취·모바일·실측 지연은 출시 미검증으로 명시.</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">7</span>테스트 계획</h2>
+    <ul>
+      
+      <li><b>명령.</b> 구현 탭에서 잠금 파일에 맞는 의존성을 준비한 뒤 <code>npm test -- worker/lib/tts/service.test.ts worker/lib/tts/storage.test.ts worker/lib/tts/audio.test.ts worker/lib/tts/providers/qwen.test.ts</code>. 완료 게이트는 <code>npm test</code>, <code>npm run lint</code>, <code>npm run build</code>다. build는 배포 명령과 구분한다. 계획 단계에서는 실행하지 않는다.</li>
+<li><b>조회 표.</b> 유효 hit → 같은 바이트·STORED/PRESENT·provider/put 0회. 정상 null → provider 1회. get sync throw/reject·영구 pending·정확히 2초·늦은 null/hit/reject → tts_storage_unavailable·provider 0회. 실제 storage에서 MIME·size·손상 MP3·stream 오류와 바디가 늦는 경우를 포함한다.</li>
+<li><b>합성 표.</b> miss 이후 타이머가 시작하고 provider input은 text만 포함. Qwen 오류 503/502 유지, unknown 오류 안전화. 12초에 tts_timeout과 adapter signal.abort; 12초 전 완료는 다음 단계. 빈/부분/비 MP3/4MiB 초과 결과·합성 실패·취소·늦은 합성 성공은 put 0회. 동기 MP3 검사 완료 뒤 clock deadline도 확인한다.</li>
+<li><b>저장 표.</b> saved → GENERATED/SAVED. conflict → 같은 key 재조회 한 번 후 승자 바이트·STORED/PRESENT. put throw/reject/pending, 경합 reget null/reject/invalid/pending → 원래 생성 바이트·GENERATED/UNCONFIRMED. put 1,800ms + reget 200ms에서 종료하며 2,000ms를 새로 부여하지 않음. 잔여 0ms이면 재조회 0회. 어떤 저장 실패도 재합성/두 번째 put을 만들지 않음.</li>
+<li><b>늦은 저장과 등록.</b> 등록한 Promise가 foreground 2초 timeout 뒤에도 pending임을 확인한 후 put의 늦은 saved/conflict/reject를 각각 settle시켜 관측 내용·한 번 등록·fulfilled 관측 Promise·미처리 rejection 0개를 확인. 저장 중 사용자 취소 뒤에도 같은 검증. observer/등록 함수 throw에도 생성 결과를 유지하며 원래 rejection을 회수.</li>
+<li><b>취소·자원.</b> 진입 전, 키 생성 중, 조회 중, miss 직후, 합성 중, 합성 완료와 put 사이, 저장·경합 재조회 중 취소를 재현한다. 사용자 reason과 timeout을 구분하고 종료 뒤 timer·abort listener를 해제한다. 동시에 두 요청을 실행해 한 요청의 취소/예산이 다른 요청을 중단하지 않음도 확인.</li>
+<li><b>실제 모듈 조합.</b> bucket 더블 위에 생산용 팩터리의 실제 storage+validateMp3를 사용해 miss→생성→저장→새 서비스 인스턴스 hit(후속 provider 0회), malformed cached object 차단, 조건부 put 경합을 확인한다. 유효하고 서로 다른 생성/승자 MP3 fixture로 반환 바이트 출처를 구별한다. 최소 한 사례에서 실제 createQwenTtsProvider와 Upgrade/socket 더블을 연결해 service의 12초 signal이 adapter까지 전달되고 socket을 닫는지 확인한다.</li>
+<li><b>계약·개인정보.</b> absent/ignored/revision은 현재 요청 기준. 같은 A열·다른 B열은 provider text가 같고 key는 다르다. 프로필/시트/rate/revision 변화는 실제 key builder를 통과한다. 숫자 문자 수는 code point, billedCharacters는 제공될 때만 유지. sentinel 원문·병음·키·시트 ID·upstream 원문 예외가 서비스 오류·관측 데이터에 없음.</li>
+<li><b>실환경 미검증.</b> 실제 DASHSCOPE_API_KEY 주입·모델 접근·과금·청취·모바일·실제 R2 저장/재조회/경합·지역/기기 변경·실측 latency는 실행하지 않는다. 합성 fixture는 MP3 구조 검사만 검증하며 음질·디코딩 성공을 보장하지 않는다.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">8</span>완료 조건</h2>
+    <ul class="done-list">
+      
+      <li>R2 hit의 provider 호출 0회, 정상 null miss에서만 한 번 호출한다.</li>
+<li>조회 예외·2초 초과·바디 오류·손상은 합성 없이 tts_storage_unavailable로 끝난다.</li>
+<li>2/12/2초 단계 예산과 요청 취소가 유지되고 timer/listener/늦은 Promise가 정리된다.</li>
+<li>조건부 put·경합·실패·timeout이 세 응답 조합에 맞게 수렴하며 합성 실패·부분 파일은 저장하지 않는다.</li>
+<li>원래 put 기반 작업 등록으로 늦은 성공·실패를 관측하고 미처리 rejection이 없다. 이미 시작한 저장은 취소 뒤에도 관측한다.</li>
+<li>서비스 및 테스트·생산용 validateMp3 연결·후속 소비 계약을 함께 완료한다. PRD AC-08/10/12/13/19~23 중 서비스 책임을 검증하며 UI·실환경 AC 전체 완료로 확대 해석하지 않는다.</li>
+<li>구현 탭에서 관련 테스트와 npm test/lint/build가 통과하고 실제 검증 한계를 기록한다. TTS_ENABLED=false를 유지한다.</li>
+<li>구현 탭이 이 계획을 최종 체크 상태로 포함해 커밋·push하고 ready PR을 base feat/ch-sound, head feat/139-chinese-audio-service, Closes #139로 생성한다. 독립 리뷰·squash merge는 root가 지정한 리뷰 탭에서 진행한다.</li>
+<li>계획 탭은 HTML 제공·구조/HTTP 검증·SHA-256/state 기록·root plan-done 콜백까지만 수행한다. 구현·커밋·push·다음 모델 시작은 하지 않는다.</li>
+    </ul>
+  </section>
+
+  <footer>issue-plan · <a href="https://github.com/damdam6/vocabulary-study/issues/139">#139</a> · 2026-09-16</footer>
+</main>
+</body>
+</html>
