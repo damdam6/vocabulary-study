@@ -38,14 +38,15 @@
 
 ## 실행과 인계
 
-- 저장소 로컬 설정은 git-common-dir 아래 `issue-codex-run/config.json`, 단계 실행기는 `issue-codex-run/run.py`다. Codex 전역 기본값이나 다른 저장소 스킬을 변경하지 않는다.
-- `issue-continue`가 선행 이슈의 실제 머지를 확인하고 실행 가능한 이슈의 worktree와 `issue-#번호` cmux workspace를 준비한다. 출발점은 최신 `origin/feat/ch-sound`이며 PR base도 명시한다.
-- 실행기는 해당 이슈의 복잡도 설정을 읽어 계획·구현·리뷰를 각각 별도 `codex exec --model … -c model_reasoning_effort=…` 세션으로 실행한다. 모델 이름을 문서에만 적고 동일 세션을 계속 사용하는 방식은 아니다.
-- 계획 단계는 `issue-plan`의 조사와 계획 HTML 작성을 수행하고 runner에 반환한다. 자동 승인된 다음 단계는 지정 구현 모델이 `issue-work`로 수행한다. 계획 단계는 코드를 구현하지 않는다.
-- 독립 리뷰 모델이 실제 변경과 수용 기준을 검토하고 `issue-review`의 CI·GitHub 리뷰·squash merge 절차를 진행한다. 수정이 필요하면 지정 구현 모델을 다시 실행하고, 변경된 HEAD를 다시 리뷰한다. 검토한 HEAD와 실제 PR HEAD를 일치시킨 뒤 머지한다.
-- 기존 GitHub AI 리뷰 workflow는 별도로 유지한다. 이번 표는 이 그래프가 직접 실행하는 Codex 단계의 배정이다.
-- 각 worktree의 `.issue-codex/`에 실제 모델 인자·단계 결과·리뷰·실행 상태를 남긴다. 해당 디렉터리는 공통 git exclude로 제외하며 커밋하지 않는다.
-- runner는 graph JSON을 수정하지 않고 완료/실패를 등록된 오케스트레이터 terminal surface로 알린다. 그래프 갱신과 후속 실행은 `issue-continue`가 담당한다. 원래 이슈 번호와 PR 번호를 구분한다.
-- 실제 Qwen 유료 호출·리소스 생성·운영 배포는 이번 실행에 포함하지 않는다. #149에 필요한 실제 버킷 정보가 없으면 그 이슈를 완료로 표시하지 않는다. 다른 독립 경로는 진행할 수 있다.
+- 사용자의 정정에 따라 **cmux 터미널에서 대화형 `codex`를 직접 실행**한다. Python runner·`codex exec`로 감싸는 방식은 폐기했다. 모델 배정과 자동 구현 승인은 유지한다.
+- 저장소 로컬 설정은 git-common-dir 아래 `issue-codex-run/config.json`, 대화형 절차는 `issue-codex-run/interactive.md`다. 이전 실행기는 `retired-noninteractive/`에 보관해 실행 경로에서 제외했다. Codex 전역 기본값이나 다른 저장소 스킬은 변경하지 않는다.
+- `issue-continue`가 선행 이슈의 실제 머지를 확인하고 최신 `origin/feat/ch-sound`에서 worktree와 `issue-#번호` cmux workspace를 준비한다. PR base도 명시적으로 `feat/ch-sound`를 사용한다.
+- 계획·구현·독립 리뷰는 같은 이슈 workspace의 각각 다른 Codex terminal surface에서 지정 모델로 수행한다. 직접 실행할 명령은 `codex --approve-for-me --model <model> -c 'model_reasoning_effort="<effort>"'`다. `--approve-for-me`가 workspace-write를 포함하므로 `--sandbox`를 중복 전달하지 않는다.
+- 계획은 `issue-plan`의 조사와 계획 HTML 작성, 구현은 `issue-work`의 구현·검증·커밋·push·ready PR, 리뷰는 독립 코드 검토와 `issue-review`의 CI·피드백·squash merge를 담당한다.
+- 단계 완료를 오케스트레이터에 일반 텍스트 `issue-stage #번호 plan-done` 또는 `implementation-done`으로 알린다. 오케스트레이터가 결과를 확인하고 다음 지정 모델의 대화형 Codex 탭을 연다. 이는 단계별 모델을 바꾸기 위한 자동 인계이며 새 사용자 승인을 요구하지 않는다.
+- 리뷰 수정은 `fix-request`/`fix-done` 콜백으로 기존 구현·리뷰 Codex 탭에 인계한다. 지정 구현 모델이 수정하고 독립 리뷰 모델이 변경된 HEAD를 다시 검토한다.
+- 콜백에는 graph에 등록된 **workspace UUID와 surface UUID를 모두 명시**한다. 최종 `issue-continue #번호`는 실제 PR MERGED·base·검토 HEAD를 확인한 뒤에만 처리한다. 기존 GitHub AI 리뷰 workflow는 별도로 유지한다.
+- 각 worktree의 `.issue-codex/interactive-state.json`에 현재 단계·surface·산출물·PR·검증 결과를 남긴다. `.issue-codex/`는 커밋하지 않는다. 중단된 비대화형 `run-state.json`은 현재 진행 상태의 기준이 아니다.
+- 실제 유료 TTS 호출·리소스 생성·운영 배포는 포함하지 않는다. #149의 실제 버킷 정보가 없으면 완료로 표시하지 않으며 다른 독립 경로는 진행할 수 있다.
 
-재진입 시 `.git/issue-graph.json`과 `issue-codex-run/config.json`, 해당 worktree의 `.issue-codex/run-state.json`을 함께 읽는다. 이 문서는 배정 정책이며 현재 실행 상태는 런타임 기록이 기준이다.
+재진입 시 `.git/issue-graph.json`, `issue-codex-run/config.json`, `interactive.md`, 해당 worktree의 `.issue-codex/interactive-state.json`과 실제 Codex 화면을 함께 확인한다. 이 문서는 배정 정책이며 현재 실행 상태는 런타임 기록이 기준이다.
