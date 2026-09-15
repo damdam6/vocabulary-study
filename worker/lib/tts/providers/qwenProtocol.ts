@@ -61,6 +61,7 @@ export function createQwenEventProcessor(taskId: string): QwenEventProcessor {
   let state: "awaiting-start" | "streaming" | "finished" | "failed" = "awaiting-start";
   let jsonBytes = 0;
   let audioBytes = 0;
+  let awaitingBinary = false;
   let billedCharacters: number | undefined;
   let completion: Extract<QwenProtocolUpdate, { status: "completed" }> | undefined;
   const chunks: Uint8Array[] = [];
@@ -74,9 +75,10 @@ export function createQwenEventProcessor(taskId: string): QwenEventProcessor {
   const push = (message: string | Uint8Array): QwenProtocolUpdate => {
     if (state === "finished" || state === "failed") return failed();
     if (message instanceof Uint8Array) {
-      if (state !== "streaming" || message.length === 0 || audioBytes + message.length > MAX_TTS_AUDIO_BYTES) return failed();
+      if (state !== "streaming" || !awaitingBinary || message.length === 0 || audioBytes + message.length > MAX_TTS_AUDIO_BYTES) return failed();
       chunks.push(message);
       audioBytes += message.length;
+      awaitingBinary = false;
       return { status: "pending" };
     }
 
@@ -85,6 +87,7 @@ export function createQwenEventProcessor(taskId: string): QwenEventProcessor {
     jsonBytes += size;
     const event = parseEvent(message);
     if (!event || event.header.task_id !== taskId) return failed();
+    if (awaitingBinary && event.header.event !== "task-failed") return failed();
 
     switch (event.header.event) {
       case "task-started":
@@ -93,7 +96,9 @@ export function createQwenEventProcessor(taskId: string): QwenEventProcessor {
         return { status: "pending" };
       case "result-generated":
         if (state !== "streaming" || !isRecord(event.payload.output)) return failed();
+        if (event.payload.output.type !== "sentence-begin" && event.payload.output.type !== "sentence-synthesis" && event.payload.output.type !== "sentence-end") return failed();
         billedCharacters = readUsage(event.payload, billedCharacters);
+        awaitingBinary = event.payload.output.type === "sentence-synthesis";
         return { status: "pending" };
       case "task-failed":
         return failed(UNAVAILABLE_CODES.has(event.header.error_code ?? "") ? "tts_unavailable" : "tts_upstream_error");

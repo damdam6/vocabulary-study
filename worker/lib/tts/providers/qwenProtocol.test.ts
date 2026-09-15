@@ -70,10 +70,12 @@ describe("createQwenEventProcessor", () => {
     const processor = createQwenEventProcessor(TASK_ID);
     const audio = createMp3Fixture(2);
     expect(processor.push(event("task-started"))).toEqual({ status: "pending" });
-    expect(processor.push(event("result-generated", { output: { type: "sentence-synthesis" }, usage: { characters: 2 } }))).toEqual({ status: "pending" });
-    processor.push(audio.subarray(0, 173));
+    expect(processor.push(event("result-generated", { output: { type: "sentence-begin" } }))).toEqual({ status: "pending" });
+    expect(processor.push(event("result-generated", { output: { type: "sentence-synthesis" } }))).toEqual({ status: "pending" });
+    processor.push(audio.subarray(0, 384));
+    processor.push(event("result-generated", { output: { type: "sentence-synthesis" } }));
+    processor.push(audio.subarray(384));
     processor.push(event("result-generated", { output: { type: "sentence-end" }, usage: { characters: 4 } }));
-    processor.push(audio.subarray(173));
     const result = processor.push(event("task-finished", { usage: { characters: 5 } }));
     expect(result.status).toBe("completed");
     if (result.status === "completed") {
@@ -87,6 +89,7 @@ describe("createQwenEventProcessor", () => {
     for (const characters of [undefined, "4", -1, 1.5, 9_007_199_254_740_992]) {
       const processor = createQwenEventProcessor(TASK_ID);
       processor.push(event("task-started"));
+      processor.push(event("result-generated", { output: { type: "sentence-synthesis" } }));
       processor.push(createMp3Fixture(1));
       const result = processor.push(event("task-finished", characters === undefined ? {} : { usage: { characters } }));
       expect(result).not.toHaveProperty("billedCharacters");
@@ -114,6 +117,7 @@ describe("createQwenEventProcessor", () => {
   it("fails terminal reuse, premature end, empty and corrupt completed audio", () => {
     const completed = createQwenEventProcessor(TASK_ID);
     completed.push(event("task-started"));
+    completed.push(event("result-generated", { output: { type: "sentence-synthesis" } }));
     completed.push(createMp3Fixture(1));
     completed.push(event("task-finished"));
     expect(completed.push(event("task-finished"))).toEqual({ status: "failed", code: "tts_upstream_error" });
@@ -122,7 +126,10 @@ describe("createQwenEventProcessor", () => {
     for (const audio of [new Uint8Array(), new TextEncoder().encode("not mp3")]) {
       const processor = createQwenEventProcessor(TASK_ID);
       processor.push(event("task-started"));
-      if (audio.length > 0) processor.push(audio);
+      if (audio.length > 0) {
+        processor.push(event("result-generated", { output: { type: "sentence-synthesis" } }));
+        processor.push(audio);
+      }
       expect(processor.push(event("task-finished"))).toEqual({ status: "failed", code: "tts_upstream_error" });
     }
   });
@@ -145,18 +152,33 @@ describe("createQwenEventProcessor", () => {
 
     const processor = createQwenEventProcessor(TASK_ID);
     processor.push(event("task-started"));
+    processor.push(event("result-generated", { output: { type: "sentence-synthesis" } }));
     expect(processor.push(new Uint8Array(MAX_TTS_AUDIO_BYTES))).toEqual({ status: "pending" });
+    processor.push(event("result-generated", { output: { type: "sentence-synthesis" } }));
     expect(processor.push(new Uint8Array(1))).toEqual({ status: "failed", code: "tts_upstream_error" });
   });
 
   it("enforces the cumulative JSON limit", () => {
     const processor = createQwenEventProcessor(TASK_ID);
     processor.push(event("task-started"));
-    const base = event("result-generated", { output: {} });
+    const base = event("result-generated", { output: { type: "sentence-begin" } });
     const large = base + " ".repeat(MAX_TTS_PROVIDER_JSON_BYTES - new TextEncoder().encode(base).length);
     for (let index = 0; index < 15; index += 1) {
       expect(processor.push(large)).toEqual({ status: "pending" });
     }
     expect(processor.push(large)).toEqual({ status: "failed", code: "tts_upstream_error" });
+  });
+
+  it.each([
+    ["binary without sentence-synthesis", [createMp3Fixture(1)]],
+    ["JSON while binary is expected", [event("result-generated", { output: { type: "sentence-synthesis" } }), event("result-generated", { output: { type: "sentence-end" } })]],
+    ["finish while binary is expected", [event("result-generated", { output: { type: "sentence-synthesis" } }), event("task-finished")]],
+    ["duplicate binary", [event("result-generated", { output: { type: "sentence-synthesis" } }), createMp3Fixture(1), createMp3Fixture(1)]],
+  ])("rejects result/binary ordering violation: %s", (_name, messages) => {
+    const processor = createQwenEventProcessor(TASK_ID);
+    processor.push(event("task-started"));
+    let result = { status: "pending" } as ReturnType<typeof processor.push>;
+    for (const message of messages) result = processor.push(message);
+    expect(result).toEqual({ status: "failed", code: "tts_upstream_error" });
   });
 });
