@@ -169,3 +169,22 @@ describe("프로필별 시트 격리 — GET /api/tabs", () => {
     }
   });
 });
+
+describe("프로필별 TTS capability", () => {
+  it("설정이 유효해도 generic 프로필은 words 계약을 유지하며 capability를 끈다", async () => {
+    const { urls } = stubSheetsFetch();
+    const configuredEnv = makeEnv({
+      PROFILES: JSON.stringify(PROFILES),
+      TTS_ENABLED: "true",
+      DASHSCOPE_API_KEY: "test-only-key",
+      TTS_AUDIO: { get() {}, put() {} },
+    });
+    const res = await worker.fetch(makeRequest("/api/words", { Authorization: "Bearer pw-en" }), configuredEnv);
+    const body = (await res.json()) as { tts: unknown; words: unknown[] };
+
+    expect(res.status).toBe(200);
+    expect(body.tts).toEqual({ enabled: false });
+    expect(body.words).toHaveLength(1);
+    for (const url of urls) expect(url).toContain("/spreadsheets/sheet-en");
+  });
+});
