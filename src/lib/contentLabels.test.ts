@@ -6,6 +6,7 @@ import {
   modeChipLabel,
   registerPlaceholder,
   registerTableHeaders,
+  supportsPronunciation,
 } from "./contentLabels";
 
 describe("modeChipLabel", () => {
@@ -17,6 +18,13 @@ describe("modeChipLabel", () => {
   it("generic은 중립 문구", () => {
     expect(modeChipLabel("generic", "m1")).toBe("단어 → 뜻");
     expect(modeChipLabel("generic", "m2")).toBe("뜻 → 단어");
+  });
+});
+
+describe("supportsPronunciation", () => {
+  it("zh만 음성 세션을 지원한다", () => {
+    expect(supportsPronunciation("zh")).toBe(true);
+    expect(supportsPronunciation("generic")).toBe(false);
   });
 });
 

@@ -5,11 +5,14 @@ import { headwordLang } from '../lib/contentLabels.ts'
 import { hanziFontSize } from '../lib/hanziSize.ts'
 import type { ContentType } from '../lib/api.ts'
 import type { StudyQuestion } from '../lib/studySession.ts'
+import type { PronunciationBinding } from '../lib/ttsTypes.ts'
 
 interface Mode1CardProps {
   question: StudyQuestion
   contentType: ContentType
   onJudged: (correct: boolean) => void
+  /** #145에서 선언·전달만 한다. 실제 공개 시점 연결은 #147이 소유한다. */
+  pronunciation?: PronunciationBinding
 }
 
 const TRANSITION_FALLBACK_BUFFER_MS = 100

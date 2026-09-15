@@ -8,12 +8,15 @@ import { useState, type FormEvent } from 'react'
 import { headwordLang, mode2Hint, mode2Placeholder } from '../lib/contentLabels.ts'
 import { gradeMode2, type StudyQuestion } from '../lib/studySession.ts'
 import type { ContentType } from '../lib/api.ts'
+import type { PronunciationBinding } from '../lib/ttsTypes.ts'
 
 interface Mode2CardProps {
   question: StudyQuestion
   contentType: ContentType
   onJudged: (correct: boolean) => void
   onProceed: () => void
+  /** #145에서 선언·전달만 한다. 결과 공개와 재생 UI는 #148이 소유한다. */
+  pronunciation?: PronunciationBinding
 }
 
 function Mode2Card({ question, contentType, onJudged, onProceed }: Mode2CardProps) {

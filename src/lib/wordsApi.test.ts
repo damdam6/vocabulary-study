@@ -55,6 +55,7 @@ describe("fetchWords", () => {
       words: [WORD],
       profile: PROFILE,
       settings: { sessionLimit: 30 },
+      tts: { enabled: false },
     });
 
     const [path, init] = fetchMock.mock.calls[0] as [string, RequestInit];
@@ -82,7 +83,9 @@ describe("fetchWords", () => {
     it("settings가 아예 없으면 sessionLimit 60으로 폴백한다", async () => {
       vi.stubGlobal("fetch", vi.fn().mockResolvedValue(Response.json({ words: [], profile: PROFILE })));
 
-      await expect(fetchWords()).resolves.toEqual({ words: [], profile: PROFILE, settings: { sessionLimit: 60 } });
+      await expect(fetchWords()).resolves.toEqual({
+        words: [], profile: PROFILE, settings: { sessionLimit: 60 }, tts: { enabled: false },
+      });
     });
 
     it.each([
@@ -116,6 +119,39 @@ describe("fetchWords", () => {
       const result = await fetchWords();
 
       expect(result.settings).toEqual({ sessionLimit: 1 });
+    });
+  });
+
+  describe("tts capability 정규화 (#145) — 구 서버와 손상 응답은 off", () => {
+    it.each([
+      ["누락", undefined],
+      ["null", null],
+      ["배열", []],
+      ["문자열", "enabled"],
+      ["enabled 문자열", { enabled: "true", revision: "r1", maxTextLength: 200 }],
+      ["revision 누락", { enabled: true, maxTextLength: 200 }],
+      ["revision 공백", { enabled: true, revision: "", maxTextLength: 200 }],
+      ["revision 허용 외 문자", { enabled: true, revision: "r 1", maxTextLength: 200 }],
+      ["revision 65자", { enabled: true, revision: "a".repeat(65), maxTextLength: 200 }],
+      ["상한 199", { enabled: true, revision: "r1", maxTextLength: 199 }],
+      ["상한 201", { enabled: true, revision: "r1", maxTextLength: 201 }],
+    ])("%s이면 off", async (_label, tts) => {
+      vi.stubGlobal("fetch", vi.fn().mockResolvedValue(Response.json({ words: [], profile: PROFILE, tts })));
+
+      await expect(fetchWords()).resolves.toMatchObject({ tts: { enabled: false } });
+    });
+
+    it("정확한 true/revision/200만 켠다", async () => {
+      vi.stubGlobal(
+        "fetch",
+        vi.fn().mockResolvedValue(Response.json({
+          words: [], profile: PROFILE, tts: { enabled: true, revision: "r_2026-09", maxTextLength: 200 },
+        })),
+      );
+
+      await expect(fetchWords()).resolves.toMatchObject({
+        tts: { enabled: true, revision: "r_2026-09", maxTextLength: 200 },
+      });
     });
   });
 });

@@ -10,6 +10,7 @@
 
 import { apiFetch, type PublicProfile, type WordEntry, type WordsSettings } from "./api.ts";
 import { SESSION_CAP } from "./sessionQueue.ts";
+import { TTS_MAX_TEXT_LENGTH, type TtsCapability } from "./ttsTypes.ts";
 
 /** settings 미동봉(구서버) 시 폴백 — 세션 설정 플랜 §3.2. */
 const DEFAULT_SETTINGS: WordsSettings = { sessionLimit: SESSION_CAP };
@@ -18,12 +19,15 @@ export interface WordsResponse {
   profile: PublicProfile;
   words: WordEntry[];
   settings: WordsSettings;
+  /** 구 서버·잘못된 capability는 기능을 끈 값으로 정규화한다. */
+  tts: TtsCapability;
 }
 
 interface RawWordsResponse {
   profile: PublicProfile;
   words: WordEntry[];
   settings?: unknown;
+  tts?: unknown;
 }
 
 /** settings가 없거나 형태 이상(sessionLimit이 유한 양의 정수가 아님)이면 기본값으로 폴백한다(구서버 호환·방어). */
@@ -38,6 +42,26 @@ function normalizeSettings(settings: unknown): WordsSettings {
   return { sessionLimit };
 }
 
+const TTS_REVISION_RE = /^[A-Za-z0-9_-]{1,64}$/;
+
+/**
+ * words 응답의 capability는 네트워크 경계에서만 신뢰한다. enabled=true라도 revision과
+ * 공통 상한이 정확히 맞지 않으면 구 서버와 동등하게 off로 처리한다.
+ */
+export function normalizeTtsCapability(value: unknown): TtsCapability {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) return { enabled: false };
+  const { enabled, revision, maxTextLength } = value as Record<string, unknown>;
+  if (
+    enabled === true &&
+    typeof revision === "string" &&
+    TTS_REVISION_RE.test(revision) &&
+    maxTextLength === TTS_MAX_TEXT_LENGTH
+  ) {
+    return { enabled: true, revision, maxTextLength: TTS_MAX_TEXT_LENGTH };
+  }
+  return { enabled: false };
+}
+
 export async function fetchWords(signal?: AbortSignal): Promise<WordsResponse> {
   const response = await apiFetch("/api/words", { signal });
   if (!response.ok) {
@@ -45,5 +69,10 @@ export async function fetchWords(signal?: AbortSignal): Promise<WordsResponse> {
   }
   // 서버 응답에는 fetchedAt도 실려 있지만(worker/routes/words.ts), 쓰는 곳이 없어 골라내지 않고 버린다.
   const data = (await response.json()) as RawWordsResponse;
-  return { profile: data.profile, words: data.words, settings: normalizeSettings(data.settings) };
+  return {
+    profile: data.profile,
+    words: data.words,
+    settings: normalizeSettings(data.settings),
+    tts: normalizeTtsCapability(data.tts),
+  };
 }
