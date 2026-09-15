@@ -4,7 +4,7 @@
 >
 > 확정: QwenCloud / `qwen-audio-3.0-tts-flash`, 기본 음색 `longanfengyue`, 속도 1.0. API 키 발급 완료, Worker secret 이름은 `DASHSCOPE_API_KEY`. 실제 시크릿 주입·모델 접근·청취는 미검증이다.
 >
-> 이전 11개 초안을 이 문서와 TTS-01~17로 대체한다. TTS-01~17은 문서 ID이며 실제 GitHub 번호는 **#135~#151**이다. 17개 이슈와 실행 그래프를 등록했으며 모든 노드는 `pending`이다. 구현은 시작하지 않았다.
+> 이전 11개 초안을 이 문서와 TTS-01~17로 대체한다. TTS-01~17은 문서 ID이며 실제 GitHub 번호는 **#135~#151**이다. 등록 당시 17개 노드는 모두 `pending`이었다. 자동 실행은 승인됐으며 [단계별 Codex 모델 배정](chinese-tts-audio-models.md)을 따른다. 현재 진행 상태는 `.git/issue-graph.json`이 기준이다.
 >
 > 제품 요구사항: [PRD](../PRD-chinese-tts-audio.md). 기술 계약: [아키텍처](../architecture/chinese-tts-audio.md).
 
@@ -130,7 +130,7 @@ TTS-11은 TTS-12를 기다린 뒤 두 카드의 선택적 prop을 추가하고 T
 - 메인 체크아웃의 `.git/issue-graph.json`에 **17개 노드·23개 간선**, 루트 **#135**, 최종 합류 **#151**, `max_parallel=5`로 등록했다. 등록 당시 모든 노드는 `pending`이며 구현은 시작하지 않았다.
 - 기존 #127·#82의 완료 그래프는 사용자 확인 후 `.git/issue-graph-history/`에 백업했다. landing mode는 **GitHub PR + squash merge**다.
 - 오케스트레이터는 workspace `B01A3BBA-4B96-4D8C-81D8-0A1E1FA6D3EC`, terminal surface `1976924D-5F45-463C-A610-C517D7DF207F`다. 이 탭이 `/issue-continue` 완료 콜백을 받는다.
-- 시작 시 P0·P1·베이스 전달과 P2 준비 범위를 확인하고 `issue-continue`로 루트부터 진행한다. 출발점·PR base·머지·후속 갱신은 모두 **`feat/ch-sound`**여야 한다. 실행 모델은 시작 시 선택한다.
+- 시작 시 P0·P1·베이스 전달과 P2 준비 범위를 확인하고 `issue-continue`로 루트부터 진행한다. 출발점·PR base·머지·후속 갱신은 모두 **`feat/ch-sound`**여야 한다. 실행 모델은 [사용자 지정 복잡도별 정책](chinese-tts-audio-models.md)으로 배정했으며 저장소 로컬 실행기가 각 단계에 실제 적용한다.
 - 선행 PR 생성만으로 후속을 시작하지 않는다. 같은 베이스로의 머지와 graph의 `done` 상태가 기준이다. 환경 대기나 실패를 완료로 처리하지 않는다.
 
 모든 노드를 실제 이슈로 등록했으므로 실행 도중 label 노드로 새 이슈를 생성하지 않는다. 현재 실행 상태의 기준은 런타임 JSON이며 이 문서는 등록 당시의 기록이다.
