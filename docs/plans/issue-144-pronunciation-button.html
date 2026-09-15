@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>#144 [TTS-10] 공통 발음 버튼과 재생 상태 표시를 구현한다 — 작업 플랜</title>
+<style>
+  :root { --bg:#f7f7f8; --card:#fff; --ink:#1c1c1e; --muted:#6e6e73; --line:#e3e3e6; --accent:#3b6ef5; --accent-soft:#e8eefe; --ok:#2e8b57; --warn:#b25e09; --code-bg:#f0f0f2; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#161618; --card:#202024; --ink:#ececf0; --muted:#98989f; --line:#333338; --accent:#7a9bff; --accent-soft:#26304a; --ok:#58c088; --warn:#e0a35c; --code-bg:#2a2a2f; } }
+  * { box-sizing:border-box; } body { margin:0; padding:40px 20px 80px; background:var(--bg); color:var(--ink); font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Segoe UI","Noto Sans KR",sans-serif; line-height:1.65; } main { max-width:860px; margin:0 auto; } a { color:var(--accent); text-decoration:none; } a:hover { text-decoration:underline; } code { font-family:"SF Mono",ui-monospace,Menlo,monospace; font-size:.86em; background:var(--code-bg); border-radius:5px; padding:2px 6px; } header { margin-bottom:28px; } .issue-chip { display:inline-block; font-weight:700; color:var(--accent); background:var(--accent-soft); border-radius:999px; padding:3px 14px; font-size:.95rem; margin-bottom:10px; } .type-chip { display:inline-block; font-weight:600; color:var(--muted); border:1px solid var(--line); border-radius:999px; padding:3px 12px; font-size:.8rem; margin-left:8px; vertical-align:2px; } h1 { font-size:1.7rem; margin:0 0 14px; letter-spacing:-.02em; } .meta { display:flex; flex-wrap:wrap; gap:6px 22px; color:var(--muted); font-size:.87rem; } .meta b { color:var(--ink); font-weight:600; } section.card { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:24px 28px; margin-top:18px; } h2 { font-size:1.05rem; margin:0 0 14px; letter-spacing:-.01em; display:flex; align-items:center; gap:8px; } h2 .no { color:var(--accent); font-size:.8rem; font-weight:700; border:1.5px solid var(--accent); border-radius:6px; padding:0 6px; } ul,ol { margin:0; padding-left:22px; } li { margin:6px 0; } .steps { list-style:none; padding:0; counter-reset:step; } .steps li { counter-increment:step; position:relative; padding:10px 0 10px 44px; border-bottom:1px dashed var(--line); } .steps li:last-child { border-bottom:none; } .steps li::before { content:counter(step); position:absolute; left:0; top:10px; width:28px; height:28px; border-radius:8px; background:var(--accent-soft); color:var(--accent); font-weight:700; font-size:.85rem; display:flex; align-items:center; justify-content:center; } .steps .files { display:block; margin-top:4px; font-size:.85rem; color:var(--muted); } table { width:100%; border-collapse:collapse; font-size:.92rem; } th,td { text-align:left; padding:8px 12px; border-bottom:1px solid var(--line); vertical-align:top; } th { color:var(--muted); font-weight:600; font-size:.82rem; } .done-list { list-style:none; padding:0; } .done-list li { padding-left:30px; position:relative; } .done-list li::before { content:""; position:absolute; left:2px; top:7px; width:15px; height:15px; border:2px solid var(--ok); border-radius:5px; } .scroll-x { overflow-x:auto; } footer { margin-top:30px; color:var(--muted); font-size:.8rem; text-align:center; } h3 { font-size:1rem; margin:20px 0 8px; } p { margin:0 0 12px; } main,.meta > span { min-width:0; } code { overflow-wrap:anywhere; } @media (max-width:600px) { body { padding:22px 12px 50px; } section.card { padding:20px 16px; } h1 { font-size:1.35rem; } th,td { min-width:135px; padding:8px; } }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <span class="issue-chip"><a href="https://github.com/damdam6/vocabulary-study/issues/144">#144</a></span><span class="type-chip">기능 개선 · 공통 UI</span>
+    <h1>[TTS-10] 공통 발음 버튼과 재생 상태 표시를 구현한다</h1>
+    <div class="meta">
+      <span><b>damdam6/vocabulary-study</b></span>
+      <span>브랜치 <b><code>feat/144-pronunciation-button</code></b> ← <code>feat/ch-sound</code></span>
+      <span>라벨 <b>enhancement</b></span>
+      <span>2026-09-16</span>
+    </div>
+  </header>
+
+  <section class="card">
+    <h2><span class="no">1</span>요약</h2>
+    <p><code>PronunciationButton</code>을 새 표시 전용 컴포넌트와 전용 CSS로 추가한다. #135가 확정한 <code>PronunciationSnapshot</code>과 <code>replay()</code>만 입력으로 받아 준비·재생·로딩·자동 실패/차단·수동 오류·입력 불가를 일관되게 표시한다. 상태 전이, API·Audio 호출, 세션 전달과 카드 배치는 후속 이슈가 계속 소유하며, 이번 변경은 실제 TTS 호출·설정 변경·배포를 하지 않는다.</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">2</span>현황 분석</h2>
+    <ul>
+      <li><code>src/lib/ttsTypes.ts:67-77</code>는 UI가 소비할 여섯 상태(<code>idle/loading/ready/playing/blocked/error</code>), 사용 가능 여부, 입력 불가 사유와 수동 안내 문구를 이미 정의한다. <code>message</code>는 수동 오류·수동 차단에만 노출 가능한 값이고, <code>src/lib/ttsTypes.ts:103-106</code>은 버튼 props를 <code>snapshot</code>과 <code>replay()</code>로 고정한다.</li>
+      <li><code>docs/PRD-chinese-tts-audio.md:89-104</code>는 로딩의 <code>aria-busy</code>, 자동 실패·자동 차단의 무음 복귀, 수동 실패·수동 차단의 서로 다른 안내 문구, 200자 초과/읽을 수 없는 입력의 비활성 사유를 구분한다. 자동 여부를 추측하는 별도 플래그는 없으므로 이 컴포넌트는 <code>message === null</code>인 실패 상태를 조용히 표시한다.</li>
+      <li><code>docs/architecture/chinese-tts-audio.md:315-326</code>는 controller와 Audio·cache의 상태 머신을 TTS-07~09에, capability·카드 연결을 TTS-11에 배정한다. 같은 문서는 <code>PronunciationButton.tsx/.css</code>를 전달된 상태와 callback만 쓰는 TTS-10의 경계로 명시한다.</li>
+      <li><code>src/components/HomeUtilBar.tsx:12-69</code>는 인라인 SVG에 <code>aria-hidden=&quot;true&quot;</code>와 <code>focusable=&quot;false&quot;</code>를 적용하는 현재 관례다. <code>src/components/HomeUtilBar.test.tsx:1-61</code>와 <code>src/test-utils.tsx:18-49</code>는 jsdom에서 React 19 <code>act</code> 기반으로 DOM·클릭을 검증하는 재사용 가능한 방식이다.</li>
+      <li><code>src/index.css:55-59</code>와 <code>src/index.css:869-899</code>에는 기존 포커스·20px 아이콘·색 토큰 관례가 있지만, 태스크 지도 <code>docs/plans/chinese-tts-audio-tasks.md:138-155</code>와 아키텍처 <code>docs/architecture/chinese-tts-audio.md:444-448</code>는 공통 버튼 스타일을 전용 CSS에 한정하고 <code>src/index.css</code> 및 카드 레이아웃을 바꾸지 않도록 한다.</li>
+      <li><code>src/screens/Mode1Card.tsx:28-45</code>는 현재 플립 전체가 button인 구조이고 <code>src/screens/Mode2Card.tsx:38-55</code>는 오답 결과만 렌더한다. 중첩 button을 만들지 않는 카드 구조·공개 시점·선택적 binding은 TTS-11~14 소유이므로 이번 이슈에서 이 파일들을 수정하지 않는다.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">3</span>설계</h2>
+    <h3>상태 표시와 상호작용의 단일 경계</h3>
+    <p>새 컴포넌트는 props 계약을 재정의하지 않는다. <code>idle</code>·<code>ready</code>·<code>blocked/error + message:null</code>은 일반 스피커를, <code>playing</code>은 강조 변형을, <code>loading</code>은 같은 고정 영역의 로딩 표시와 <code>aria-busy=&quot;true&quot;</code>를 렌더한다. 로딩 중 클릭도 한 번의 전달된 <code>replay()</code> 호출로만 위임하여 요청 합치기는 controller의 책임으로 남긴다.</p>
+    <p><code>inputReason</code>가 있거나 소비 불가능한 snapshot은 native <code>disabled</code>와 버튼 밖의 연결된 설명으로 나타낸다. <code>text_too_long</code>과 <code>invalid_text</code>는 PRD의 한국어 사유를 사용한다. capability가 꺼져 카드에서 버튼 자체를 생략할지 여부는 TTS-11의 선택적 binding 책임이므로, 이 공용 컴포넌트는 전달받은 비활성 snapshot을 안전하게 렌더할 수만 있게 한다.</p>
+    <p><code>message</code>가 있는 경우에만 버튼 근처의 고정 메시지 영역을 <code>aria-live=&quot;polite&quot;</code>로 사용한다. 따라서 자동 재생 차단·자동 요청 실패에는 토스트·live announcement·새 오류 문구를 만들지 않는다. SVG는 장식으로 숨기고, 활성 버튼의 기본 이름은 <code>발음 듣기</code>로 유지한다.</p>
+    <h3>제외한 선택지</h3>
+    <ul>
+      <li>컴포넌트 내부 fetch, Audio, 상태 관리: snapshot/controller와 중복 상태 머신이 되어 TTS-07~09 경계를 침범하므로 제외한다.</li>
+      <li><code>src/index.css</code> 또는 Mode1/Mode2 카드 직접 수정: 병렬 이슈의 소유 파일과 충돌하고 현재 Mode1의 중첩 button 문제를 해결할 수 없으므로 TTS-11~14로 남긴다.</li>
+      <li>자동 실패에도 공통 오류 문구를 생성: 수동 오류만 알린다는 PRD UX와 맞지 않으므로 controller가 제공한 <code>message</code>만 표시한다.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">4</span>작업 단계</h2>
+    <p><strong>구현 상태: 전체 단계 완료.</strong> 컴포넌트·전용 CSS·jsdom 테스트를 추가했고 전체 테스트 486개, 린트, 빌드를 통과했다. 계획 서버는 로컬 tmux 권한 오류로 열지 못했다.</p>
+    <ol class="steps">
+      <li><code>PronunciationButtonProps</code>를 그대로 소비하는 표시 전용 React 컴포넌트를 추가한다. 상태별 class/아이콘/로딩 표시, <code>type=&quot;button&quot;</code>, 20px 장식 SVG, <code>aria-label</code>·<code>aria-busy</code>·<code>aria-describedby</code>를 정하고, 활성 클릭은 한 번의 <code>replay()</code> 외에 어떤 판단·submit·서비스 호출도 하지 않게 한다. <code>message</code>가 있을 때만 polite live 영역을 렌더한다.
+        <span class="files"><code>src/components/PronunciationButton.tsx</code></span>
+      </li>
+      <li>컴포넌트에서만 import하는 CSS를 추가한다. 기존 토큰으로 최소 44×44px 버튼과 20px SVG, 로딩/재생/비활성/포커스 상태를 꾸미고, 메시지용 최소 높이 영역을 확보해 로딩·오류가 카드 높이를 반복해서 바꾸지 않게 한다. 축소 모션 환경에서도 의미가 사라지지 않도록 spinner 애니메이션을 정적으로 처리하며 전역·카드 선택자는 만들지 않는다.
+        <span class="files"><code>src/components/PronunciationButton.css</code></span>
+      </li>
+      <li>공유 jsdom 헬퍼로 상태 매핑을 고정한다. 일반/로딩/재생/조용한 자동 차단·오류/수동 메시지/두 입력 불가 사유를 독립 snapshot으로 렌더하고, loading의 busy 상태, 수동 메시지의 polite live, 비활성 설명 연결과 disabled 동작을 확인한다. 활성 button의 마우스·키보드 기본 활성화가 replay 외 submit·판정 callback을 만들지 않는 host form 사례도 검증한다.
+        <span class="files"><code>src/components/PronunciationButton.test.tsx</code>, <code>src/test-utils.tsx</code> (재사용만; 수정 없음)</span>
+      </li>
+      <li>전용 테스트, 전체 회귀 명령과 정적 범위 점검을 실행한다. 계획에서 금지한 카드·전역 CSS·TTS 설정·시크릿 파일 변경이 없는지 확인하고, PR은 <code>feat/ch-sound</code>를 base로 하며 실제 TTS/외부 리소스 검증을 자동 테스트 통과로 대체하지 않는다.
+        <span class="files"><code>src/components/PronunciationButton.test.tsx</code>, <code>src/components/PronunciationButton.tsx</code>, <code>src/components/PronunciationButton.css</code></span>
+      </li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">5</span>리스크</h2>
+    <div class="scroll-x"><table><thead><tr><th>리스크</th><th>영향</th><th>완화책</th></tr></thead><tbody>
+      <tr><td>자동 실패와 수동 실패를 UI가 혼동</td><td>자동 재생에 불필요한 토스트·스크린리더 알림이 생김</td><td>상태명만으로 원인을 추론하지 않고 <code>message</code>가 있는 수동 사례만 live message로 렌더하는 계약 테스트를 둔다.</td></tr>
+      <tr><td>버튼을 로딩 중 disabled 처리</td><td>controller의 요청 병합·수동 의도 처리를 막거나 UX가 계약과 달라짐</td><td>loading은 busy 시각 상태로만 표현하고 replay 전달·중복 억제는 controller 소유로 유지한다.</td></tr>
+      <tr><td>현재 Mode1의 큰 button 안에 즉시 삽입</td><td>중첩 interactive element로 키보드·접근성 오류 발생</td><td>이슈 #144는 독립 컴포넌트만 추가하고 구조 분리는 TTS-12, 연결은 TTS-11·13에서 한다.</td></tr>
+      <tr><td>상태 메시지의 출현/소멸로 카드가 흔들림</td><td>모바일·확대 화면에서 판정/다음 버튼 공간이 밀림</td><td>전용 CSS에 메시지 영역의 최소 높이를 두고 390px·200% 확대는 후속 실제 화면 통합 검증에도 남긴다.</td></tr>
+    </tbody></table></div>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">6</span>테스트 계획</h2>
+    <ul>
+      <li><code>npm test -- src/components/PronunciationButton.test.tsx</code>: jsdom에서 6개 상태와 enabled/inputReason/message 조합을 렌더하고, 20px SVG가 접근성 트리에서 제외되며 활성 제어의 이름이 <code>발음 듣기</code>인지 확인한다.</li>
+      <li>같은 테스트에서 loading은 <code>aria-busy=&quot;true&quot;</code>이고, 자동 <code>blocked/error</code>의 <code>message:null</code>에는 live region이 없으며, 수동 <code>message</code>만 <code>aria-live=&quot;polite&quot;</code>로 노출되는지 검증한다.</li>
+      <li>host form 안에서 click 및 button의 기본 키보드 활성화 경로를 검증해 replay가 정확히 한 번 호출되고 form submit 또는 카드 판정 callback을 호출하지 않음을 확인한다. inputReason/enabled 비활성 상태에서는 replay가 호출되지 않고 설명이 <code>aria-describedby</code>로 연결되는지도 확인한다.</li>
+      <li><code>npm test</code>, <code>npm run lint</code>, <code>npm run build</code>: 공용 타입 소비와 CSS import가 전체 TypeScript/Vite 경로에서 회귀하지 않는지 확인한다.</li>
+      <li>실제 서비스·player 없이 실행하는 단위 테스트 범위를 명시한다. 실제 브라우저 자동재생 차단, 모바일 터치/청취, R2와 유료 제공자 호출은 이 이슈의 검증으로 주장하지 않고 TTS-16 및 출시 검증에 남긴다.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">7</span>완료 조건</h2>
+    <ul class="done-list">
+      <li><code>src/components/PronunciationButton.tsx</code>는 #135의 props 계약만 소비하며 click 한 번에 전달된 replay callback만 호출하고 submit·채점·API·controller 생성을 하지 않는다.</li>
+      <li>활성 제어는 <code>type=&quot;button&quot;</code>, 44×44px 이상 터치 영역, 20px 장식 SVG, 일반 접근성 이름과 loading busy 설명을 갖는다.</li>
+      <li>ready/playing/loading/조용한 자동 차단·실패/수동 오류/입력 불가 snapshot을 외부 player 없이 렌더할 수 있고, 수동 <code>message</code>만 polite live announcement를 만든다.</li>
+      <li>비활성 사유가 버튼 밖 연결 텍스트로 읽히며, 전용 CSS의 고정 메시지 공간과 기존 디자인 토큰을 사용한다. <code>src/index.css</code>, 카드 레이아웃, 세션/controller/API는 변경하지 않는다.</li>
+      <li>컴포넌트 jsdom 테스트와 전체 <code>npm test</code>·<code>npm run lint</code>·<code>npm run build</code> 결과를 PR에 기록하고, PR base가 <code>feat/ch-sound</code>임을 확인한다.</li>
+      <li><code>TTS_ENABLED=false</code>는 유지하며 키·시크릿·실제 TTS/R2 리소스·배포를 변경하거나 검증하지 않는다.</li>
+    </ul>
+  </section>
+  <footer>issue-plan · <a href="https://github.com/damdam6/vocabulary-study/issues/144">#144</a> · 2026-09-16</footer>
+</main>
+</body>
+</html>
