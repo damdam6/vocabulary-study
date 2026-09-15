@@ -1,0 +1,36 @@
+.mode2-result-scroll {
+  width: 100%;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 11px;
+  padding: 4px;
+}
+
+.mode2-result-headword {
+  width: 100%;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+}
+
+.mode2-result-headword .mode-card-hanzi,
+.mode2-result-scroll .mode-card-pinyin,
+.mode2-result-scroll .mode-card-meaning,
+.mode2-result-scroll .mode-my-answer {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.mode2-result-pronunciation {
+  flex: 0 0 auto;
+}

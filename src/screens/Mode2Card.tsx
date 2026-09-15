@@ -4,11 +4,13 @@
 //   - 오답이면 이 컴포넌트가 결과 화면(정답 한자·병음·뜻·내 답)을 띄운 채 머물고,
 //     "다음" 버튼에서 onProceed를 호출해야 셸이 진행한다.
 //   - 셸이 문제마다 key를 바꿔 리마운트하므로 내부 상태는 초기화를 신경 쓰지 않는다.
-import { useState, type FormEvent } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type FormEvent } from 'react'
 import { headwordLang, mode2Hint, mode2Placeholder } from '../lib/contentLabels.ts'
 import { gradeMode2, type StudyQuestion } from '../lib/studySession.ts'
 import type { ContentType } from '../lib/api.ts'
 import type { PronunciationBinding } from '../lib/ttsTypes.ts'
+import PronunciationButton from '../components/PronunciationButton.tsx'
+import './Mode2Card.css'
 
 interface Mode2CardProps {
   question: StudyQuestion
@@ -19,12 +21,36 @@ interface Mode2CardProps {
   pronunciation?: PronunciationBinding
 }
 
-function Mode2Card({ question, contentType, onJudged, onProceed }: Mode2CardProps) {
+function Mode2Card({ question, contentType, onJudged, onProceed, pronunciation }: Mode2CardProps) {
   const [value, setValue] = useState('')
   // null이 아니면 오답 결과 화면 표시 중 — 값은 트림된 내 답(빈 입력 오답이면 '')
   const [wrongAnswer, setWrongAnswer] = useState<string | null>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
+  const pronunciationRef = useRef<HTMLDivElement>(null)
+  const proceedRef = useRef<HTMLButtonElement>(null)
+  const shouldMoveFocusRef = useRef(false)
+  const revealConsumedRef = useRef(false)
   const { word } = question
   const lang = headwordLang(contentType)
+
+  useEffect(() => {
+    if (wrongAnswer === null || pronunciation === undefined || revealConsumedRef.current) return
+    const timer = window.setTimeout(() => {
+      revealConsumedRef.current = true
+      pronunciation.reveal()
+    }, 0)
+    return () => window.clearTimeout(timer)
+  }, [pronunciation, wrongAnswer])
+
+  useLayoutEffect(() => {
+    if (wrongAnswer === null || !shouldMoveFocusRef.current) return
+    shouldMoveFocusRef.current = false
+    const activeElement = document.activeElement
+    if (activeElement !== document.body && activeElement !== null && activeElement !== inputRef.current) return
+    const pronunciationButton = pronunciationRef.current?.querySelector<HTMLButtonElement>('button:not(:disabled)')
+    const focusTarget = pronunciationButton ?? proceedRef.current
+    focusTarget?.focus()
+  }, [wrongAnswer])
 
   const submit = (event: FormEvent) => {
     event.preventDefault()
@@ -33,6 +59,7 @@ function Mode2Card({ question, contentType, onJudged, onProceed }: Mode2CardProp
     if (correct) {
       onJudged(true)
     } else {
+      shouldMoveFocusRef.current = document.activeElement === inputRef.current
       setWrongAnswer(answer)
       onJudged(false)
     }
@@ -43,16 +70,25 @@ function Mode2Card({ question, contentType, onJudged, onProceed }: Mode2CardProp
       <div className="mode-area mode-area--m2">
         <div className="mode-card mode-card--result">
           <span className="mode-result-title">오답</span>
-          <span lang={lang} className="mode-card-hanzi">{word.hanzi}</span>
-          {word.pinyin && <span className="mode-card-pinyin">{word.pinyin}</span>}
-          <span className="mode-card-meaning">{word.meaning}</span>
-          {wrongAnswer !== '' && (
-            <span className="mode-my-answer">
-              내 답: <s lang={lang}>{wrongAnswer}</s>
-            </span>
-          )}
+          <div className="mode2-result-scroll">
+            <div className="mode2-result-headword">
+              <span lang={lang} className="mode-card-hanzi">{word.hanzi}</span>
+              {pronunciation && (
+                <div className="mode2-result-pronunciation" ref={pronunciationRef}>
+                  <PronunciationButton snapshot={pronunciation.snapshot} replay={pronunciation.replay} />
+                </div>
+              )}
+            </div>
+            {word.pinyin && <span className="mode-card-pinyin">{word.pinyin}</span>}
+            <span className="mode-card-meaning">{word.meaning}</span>
+            {wrongAnswer !== '' && (
+              <span className="mode-my-answer">
+                내 답: <s lang={lang}>{wrongAnswer}</s>
+              </span>
+            )}
+          </div>
         </div>
-        <button type="button" className="primary-button" onClick={onProceed}>
+        <button ref={proceedRef} type="button" className="primary-button" onClick={onProceed}>
           다음
         </button>
       </div>
@@ -66,6 +102,7 @@ function Mode2Card({ question, contentType, onJudged, onProceed }: Mode2CardProp
         <span className="mode-card-hint">{mode2Hint(contentType)}</span>
       </div>
       <input
+        ref={inputRef}
         className="mode-input"
         type="text"
         lang={lang}
