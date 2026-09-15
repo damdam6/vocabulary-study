@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>#146 모드1 카드 구조와 정답 공개 접근성을 정리한다 — 작업 플랜</title>
+<style>
+  :root {
+    --bg: #f7f7f8; --card: #ffffff; --ink: #1c1c1e; --muted: #6e6e73;
+    --line: #e3e3e6; --accent: #3b6ef5; --accent-soft: #e8eefe;
+    --ok: #2e8b57; --warn: #b25e09; --code-bg: #f0f0f2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161618; --card: #202024; --ink: #ececf0; --muted: #98989f;
+      --line: #333338; --accent: #7a9bff; --accent-soft: #26304a;
+      --ok: #58c088; --warn: #e0a35c; --code-bg: #2a2a2f;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 40px 20px 80px; background: var(--bg); color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+                 "Segoe UI", "Noto Sans KR", sans-serif;
+    line-height: 1.65;
+  }
+  main { max-width: 860px; margin: 0 auto; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code {
+    font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 0.86em;
+    background: var(--code-bg); border-radius: 5px; padding: 2px 6px;
+  }
+  header { margin-bottom: 28px; }
+  .issue-chip {
+    display: inline-block; font-weight: 700; color: var(--accent);
+    background: var(--accent-soft); border-radius: 999px;
+    padding: 3px 14px; font-size: 0.95rem; margin-bottom: 10px;
+  }
+  .type-chip {
+    display: inline-block; font-weight: 600; color: var(--muted);
+    border: 1px solid var(--line); border-radius: 999px;
+    padding: 3px 12px; font-size: 0.8rem; margin-left: 8px; vertical-align: 2px;
+  }
+  h1 { font-size: 1.7rem; margin: 0 0 14px; letter-spacing: -0.02em; }
+  h3 { font-size: 0.98rem; margin: 18px 0 8px; }
+  .meta {
+    display: flex; flex-wrap: wrap; gap: 6px 22px;
+    color: var(--muted); font-size: 0.87rem;
+  }
+  .meta b { color: var(--ink); font-weight: 600; }
+  section.card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 24px 28px; margin-top: 18px;
+  }
+  h2 {
+    font-size: 1.05rem; margin: 0 0 14px; letter-spacing: -0.01em;
+    display: flex; align-items: center; gap: 8px;
+  }
+  h2 .no {
+    color: var(--accent); font-size: 0.8rem; font-weight: 700;
+    border: 1.5px solid var(--accent); border-radius: 6px; padding: 0 6px;
+  }
+  ul, ol { margin: 0; padding-left: 22px; }
+  li { margin: 6px 0; }
+  .steps { list-style: none; padding: 0; counter-reset: step; }
+  .steps li {
+    counter-increment: step; position: relative; padding: 10px 0 10px 44px;
+    border-bottom: 1px dashed var(--line);
+  }
+  .steps li:last-child { border-bottom: none; }
+  .steps li.completed { color: var(--ok); }
+  .steps li.completed::before { content: "✓"; background: var(--ok); color: white; }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 10px;
+    width: 28px; height: 28px; border-radius: 8px; background: var(--accent-soft);
+    color: var(--accent); font-weight: 700; font-size: 0.85rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .steps .files { display: block; margin-top: 4px; font-size: 0.85rem; color: var(--muted); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 0.82rem; }
+  .done-list { list-style: none; padding: 0; }
+  .done-list li { padding-left: 30px; position: relative; }
+  .done-list li::before {
+    content: ""; position: absolute; left: 2px; top: 7px; width: 15px; height: 15px;
+    border: 2px solid var(--ok); border-radius: 5px;
+  }
+  .done-list li.completed::before { content: "✓"; color: var(--ok); border: none; font-weight: 800; }
+  .scroll-x { overflow-x: auto; }
+  footer { margin-top: 30px; color: var(--muted); font-size: 0.8rem; text-align: center; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <span class="issue-chip"><a href="https://github.com/damdam6/vocabulary-study/issues/146">#146</a></span><span class="type-chip">기능 개선</span>
+    <h1>모드1 카드 구조와 정답 공개 접근성을 정리한다</h1>
+    <div class="meta">
+      <span><b>damdam6/vocabulary-study</b></span>
+      <span>브랜치 <b><code>feat/146-mode1-card-accessibility</code></b> ← <code>feat/ch-sound</code></span>
+      <span>라벨 <b>enhancement</b></span>
+      <span>2026-09-16</span>
+    </div>
+  </header>
+
+  <section class="card">
+    <h2><span class="no">1</span>요약</h2>
+    <p>현재 모드1 카드는 앞·뒷면을 하나의 버튼으로 감싸므로 후속 발음 버튼을 합법적인 대화형 구조로 넣을 수 없고, CSS 뒤집기만으로는 공개 전 답을 접근성 트리에서 차단하지 못한다. 플립 래퍼를 비대화형으로 바꾸고 앞면 공개 버튼·뒷면 내용 영역을 분리한 뒤, 기존 <code>revealed</code>와 별도의 일회성 <code>viewReady</code> 게이트를 도입한다. 판정은 공개 클릭 직후 그대로 허용하되 답 영역의 접근성 공개와 조건부 초점 이동은 실제 transform 완료 또는 계산된 fallback 뒤에 수행하며, 이 이슈에서는 음성 API·Audio·스피커 UI를 추가하지 않는다.</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">2</span>현황 분석</h2>
+    <p><b>조사 기준:</b> 현재 HEAD <code>84669f0</code>, 이슈 #146 본문과 댓글(댓글 0개), <code>TTS-12.md</code>, 중국어 TTS PRD·아키텍처를 대조했다. worktree는 <code>feat/ch-sound</code>의 현재 <code>origin/feat/ch-sound</code>와 같은 커밋에서 시작했으며 계획 작성 전 제품 코드 변경은 없었다.</p>
+    <div class="scroll-x"><table>
+      <thead><tr><th>현재 구조 / 근거</th><th>이번 변경에 미치는 영향</th></tr></thead>
+      <tbody>
+        <tr><td><code>src/screens/Mode1Card.tsx:18</code>, <code>src/screens/Mode1Card.tsx:28</code></td><td><code>revealed</code> 하나로 플립·판정 렌더를 모두 결정하고, <code>button.flip-card</code>가 두 면 전체를 감싼다. 후속 스피커 버튼을 뒷면에 넣으면 중첩 button이 되므로 래퍼와 활성 제어를 분리해야 한다.</td></tr>
+        <tr><td><code>src/screens/Mode1Card.tsx:34</code>, <code>src/index.css:458</code></td><td>뒷면 답은 처음부터 DOM에 있고 <code>backface-visibility</code>만 적용된다. 이는 시각적 가림일 뿐 접근성 트리·탐색 차단 계약이 아니므로 상태 기반 <code>aria-hidden</code>/<code>inert</code>가 필요하다.</td></tr>
+        <tr><td><code>src/screens/Mode1Card.tsx:47</code>, <code>src/screens/StudyScreen.tsx:93</code></td><td>판정 버튼은 <code>revealed</code> 직후 렌더되고 <code>onJudged</code>는 기록 effect와 문제 진행을 즉시 수행한다. <code>viewReady</code>를 판정 가능 조건으로 사용하면 기존 빠른 O/X 계약을 깨므로 두 상태를 분리한다.</td></tr>
+        <tr><td><code>src/screens/StudyScreen.tsx:139</code>, <code>src/screens/StudyScreen.tsx:78</code></td><td>문제마다 <code>key={session.pos}</code>로 카드가 리마운트되고 모드1 판정 시 즉시 advance한다. 따라서 카드 내부 timer는 빠른 판정과 unmount 양쪽에서 정리되어야 하며 다음 문제로 완료 신호나 초점이 새어서는 안 된다.</td></tr>
+        <tr><td><code>src/index.css:440</code>, <code>src/index.css:447</code></td><td>현재 transform 전환은 CSS의 0.55초 값뿐이고 완료 event/fallback이 없다. JS에 550ms를 복제하지 않고 실제 computed <code>transition-property</code>, duration, delay에서 transform 시간을 계산해야 한다.</td></tr>
+        <tr><td><code>src/index.css:327</code>, <code>src/index.css:433</code>, <code>src/index.css:514</code></td><td><code>min-height: 0</code>인 flex 영역과 절대 배치 카드, 고정 118px 판정 영역을 조합한다. 긴 표제어·병음은 현재 뒷면 overflow 정책이 없어 잘릴 수 있으므로 카드 내용만 세로 스크롤되고 판정 영역은 별도 flex 슬롯으로 남도록 바꾼다.</td></tr>
+        <tr><td><code>src/index.css:367</code>, <code>src/index.css:372</code>, <code>src/screens/Mode1Card.tsx:23</code></td><td>뒷면은 공용 44px/20px 텍스트 클래스를 사용하고, 앞면은 zh만 <code>hanziFontSize</code>, generic은 고정 클래스를 쓴다. 이 표시·언어·병음 생략 규칙은 유지하되 긴 토큰 wrapping을 보강한다.</td></tr>
+        <tr><td><code>src/test-utils.tsx:18</code>, <code>src/test-utils.tsx:40</code></td><td>jsdom용 React 19 렌더·조작 헬퍼가 이미 있다. 신규 <code>Mode1Card.test.tsx</code>에서 DOM 구조, 초점, transition event, fake timer, generic 회귀를 외부 테스트 라이브러리 없이 검증할 수 있다.</td></tr>
+      </tbody>
+    </table></div>
+    <p><b>소유 경계:</b> 제품 변경은 <code>src/screens/Mode1Card.tsx</code>와 <code>src/index.css</code>의 모드1 플립 영역, 신규 전용 테스트에 한정한다. <code>StudyScreen</code>의 채점·진행, 모드2 CSS, pronunciation binding·버튼·요청·재생은 수정하지 않는다.</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">3</span>설계</h2>
+    <h3>구조와 접근성 상태</h3>
+    <ul>
+      <li><code>div.flip-card</code>를 transform을 소유하는 비대화형 래퍼로 두고, 앞면은 명시적 <code>button.flip-face</code>, 뒷면은 내용 영역인 <code>div.flip-face--back</code>으로 분리한다. 두 요소가 형제이므로 후속 이슈가 뒷면에 버튼을 넣어도 중첩 제어가 생기지 않는다.</li>
+      <li><code>revealed</code>는 플립 시작과 O/X 즉시 노출을, <code>viewReady</code>는 답 영역의 접근성 공개를 뜻한다. 공개 전/전환 중 뒷면에는 <code>aria-hidden</code>과 <code>inert</code>를 적용하고, 공개 후 앞면은 반대로 접근성·키보드 탐색에서 제외한다. CSS <code>backface-visibility</code>는 시각 효과만 담당한다.</li>
+      <li>공개 버튼에 초점이 있던 키보드 흐름만 기억하고 완료 시 첫 판정 버튼으로 옮긴다. 사용자가 전환 중 종료나 이미 나타난 O/X 등 다른 제어로 초점을 옮겼으면 현재 <code>activeElement</code>를 확인해 빼앗지 않는다. #147은 발음 버튼이 가능할 때 목적지만 확장하고 이 게이트 계산을 재구현하지 않는다.</li>
+    </ul>
+    <h3>일회성 완료 게이트</h3>
+    <ul>
+      <li>transform 래퍼의 <code>onTransitionEnd</code>는 <code>event.target === event.currentTarget</code> 및 <code>propertyName === "transform"</code>일 때만 완료 함수를 호출한다. 완료 함수는 ref 기반 일회성 가드로 중복 event와 fallback 경합을 흡수한다.</li>
+      <li>플립 클래스가 DOM에 반영된 뒤 <code>getComputedStyle</code>의 comma-separated transition property/duration/delay 목록을 CSS 반복 규칙에 맞춰 읽고, <code>transform</code> 또는 <code>all</code> 항목의 최대 duration+delay에 100ms를 더해 fallback을 예약한다. 계산값이 0 이하이거나 <code>prefers-reduced-motion: reduce</code>이면 뒷면 렌더 뒤 즉시 같은 완료 게이트를 통과시킨다.</li>
+      <li>fallback ID는 ref로 소유하고 완료·판정·effect cleanup에서 해제한다. 빠른 O/X가 먼저 실행되면 게이트도 닫아 늦은 event/timer가 focus나 상태를 바꾸지 못하게 한다.</li>
+    </ul>
+    <h3>레이아웃</h3>
+    <ul>
+      <li>기존 3D transform·앞면 크기 스케일·공용 뒷면 타이포그래피는 유지한다. 뒷면에 폭 축소 허용, 긴 단어 wrapping, 세로 overflow를 명시해 200자 표제어와 긴 병음이 카드 내부에서 스크롤되게 한다.</li>
+      <li><code>.flip-stage</code>와 <code>.judge-zone</code>의 flex 경계를 유지해 카드가 늘어날 때 O/X 영역을 밀어내지 않도록 한다. reduced motion media query에서는 transform transition을 제거해 JS의 0초 경로와 시각 동작을 일치시킨다.</li>
+    </ul>
+    <p><b>기각한 대안:</b> 고정 550ms timer는 CSS 변경과 어긋나고 delay를 무시하므로 사용하지 않는다. <code>transitionend</code>만 의존하면 event 유실·0초 전환에서 영원히 준비되지 않으므로 fallback을 둔다. 답 DOM을 <code>viewReady</code> 때 처음 마운트하면 플립 중 뒷면 시각이 비므로, DOM은 유지하되 접근성 속성으로 비활성화한다. 공용 <code>StudyScreen</code>에 타이밍 상태를 올리는 것은 카드 DOM/CSS와 한 몸인 책임을 불필요하게 확산하므로 피한다.</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">4</span>작업 단계</h2>
+    <ol class="steps">
+      <li class="completed">Mode1Card의 플립 DOM을 비대화형 래퍼, 앞면 공개 버튼, 뒷면 내용 영역으로 재구성하고 <code>revealed</code>/<code>viewReady</code> 접근성 속성을 분리한다. 기존 zh/generic 표시, 병음 생략, O/X 즉시 <code>onJudged</code> 계약을 보존한다.
+        <span class="files"><code>src/screens/Mode1Card.tsx</code></span>
+      </li>
+      <li class="completed">computed transition 목록을 해석한 fallback과 필터된 transform <code>transitionend</code>를 하나의 일회성 완료 게이트에 연결한다. reduced motion·0초 즉시 완료, 조건부 초점 이동, 완료/빠른 판정/unmount timer 정리를 구현한다.
+        <span class="files"><code>src/screens/Mode1Card.tsx</code></span>
+      </li>
+      <li class="completed">새 형제 구조에도 기존 3D 플립이 유지되도록 모드1 셀렉터를 조정하고, 뒷면 긴 표제어·병음 wrapping/내부 스크롤, 판정 영역 보존, reduced-motion 0초 전환을 추가한다. 모드2 전용 스타일은 건드리지 않는다.
+        <span class="files"><code>src/index.css</code></span>
+      </li>
+      <li class="completed">구조·접근성·완료 게이트·초점·빠른 판정·generic/긴 콘텐츠 회귀를 jsdom과 fake timer로 고정한다. computed style과 <code>matchMedia</code>는 테스트별 더블로 제어하고 cleanup 뒤 미결 timer가 없음을 확인한다.
+        <span class="files"><code>src/screens/Mode1Card.test.tsx</code>, <code>src/test-utils.tsx</code> (필요한 최소 보강 시)</span>
+      </li>
+      <li class="completed">관련 테스트부터 실행한 뒤 전체 <code>npm test</code>, <code>npm run lint</code>, <code>npm run build</code>를 통과시킨다. 실제 390px/200% 확대는 자동 테스트와 구분해 출시 검증 미확인 항목으로 남긴다.
+        <span class="files"><code>package.json</code>의 기존 검증 명령 (변경 없음)</span>
+      </li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">5</span>리스크</h2>
+    <div class="scroll-x"><table>
+      <thead><tr><th>리스크</th><th>영향</th><th>완화책</th></tr></thead>
+      <tbody>
+        <tr><td>브라우저별 transition 목록·event 차이</td><td>높음 — 답이 영구 비공개거나 두 번 완료될 수 있음</td><td>target/property 필터, 목록 반복 규칙 기반 최대 시간, +100ms fallback, ref 일회성 게이트를 각각 테스트한다.</td></tr>
+        <tr><td><code>inert</code>와 <code>aria-hidden</code> 상태가 시각 플립과 어긋남</td><td>높음 — 공개 전 답 노출 또는 공개 후 탐색 불가</td><td>앞/뒤 상태 행렬을 DOM 단언으로 고정하고, 시각용 backface와 접근성 속성의 역할을 분리한다.</td></tr>
+        <tr><td>늦은 완료가 사용자 초점을 빼앗음</td><td>중간 — 종료/OX 키보드 흐름 방해</td><td>공개 시 초점 출처를 기록하되 완료 시 현재 activeElement를 다시 검사하고, 빠른 판정에서 게이트를 닫는다.</td></tr>
+        <tr><td>긴 콘텐츠 overflow가 판정 영역을 가리거나 모드2 공용 타이포에 파급</td><td>중간 — 200자/확대 화면에서 판정 불가</td><td>모드1 뒷면에만 스크롤·wrapping을 한정하고 judge zone을 비수축 영역으로 유지한다. 실제 390px/200% 확대는 출시 QA로 명시한다.</td></tr>
+        <tr><td>React StrictMode/effect cleanup에서 timer가 중복됨</td><td>중간 — 경고·늦은 setState·초점 이동</td><td>effect마다 이전 timer를 먼저 정리하고 unmount 및 판정 cleanup을 fake timer의 pending count로 검증한다.</td></tr>
+        <tr><td>후속 #145/#147의 발음 binding과 구조 충돌</td><td>중간 — 타이밍 계산 중복 또는 다시 DOM 재작성</td><td>뒷면 제어 슬롯과 내부 <code>viewReady</code> 완료 지점을 명확히 만들고, 발음 prop/API 자체는 후속 소유 범위로 남긴다.</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">6</span>테스트 계획</h2>
+    <ul>
+      <li><code>src/screens/Mode1Card.test.tsx</code> 구조: 전체 카드가 button이 아니고 앞면 공개 버튼과 뒷면 영역이 형제이며 <code>button button</code>이 없다. 공개 전 뒷면은 <code>aria-hidden</code>/<code>inert</code>, 앞면은 접근·활성 가능하고 공개 완료 뒤 상태가 반전된다.</li>
+      <li>transition 필터: 자식에서 버블된 event와 다른 property는 무시하고, 래퍼의 transform event만 완료한다. 같은 event 반복과 fallback 경합에도 접근성 상태 전환은 한 번뿐이다.</li>
+      <li>fake timer: 예시 duration/delay 조합의 최대값+100ms 전에는 준비되지 않고 이후 완료된다. 0초 및 reduced motion은 즉시 완료하며, 정상 완료·빠른 O/X·unmount 뒤 timer가 남지 않는다.</li>
+      <li>초점: 키보드 공개 버튼에 남은 초점은 viewReady 뒤 첫 판정 버튼으로 이동한다. 전환 중 종료 버튼 또는 이미 노출된 판정 버튼으로 옮긴 초점은 유지한다.</li>
+      <li>판정 회귀: reveal 직후 transition 완료 전에도 X/O가 각각 <code>onJudged(false/true)</code>를 정확히 한 번 호출한다. generic에서도 고정 크기·언어 규칙·플립·판정이 유지되고 TTS/Audio 호출은 존재하지 않는다.</li>
+      <li>긴 fixture: 코드 포인트 200개 표제어와 긴 병음/뜻이 손실 없이 뒷면에 렌더되고 모드1 전용 scroll/wrap class를 사용하며 판정 영역은 별도 형제로 유지된다. jsdom이 실제 레이아웃을 계산하지 못하므로 390px/200% 시각 확인은 출시 검증으로 남긴다.</li>
+      <li>검증 명령: 관련 <code>npm test -- src/screens/Mode1Card.test.tsx</code> 후 <code>npm test</code>, <code>npm run lint</code>, <code>npm run build</code>. 실제 키·청취·음성 API·모바일 실기기 결과로 오인하지 않고, 이 이슈는 음성 더블 없이 독립 검증한다.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">7</span>완료 조건</h2>
+    <ul class="done-list">
+      <li class="completed">비대화형 플립 래퍼와 앞면 공개 버튼·뒷면 내용 영역이 분리되어 중첩 button이 없고, 후속 뒷면 제어를 위한 합법적인 구조가 확보된다.</li>
+      <li class="completed">공개 전과 플립 중 답 영역은 접근성 트리·키보드 탐색에서 숨겨지고, viewReady 뒤에만 공개된다.</li>
+      <li class="completed">transform event 필터와 계산 시간+100ms fallback이 같은 일회성 게이트를 사용해 event 중복·유실·reduced motion·0초 전환을 모두 처리한다.</li>
+      <li class="completed">공개 버튼에 있던 키보드 초점만 viewReady 뒤 첫 판정 제어로 이동하고, 사용자가 다른 곳으로 옮긴 초점은 빼앗지 않는다.</li>
+      <li class="completed">O/X는 공개 직후 사용할 수 있고 판정·기록·다음 문제 진행을 기다리지 않는다. 빠른 판정과 unmount 후 timer·늦은 상태 변경이 없다.</li>
+      <li class="completed">zh와 generic의 기존 플립·표시·판정이 유지되며, 200자 표제어와 긴 병음은 wrapping/카드 내부 스크롤을 사용하고 판정 영역은 보존된다.</li>
+      <li class="completed">음성 요청·자동재생·스피커·Audio·모드2 CSS를 추가하지 않으며, 구조와 공개 완료 동작을 jsdom/fake timer만으로 검증할 수 있다.</li>
+      <li class="completed">관련 테스트와 전체 <code>npm test</code>, <code>npm run lint</code>, <code>npm run build</code>가 통과하고, 실제 390px/200% 확대는 출시 검증 미확인 항목으로 기록한다.</li>
+      <li class="completed">PR은 <code>feat/ch-sound</code>를 base로 하고 변경 범위·검증 결과를 남긴다.</li>
+    </ul>
+  </section>
+
+  <footer>issue-plan · <a href="https://github.com/damdam6/vocabulary-study/issues/146">#146</a> · 2026-09-16</footer>
+</main>
+</body>
+</html>
