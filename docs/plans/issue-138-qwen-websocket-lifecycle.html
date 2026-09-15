@@ -201,7 +201,7 @@
     <ul>
       <li><b>구현:</b> <code>qwen.ts</code>에 Upgrade fetch, WebSocket 수명, 단일 settle, 오류 정규화와 늦은 Upgrade 정리를 추가했다. 기존 <code>qwenProtocol.ts</code>와 MP3 검사기를 변경하지 않고 소비한다.</li>
       <li><b>대상 테스트:</b> <code>npm test -- worker/lib/tts/providers/qwen.test.ts worker/lib/tts/providers/qwenProtocol.test.ts worker/lib/tts/audio.test.ts</code> — 3 files, 51 tests passed. 독립 리뷰 r1의 보완으로 partial MP3 수신 중 abort reason 보존·cancel·listener/socket 정리와 늦은 task-finished/message/close/error 무해성을 회귀 테스트로 고정했다.</li>
-      <li><b>전체 검증:</b> <code>npm test</code> — 45 files, 591 tests passed. <code>npm run lint</code>와 <code>npm run build</code>도 모두 통과했다.</li>
+      <li><b>전체 검증:</b> <code>npm test</code> — 45 files, 592 tests passed. <code>npm run lint</code>와 <code>npm run build</code>도 모두 통과했다.</li>
       <li><b>미검증:</b> 실제 키·Qwen 모델 접근·청취·모바일·R2·실제 네트워크 지연은 실행하지 않았다. 운영 설정은 변경하지 않아 <code>TTS_ENABLED=false</code>를 유지한다.</li>
     </ul>
   </section>
