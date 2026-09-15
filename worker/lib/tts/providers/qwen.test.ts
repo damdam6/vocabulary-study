@@ -168,6 +168,37 @@ describe("createQwenTtsProvider", () => {
     expect(JSON.parse(openSocket.sends[1]!).payload.input).toEqual({ directive: "cancel" });
   });
 
+  it("preserves the abort reason while receiving audio and ignores every late socket event", async () => {
+    const socket = new SocketDouble();
+    const controller = new AbortController();
+    const provider = createQwenTtsProvider(config, API_KEY, { fetch: async () => response(socket), randomUUID: () => TASK_ID });
+    const result = provider.synthesize({ text: TEXT }, controller.signal);
+    await tick();
+    socket.emitMessage(event("task-started"));
+    socket.emitMessage(event("result-generated", { output: { type: "sentence-synthesis" } }));
+    socket.emitMessage(createMp3Fixture(1).buffer.slice(0, 128));
+    expect(socket.listenerCount()).toBe(3);
+
+    const reason = new DOMException("receiving abort sentinel", "TimeoutError");
+    controller.abort(reason);
+    await expect(result).rejects.toBe(reason);
+    expect(socket.sends.map((message) => JSON.parse(message).header.action)).toEqual([
+      "run-task", "continue-task", "finish-task", "finish-task",
+    ]);
+    expect(JSON.parse(socket.sends[3]!).payload.input).toEqual({ directive: "cancel" });
+    expect(socket.closed).toBe(1);
+    expect(socket.listenerCount()).toBe(0);
+
+    const sendsAfterAbort = [...socket.sends];
+    socket.emitMessage(event("task-finished"));
+    socket.emitMessage("late provider error sentinel");
+    socket.emitClose();
+    socket.emitError();
+    expect(socket.sends).toEqual(sendsAfterAbort);
+    expect(socket.closed).toBe(1);
+    expect(socket.listenerCount()).toBe(0);
+  });
+
   it("rejects close/error/setup/send failures once and accepts before setup cleanup", async () => {
     const socket = new SocketDouble();
     const controller = new AbortController();
