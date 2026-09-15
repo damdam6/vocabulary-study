@@ -81,7 +81,7 @@ export async function handleTtsPost(
   } catch (error) {
     if (request.signal.aborted) throw request.signal.reason;
     if (error instanceof TtsServiceError) return ttsError(error.code);
-    return ttsError("tts_unavailable");
+    return ttsInternalError();
   }
 }
 
@@ -90,6 +90,15 @@ export function ttsError(code: TtsErrorCode, extraHeaders: HeadersInit = {}): Re
   return Response.json(
     { error, message },
     { status, headers: { "Cache-Control": TTS_RESPONSE_HEADERS.cacheControl, ...extraHeaders } },
+  );
+}
+
+/** 서비스에서 분류되지 않은 오류는 가용성 오류와 구분해 고정 500으로 숨긴다. */
+function ttsInternalError(): Response {
+  const { error, message } = TTS_ERROR_RESPONSES.tts_unavailable;
+  return Response.json(
+    { error, message },
+    { status: 500, headers: { "Cache-Control": TTS_RESPONSE_HEADERS.cacheControl } },
   );
 }
 

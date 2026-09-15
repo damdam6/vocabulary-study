@@ -62,7 +62,8 @@ export default {
           return await handleTtsPost(request, env, profile, ctx);
         } catch (err) {
           if (request.signal.aborted) throw err;
-          console.error("[POST /api/tts]", err);
+          // 예외 객체는 provider/요청 원문을 포함할 수 있으므로 로그 경계 밖으로 내보내지 않는다.
+          console.error("tts_unexpected_error", { profileId: profile.id, error: "internal_error" });
           return Response.json(
             { error: "tts_unavailable", message: "발음을 불러올 수 없습니다." },
             { status: 500, headers: { "Cache-Control": "private, no-store" } },

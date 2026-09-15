@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import worker from "../index.ts";
+import { handleTtsPost } from "./tts.ts";
 import { createMp3Fixture } from "../lib/tts/fixtures/mp3.ts";
 import { makeEnv, makeExecutionContext, makeRequest } from "../test-utils.ts";
 
@@ -163,7 +164,7 @@ describe("POST /api/tts — 서비스 결과 직렬화", () => {
   });
 
   it("예상 못 한 내부 예외는 비밀을 노출하지 않는 500으로 고정한다", async () => {
-    vi.spyOn(console, "error").mockImplementation(() => {});
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     vi.spyOn(crypto, "randomUUID").mockImplementation(() => { throw new Error("private sentinel"); });
     const bucket = { get: vi.fn(), put: vi.fn() };
     const res = await worker.fetch(ttsRequest(), configuredEnv(bucket));
@@ -173,6 +174,29 @@ describe("POST /api/tts — 서비스 결과 직렬화", () => {
     expect(text).toContain("tts_unavailable");
     expect(text).not.toContain("private sentinel");
     expect(res.headers.get("Cache-Control")).toBe("private, no-store");
+    expect(errorSpy).toHaveBeenCalledWith("tts_unexpected_error", { profileId: "zh-a", error: "internal_error" });
+    for (const argument of errorSpy.mock.calls.flat()) {
+      expect(`${String(argument)} ${JSON.stringify(argument)}`).not.toContain("private sentinel");
+    }
+  });
+
+  it("분류되지 않은 서비스 내부 오류는 고정 본문의 500으로 숨긴다", async () => {
+    const digest = vi.spyOn(crypto.subtle, "digest").mockRejectedValue(new Error("service internal sentinel"));
+    const bucket = { get: vi.fn(), put: vi.fn() };
+    const res = await handleTtsPost(
+      ttsRequest(),
+      configuredEnv(bucket),
+      { id: "zh-a", name: "중국어 A", password: "test-password", sheetId: "sheet-a", modes: ["m1"], contentType: "zh" },
+    );
+
+    expect(res.status).toBe(500);
+    const text = await res.text();
+    expect(text).toBe(JSON.stringify({ error: "tts_unavailable", message: "발음을 불러올 수 없습니다." }));
+    expect(text).not.toContain("service internal sentinel");
+    expect(res.headers.get("Cache-Control")).toBe("private, no-store");
+    expect(res.headers.get("X-TTS-Source")).toBeNull();
+    expect(bucket.get).not.toHaveBeenCalled();
+    digest.mockRestore();
   });
 
   it("프로필별 R2 키를 분리하며 TTS 경로에서 Sheets 호출을 추가하지 않는다", async () => {
