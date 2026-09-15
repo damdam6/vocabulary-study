@@ -148,12 +148,26 @@ describe('Mode1Card 접근성 플립', () => {
     const { container, unmount } = renderCard({ hanzi, pinyin, meaning }, 'generic')
     expect(container.querySelector('.flip-hanzi--generic')?.textContent).toBe(hanzi)
     fire(() => (container.querySelector('.flip-face--front') as HTMLButtonElement).click())
-    expect(container.querySelector('.flip-face--back .mode-card-hanzi')?.textContent).toBe(hanzi)
-    expect(container.querySelector('.flip-face--back .mode-card-pinyin')?.textContent).toBe(pinyin)
-    expect(container.querySelector('.flip-face--back .mode-card-meaning')?.textContent).toBe(meaning)
+    const back = container.querySelector('.flip-face--back')!
+    const content = back.querySelector('.flip-face-back-content')!
+    expect(content.parentElement).toBe(back)
+    expect(content.children).toHaveLength(3)
+    expect(content.querySelector('.mode-card-hanzi')?.textContent).toBe(hanzi)
+    expect(content.querySelector('.mode-card-pinyin')?.textContent).toBe(pinyin)
+    expect(content.querySelector('.mode-card-meaning')?.textContent).toBe(meaning)
     expect(container.querySelector('.judge-zone')?.parentElement).toBe(container.querySelector('.mode-area'))
     expect(vi.getTimerCount()).toBe(1)
     unmount()
     expect(vi.getTimerCount()).toBe(0)
+  })
+
+  it('짧은 답도 긴 답과 같은 내부 정렬 래퍼에 배치한다', () => {
+    const { container, unmount } = renderCard()
+    const back = container.querySelector('.flip-face--back')!
+    const content = back.querySelector('.flip-face-back-content')!
+    expect(content.parentElement).toBe(back)
+    expect(Array.from(content.children).map((element) => element.textContent)).toEqual(['经济', 'jīngjì', '경제'])
+    expect(back.children).toHaveLength(1)
+    unmount()
   })
 })

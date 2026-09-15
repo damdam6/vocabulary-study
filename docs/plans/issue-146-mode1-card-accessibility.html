@@ -160,7 +160,7 @@
       <li class="completed">computed transition 목록을 해석한 fallback과 필터된 transform <code>transitionend</code>를 하나의 일회성 완료 게이트에 연결한다. reduced motion·0초 즉시 완료, 조건부 초점 이동, 완료/빠른 판정/unmount timer 정리를 구현한다.
         <span class="files"><code>src/screens/Mode1Card.tsx</code></span>
       </li>
-      <li class="completed">새 형제 구조에도 기존 3D 플립이 유지되도록 모드1 셀렉터를 조정하고, 뒷면 긴 표제어·병음 wrapping/내부 스크롤, 판정 영역 보존, reduced-motion 0초 전환을 추가한다. 모드2 전용 스타일은 건드리지 않는다.
+      <li class="completed">새 형제 구조에도 기존 3D 플립이 유지되도록 모드1 셀렉터를 조정하고, 뒷면 긴 표제어·병음 wrapping/내부 스크롤, 판정 영역 보존, reduced-motion 0초 전환을 추가한다. 모드2 전용 스타일은 건드리지 않는다. <b>리뷰 r1 반영:</b> 스크롤 컨테이너는 시작 정렬하고, 최소 높이 100%인 내부 래퍼가 짧은 내용만 중앙 정렬하게 해 긴 내용의 시작·끝을 모두 스크롤로 도달할 수 있게 했다.
         <span class="files"><code>src/index.css</code></span>
       </li>
       <li class="completed">구조·접근성·완료 게이트·초점·빠른 판정·generic/긴 콘텐츠 회귀를 jsdom과 fake timer로 고정한다. computed style과 <code>matchMedia</code>는 테스트별 더블로 제어하고 cleanup 뒤 미결 timer가 없음을 확인한다.

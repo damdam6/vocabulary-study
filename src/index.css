@@ -474,15 +474,26 @@ button {
 
 .flip-face--back {
   transform: rotateX(180deg);
-  gap: 12px;
   min-width: 0;
   overflow-x: hidden;
   overflow-y: auto;
   overflow-wrap: anywhere;
   scrollbar-gutter: stable;
+  justify-content: flex-start;
 }
 
-.flip-face--back > * {
+.flip-face-back-content {
+  flex: none;
+  width: 100%;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.flip-face-back-content > * {
   max-width: 100%;
 }
 

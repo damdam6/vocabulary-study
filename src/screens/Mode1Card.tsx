@@ -129,9 +129,11 @@ function Mode1Card({ question, contentType, onJudged }: Mode1CardProps) {
             <span className="flip-hint">탭해서 뜻 보기</span>
           </button>
           <div className="flip-face flip-face--back" aria-hidden={!viewReady} inert={!viewReady}>
-            <span lang={lang} className="mode-card-hanzi">{word.hanzi}</span>
-            {word.pinyin && <span className="mode-card-pinyin">{word.pinyin}</span>}
-            <span className="mode-card-meaning">{word.meaning}</span>
+            <div className="flip-face-back-content">
+              <span lang={lang} className="mode-card-hanzi">{word.hanzi}</span>
+              {word.pinyin && <span className="mode-card-pinyin">{word.pinyin}</span>}
+              <span className="mode-card-meaning">{word.meaning}</span>
+            </div>
           </div>
         </div>
       </div>
