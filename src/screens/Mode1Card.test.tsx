@@ -2,6 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { fire, renderComponent } from '../test-utils.tsx'
 import type { StudyQuestion } from '../lib/studySession.ts'
+import type { PronunciationBinding } from '../lib/ttsTypes.ts'
 import Mode1Card from './Mode1Card.tsx'
 
 const question: StudyQuestion = {
@@ -19,13 +20,27 @@ function transitionEnd(element: Element, propertyName: string, target: Element =
   target.dispatchEvent(event)
 }
 
-function renderCard(overrides: Partial<StudyQuestion['word']> = {}, contentType: 'zh' | 'generic' = 'zh') {
+function createPronunciation(enabled = true) {
+  return {
+    snapshot: { status: 'idle' as const, questionId: 'q-1', enabled, inputReason: null, message: null },
+    prepare: vi.fn(),
+    reveal: vi.fn(),
+    replay: vi.fn(),
+  }
+}
+
+function renderCard(
+  overrides: Partial<StudyQuestion['word']> = {},
+  contentType: 'zh' | 'generic' = 'zh',
+  pronunciation?: PronunciationBinding,
+) {
   const onJudged = vi.fn()
   const result = renderComponent(
     <Mode1Card
       question={{ ...question, word: { ...question.word, ...overrides } }}
       contentType={contentType}
       onJudged={onJudged}
+      pronunciation={pronunciation}
     />,
   )
   return { ...result, onJudged }
@@ -168,6 +183,78 @@ describe('Mode1Card 접근성 플립', () => {
     expect(content.parentElement).toBe(back)
     expect(Array.from(content.children).map((element) => element.textContent)).toEqual(['经济', 'jīngjì', '경제'])
     expect(back.children).toHaveLength(1)
+    unmount()
+  })
+
+  it('binding은 첫 플립에서 prepare하고 카드 공개 완료 뒤 reveal을 한 번만 전달한다', () => {
+    const pronunciation = createPronunciation()
+    const { container, unmount } = renderCard({}, 'zh', pronunciation)
+    const front = container.querySelector('.flip-face--front') as HTMLButtonElement
+    const card = container.querySelector('.flip-card')!
+
+    fire(() => front.click())
+    expect(pronunciation.prepare).toHaveBeenCalledTimes(1)
+    expect(pronunciation.reveal).not.toHaveBeenCalled()
+    fire(() => transitionEnd(card, 'transform'))
+    expect(pronunciation.reveal).toHaveBeenCalledTimes(1)
+    fire(() => transitionEnd(card, 'transform'))
+    fire(() => vi.runAllTimers())
+    expect(pronunciation.reveal).toHaveBeenCalledTimes(1)
+    unmount()
+  })
+
+  it('공개 후 발음 버튼은 replay만 호출하고 판정을 발생시키지 않는다', () => {
+    const pronunciation = createPronunciation()
+    const { container, onJudged, unmount } = renderCard({}, 'zh', pronunciation)
+    const front = container.querySelector('.flip-face--front') as HTMLButtonElement
+    fire(() => front.click())
+    fire(() => transitionEnd(container.querySelector('.flip-card')!, 'transform'))
+
+    const button = container.querySelector('.pronunciation-button__control') as HTMLButtonElement
+    expect(button).not.toBeNull()
+    expect(button.type).toBe('button')
+    expect(button.getAttribute('aria-label')).toBe('발음 듣기')
+    fire(() => button.click())
+    expect(pronunciation.replay).toHaveBeenCalledTimes(1)
+    expect(onJudged).not.toHaveBeenCalled()
+    unmount()
+  })
+
+  it('병음이 없어도 발음 버튼 영역을 유지한다', () => {
+    const pronunciation = createPronunciation()
+    const { container, unmount } = renderCard({ pinyin: '' }, 'zh', pronunciation)
+    fire(() => (container.querySelector('.flip-face--front') as HTMLButtonElement).click())
+    fire(() => transitionEnd(container.querySelector('.flip-card')!, 'transform'))
+    expect(container.querySelector('.mode-card-pinyin')).toBeNull()
+    expect(container.querySelector('.mode-card-pinyin-area')).not.toBeNull()
+    expect(container.querySelector('.pronunciation-button__control')).not.toBeNull()
+    unmount()
+  })
+
+  it('generic/off에서는 버튼과 발음 호출이 없고 기존 판정 focus fallback을 유지한다', () => {
+    const pronunciation = createPronunciation()
+    const { container, unmount } = renderCard({}, 'generic', pronunciation)
+    const front = container.querySelector('.flip-face--front') as HTMLButtonElement
+    front.focus()
+    fire(() => front.click())
+    fire(() => transitionEnd(container.querySelector('.flip-card')!, 'transform'))
+    expect(container.querySelector('.pronunciation-button__control')).toBeNull()
+    expect(pronunciation.prepare).not.toHaveBeenCalled()
+    expect(pronunciation.reveal).not.toHaveBeenCalled()
+    expect(document.activeElement).toBe(container.querySelector('.judge--x'))
+    unmount()
+  })
+
+  it('빠른 판정 뒤 늦은 완료가 reveal을 호출하지 않는다', () => {
+    const pronunciation = createPronunciation()
+    const { container, onJudged, unmount } = renderCard({}, 'zh', pronunciation)
+    const front = container.querySelector('.flip-face--front') as HTMLButtonElement
+    fire(() => front.click())
+    fire(() => (container.querySelector('.judge--o') as HTMLButtonElement).click())
+    fire(() => transitionEnd(container.querySelector('.flip-card')!, 'transform'))
+    fire(() => vi.runAllTimers())
+    expect(onJudged).toHaveBeenCalledTimes(1)
+    expect(pronunciation.reveal).not.toHaveBeenCalled()
     unmount()
   })
 })

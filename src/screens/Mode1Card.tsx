@@ -6,12 +6,13 @@ import { hanziFontSize } from '../lib/hanziSize.ts'
 import type { ContentType } from '../lib/api.ts'
 import type { StudyQuestion } from '../lib/studySession.ts'
 import type { PronunciationBinding } from '../lib/ttsTypes.ts'
+import PronunciationButton from '../components/PronunciationButton.tsx'
 
 interface Mode1CardProps {
   question: StudyQuestion
   contentType: ContentType
   onJudged: (correct: boolean) => void
-  /** #145에서 선언·전달만 한다. 실제 공개 시점 연결은 #147이 소유한다. */
+  /** #145에서 전달한 선택적 binding을 모드1 공개 사건에 연결한다. */
   pronunciation?: PronunciationBinding
 }
 
@@ -37,7 +38,7 @@ function transformTransitionMs(style: CSSStyleDeclaration): number {
   }, 0)
 }
 
-function Mode1Card({ question, contentType, onJudged }: Mode1CardProps) {
+function Mode1Card({ question, contentType, onJudged, pronunciation }: Mode1CardProps) {
   const [revealed, setRevealed] = useState(false)
   const [viewReady, setViewReady] = useState(false)
   const cardRef = useRef<HTMLDivElement>(null)
@@ -46,9 +47,11 @@ function Mode1Card({ question, contentType, onJudged }: Mode1CardProps) {
   const completionClosedRef = useRef(false)
   const judgedRef = useRef(false)
   const shouldMoveFocusRef = useRef(false)
+  const revealDeliveredRef = useRef(false)
   const fallbackRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const { word } = question
   const lang = headwordLang(contentType)
+  const pronunciationBinding = contentType === 'zh' ? pronunciation : undefined
   // 글자 수 적응 스케일은 zh 전용(이슈 #80) — generic은 고정 클래스로 표시.
   const frontSizeClass = contentType === 'zh' ? `flip-hanzi--${hanziFontSize(word.hanzi)}` : 'flip-hanzi--generic'
 
@@ -80,11 +83,23 @@ function Mode1Card({ question, contentType, onJudged }: Mode1CardProps) {
   }, [clearFallback, completeView, revealed])
 
   useEffect(() => {
-    if (viewReady && shouldMoveFocusRef.current && document.activeElement === revealButtonRef.current) {
-      firstJudgeRef.current?.focus()
+    if (!viewReady) return
+
+    if (!revealDeliveredRef.current) {
+      revealDeliveredRef.current = true
+      pronunciationBinding?.reveal()
     }
-    if (viewReady) shouldMoveFocusRef.current = false
-  }, [viewReady])
+
+    if (shouldMoveFocusRef.current && document.activeElement === revealButtonRef.current) {
+      const pronunciationButton = cardRef.current?.querySelector<HTMLButtonElement>(
+        '.pronunciation-button__control',
+      )
+      const pronunciationUsable = pronunciationButton && !pronunciationButton.disabled
+      if (pronunciationUsable) pronunciationButton.focus()
+      else firstJudgeRef.current?.focus()
+    }
+    shouldMoveFocusRef.current = false
+  }, [pronunciationBinding, viewReady])
 
   useEffect(() => () => {
     completionClosedRef.current = true
@@ -93,6 +108,7 @@ function Mode1Card({ question, contentType, onJudged }: Mode1CardProps) {
 
   const reveal = () => {
     if (revealed) return
+    pronunciationBinding?.prepare()
     shouldMoveFocusRef.current = document.activeElement === revealButtonRef.current
     setRevealed(true)
   }
@@ -134,7 +150,15 @@ function Mode1Card({ question, contentType, onJudged }: Mode1CardProps) {
           <div className="flip-face flip-face--back" aria-hidden={!viewReady} inert={!viewReady}>
             <div className="flip-face-back-content">
               <span lang={lang} className="mode-card-hanzi">{word.hanzi}</span>
-              {word.pinyin && <span className="mode-card-pinyin">{word.pinyin}</span>}
+              <div className="mode-card-pinyin-area">
+                {word.pinyin && <span className="mode-card-pinyin">{word.pinyin}</span>}
+                {viewReady && pronunciationBinding && (
+                  <PronunciationButton
+                    snapshot={pronunciationBinding.snapshot}
+                    replay={pronunciationBinding.replay}
+                  />
+                )}
+              </div>
               <span className="mode-card-meaning">{word.meaning}</span>
             </div>
           </div>
