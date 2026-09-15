@@ -163,7 +163,8 @@
     <h2><span class="no">5</span>구현·검증 기록</h2>
     <ul>
       <li><b>구현.</b> <code>createTtsAudioService</code>가 R2 hit/miss·합성·조건부 저장과 경합 재조회 정책을 소유하고, <code>createR2TtsAudioService</code>가 실제 storage와 <code>validateMp3</code>를 연결한다. HTTP·인증·ctx 연결은 #140의 소유로 남겼다.</li>
-      <li><b>자동 검증.</b> <code>npm test -- worker/lib/tts/service.test.ts worker/lib/tts/storage.test.ts worker/lib/tts/audio.test.ts worker/lib/tts/providers/qwen.test.ts</code>는 4 파일·40 테스트, <code>npm test</code>, <code>npm run lint</code>, <code>npm run build</code>는 통과했다. build는 권한 있는 로컬 환경에서 Wrangler 로그 기록까지 재확인했다.</li>
+      <li><b>자동 검증.</b> <code>npm test -- worker/lib/tts/service.test.ts worker/lib/tts/storage.test.ts worker/lib/tts/audio.test.ts worker/lib/tts/providers/qwen.test.ts</code>는 4 파일·42 테스트, <code>npm test</code>는 48 파일·626 테스트, <code>npm run lint</code>, <code>npm run build</code>는 통과했다. build는 권한 있는 로컬 환경에서 Wrangler 로그 기록까지 재확인했다.</li>
+      <li><b>리뷰 보완.</b> r1 major에 따라 MP3 동기 검증을 합성 deadline 보호 범위로 옮기고, 검증 직후 caller 취소와 deadline을 다시 확인하도록 보완했다. provider가 deadline 전 완료했더라도 검증 뒤 예산을 넘기면 timeout abort·<code>tts_timeout</code>·put 0회가 되는 경계 회귀 테스트를 추가했다.</li>
       <li><b>미검증.</b> 실제 <code>DASHSCOPE_API_KEY</code> 주입·유료 모델 호출/과금·실제 비공개 R2의 읽기·쓰기·경합·지연, 청취/디코딩 품질, 모바일 브라우저는 수행하지 않았다. <code>TTS_ENABLED=false</code>를 유지했고 배포·리소스 생성은 하지 않았다.</li>
     </ul>
   </section>

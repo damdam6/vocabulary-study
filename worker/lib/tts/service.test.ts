@@ -188,6 +188,56 @@ describe("createTtsAudioService", () => {
     await expect(cancelled).rejects.toBe(reason);
   });
 
+  it("counts synchronous MP3 validation time in the synthesis deadline", async () => {
+    let now = 0;
+    const timers = new Set<() => void>();
+    let providerSignal: AbortSignal | undefined;
+    const upstream: TtsProvider = {
+      pronunciationMode: "none",
+      synthesize: vi.fn((_input, signal) => {
+        providerSignal = signal;
+        return Promise.resolve({ audio: createMp3Fixture(), contentType: "audio/mpeg" as const });
+      }),
+    };
+    const storage = { get: vi.fn().mockResolvedValue(null), putIfAbsent: vi.fn() };
+    const service = createTtsAudioService({
+      storage,
+      provider: upstream,
+      clock: {
+        now: () => now,
+        setTimeout: (callback) => { timers.add(callback); return callback; },
+        clearTimeout: (callback) => { timers.delete(callback as () => void); },
+      },
+      validateAudio: () => {
+        // provider는 deadline 전 완료했지만, 동기 형식 검사가 예산을 소진한 경계다.
+        now = 12_000;
+        return true;
+      },
+    });
+
+    await expect(service(request())).rejects.toMatchObject({ code: "tts_timeout", status: 504 });
+    expect(providerSignal?.aborted).toBe(true);
+    expect(storage.putIfAbsent).not.toHaveBeenCalled();
+    expect(timers).toHaveLength(0);
+  });
+
+  it("preserves a caller abort observed immediately after MP3 validation", async () => {
+    const controller = new AbortController();
+    const reason = new DOMException("cancelled during validation", "AbortError");
+    const storage = { get: vi.fn().mockResolvedValue(null), putIfAbsent: vi.fn() };
+    const service = createTtsAudioService({
+      storage,
+      provider: provider(),
+      validateAudio: () => {
+        controller.abort(reason);
+        return true;
+      },
+    });
+
+    await expect(service(request(controller.signal))).rejects.toBe(reason);
+    expect(storage.putIfAbsent).not.toHaveBeenCalled();
+  });
+
   it("passes the service deadline into the real Qwen adapter and closes its socket", async () => {
     const socket = new SocketDouble();
     const timing = controlledClock();

@@ -17,6 +17,7 @@ import {
   type TtsErrorCode,
   type TtsProvider,
   type TtsResponseDiagnostics,
+  type ValidateAudio,
 } from "./types.ts";
 
 type TtsAudioStorage = ReturnType<typeof createTtsAudioStorage>;
@@ -41,6 +42,8 @@ export interface CreateTtsAudioServiceOptions {
   readonly registerBackgroundTask?: (promise: Promise<unknown>) => void;
   readonly observeStorage?: (observation: TtsStorageObservation) => void;
   readonly createRequestId?: () => string;
+  /** 동기 MP3 검사는 합성 12초 예산 안에서만 수행한다. */
+  readonly validateAudio?: ValidateAudio;
 }
 
 export interface TtsAudioServiceRequest {
@@ -91,6 +94,7 @@ export function createTtsAudioService(options: CreateTtsAudioServiceOptions) {
   const registerBackgroundTask = options.registerBackgroundTask ?? (() => undefined);
   const observeStorage = options.observeStorage ?? defaultStorageObserver;
   const createRequestId = options.createRequestId ?? defaultRequestId;
+  const validateAudio = options.validateAudio ?? validateMp3;
 
   return async function getOrCreateTtsAudio(request: TtsAudioServiceRequest): Promise<TtsAudioServiceResponse> {
     throwIfAborted(request.signal);
@@ -125,16 +129,21 @@ export function createTtsAudioService(options: CreateTtsAudioServiceOptions) {
         synthesisController.abort(timeoutReason);
         throw timeoutReason;
       }
+      if (synthesized.contentType !== "audio/mpeg" || !validateAudio(synthesized.audio, synthesized.contentType)) {
+        throw new TtsServiceError("tts_upstream_error");
+      }
+      throwIfAborted(request.signal);
+      if (clock.now() >= synthesisDeadline) {
+        synthesisController.abort(timeoutReason);
+        throw timeoutReason;
+      }
     } catch (error) {
       rethrowAbort(request.signal);
       if (error === timeoutReason || error instanceof DeadlineExceeded) throw new TtsServiceError("tts_timeout");
+      if (error instanceof TtsServiceError) throw error;
       throw providerError(error);
     } finally {
       request.signal.removeEventListener("abort", propagateAbort);
-    }
-
-    if (synthesized.contentType !== "audio/mpeg" || !validateMp3(synthesized.audio, synthesized.contentType)) {
-      throw new TtsServiceError("tts_upstream_error");
     }
     throwIfAborted(request.signal);
 
@@ -185,7 +194,7 @@ export function createR2TtsAudioService(
   bucket: TtsAudioStorageBucket,
   options: Omit<CreateTtsAudioServiceOptions, "storage">,
 ) {
-  return createTtsAudioService({ ...options, storage: createTtsAudioStorage(bucket, validateMp3) });
+  return createTtsAudioService({ ...options, storage: createTtsAudioStorage(bucket, validateMp3), validateAudio: validateMp3 });
 }
 
 function storedResponse(
