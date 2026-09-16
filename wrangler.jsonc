@@ -22,8 +22,23 @@
 	"upload_source_maps": true,
 	"compatibility_flags": [
 		"nodejs_compat"
+	],
+	"vars": {
+		"TTS_ENABLED": "false",
+		"TTS_PROVIDER": "qwen",
+		"TTS_MODEL": "qwen-audio-3.0-tts-flash",
+		"TTS_VOICE": "longanfengyue",
+		"TTS_RATE": "1.0",
+		"TTS_REVISION": "tts-v1"
+	},
+	"r2_buckets": [
+		{
+			"binding": "TTS_AUDIO",
+			"bucket_name": "vocabulary-study-tts-audio",
+			"preview_bucket_name": "audio-uploads"
+		}
 	]
-	// 평문 var 없음 — 시트 ID는 프로필별 값이라 PROFILES 시크릿 안에 있다 (PRD-general §5.1).
+	// 시트 ID는 프로필별 값이라 PROFILES 시크릿 안에 있다 (PRD-general §5.1).
 	/**
 	 * Smart Placement
 	 * https://developers.cloudflare.com/workers/configuration/smart-placement/#smart-placement
@@ -41,7 +56,6 @@
 	 * Note: Use secrets to store sensitive data.
 	 * https://developers.cloudflare.com/workers/configuration/secrets/
 	 */
-	// "vars": {  "MY_VARIABLE": "production_value" }
 	/**
 	 * Service Bindings (communicate between multiple Workers)
 	 * https://developers.cloudflare.com/workers/wrangler/configuration/#service-bindings
