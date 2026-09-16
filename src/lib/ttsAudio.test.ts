@@ -81,6 +81,26 @@ describe("TtsAudioOutput", () => {
     await expect(second).resolves.toEqual({ status: "started" });
   });
 
+  it("재생 중 같은 Blob을 5회 눌러도 이전 source를 멈추고 하나씩 처음부터 재생한다", async () => {
+    const fake = new FakeAudio();
+    const revoked: string[] = [];
+    const output = outputWith(fake, revoked);
+    const blob = new Blob(["audio"]);
+
+    for (let i = 0; i < 5; i++) {
+      fake.ended = false;
+      fake.nextPlay = deferred<void>();
+      const playing = output.play(blob);
+      expect(fake.calls.at(-1)).toBe("play");
+      fake.nextPlay.resolve();
+      await expect(playing).resolves.toEqual({ status: "started" });
+    }
+
+    expect(fake.calls.filter((call) => call === "play")).toHaveLength(5);
+    expect(fake.calls.filter((call) => call === "pause")).toHaveLength(4);
+    expect(revoked).toEqual(["blob:test-1", "blob:test-2", "blob:test-3", "blob:test-4"]);
+  });
+
   it("교체·stop·dispose 뒤 늦은 native 완료와 이전 listener를 현재 source에서 격리한다", async () => {
     const fake = new FakeAudio();
     const revoked: string[] = [];

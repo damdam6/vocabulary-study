@@ -128,12 +128,11 @@ describe("PronunciationController", () => {
     expect(controller.getSnapshot().status).toBe("playing");
   });
 
-  it("로딩 중 replay는 요청과 manual 의도를 하나로 합치고 자동 재생을 추가하지 않는다", async () => {
+  it("로딩 중 5회 replay는 요청과 manual 의도를 하나로 합치고 자동 재생을 추가하지 않는다", async () => {
     const { controller, requests, audio } = setup();
     controller.activate("q", { text: "中", pinyin: null });
     controller.prepare("q");
-    controller.replay("q");
-    controller.replay("q");
+    for (let i = 0; i < 5; i++) controller.replay("q");
     controller.reveal("q");
     expect(requests).toHaveLength(1);
     requests[0].pending.resolve(response());
