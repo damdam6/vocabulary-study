@@ -101,9 +101,16 @@ function Mode1Card({ question, contentType, onJudged, pronunciation }: Mode1Card
     shouldMoveFocusRef.current = false
   }, [pronunciationBinding, viewReady])
 
-  useEffect(() => () => {
-    completionClosedRef.current = true
-    clearFallback()
+  useEffect(() => {
+    // StrictMode의 개발 수명은 setup → cleanup → setup을 한 번 더 수행한다.
+    // 첫 cleanup이 닫은 completion gate를 다음 실제 카드 수명에서 다시 열어야
+    // transition 완료·fallback 공개를 놓치지 않는다. 판정/실제 unmount cleanup은
+    // 여전히 gate를 닫으므로 늦은 완료는 기존처럼 차단된다.
+    completionClosedRef.current = false
+    return () => {
+      completionClosedRef.current = true
+      clearFallback()
+    }
   }, [clearFallback])
 
   const reveal = () => {

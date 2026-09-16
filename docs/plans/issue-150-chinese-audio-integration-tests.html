@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>#150 중국어 음성 대표 통합 흐름과 학습 회귀 검증 — 작업 플랜</title>
+<style>
+  :root {
+    --bg: #f7f7f8; --card: #ffffff; --ink: #1c1c1e; --muted: #6e6e73;
+    --line: #e3e3e6; --accent: #3b6ef5; --accent-soft: #e8eefe;
+    --ok: #2e8b57; --warn: #b25e09; --code-bg: #f0f0f2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161618; --card: #202024; --ink: #ececf0; --muted: #98989f;
+      --line: #333338; --accent: #7a9bff; --accent-soft: #26304a;
+      --ok: #58c088; --warn: #e0a35c; --code-bg: #2a2a2f;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 40px 20px 80px; background: var(--bg); color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+                 "Segoe UI", "Noto Sans KR", sans-serif;
+    line-height: 1.65;
+  }
+  main { max-width: 860px; margin: 0 auto; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code {
+    font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 0.86em;
+    background: var(--code-bg); border-radius: 5px; padding: 2px 6px;
+  }
+  header { margin-bottom: 28px; }
+  .issue-chip {
+    display: inline-block; font-weight: 700; color: var(--accent);
+    background: var(--accent-soft); border-radius: 999px;
+    padding: 3px 14px; font-size: 0.95rem; margin-bottom: 10px;
+  }
+  .type-chip {
+    display: inline-block; font-weight: 600; color: var(--muted);
+    border: 1px solid var(--line); border-radius: 999px;
+    padding: 3px 12px; font-size: 0.8rem; margin-left: 8px; vertical-align: 2px;
+  }
+  h1 { font-size: 1.7rem; margin: 0 0 14px; letter-spacing: -0.02em; }
+  .meta {
+    display: flex; flex-wrap: wrap; gap: 6px 22px;
+    color: var(--muted); font-size: 0.87rem;
+  }
+  .meta b { color: var(--ink); font-weight: 600; }
+  section.card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 24px 28px; margin-top: 18px;
+  }
+  h2 {
+    font-size: 1.05rem; margin: 0 0 14px; letter-spacing: -0.01em;
+    display: flex; align-items: center; gap: 8px;
+  }
+  h2 .no {
+    color: var(--accent); font-size: 0.8rem; font-weight: 700;
+    border: 1.5px solid var(--accent); border-radius: 6px; padding: 0 6px;
+  }
+  ul, ol { margin: 0; padding-left: 22px; }
+  li { margin: 6px 0; }
+  .steps { list-style: none; padding: 0; counter-reset: step; }
+  .steps li {
+    counter-increment: step; position: relative; padding: 10px 0 10px 44px;
+    border-bottom: 1px dashed var(--line);
+  }
+  .steps li:last-child { border-bottom: none; }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 10px;
+    width: 28px; height: 28px; border-radius: 8px; background: var(--accent-soft);
+    color: var(--accent); font-weight: 700; font-size: 0.85rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .steps .files { display: block; margin-top: 4px; font-size: 0.85rem; color: var(--muted); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 0.82rem; }
+  .done-list { list-style: none; padding: 0; }
+  .done-list li { padding-left: 30px; position: relative; }
+  .done-list li::before {
+    content: ""; position: absolute; left: 2px; top: 7px; width: 15px; height: 15px;
+    border: 2px solid var(--ok); border-radius: 5px;
+  }
+  .scroll-x { overflow-x: auto; }
+  footer { margin-top: 30px; color: var(--muted); font-size: 0.8rem; text-align: center; }
+  code { overflow-wrap: anywhere; }
+  h3 { font-size: 1rem; margin: 24px 0 10px; }
+  .steps p { margin: 6px 0; }
+  td { min-width: 110px; overflow-wrap: anywhere; }
+  input[type=checkbox] { margin-right: 6px; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <span class="issue-chip"><a href="https://github.com/damdam6/vocabulary-study/issues/150">#150</a></span><span class="type-chip">통합 회귀 검증</span>
+    <h1>중국어 음성 대표 통합 흐름과 학습 회귀 검증</h1>
+    <div class="meta">
+      <span><b>damdam6/vocabulary-study</b></span>
+      <span>브랜치 <b><code>feat/150-chinese-audio-integration-tests</code></b> ← <code>feat/ch-sound</code></span>
+      <span>라벨 <b>enhancement</b></span>
+      <span>2026-09-16</span>
+    </div>
+  </header>
+
+  <section class="card">
+    <h2><span class="no">1</span>요약</h2>
+    <p>선행 구현을 실제 서비스·라우트·저장소 및 실제 카드·세션·controller 경로로 연결해 대표 저장/장애와 기존 학습 회귀를 검증했다. 새 통합 테스트와 AC-01~24 검증 기록을 소유하며 상세 protocol·경합·timeout 조합은 선행 테스트 증거로 재사용한다. StrictMode 모드1 공개 게이트 결함을 재현해 최소 수명 수정으로 해결했다. R2 보완에서는 Worker route 응답을 실제 client controller/cache/Audio로 소비하는 S1/S3, 네 문제 실제 StudyScreen transcript와 5xx retryQueue, App 401 Audio/Object URL 정리, PRD 원문 기반 AC 지도를 추가했다. 최종 전체 검사 결과는 검증 기록에 실제 실행 수로 갱신하며, 실제 환경 활성화와 출시 판단은 포함하지 않는다.</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">2</span>현황 분석</h2>
+
+    <p><b>조사 기준:</b> HEAD <code>d6c7e11b350a6d4975f9ea5473ba4959cbea1ecb</code>, 브랜치/워크트리 일치, 최초 작업 트리 clean. 이슈 #150 본문과 댓글을 조회했으며 댓글은 0개다. 사용자 지정 interactive.md/config.json을 우선 적용했다. 상위 디렉터리와 작업 트리에서 적용할 AGENTS.md는 발견되지 않았다.</p><p><b>직접 선행 완료:</b> <a href="https://github.com/damdam6/vocabulary-study/pull/165">#140 / PR #165</a> MERGED → d6c7e11, <a href="https://github.com/damdam6/vocabulary-study/pull/163">#147 / PR #163</a> MERGED → 7bfac65, <a href="https://github.com/damdam6/vocabulary-study/pull/164">#148 / PR #164</a> MERGED → ca3a187. 세 PR의 base는 모두 feat/ch-sound이고 현재 git history에 포함된다. #149 실제 버킷·키 준비는 이 작업의 의존성이 아니다.</p><div class="scroll-x"><table><thead><tr><th>영역</th><th>현재 코드 흐름</th><th>기존 증거와 남은 연결</th></tr></thead><tbody><tr><td>서버 진입·저장</td><td><a href="https://github.com/damdam6/vocabulary-study/blob/d6c7e11b350a6d4975f9ea5473ba4959cbea1ecb/worker/index.ts#L18"><code>worker/index.ts:18</code></a>의 인증 → <a href="https://github.com/damdam6/vocabulary-study/blob/d6c7e11b350a6d4975f9ea5473ba4959cbea1ecb/worker/routes/tts.ts#L22"><code>worker/routes/tts.ts:22</code></a> 설정/입력 → <a href="https://github.com/damdam6/vocabulary-study/blob/d6c7e11b350a6d4975f9ea5473ba4959cbea1ecb/worker/lib/tts/service.ts#L100"><code>worker/lib/tts/service.ts:100</code></a> 실제 키·R2 조회·합성·조건부 저장 → HTTP MP3. 라우트가 요청마다 provider/service를 생성하고 ctx.waitUntil을 전달한다.</td><td><a href="https://github.com/damdam6/vocabulary-study/blob/d6c7e11b350a6d4975f9ea5473ba4959cbea1ecb/worker/routes/tts.test.ts#L142"><code>worker/routes/tts.test.ts:142</code></a>는 hit·인증 오류·Upgrade 생성까지 이미 연결한다. 연속 요청이 상태 있는 버킷을 재사용하는지와 실제 클라이언트 소비까지 이어지는 검증은 없다.</td></tr><tr><td>저장 실패 계약</td><td><a href="https://github.com/damdam6/vocabulary-study/blob/d6c7e11b350a6d4975f9ea5473ba4959cbea1ecb/worker/lib/tts/storage.ts#L87"><code>worker/lib/tts/storage.ts:87</code></a>는 null만 miss로, <a href="https://github.com/damdam6/vocabulary-study/blob/d6c7e11b350a6d4975f9ea5473ba4959cbea1ecb/worker/lib/tts/service.ts#L112"><code>worker/lib/tts/service.ts:112</code></a>는 read 실패를 tts_storage_unavailable로 처리한다. put의 실패/예산 초과는 GENERATED/UNCONFIRMED이며 원래 Promise를 관측한다.</td><td><a href="https://github.com/damdam6/vocabulary-study/blob/d6c7e11b350a6d4975f9ea5473ba4959cbea1ecb/worker/lib/tts/service.test.ts#L123"><code>worker/lib/tts/service.test.ts:123</code></a> read 실패·timeout, :135 경합 승자, :149 늦은 put, :173 합성 deadline. 조합을 복제하지 않고 최종 증거로 인용한다.</td></tr><tr><td>세션·전송·오디오</td><td><a href="https://github.com/damdam6/vocabulary-study/blob/d6c7e11b350a6d4975f9ea5473ba4959cbea1ecb/src/screens/StudyScreen.tsx#L66"><code>src/screens/StudyScreen.tsx:66</code></a>은 sessionId:pos와 현재 A/B열을 hook에 전달한다. <a href="https://github.com/damdam6/vocabulary-study/blob/d6c7e11b350a6d4975f9ea5473ba4959cbea1ecb/src/hooks/usePronunciation.ts#L60"><code>src/hooks/usePronunciation.ts:60</code></a>은 실제 controller/transport/Audio/cache를 만들고 cleanup에서 폐기한다. <a href="https://github.com/damdam6/vocabulary-study/blob/d6c7e11b350a6d4975f9ea5473ba4959cbea1ecb/src/lib/api.ts#L90"><code>src/lib/api.ts:90</code></a>은 401 인증 정리와 성공 callback을 실행한다.</td><td><a href="https://github.com/damdam6/vocabulary-study/blob/d6c7e11b350a6d4975f9ea5473ba4959cbea1ecb/src/screens/StudyScreen.test.tsx#L10"><code>src/screens/StudyScreen.test.tsx:10</code></a>는 hook을 대체하고 <a href="https://github.com/damdam6/vocabulary-study/blob/d6c7e11b350a6d4975f9ea5473ba4959cbea1ecb/src/hooks/usePronunciation.test.tsx#L15"><code>src/hooks/usePronunciation.test.tsx:15</code></a>는 controller 등을 대체한다. 각 계층 단위 성공으로 실제 연결 성공을 단정할 수 없다.</td></tr><tr><td>모드1 공개</td><td><a href="https://github.com/damdam6/vocabulary-study/blob/d6c7e11b350a6d4975f9ea5473ba4959cbea1ecb/src/screens/Mode1Card.tsx#L109"><code>src/screens/Mode1Card.tsx:109</code></a>에서 prepare, :85에서 viewReady 뒤 reveal 1회, :116에서 판정 시 게이트와 timer를 닫는다. StudyScreen :114는 기록 전에 stop한다.</td><td><a href="https://github.com/damdam6/vocabulary-study/blob/d6c7e11b350a6d4975f9ea5473ba4959cbea1ecb/src/screens/Mode1Card.test.tsx#L189"><code>src/screens/Mode1Card.test.tsx:189</code></a>는 binding 호출을 검증한다. 새 테스트는 실제 요청·native play 횟수와 빠른 판정 뒤 늦은 응답을 관찰한다.</td></tr><tr><td>모드2 결과</td><td><a href="https://github.com/damdam6/vocabulary-study/blob/d6c7e11b350a6d4975f9ea5473ba4959cbea1ecb/src/screens/Mode2Card.tsx#L36"><code>src/screens/Mode2Card.tsx:36</code></a>은 wrongAnswer !== null에서 0ms 예약으로 reveal한다. :55의 채점은 정답을 즉시 진행하고 빈 오답은 결과 화면에 둔다.</td><td><a href="https://github.com/damdam6/vocabulary-study/blob/d6c7e11b350a6d4975f9ea5473ba4959cbea1ecb/src/screens/Mode2Card.test.tsx#L57"><code>src/screens/Mode2Card.test.tsx:57</code></a>의 빈 오답·StrictMode·수동 버튼 증거를 유지한다. 새 테스트는 입력 오답 대신 정답 A열이 실제 transport로 전달되는지 확인한다.</td></tr><tr><td>기록·큐·통계</td><td><a href="https://github.com/damdam6/vocabulary-study/blob/d6c7e11b350a6d4975f9ea5473ba4959cbea1ecb/src/lib/studySession.ts#L85"><code>src/lib/studySession.ts:85</code></a>: 모든 정답은 answer, 복습 오답만 review-fail, 학습 오답은 기록 없음. <a href="https://github.com/damdam6/vocabulary-study/blob/d6c7e11b350a6d4975f9ea5473ba4959cbea1ecb/src/screens/StudyScreen.tsx#L79"><code>src/screens/StudyScreen.tsx:79</code></a>이 실패 기록을 실제 retryQueue로 적재한다. <a href="https://github.com/damdam6/vocabulary-study/blob/d6c7e11b350a6d4975f9ea5473ba4959cbea1ecb/src/App.tsx#L43"><code>src/App.tsx:43</code></a>는 모든 API 성공 때 flush를 요청한다.</td><td>성공 TTS가 기존 기록 flush를 촉발하는 것은 정상 계약이다. TTS 자체를 큐에 넣지 않는다는 조건과 재전송 시점이 항상 같다는 조건을 혼동하지 않는다.</td></tr><tr><td>홈·로그인·숨김</td><td><a href="https://github.com/damdam6/vocabulary-study/blob/d6c7e11b350a6d4975f9ea5473ba4959cbea1ecb/src/screens/HomeScreen.tsx#L49"><code>src/screens/HomeScreen.tsx:49</code></a>이 words capability를 보관하고 :94에서 App으로 전달한다. <a href="https://github.com/damdam6/vocabulary-study/blob/d6c7e11b350a6d4975f9ea5473ba4959cbea1ecb/src/App.tsx#L37"><code>src/App.tsx:37</code></a>의 실제 401 callback은 로그인 전환·Study unmount를 일으킨다. <a href="https://github.com/damdam6/vocabulary-study/blob/d6c7e11b350a6d4975f9ea5473ba4959cbea1ecb/src/hooks/usePronunciation.ts#L99"><code>src/hooks/usePronunciation.ts:99</code></a>은 hidden/pagehide를 처리한다.</td><td>Home/App을 실제로 렌더하는 대표 사례로 capability 전달·로그인 복귀·리소스 해제를 확인한다. standalone hook 호출 횟수만으로 완료 처리하지 않는다.</td></tr></tbody></table></div><p><b>선행 실행 기록과 한계:</b> PR #165는 51 files / 664 tests 및 lint/build 통과, #163은 49 / 639와 모드1 13 tests, #164는 50 / 645와 모드2 11 tests를 보고한다. 각각 당시 커밋의 PR 기록이며 합산하거나 현재 worktree 재실행 결과로 표시하지 않는다. 이 계획 단계에서 npm test/lint/build를 실행하지 않았다.</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">3</span>설계 및 확인할 연결 결함</h2>
+
+    <h3>두 테스트 경계</h3><ol><li><code>worker/tts.integration.test.ts</code> (node): 실제 Worker dispatch/auth → route → service → R2 storage → Qwen adapter/protocol/MP3 검사. 외부 R2Bucket과 Upgrade/socket만 더블로 둔다. 실제 클라이언트 ttsApi/controller/Audio 출력기를 함께 소비자로 연결해 저장 실패 바이트가 재생 포트에 도달하고 인증 callback이 보존되는지 확인한다.</li><li><code>src/screens/StudyScreen.tts.integration.test.tsx</code> (jsdom): 실제 StudyScreen/hook/controller/cards/transport/audio/cache/studySession/api/retryQueue를 유지한다. App/Login/Home은 인증·capability·flush 대표 시나리오에서 실제로 렌더한다. 외부 HTTP 응답·native Audio·Object URL·시간/브라우저 이벤트만 제어한다. HTTP 서버 계약은 S1–S4와 선행 route 증거가 보완한다.</li></ol><p>R2 더블은 이전 put 바이트와 metadata를 저장하는 작은 메모리 구현이다. 세션 재생의 새 요청에서는 새 controller·cache·ctx를 만들고 버킷만 유지한다. 전체 protocol emulator나 가상 Sheets 서버는 만들지 않는다. 기존 <code>worker/lib/tts/fixtures/mp3.ts</code>의 합성 MP3 fixture는 파서/바이트 연결용이며 청취 가능한 실제 제공자 음성의 증거가 아니다. <code>src/lib/ttsFixtures.ts</code>의 “fixture” Blob을 유효 MP3 근거로 쓰지 않는다.</p><h3>정적 조사에서 찾은 결함 후보</h3><p><a href="https://github.com/damdam6/vocabulary-study/blob/d6c7e11b350a6d4975f9ea5473ba4959cbea1ecb/src/screens/Mode1Card.tsx#L104"><code>src/screens/Mode1Card.tsx:104</code></a>는 effect cleanup에서 <code>completionClosedRef.current = true</code>를 설정하지만 setup에서 다시 열지 않는다. <a href="https://github.com/damdam6/vocabulary-study/blob/d6c7e11b350a6d4975f9ea5473ba4959cbea1ecb/src/main.tsx#L6"><code>src/main.tsx:6</code></a>의 StrictMode setup → cleanup → setup 뒤 사용자 플립 시 :65의 <code>completeView</code>가 즉시 반환할 가능성이 있다. 기존 모드1 테스트에는 StrictMode 연결 사례가 없다. <b>구현 첫 테스트로 재현하고, 확인되면 생존 게이트만 최소 수정</b>한다. 계획에서 결함 해결/테스트 통과를 미리 주장하지 않는다.</p><h3>소유 범위와 변경 제한</h3><p>필수 신규 경로는 두 통합 테스트와 <code>docs/plans/chinese-tts-audio-verification.md</code>다. 전용 fixture는 길이/재사용 필요가 있을 때 <code>worker/fixtures/ttsIntegration.ts</code>, <code>src/screens/fixtures/ttsIntegration.ts</code>로 추출한다. 기존 fixture·render helper를 우선 사용하고 기존 단위 테스트를 이동·대규모 수정하지 않는다. representative 통합 결함이 확인된 경우에만 해당 생산 코드의 좁은 수정과 관련 검증을 포함한다. 학습 알고리즘·공유 CSS·provider 정책·새 캐시·binding·생성 Env·시크릿 파일은 작업 계획에 포함하지 않는다.</p><h3>AC 증거 지도</h3><p>다음은 <b>증거 배치 계획</b>이다. 아래 축약 경로 중 서버 테스트는 <code>worker/lib/tts/</code>(qwen 계열은 providers/), routes/index는 worker/, 클라이언트 lib 테스트는 src/lib/, 카드/화면은 src/screens/, hook은 src/hooks/, 버튼은 src/components/를 기준으로 한다. 구현 결과 문서에는 전체 클릭 가능한 경로와 정확한 테스트 제목·실행 결과를 적는다. 모든 AC는 “자동 검증 / 코드 조사 / 출시 확인 대기”를 구분한다.</p><div class="scroll-x"><table><thead><tr><th>AC</th><th>검증할 계약</th><th>이미 존재하는 자동 증거</th><th>이번 이슈의 증거 계획</th><th>남은 확인/한계</th></tr></thead><tbody><tr><td>AC-01</td><td>generic 요청·버튼·재생 0</td><td>routes/tts.test.ts:104 사전 차단; Mode1Card.test.tsx:234; usePronunciation.test.tsx:102</td><td>C5: 실제 App의 generic/off/구 응답 진행</td><td>직접 버킷 접근은 AC-24 출시 확인</td></tr><tr><td>AC-02</td><td>앞면 0 → 플립 준비 → 공개 후 1</td><td>Mode1Card.test.tsx:189; speak.test.ts:117</td><td>C1: 준비 완료를 전환 전에 풀어도 play 0, transform 후 1</td><td>실제 음성 시점은 모바일 확인</td></tr><tr><td>AC-03</td><td>재렌더·중복 공개 중복 없음</td><td>Mode1Card.test.tsx:110,189; speak.test.ts:102</td><td>C1: StrictMode 포함 공개 1회; 기록 응답 재렌더에도 중복 없음</td><td>StrictMode 게이트 결함 후보 재현 필요</td></tr><tr><td>AC-04</td><td>정답 0·일반/빈 오답 1</td><td>Mode2Card.test.tsx:42,57,122</td><td>C2: 일반/공백 오답은 정답 text로 1회, 즉시 정답은 요청 0</td><td>실제 음질은 별도</td></tr><tr><td>AC-05</td><td>빈 B열에서도 재생</td><td>pronunciation.test.ts:5; Mode1Card.test.tsx:223; Mode2Card.test.tsx:184</td><td>S1/C2의 빈 병음 fixture, absent와 정답 음성 연결</td><td>자연 발음 청취 미검증</td></tr><tr><td>AC-06</td><td>반복 클릭·겹침·재요청 방지</td><td>ttsAudio.test.ts:64; speak.test.ts:172</td><td>C1: 준비 후 5회 수동 replay, 단일 활성 source·TTS 추가 요청 0</td><td>iOS/Android 반복 재생 미검증</td></tr><tr><td>AC-07</td><td>로딩 중 요청 최대 1</td><td>speak.test.ts:131; ttsApi.test.ts:139</td><td>C1 로딩 중 연속 클릭의 대표 경로만 확인</td><td>세부 의도 경합은 선행 증거 재사용</td></tr><tr><td>AC-08</td><td>이동·종료·완료·401의 늦은 소리 차단</td><td>speak.test.ts:216,268; qwen.test.ts:144,171; ttsApi.test.ts:155</td><td>C1 빠른 판정 + C3 종료/마지막 피드백 + C4 실제 로그인 전환</td><td>실기기 이동과 실제 네트워크 취소 미검증</td></tr><tr><td>AC-09</td><td>자동재생 차단 뒤 수동 가능</td><td>ttsAudio.test.ts:114; speak.test.ts:202; PronunciationButton.test.tsx:80</td><td>상세 단위 증거 재사용. C1은 실제 Audio 출력 연결 보강</td><td>모바일 autoplay 정책 미검증</td></tr><tr><td>AC-10</td><td>장애에도 학습·수동 재시도</td><td>qwen.test.ts:107; service.test.ts:173; ttsApi.test.ts:139,166; speak.test.ts:186</td><td>S2/S3/S4 + C6 정상/실패/off 회귀; 자동 실패 후 timer 경과해도 재요청 0</td><td>실제 provider 오류/timeout 미검증</td></tr><tr><td>AC-11</td><td>200자 허용·201/빈값 차단</td><td>input.test.ts:15; speak.test.ts:72; Mode1Card.test.tsx:159; Mode2Card.test.tsx:184</td><td>S1을 짧은 표제어와 200자 문장으로 매개변수화</td><td>390px·200% 확대·가림·전체 문장 청취 미검증</td></tr><tr><td>AC-12</td><td>B열 ignored/absent·text 분리·키 변경</td><td>pronunciation.test.ts:5,12; storage.test.ts:63; qwenProtocol.test.ts:33; service.test.ts:105</td><td>선행 실제 테스트 제목·결과를 연결. 별도 병음 알고리즘/조합 테스트 추가 없음</td><td>行의 두 발음 분리 보장 없음; 다음자·경성·ü 청취 미검증</td></tr><tr><td>AC-13</td><td>같은 내용 재사용·설정 변경 새 키</td><td>storage.test.ts:54,63,73; service.test.ts:94</td><td>S1 같은 버킷·새 controller/cache에서 같은 바이트</td><td>실제 보관 지속성은 출시 확인</td></tr><tr><td>AC-14</td><td>인증/generic/off 선차단·기존 API 정상</td><td>routes/tts.test.ts:88,104; routes/words.test.ts:170; index.profiles.test.ts</td><td>S4 앱 401과 provider 401 분리, C5 off 학습</td><td>실환경 binding은 #149</td></tr><tr><td>AC-15</td><td>키보드·공개 전 숨김·모션 감소</td><td>Mode1Card.test.tsx:68,86,124; Mode2Card.test.tsx:94,104; PronunciationButton.test.tsx:34</td><td>C1 실제 controller를 포함한 StrictMode 공개 보강</td><td>실제 키보드·접근성 트리·모바일/축소모션 확인 대기</td></tr><tr><td>AC-16</td><td>hidden 정지·자동 복귀 없음</td><td>usePronunciation.test.tsx:112; speak.test.ts:248</td><td>C3: 재생 중 hidden 및 준비 중 pagehide, 복귀 뒤 수동만</td><td>모바일 background/foreground 미검증</td></tr><tr><td>AC-17</td><td>동일 채점·큐·기록·통계</td><td>studySession.test.ts; sessionQueue.test.ts; retryQueue.test.ts; worker/routes/answer.test.ts</td><td>C6 혼합 판정 transcript의 정상/실패/off 동등 비교 + C7 실제 flush 계약</td><td>Sheets 실제 쓰기는 실행하지 않음</td></tr><tr><td>AC-18</td><td>구 서버 응답 off·기존 학습 정상</td><td>wordsApi.test.ts:125; routes/words.test.ts:170</td><td>C5: tts 없는 words → 실제 Home/App/Study → 완료</td><td>#149 배포 호환 상태는 별도</td></tr><tr><td>AC-19</td><td>첫 저장 뒤 새 세션 동일 바이트</td><td>service.test.ts:258; routes/tts.test.ts:238</td><td>S1: 실제 route/service/storage와 fresh controller/cache; 후속 provider 0</td><td>실제 R2·다른 기기·지역·재배포 미검증</td></tr><tr><td>AC-20</td><td>저장 hit는 provider 장애 무관·조회 실패 합성 0</td><td>storage.test.ts:93; service.test.ts:94,123; routes/tts.test.ts:142</td><td>S1 후속 provider 실패 설정에도 hit; S2 get reject → synthesis 0; C6 학습 가능</td><td>실제 R2 장애/권한 확인 대기</td></tr><tr><td>AC-21</td><td>저장 실패/초과에도 UNCONFIRMED 재생</td><td>service.test.ts:149; storage.test.ts:184</td><td>S3 put reject → 실제 client Blob/Audio play·동일 세션 replay·ctx.drain; C6 큐 영향 없음</td><td>저장 예산 초과 상세는 기존 테스트; 실환경 늦은 저장 관측 대기</td></tr><tr><td>AC-22</td><td>동시 최초 저장 덮어쓰기 없음</td><td>storage.test.ts:142,155; service.test.ts:135</td><td>조건부 헤더는 S1에서도 관찰. 경합 조합은 선행 테스트 재사용</td><td>실제 R2 원자성·경합·중복 과금 관측 대기</td></tr><tr><td>AC-23</td><td>시트 직접 추가·변경·삭제와 파일 보관</td><td>storage.test.ts:54,63; routes/tts.test.ts:210의 Sheets 미접근; service.test.ts:105</td><td>S1 미등록 문장도 요청 시 생성. 키 입력/삭제 경로 없음은 코드 조사 근거로 구분</td><td>전체 시트 편집/삭제→보관 자동 증거는 부분적. 실제 변경·자동 만료 없음은 #149/#151 출시 확인</td></tr><tr><td>AC-24</td><td>비공개·프로필 분리</td><td>routes/tts.test.ts:88,210; storage.test.ts:63</td><td>선행 인증·profile/sheet 키 분리 결과를 연결</td><td>버킷 공개 URL 차단·공개 도메인/lifecycle은 실제 환경 미검증</td></tr></tbody></table></div>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">4</span>작업 단계</h2>
+    <ol class="steps">
+
+      <li id="step-1"><label><input type="checkbox" checked disabled> <b>전용 harness 준비</b></label><p>실제 모듈을 import하고 외부 더블만 둔다. 상태 있는 Map 버킷은 get마다 새 stream을 반환하고 put은 전달받은 바이트를 복사·보관하며 If-None-Match를 실제 검사한다. Upgrade/socket 더블은 전송된 task ID에 맞춰 정상 이벤트만 제공한다. 예상하지 못한 fetch URL은 즉시 실패시켜 외부 유출을 막는다. 기존 createMp3Fixture와 makeExecutionContext/drain을 재사용한다.</p><span class="files"><code>worker/tts.integration.test.ts</code>, <code>worker/fixtures/ttsIntegration.ts (필요할 때 신규)</code>, <code>src/screens/fixtures/ttsIntegration.ts (필요할 때 신규)</code></span></li><li id="step-2"><label><input type="checkbox" checked disabled> <b>서버부터 클라이언트 소비까지 대표 연결</b></label><p>S1–S4를 작성한다. node 테스트에서 실제 apiFetch/ttsApi/controller/Audio 출력기/Blob cache까지 붙여 route 응답을 소비하고, localStorage·native Audio·Object URL만 더블로 둔다. 모든 ctx와 요청 Promise를 회수한다. 서버 HTTP 응답과 client Blob 바이트를 각각 관찰한다.</p><span class="files"><code>worker/tts.integration.test.ts</code>, <code>worker/fixtures/ttsIntegration.ts (필요할 때 신규)</code></span></li><li id="step-3"><label><input type="checkbox" checked disabled> <b>실제 카드·세션 공개와 이동</b></label><p>C1–C3를 실제 StudyScreen + usePronunciation + controller + 두 카드로 작성한다. StrictMode 케이스를 먼저 실행해 아래 결함 후보를 재현한다. 전환 event, fetch/body deferred, native play와 source 연결을 관찰하며 내부 stop spy만으로 성공 처리하지 않는다.</p><span class="files"><code>src/screens/StudyScreen.tts.integration.test.tsx</code>, <code>src/screens/fixtures/ttsIntegration.ts (필요할 때 신규)</code></span></li><li id="step-4"><label><input type="checkbox" checked disabled> <b>확인된 연결 결함의 최소 수정</b></label><p>Mode1Card의 StrictMode cleanup이 completionClosedRef를 영구 true로 남기는지 C1의 실패로 확인한다. 재현되면 실제 언마운트/판정 후 늦은 완료 차단은 보존하면서 effect setup과 cleanup의 생존 상태만 균형 있게 고친다. 테스트를 통과시키기 위해 StrictMode를 제거하거나 controller를 mock하지 않는다. 다른 대표 연결 결함도 동일 원칙을 적용하며 광범위 정책 변경은 findings로 남긴다.</p><span class="files"><code>src/screens/Mode1Card.tsx (재현 시에만 최소 변경)</code>, <code>src/screens/StudyScreen.tts.integration.test.tsx</code>, <code>docs/plans/chinese-tts-audio-verification.md</code></span></li><li id="step-5"><label><input type="checkbox" checked disabled> <b>앱 인증·capability·학습 회귀</b></label><p>C4–C7을 구현한다. 로그인/홈 경로는 실제 App을 렌더하고 HTTP 응답만 제어한다. 채점 회귀는 고정 시각과 고정 큐로 동일 조작 transcript를 실행하고 기록 내용·진행 순서·재시도 큐·최종 통계를 비교한다. app 성공 callback의 flush 차이는 별도 성공 계약으로 검증한다.</p><span class="files"><code>src/screens/StudyScreen.tts.integration.test.tsx</code>, <code>src/screens/fixtures/ttsIntegration.ts (필요할 때 신규)</code></span></li><li id="step-6"><label><input type="checkbox" checked disabled> <b>AC-01–24 검증 기록 작성</b></label><p>각 AC에 선행 또는 신규 테스트 경로·정확한 테스트 제목·실행 명령·결과·커밋 기준과 출시 미검증을 기입한다. 계획된 테스트를 실행 증거로 표기하지 않는다. AC-23/24의 코드 조사와 실제 환경 검증을 구분하고 #149/#151에 넘길 체크리스트를 남긴다.</p><span class="files"><code>docs/plans/chinese-tts-audio-verification.md</code>, <code>docs/plans/issue-150-chinese-audio-integration-tests.html</code></span></li><li id="step-7"><label><input type="checkbox" checked disabled> <b>전체 검증·구현 단계 인계 산출물 정리</b></label><p>현재 worktree에 node_modules가 없으므로 구현 단계에서 tracked package-lock.json 기준 npm ci로 준비한다. 소유 테스트 → 전체 npm test/lint/build → git diff --check를 수행한다. 기존 잠금 파일을 변경하지 않는다. 실패하면 원인과 제한을 기록하고 대표 결함 수정 후 관련 검증을 다시 한다. 실제 실행 결과로 계획 체크리스트를 갱신한다.</p><span class="files"><code>worker/tts.integration.test.ts</code>, <code>src/screens/StudyScreen.tts.integration.test.tsx</code>, <code>docs/plans/chinese-tts-audio-verification.md</code>, <code>docs/plans/issue-150-chinese-audio-integration-tests.html</code></span></li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">5</span>리스크</h2>
+    <div class="scroll-x">
+    <table>
+      <thead><tr><th>리스크</th><th>영향</th><th>완화책</th></tr></thead>
+      <tbody>
+
+        <tr><td>StrictMode 공개 게이트</td><td>실제 앱의 모드1 공개·자동 음성 유실 가능</td><td>src/main.tsx가 StrictMode를 사용한다. Mode1Card :104 cleanup의 true 설정을 먼저 통합 테스트로 재현하고 최소 수명 수정 후 빠른 판정·실제 언마운트도 재검증한다. 현재는 정적 조사 가설이며 테스트 재현 미실행이다.</td></tr><tr><td>더블이 결론을 미리 구현</td><td>상수 MP3/상수 hit가 저장·직렬화 결함을 숨김</td><td>버킷은 put으로 받은 바이트만 보관하고 매번 새 stream을 만든다. 실제 route/service/storage/provider adapter·controller/transport를 대체하지 않는다. HTTP 파서는 실제 Response를 읽는다.</td></tr><tr><td>fake timer·stream·React 경계</td><td>예약 공개 유실 또는 flake/무한 timer drain</td><td>act와 명시적 deferred를 사용하고 필요한 0ms 공개/전환만 진행한다. runAllTimers로 20초 timeout까지 밀지 않는다. crypto digest의 native 비동기는 별도 await한다. jsdom Blob/Response 차이는 외부 API fixture에서 명시하고 ttsApi를 mock하지 않는다.</td></tr><tr><td>기록 callback의 flush</td><td>성공/실패 시 중간 요청 수 차이를 채점 회귀로 오판</td><td>고정 판정 transcript와 최종 효과를 비교하고 C7에서 실제 App callback을 별도 검증한다. localStorage·handler·flushing 완료를 케이스마다 정리한다.</td></tr><tr><td>의존성·빌드</td><td>이 worktree에는 아직 node_modules 없음; build는 Worker 타입도 검사</td><td>구현 단계에서 npm ci로 package-lock.json에 맞춘다. 신규 런타임/테스트 패키지를 추가하지 않는다. 메인 checkout pnpm-lock.yaml과 설정/Env를 수정하지 않는다. 로그 경고와 exit code를 분리 기록한다.</td></tr><tr><td>실환경 오인·범위 확대</td><td>모의 통과를 R2·음질·모바일 출시 승인으로 오인</td><td>#149 준비는 비의존. bucket/secret/배포/청취/실측은 수행하지 않고 출시 대기로 적는다. 구조적 redesign은 재현·영향·관련 소유 이슈만 findings로 인계한다.</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">6</span>테스트 계획</h2>
+    <ul>
+
+      <li><b>S1 — 첫 생성·조건부 저장·새 세션 재사용.</b> 짧은 A열+B열과 200자 문장+빈 B열을 매개변수화한다. 첫 controller 공개 → POST 인증 → get null → 실제 Qwen adapter/MP3 검증 → put 1회(If-None-Match: *) → GENERATED/SAVED → 정확한 Blob 바이트·play 1회. ctx.drain 뒤 controller/cache를 dispose하고 새로운 controller/cache와 새 요청 ctx로 다시 공개한다. 버킷 Map만 유지하며 STORED/PRESENT, 동일 바이트, 추가 put/provider 0을 확인한다. 두 번째 provider는 실패하도록 설정해 hit가 upstream 가용성과 독립임을 보인다. 이 테스트의 “새 세션”은 새 클라이언트 자원이며 실제 기기/R2 증거는 아니다.</li><li><b>S2 — 조회 장애.</b> get이 reject하면 실제 라우트 503 tts_storage_unavailable, socket/합성/put/play 0. 실패를 miss로 취급하지 않는다. 상세 timeout·손상 조합은 기존 service/storage 테스트로 연결한다.</li><li><b>S3 — 쓰기 장애와 사용 가능한 생성 음성.</b> 정상 합성 뒤 put reject → GENERATED/UNCONFIRMED 200. 실제 ttsApi가 해당 진단과 Blob을 받아 native Audio 더블의 play까지 도달한다. 같은 세션 수동 재생은 추가 요청 없이 같은 Blob을 재사용한다. ctx.tasks를 drain하고 실패 observation이 회수되며 저장 성공으로 기록되지 않음을 확인한다. 저장 대기 초과/늦은 성공은 service.test.ts:149의 기존 실행 증거로 연결한다.</li><li><b>S4 — 제공자 인증과 앱 인증의 분리.</b> 정상 앱 인증 + provider Upgrade 401 → 공개 503, WWW-Authenticate 없음. 실제 apiFetch를 통과해도 저장 앱 인증·프로필 유지, unauthorized callback 0, put/play 0. 잘못된 앱 인증은 실제 401 → 인증 삭제·callback 1, R2/provider 0의 대조를 둔다. 테스트용 고정 값만 사용한다.</li><li><b>C1 — 모드1 실제 연결.</b> 앞면은 요청 0. 계산 style을 0이 아닌 transform으로 제어하고 플립 때 요청 1; 응답을 먼저 완료해도 play 0; 자기 transform 완료 후 1. StrictMode와 중복 event/상태 재렌더에서도 1이다. 로딩 중 클릭은 요청 1로 합쳐지고, 준비 후 5회 replay는 한 Audio에서 이전 source를 해제하며 기록/판정/추가 fetch를 만들지 않는다. 별도 deferred 응답 사례에서 플립 직후 O/X로 이동한 뒤 늦은 응답과 fallback을 풀어도 이전 play 0, 학습은 즉시 다음으로 간다.</li><li><b>C2 — 모드2 실제 연결.</b> 일반 오답과 공백 입력 오답을 각각 제출한다. 결과 DOM에 정답이 보인 뒤에만 실제 fetch가 시작되고 JSON text는 사용자의 답이 아닌 word.hanzi이다. 병음 없음도 허용한다. StrictMode에서 공개당 요청/play 1, 수동 버튼은 기록·제출·다음 이동 0. 즉시 정답은 TTS 요청 0이고 answer 기록과 진행은 즉시 수행한다.</li><li><b>C3 — 숨김·이탈·완료.</b> 재생 중 visibilitychange hidden에서 pause → src 제거 → URL revoke를 관찰한다. visible 복귀만으로 fetch/play가 증가하지 않고 수동 클릭으로만 재생한다. 준비 중 pagehide/종료는 실제 transport signal을 abort하고 늦은 응답을 풀어도 play 0이다. 마지막 문제 빠른 판정에서 완료 feedback animation을 아직 끝내지 않아도 이전 오디오는 정지한다. unmount 뒤 timer·listener·활성 URL이 남지 않는다.</li><li><b>C4 — 실제 App 로그인 복귀.</b> 고정 words 응답으로 Home의 학습 시작 버튼부터 Study로 들어간다. provider 오류를 나타내는 공개 503에서는 로그인 전환/인증 삭제 없이 판정 가능하다(S4가 실제 서버 변환을 보증). 별도 앱 401 응답에서는 실제 unauthorized handler → LoginScreen 표시 → Study unmount → 요청 취소·오디오 해제를 검증한다. 로그인 뒤 새 세션이 옛 Blob/자동 공개 상태를 이어받지 않는지도 확인한다.</li><li><b>C5 — generic/off/구 서버.</b> 실제 Home/App 경로에서 generic, zh+enabled:false, tts 필드 없는 응답을 매개변수화한다. 버튼/fetch/play 0으로 학습·완료가 정상이며 capability가 localStorage의 다른 값으로 덮이지 않는다. 상세 words 포맷 오류는 wordsApi 선행 테스트를 재사용한다.</li><li><b>C6 — 정상/실패/off 동등 회귀.</b> 큐를 q1 모드1 학습 정답, q2 모드1 학습 오답, q3 모드2 복습 빈 오답, q4 모드2 학습 정답으로 고정한다. q3는 다음 클릭 전까지 머무르고 최종 통계는 {correct:2, wrong:2}, 큐 분모는 4, 재출제 없음이다. 예상 기록은 q1/q4 answer와 q3 review-fail뿐이며 timestamp·mode·isReview·profileId를 직접 명시한 기대값과 비교한다. TTS 200(UNCONFIRMED 포함), 503 실패, off 각각에서 같은 결과여야 한다. 기록 HTTP를 모두 성공시키는 실행과 고정된 answer/review-fail을 5xx로 만드는 실행을 구분해 실제 localStorage 재시도 엔트리도 비교한다. 조용한 TTS 실패는 어떤 큐 항목도 추가하지 않는다.</li><li><b>C7 — 기존 API 성공 flush.</b> 실제 App에서 진입 flush가 끝난 뒤 현재 프로필의 기존 answer 1건을 적재한다. TTS 200은 실제 성공 handler를 거쳐 그 answer를 1회 재전송하고 큐에서 제거한다. TTS 자체는 적재되지 않는다. 503/off에는 같은 시점의 flush가 없으며 이후 공통 성공 API/flush 조건을 동일하게 주면 같은 기록/최종 큐가 된다. 따라서 중간 HTTP 횟수의 단순 동등 비교로 정상 동작을 실패 처리하지 않는다.</li><li><b>실행 순서.</b> 개발 중 <code>npm test -- worker/tts.integration.test.ts src/screens/StudyScreen.tts.integration.test.tsx</code>. 대표 결함 수정 시 해당 기존 카드/서비스 테스트도 실행한다. 완료 시 <code>npm test</code>, <code>npm run lint</code>, <code>npm run build</code>, <code>git diff --check</code>. 실행 시각·HEAD·파일/테스트 수·exit code와 실패/경고를 verification.md에 기록한다. 테스트 이름은 S1–S4/C1–C7 식별자와 연결하고 예상 횟수와 아직 미실행인 항목을 섞지 않는다.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">7</span>완료 조건</h2>
+    <ul class="done-list">
+
+      <li>S1–S4/C1–C7의 대표 저장·장애·공개·이동·로그인/hidden 연결이 실제 내부 모듈로 통과하며 test-double 호출 횟수만의 형식적 검증에 그치지 않는다.</li><li>정상/실패/off의 동일 판정에서 채점·학습 큐·기록 내용·통계가 같고 TTS 자체는 retryQueue에 없다. 기존 성공 callback의 기록 flush도 보존한다.</li><li>확인된 대표 연결 결함만 최소 수정하고, 재현하지 않은 가설/넓은 재설계는 verification.md의 미해결 사실로 명시한다. 완료 조건을 침해하는 미해결 결함을 성공으로 처리하지 않는다.</li><li>AC-01~24 모두 실제 자동 실행 증거 또는 명확한 출시 대기 항목을 갖는다. 상세 단위 실패 조합을 복제하지 않는다. AC-23/24는 코드 근거만으로 실환경 완료 표시하지 않는다.</li><li>전체 npm test/lint/build 및 git diff --check 결과를 실제 실행 시각·커밋과 함께 기록한다. 실환경 없이 모든 자동 테스트를 실행할 수 있다.</li><li>실제 키/시크릿 값 읽기·출력, 유료 호출, cloud resource 생성, actual binding, 수동 배포/청취/모바일 실측을 하지 않는다. 운영 TTS_ENABLED=false(현재 미설정의 기본 off 포함)를 유지하며 true는 격리된 테스트 env에만 사용한다.</li><li>실제 R2 객체·비공개 URL·lifecycle·다른 기기/지역, endpoint/key 접근, 청취 20표본, 모바일/390px·200% 확대, PRD 지연 p95는 출시 미검증으로 #149/#151에 인계한다.</li><li>계획 HTML을 공유 서버 :8757의 해당 worktree URL로 probe하고 #150 지정 workspace의 cmux browser에서 연다. 상태 JSON의 기존 metadata/history/surface를 보존하며 stage=plan/status=ready, 경로·SHA-256·URL·검증·한계를 기록한다.</li><li>계획 단계는 구현/commit/push/PR 없이 종료한다. 지정 오케스트레이터 workspace와 surface 양쪽을 명시한 plain issue-stage #150 plan-done callback 및 별도 Enter로 인계한다. 후속 구현 gpt-5.6-terra high → 독립 리뷰 gpt-5.6-sol low이며 모든 PR/머지는 feat/ch-sound 대상이다.</li>
+    </ul>
+  </section>
+
+  <footer>issue-plan · <a href="https://github.com/damdam6/vocabulary-study/issues/150">#150</a> · 2026-09-16</footer>
+</main>
+</body>
+</html>
