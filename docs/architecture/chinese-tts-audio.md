@@ -2,11 +2,11 @@
 
 > 작성일: 2026-09-14 · 개정일: 2026-09-15 · 브랜치: `feat/ch-sound` · 분석 기준 커밋: `10dc04c`.
 >
-> 상태: **구현 설계 초안**. 기능 구현·유료 합성·청취 테스트·배포는 수행하지 않았다. 원안 D1~D5를 유지하며, 아래 구현 선택과 수치는 제안이다. 2026-09-15 소유자가 QwenCloud / `qwen-audio-3.0-tts-flash`를 확정했고 API 키 발급을 완료했다. 음색·속도는 아래 구현 기본값을 사용하며 실제 연결은 미검증이다.
+> 상태: **병합된 구현 계약 및 출시 전 운영 기준**. 기능 구현과 #150 자동 회귀는 `feat/ch-sound`에 병합됐다. 유료 합성·청취 테스트·실제 배포 활성화는 수행하지 않았다. 2026-09-15 소유자가 QwenCloud / `qwen-audio-3.0-tts-flash`를 확정했고 API 키 발급 사실만 확인했다. 음색·속도는 구현 기본값이며 실제 secret 주입·연결은 미검증이다.
 >
 > 2026-09-14 개정: 소유자의 저장 방식 채택을 반영해 **첫 요청 시 생성 + 비공개 R2 지속 저장**으로 변경했다. 원안의 Cache API 단독 보관안을 대체하며, 등록 직후 선생성은 후속 단계로 둔다.
 >
-> 제품 동작·완료 조건: [중국어 TTS PRD](../PRD-chinese-tts-audio.md). 구현 단위·등록용 본문: [이슈 17개와 의존성 그래프](../plans/chinese-tts-audio-tasks.md). 논의 원문: [중국어 발음 읽어주기 결정 내역](https://github.com/damdam6/vocabulary-study/blob/claude/chinese-word-audio-reading-5dva2m/docs/plans/chinese-tts-audio.md).
+> 제품 동작·완료 조건: [중국어 TTS PRD](../PRD-chinese-tts-audio.md). 운영 순서: [중국어 TTS 운영 런북](../plans/chinese-tts-audio-operations.md). 환경 사실: [#149 환경 기록](../plans/chinese-tts-audio-environment.md). 자동 증거: [#150 검증 기록](../plans/chinese-tts-audio-verification.md). 구현 단위: [이슈 17개와 의존성 그래프](../plans/chinese-tts-audio-tasks.md). 논의 원문: [중국어 발음 읽어주기 결정 내역](https://github.com/damdam6/vocabulary-study/blob/claude/chinese-word-audio-reading-5dva2m/docs/plans/chinese-tts-audio.md).
 
 ## 1. 구조와 핵심 결정
 
@@ -63,7 +63,7 @@ flowchart LR
 
 ### 2.1 선택 결과와 구현 기본값
 
-**QwenCloud / `qwen-audio-3.0-tts-flash` 확정, API 키 발급 완료**다. `qwen3-tts-flash`의 HTTP URL/WAV API를 이 모델의 계약으로 사용하지 않는다. 선택 모델은 국제 DashScope WebSocket으로 MP3를 받을 수 있다. [선택 모델의 공식 API 예시·요금](https://www.qwencloud.com/models/qwen-audio-3.0-tts-flash)
+**QwenCloud / `qwen-audio-3.0-tts-flash` 확정, API 키 발급 사실 확인**이다. `qwen3-tts-flash`의 HTTP URL/WAV API를 이 모델의 계약으로 사용하지 않는다. 선택 모델은 국제 DashScope WebSocket으로 MP3를 받을 수 있다. [선택 모델의 공식 API 예시·요금](https://www.qwencloud.com/models/qwen-audio-3.0-tts-flash)
 
 기본 음색 `longanfengyue`는 해당 모델의 표준 중국어 시스템 음색이다. 속도 1.0, MP3 24kHz·128kbps, volume 50, pitch 1.0, seed 0, `language_hints: ["zh"]`를 구현 기본값으로 둔다. SSML은 끄고 instruction·hot_fix·복제 음성은 사용하지 않는다. 음색·출력 설정은 실제 청취와 모델 접근 검증 전의 기본값이다. [음색 목록](https://docs.qwencloud.com/developer-guides/speech/voice-list/qwen-audio-tts), [오디오 설정](https://docs.qwencloud.com/api-reference/speech-synthesis/cosyvoice/python-sdk)
 
@@ -397,6 +397,8 @@ TTS API의 정상 응답도 기존 `apiFetch` 성공 콜백을 호출하므로 �
 긴 표제어·병음의 wrapping, 카드 뒷면/result 내부 세로 스크롤, 판정·다음 버튼 공간을 명시적으로 확보한다. 기존 카드 앞면의 기본 음절 수 스케일은 유지하되 긴 콘텐츠의 최소 높이·overflow를 검증한다. 수용 기준은 [PRD §6·§8](../PRD-chinese-tts-audio.md#6-접근성과-화면-품질)이다.
 
 ## 9. 운영 설정과 관측
+
+운영 절차의 실행 순서·확인 상태·롤백·정리는 [중국어 TTS 운영 런북](../plans/chinese-tts-audio-operations.md)이 소유한다. 이 문서는 코드가 제공하는 계약과 관측 가능한 값만 정의하며, 자동 테스트 통과를 실제 endpoint·R2·청취 성공으로 승격하지 않는다.
 
 | 설정 | 위치 | 초기 제안 / 의미 |
 |---|---|---|
