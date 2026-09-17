@@ -235,6 +235,25 @@
 - 성공 응답은 `audio/mpeg`와 `Cache-Control: private, no-store`를 사용하고, `X-TTS-Source: STORED|GENERATED`, `X-TTS-Storage: PRESENT|SAVED|UNCONFIRMED`, `X-TTS-Pronunciation: absent|ignored`, `X-TTS-Revision`을 반환한다. 저장 hit는 `STORED/PRESENT`, 새 합성은 `GENERATED/SAVED`다. 생성 MP3는 유효하지만 저장 대기 초과·실패·경합 재조회 실패면 `GENERATED/UNCONFIRMED`이며 저장 성공/실패를 확정하지 않는다.
 - 미인증·`generic`·기능 off·잘못된 입력은 TTS만 거부하고 R2/provider 호출 없이 오류를 반환한다. TTS 실패는 학습 진행·채점·시트 기록에 영향을 주지 않으며 retryQueue에 TTS 항목을 넣지 않는다.
 
+TTS 오류 응답 계약은 다음과 같다. 라우트가 `ttsError`로 반환하는 모든 오류 본문은 `Cache-Control: private, no-store`와 함께 `{ "error": <code>, "message": <한국어 안내> }` JSON이다. 메시지와 상태의 canonical source는 [`worker/lib/tts/types.ts`](../worker/lib/tts/types.ts)의 `TTS_ERROR_RESPONSES`이며, 구현/parameterized route 검증은 [`worker/routes/tts.ts`](../worker/routes/tts.ts)와 [`worker/routes/tts.test.ts`](../worker/routes/tts.test.ts)에 있다.
+
+| 상황 | HTTP 상태 | `error` code | 의미 |
+|---|---:|---|---|
+| 앱 인증 실패 | `401` | (본문 없음) | `worker/index.ts`가 TTS 라우트 전에 빈 응답과 `WWW-Authenticate: Bearer`로 종료한다. 앱 비밀번호 오류이며 provider 인증 오류가 아니다. |
+| `generic` 또는 비중국어 프로필 | `403` | `tts_not_allowed` | 인증은 성공했지만 `contentType === "zh"`가 아니므로 R2/provider 전에 거부한다. |
+| 잘못된 JSON·필드·표제어·병음 | `400` | `invalid_tts_request` | 허용된 JSON shape와 정규화된 text/pinyin 규칙을 통과하지 못했다. |
+| 요청 본문이 16KiB 초과 | `413` | `tts_request_too_large` | `Content-Length` 또는 실제 스트림 상한을 넘었다. |
+| JSON이 아닌 media type | `415` | `unsupported_media_type` | `Content-Type: application/json`이 아니다. |
+| 기능 flag off | `503` | `tts_disabled` | 현재 `TTS_ENABLED=false` baseline이거나 설정상 비활성이다. |
+| 설정·secret·R2 binding 미완료 | `503` | `tts_not_configured` | TTS 설정을 준비할 수 없으며 기존 학습은 계속한다. |
+| provider 인증/일시 가용성 오류 | `503` | `tts_unavailable` | provider의 인증·429·일시 가용성 문제를 앱 인증 실패와 구분한다. |
+| R2 조회/저장소 오류 | `503` | `tts_storage_unavailable` | R2 오류를 파일 없음으로 간주해 재합성하지 않는다. |
+| provider 응답·MP3 검증 오류 | `502` | `tts_upstream_error` | upstream 결과가 계약에 맞지 않는다. |
+| TTS 합성 timeout | `504` | `tts_timeout` | 합성 deadline을 초과했다. |
+| 라우트의 분류되지 않은 예외 | `500` | `tts_unavailable` | `worker/index.ts`가 고정된 no-store JSON으로 내부 오류를 숨긴다. 이 경로도 앱 인증 `401`과 다르다. |
+
+라우트 method가 `POST`가 아니면 `405 method_not_allowed`와 `Allow: POST`도 같은 JSON 오류 형식으로 반환한다. 오류에는 성공 전용 `X-TTS-*` 헤더를 붙이지 않는다. `TTS_ERROR_RESPONSES`의 provider auth/upstream/storage/timeout 매핑을 임의로 바꾸지 않는다.
+
 **`POST /api/answer`** — 정답 1건 기록 (오답은 호출하지 않음)
 - 요청:
 ```json
