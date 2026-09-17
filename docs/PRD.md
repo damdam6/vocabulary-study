@@ -45,12 +45,13 @@
 - 단어 등록 파이프라인: claude.ai 추출 킷 + 등록 화면 + Worker 등록 API (§7.3, §9.3)
 - 비밀번호 1개 접근 보호 (§8)
 - 모바일 우선 반응형 UI
+- 인증된 `contentType === "zh"` 프로필의 표제어 발음: capability가 켜진 경우 모드1 공개 후와 모드2 오답 결과 후 자동 1회 및 수동 반복 재생. TTS는 학습 진행·채점·시트 기록을 막지 않는다.
 
 ### v1 제외 (명시적 비범위)
 - 단어 편집·삭제 UI — 시트에서 직접 수정/삭제한다 (등록 취소 기능도 없음, `docs/plans/word-registration-system.md` §8 Q6)
 - 단어 목록·통계·이력 조회 화면 — 시트에서 직접 본다
 - 회원/멀티유저, 소셜 기능
-- 예문, 발음 오디오(TTS), 필기 인식
+- 예문, 필기 인식. 중국어 TTS의 첫 요청 합성·비공개 R2 재사용은 §7.3과 `docs/PRD-chinese-tts-audio.md`에 정의한다.
 - 오답 기록 (정답만 기록한다)
 - SM-2류 동적 SRS 알고리즘 (고정 간격만)
 - 오프라인 완전 지원 (기록 재시도 큐 정도만, §10)
@@ -191,7 +192,7 @@
 
 - **프론트엔드**: React + Vite. SPA 1개, 화면은 홈/학습/단어 등록 3개뿐이므로 상태 기반 화면 전환으로 충분 (라우터 라이브러리 선택 자유). 등록 화면의 병음-한자 일치 검증에 `pinyin-pro` 사전 라이브러리를 사용하되, 등록 화면 전용 청크로 지연 로드(dynamic import)해 홈·학습 초기 번들 크기에는 영향을 주지 않는다. *(2026-07-19 단어 등록 v1 편입으로 변경)*
 - **백엔드**: Cloudflare Worker 1개. 정적 자산 서빙(Workers Assets) + `/api/*` 처리를 겸한다. 별도 서버 없음.
-- **시트 접근**: Google 서비스 계정. 서비스 계정 이메일을 스프레드시트에 **편집자**로 공유해 둔다. Worker가 서비스 계정 키(JSON)로 JWT를 만들어 Sheets API v4 호출. 액세스 토큰은 Worker 메모리에 캐시(만료 ~1시간).
+- **시트 접근**: Google 서비스 계정. 서비스 계정 이메일을 스프레드시트에 **편집자**로 공유해 둔다. Worker가 서비스 계정 키(JSON)로 JWT를 만들어 Sheets API v4 호출. 액세스 토큰은 Worker 메모리에 캐시(만료 ~1시간). 중국어 TTS는 인증된 Worker와 비공개 R2 binding을 통해서만 접근한다.
 - **읽기/쓰기 모두 Worker 경유.** 시트는 웹 게시하지 않고 비공개 유지한다.
 
 ### 7.2 환경변수 / 시크릿 (Worker)
@@ -227,6 +228,12 @@
 - 큐 구성(§6.1)과 상태 판정(§5.1)은 **클라이언트**가 수행한다. Worker는 데이터 중계만.
 - **`settings` 블록** *(2026-07-28 추가)*: `_정보` 설정 탭(§4.1)을 요청당 1회 읽어 합성한다. `sessionLimit`은 §6.1 세션 상한이고, 설정이 없거나 이상하면 **60**이 실린다 — 탭 부재·읽기 실패도 마찬가지로 60이며, 이 엔드포인트를 실패시키지 않는다. 홈이 진입마다 재조회하므로 시트에서 값을 고치면 다음 홈 진입에 자연히 반영된다 (`profile` 블록과 같은 패턴, `docs/PRD-general.md` §5.2).
 - `settings`는 이 엔드포인트에만 싣는다 — `GET /api/health`는 로그인 시점이라 불필요하다.
+- `profile.contentType === "zh"`이고 TTS 설정·`TTS_AUDIO`가 준비된 경우에만 최상위 `tts` capability를 `{ enabled: true, revision, maxTextLength: 200 }`으로 싣는다. 그 밖에는 `{ enabled: false }`이며 capability가 없어도 words·학습은 정상이다.
+
+**`POST /api/tts`** — 인증된 중국어 표제어의 MP3 조회·합성
+- `contentType === "zh"` 프로필만 허용한다. JSON 본문의 `text`는 NFC·trim 후 1~200 Unicode 코드 포인트이며 A열 표제어만 전달한다. B열 `pinyin`은 저장 키와 진단에만 쓰고 provider hint에는 넣지 않는다.
+- 성공 응답은 `audio/mpeg`와 `Cache-Control: private, no-store`를 사용하고, `X-TTS-Source: STORED|GENERATED`, `X-TTS-Storage: PRESENT|SAVED|UNCONFIRMED`, `X-TTS-Pronunciation: absent|ignored`, `X-TTS-Revision`을 반환한다. 저장 hit는 `STORED/PRESENT`, 새 합성은 `GENERATED/SAVED`다. 생성 MP3는 유효하지만 저장 대기 초과·실패·경합 재조회 실패면 `GENERATED/UNCONFIRMED`이며 저장 성공/실패를 확정하지 않는다.
+- 미인증·`generic`·기능 off·잘못된 입력은 TTS만 거부하고 R2/provider 호출 없이 오류를 반환한다. TTS 실패는 학습 진행·채점·시트 기록에 영향을 주지 않으며 retryQueue에 TTS 항목을 넣지 않는다.
 
 **`POST /api/answer`** — 정답 1건 기록 (오답은 호출하지 않음)
 - 요청:
@@ -323,7 +330,7 @@ UI 언어는 한국어. 모바일 우선 반응형 (기준 뷰포트 ~390px, 데
 ## 10. 비기능 요구사항
 
 - **기록 유실 방지**: `POST /api/answer`·`POST /api/review-fail` 실패(네트워크 등) 시 요청을 종류 태그를 붙여 `localStorage` 재시도 큐에 넣고, 앱 로드 시·다음 성공 시점에 적재 순서대로(FIFO) 재전송한다. answer는 타임스탬프(최초 발생 시각)를 그대로 보존해 재전송하고, review-fail은 간격 후퇴 재요청(`tab`·`hanzi`)을 재전송한다.
-- **성능**: 단어 수천 개 규모까지는 `/api/words` 한 방 로드로 충분. 페이지네이션 불필요.
+- **성능**: 단어 수천 개 규모까지는 `/api/words` 한 방 로드로 충분. 페이지네이션 불필요. TTS는 공개 완료/오답 결과 뒤 비차단으로 시도하고, 서버의 200 코드 포인트·16KiB·합성/저장 제한을 따른다.
 - **폰트**: 한자 표시는 간체 우선 (`lang="zh-Hans"` 지정). Noto Sans KR/SC 웹폰트 채택(Google Fonts CDN, 시스템 폰트 폴백). *(2026-07-17 디자인 확정으로 변경, `docs/design-prd.md` §1.2)*
 - **입력**: 모드 2 입력란에서 브라우저 자동완성·자동수정 끔 (`autocomplete="off"` 등). 중국어 IME 설치는 사용자 책임.
 
@@ -331,7 +338,7 @@ UI 언어는 한국어. 모바일 우선 반응형 (기준 뷰포트 ~390px, 데
 
 - 단어 목록/통계 화면 (모드별 정답률, 자주 틀리는 단어)
 - 오답 기록
-- 예문·TTS 발음
+- TTS의 음색·속도 사용자 설정, 예문 음성, 일괄/선생성·배치·강제 병음·SSML/hot_fix·provider fallback, 음성 다운로드 UI
 - 탭 선택 학습 (현재는 항상 전체 통합)
 - 사이트 내 단어 편집·삭제 (추가는 2026-07-19 v1 편입, §9.3)
 

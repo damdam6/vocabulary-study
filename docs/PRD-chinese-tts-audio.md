@@ -1,12 +1,12 @@
 # 중국어 표제어 음성 재생 PRD
 
-> 작성일: 2026-09-14 · 개정일: 2026-09-15 · 대상 브랜치: `feat/ch-sound` · 코드 기준: `10dc04c`.
+> 작성일: 2026-09-14 · 개정일: 2026-09-17 · 대상 브랜치: `feat/ch-sound` · 문서화 기준: #149/#150 병합 결과.
 >
-> 상태: **구현용 초안**. 원안의 D1~D5와 재생 정책은 소유자 확정 사항이다. 제공자·모델은 소유자가 **QwenCloud / `qwen-audio-3.0-tts-flash`**로 확정했고 API 키 발급도 완료했다. 상세 동작·수치는 설계 제안이며 실제 청취 검증은 아직 완료하지 않았다. 이번 산출물은 문서이며 기능은 구현되지 않았다.
+> 상태: **구현 계약 및 출시 전 인계 문서**. Worker·클라이언트 구현과 #150 자동 회귀가 `feat/ch-sound`에 병합됐다. 제공자·모델은 소유자가 **QwenCloud / `qwen-audio-3.0-tts-flash`**로 확정했고 API 키 발급 사실만 확인됐다. 실제 secret 주입·endpoint/model 접근·R2 객체·유료 합성·청취·모바일·p95·활성화는 미검증이다.
 >
 > 2026-09-14 개정: 소유자의 저장 방식 채택에 따라 **첫 요청 시 생성 + R2 지속 저장·재사용**을 기본 구조로 반영했다. 등록 직후 선생성은 후속 단계다. 2026-09-15에는 Qwen-Audio-3.0-TTS-Flash로 제공자·모델을 확정했다. 원안의 Cache API 단독 보관안은 이 결정으로 대체한다.
 >
-> 원안: [중국어 발음 읽어주기 — 결정 내역](https://github.com/damdam6/vocabulary-study/blob/claude/chinese-word-audio-reading-5dva2m/docs/plans/chinese-tts-audio.md). 구현 계약: [아키텍처](architecture/chinese-tts-audio.md). 구현 단위·수용 기준 추적: [이슈 17개와 의존성 그래프](plans/chinese-tts-audio-tasks.md).
+> 원안: [중국어 발음 읽어주기 — 결정 내역](https://github.com/damdam6/vocabulary-study/blob/claude/chinese-word-audio-reading-5dva2m/docs/plans/chinese-tts-audio.md). 구현 계약: [아키텍처](architecture/chinese-tts-audio.md). 운영 절차: [중국어 TTS 운영 런북](plans/chinese-tts-audio-operations.md). 환경 사실: [#149 환경 기록](plans/chinese-tts-audio-environment.md). 자동 증거: [#150 검증 기록](plans/chinese-tts-audio-verification.md). 구현 단위: [이슈 17개와 의존성 그래프](plans/chinese-tts-audio-tasks.md).
 >
 > 이 PRD는 [기능 PRD](PRD.md), [범용화 PRD](PRD-general.md), [디자인 PRD](design-prd.md)의 TTS 변경분을 정의한다. 승인·구현 시 TTS에 관한 충돌은 이 문서를 기준으로 정리하며, 기존 학습·채점·시트 계약은 해당 문서를 따른다.
 
@@ -29,7 +29,7 @@
 | 텍스트 | A열 표제어를 읽음. 단어·문장을 동일 API로 처리 | 원안 D5 확정 |
 | 제공자·모델 | QwenCloud / `qwen-audio-3.0-tts-flash` | **2026-09-15 소유자 확정** |
 | 음색·속도 | `longanfengyue`, 1.0 | 구현 기본값. 출시 전 청취 검증 |
-| API 키 | 발급 완료. `DASHSCOPE_API_KEY`로 Worker에 주입 | 실제 주입·연결 검증 미확인 |
+| API 키 | 발급 사실 확인. secret 이름은 `DASHSCOPE_API_KEY` | 환경별 주입·연결 검증 미확인 |
 | 합성 길이 | 정규화 후 1~200 Unicode 코드 포인트 | 원안 상한을 구체화한 제안 |
 | 음성 보관 | 첫 요청 시 생성한 MP3를 비공개 R2에 지속 저장·재사용. 세션 내에는 Blob 캐시 | **저장 방식 소유자 채택, 세부 구현은 본 문서 기준** |
 | 선생성 | 등록 직후 백그라운드 생성은 후속 단계. 첫 버전은 요청 시 생성 | 논의에서 제안한 단계적 도입안 반영 |
@@ -128,13 +128,13 @@ B열이 없으면 진단 상태는 `absent`, 있으면 `ignored / provider_hint_
 
 ### 5.3 제공자 확정과 이용 조건
 
-**2026-09-15 소유자 결정: QwenCloud의 `qwen-audio-3.0-tts-flash` 사용, API 키 발급 완료.** 기존 MiniMax 선택 기록을 대체한다. 이름이 비슷한 `qwen3-tts-flash`와는 다른 모델이다. 이번 구현에는 Qwen adapter 하나를 포함하고 제공자 경계는 유지한다.
+**2026-09-15 소유자 결정: QwenCloud의 `qwen-audio-3.0-tts-flash` 사용, API 키 발급 사실 확인.** 기존 MiniMax 선택 기록을 대체한다. 이름이 비슷한 `qwen3-tts-flash`와는 다른 모델이다. 이번 구현에는 Qwen adapter 하나를 포함하고 제공자 경계는 유지한다.
 
 구현 기본 음색은 공식 목록의 표준 중국어 음색 `longanfengyue`, 속도는 1.0이다. 음색은 아직 청취로 확정하지 않았다. 국제 DashScope endpoint를 기본 경로로 사용하며 발급한 키의 이 endpoint·모델 접근은 출시 전에 확인한다. 키 발급을 Worker 시크릿 주입·과금 계정 준비·연결 성공으로 기록하지 않는다. [모델·요금](https://www.qwencloud.com/models/qwen-audio-3.0-tts-flash), [공식 음색 목록](https://docs.qwencloud.com/developer-guides/speech/voice-list/qwen-audio-tts)
 
-공시 가격은 **1만 과금 문자당 $0.15**다. QwenCloud 화면의 Free Tier 표시는 확인했으나 계정별 무료 제공량·유효기간은 미확인이다. 무료 제공을 운영 전제로 삼지 않는다. 요금은 제공자의 실제 `usage.characters` 계량으로 확인하며, 원문 코드 포인트 수와 과금 문자 수를 동일시하지 않는다. SDK 문서의 길이 계산은 한자를 2로 세므로 단순 한자 수만으로 비용을 확정하지 않는다. [문자 계산 규칙](https://docs.qwencloud.com/api-reference/speech-synthesis/cosyvoice/python-sdk), [과금 사용량 필드](https://docs.qwencloud.com/api-reference/speech-synthesis/cosyvoice/server-events)
+현재 계정의 무료 제공량·단가·유효기간은 운영 시점의 공식 provider 청구 자료를 확인하기 전까지 미확정이다. 요금은 제공자의 실제 `usage.characters`와 청구 자료로 대조하며, 원문 Unicode 코드 포인트 수와 과금 문자 수를 동일시하지 않는다. SDK 문서의 길이 계산도 단순 한자 수만으로 비용을 확정하는 근거로 쓰지 않는다. [문자 계산 규칙](https://docs.qwencloud.com/api-reference/speech-synthesis/cosyvoice/python-sdk), [과금 사용량 필드](https://docs.qwencloud.com/api-reference/speech-synthesis/cosyvoice/server-events)
 
-예를 들어 실제 계량이 4만 과금 문자라면 합성료는 $0.60이며 R2 비용은 별도다. 생성·저장된 파일의 재사용에는 새 합성 호출이 없다. API 키 원문은 문서·이슈·저장소에 넣지 않는다.
+생성·저장된 파일의 재사용에는 새 합성 호출이 없어야 한다. API 키 원문은 문서·이슈·저장소에 넣지 않는다.
 
 ## 6. 접근성과 화면 품질
 
@@ -162,9 +162,9 @@ B열이 없으면 진단 상태는 `absent`, 있으면 `ignored / provider_hint_
 
 브라우저 자동재생 차단은 합성 실패와 분리해 집계한다. Worker는 R2 조회/합성/저장 지연과 저장 결과를 측정할 수 있지만 실제 스피커 재생 성공은 알 수 없으므로, 재생 지연은 브라우저 검증 기록에서 측정한다. 이 버전에 새 사용자 분석 수집 API를 추가하지 않는다.
 
-비용은 `실제 합성한 과금 문자 수 × 제공자 단가 + R2 저장량·읽기·쓰기 요금`으로 계산한다. 정상 보관 후의 반복 재생에는 TTS 합성 비용이 추가되지 않는다. 세션 문제 수는 현재 1~500으로 설정 가능하므로 60문제를 고정 상한으로 가정하지 않는다. 모든 요청이 새로운 내용·설정인 예시로 하루 60회·평균 4자·30일이면 7,200자, 평균 50자면 90,000자의 원문이다. 이는 과금 문자 수와 구분한다. 실제 합성 비용은 신규 파일·설정 변경·저장 실패·동시 최초 요청 수를 반영해 제공자 계량으로 확인한다.
+비용 계량은 Qwen 완료 이벤트에서 반환될 수 있는 `usage.characters`와 실제 provider/R2 청구 자료를 대조한다. `usage.characters`는 provider-reported billing evidence이며 public `/api/tts` 응답 header에 노출되지 않고, 로그/telemetry가 항상 보인다고 가정하지 않는다. 무료량·단가·잔액은 운영 시점의 공식 청구 화면을 확인하기 전까지 미확정으로 둔다. 정상 보관 후의 반복 재생은 합성 대신 R2 hit를 사용해야 하지만, 동시 최초 요청·설정 변경·저장 실패는 별도 비용으로 관찰한다.
 
-저장 크기의 예시로 파일당 100KB를 가정하면 1만 개는 약 1GB다. 실제 크기는 문장 길이·인코딩에 따라 달라지고 이전 버전의 파일도 저장량에 포함한다. R2 Standard의 무료 할당량은 계정 전체 이용량을 기준으로 확인한다. [R2 요금](https://developers.cloudflare.com/r2/pricing/)
+실제 파일 크기와 이전 revision 파일의 보관량은 R2 청구 자료로 확인한다. 무료 할당량·단가는 계정과 시점에 따라 달라질 수 있으므로 운영 시점의 공식 자료를 확인한다. [R2 요금](https://developers.cloudflare.com/r2/pricing/)
 
 지속 저장이 전역 중복 합성이나 월 지출 상한까지 보장하지는 않는다. 서로 다른 요청이 동시에 최초 합성을 시작하면 중복 과금이 생길 수 있다. 출시 시 선택 계정의 예산 알림·이용 한도를 확인하고, 음성 기능만 끌 수 있는 운영 설정을 둔다.
 
@@ -212,7 +212,7 @@ B열이 없으면 진단 상태는 `absent`, 있으면 `ignored / provider_hint_
 | 제공자·모델 | QwenCloud / `qwen-audio-3.0-tts-flash` 확정 완료 | 소유자 + 구현 담당 |
 | 음색 | `longanfengyue` 기본값, 출시 전 청취 검증 | 청취 평가자 |
 | 속도 | 단어·문장 공통 1.0. 변경 시 전체 표본 재검증 | 소유자 |
-| 계정·키·요금 | API 키 발급 완료. 국제 endpoint·모델 접근, 무료량/과금 조건, `DASHSCOPE_API_KEY` 주입 확인 필요 | 운영 담당 |
+| 계정·키·요금 | API 키 발급 사실 확인. 국제 endpoint·모델 접근, 무료량/과금 조건, `DASHSCOPE_API_KEY` 주입 확인 필요 | 운영 담당 |
 | 음성 저장소 | 운영/검증용 비공개 R2 버킷·바인딩, 자동 만료 없음 확인 | 운영 담당 |
 | 품질·지연 | 위 표본과 §7 목표의 측정 결과 | 구현 담당 |
 | 구현 검증 | AC-01~24, 모바일 실기기, 기존 빌드·테스트·린트 | 구현 담당 |
@@ -221,4 +221,4 @@ B열이 없으면 진단 상태는 `absent`, 있으면 `ignored / provider_hint_
 
 ## 10. 기존 문서 반영 계획
 
-구현 시 [PRD.md](PRD.md) §11에서 TTS를 비목표에서 제외하고 §7.3·§9.2에 API·음성 흐름을 연결한다. [PRD-general.md](PRD-general.md)에는 B열의 표시·저장 키 용도와 첫 버전의 병음 미적용 정책과 `/api/words`의 음성 지원 정보를 추가한다. [design-prd.md](design-prd.md) §4.2·§4.3·§4.6에는 버튼·상태·콘텐츠 분기를 반영한다. 기존 PRD의 최종 정리는 TTS-17에서 수행한다. TTS-16은 서버·화면 완료 후 자동 회귀를 검증하고 TTS-15의 실제 환경 준비를 기다리지 않는다. 이번 초안 단계에서 기존 문서의 확정 상태를 소급해 변경하지 않는다.
+이 문서화 단계에서 [PRD.md](PRD.md) §3·§7.3·§9.2·§10·§11, [PRD-general.md](PRD-general.md) §5.2·§7·§8, [design-prd.md](design-prd.md) §4.2·§4.3에 구현 계약을 연결했다. [아키텍처](architecture/chinese-tts-audio.md)와 [운영 런북](plans/chinese-tts-audio-operations.md)은 수명·진단·출시 순서를 소유하고, [#149 환경 기록](plans/chinese-tts-audio-environment.md)과 [#150 자동 검증](plans/chinese-tts-audio-verification.md)은 선행 증거와 한계를 보존한다. #150의 55 files/696 tests 및 4 files/32 tests·lint·build는 선행 동일 HEAD의 증거이며 이 문서 변경의 새 실행 결과가 아니다.
