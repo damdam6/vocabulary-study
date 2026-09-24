@@ -31,11 +31,12 @@
   overflow-x: hidden;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   padding: 4px;
 }
 
 .mode2-question-scroll .mode-card-meaning {
+  margin-block: auto;
   max-width: 100%;
   overflow-wrap: anywhere;
   white-space: normal;

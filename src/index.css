@@ -226,10 +226,13 @@ button {
 /* §4.1 학습 화면 공통 프레임 (#15) — 수치는 목업(docs/design/prototype.dc.html) 기준 */
 .study {
   flex: 1;
+  height: 100dvh;
+  max-height: 100dvh;
   display: flex;
   flex-direction: column;
   padding: 16px 20px 22px;
   min-height: 0;
+  overflow: hidden;
 }
 
 .study-header {
