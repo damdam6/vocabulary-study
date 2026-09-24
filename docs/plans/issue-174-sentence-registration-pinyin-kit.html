@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>#174 문장 등록 미리보기·병음 검토 경고·추출 킷 지원 — 작업 플랜</title>
+<style>
+  :root {
+    --bg: #f7f7f8; --card: #ffffff; --ink: #1c1c1e; --muted: #6e6e73;
+    --line: #e3e3e6; --accent: #3b6ef5; --accent-soft: #e8eefe;
+    --ok: #2e8b57; --warn: #b25e09; --code-bg: #f0f0f2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161618; --card: #202024; --ink: #ececf0; --muted: #98989f;
+      --line: #333338; --accent: #7a9bff; --accent-soft: #26304a;
+      --ok: #58c088; --warn: #e0a35c; --code-bg: #2a2a2f;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 40px 20px 80px; background: var(--bg); color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+                 "Segoe UI", "Noto Sans KR", sans-serif;
+    line-height: 1.65;
+    overflow-wrap: anywhere;
+  }
+  main { max-width: 860px; margin: 0 auto; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code {
+    font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 0.86em;
+    background: var(--code-bg); border-radius: 5px; padding: 2px 6px;
+  }
+  header { margin-bottom: 28px; }
+  .issue-chip {
+    display: inline-block; font-weight: 700; color: var(--accent);
+    background: var(--accent-soft); border-radius: 999px;
+    padding: 3px 14px; font-size: 0.95rem; margin-bottom: 10px;
+  }
+  .type-chip {
+    display: inline-block; font-weight: 600; color: var(--muted);
+    border: 1px solid var(--line); border-radius: 999px;
+    padding: 3px 12px; font-size: 0.8rem; margin-left: 8px; vertical-align: 2px;
+  }
+  h1 { font-size: 1.7rem; margin: 0 0 14px; letter-spacing: -0.02em; }
+  .meta {
+    display: flex; flex-wrap: wrap; gap: 6px 22px;
+    color: var(--muted); font-size: 0.87rem;
+  }
+  .meta b { color: var(--ink); font-weight: 600; }
+  section.card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 24px 28px; margin-top: 18px;
+  }
+  h2 {
+    font-size: 1.05rem; margin: 0 0 14px; letter-spacing: -0.01em;
+    display: flex; align-items: center; gap: 8px;
+  }
+  h2 .no {
+    color: var(--accent); font-size: 0.8rem; font-weight: 700;
+    border: 1.5px solid var(--accent); border-radius: 6px; padding: 0 6px;
+  }
+  ul, ol { margin: 0; padding-left: 22px; }
+  li { margin: 6px 0; }
+  .steps { list-style: none; padding: 0; counter-reset: step; }
+  .steps li {
+    counter-increment: step; position: relative; padding: 10px 0 10px 44px;
+    border-bottom: 1px dashed var(--line);
+  }
+  .steps li:last-child { border-bottom: none; }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 10px;
+    width: 28px; height: 28px; border-radius: 8px; background: var(--accent-soft);
+    color: var(--accent); font-weight: 700; font-size: 0.85rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .steps .files { display: block; margin-top: 4px; font-size: 0.85rem; color: var(--muted); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 0.82rem; }
+  .done-list { list-style: none; padding: 0; }
+  .done-list li { padding-left: 30px; position: relative; }
+  .done-list li::before {
+    content: ""; position: absolute; left: 2px; top: 7px; width: 15px; height: 15px;
+    border: 2px solid var(--ok); border-radius: 5px;
+  }
+  .scroll-x { overflow-x: auto; }
+  footer { margin-top: 30px; color: var(--muted); font-size: 0.8rem; text-align: center; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <span class="issue-chip"><a href="https://github.com/damdam6/vocabulary-study/issues/174">#174</a></span><span class="type-chip">기능 개선</span>
+    <h1>문장 등록 미리보기·병음 검토 경고·추출 킷 지원</h1>
+    <div class="meta">
+      <span><b>damdam6/vocabulary-study</b></span>
+      <span>브랜치 <b><code>feat/174-sentence-registration-pinyin-kit</code></b> ← <code>main</code></span>
+      <span>라벨 <b>enhancement</b></span>
+      <span>2026-09-24</span>
+    </div>
+  </header>
+
+  <section class="card">
+    <h2><span class="no">1</span>요약</h2>
+    <p>#173의 shared/registration.ts 계약을 프런트와 Python 추출 킷에 적용한다. 형식 오류는 차단하고 병음 의미 불일치·자동 확인 불가는 제출 가능한 경고로 분리한다. 경고 수정·중복 재판정·집계·전송을 함께 검증하며 #174 범위만 구현한다. 요청 설정: codex / gpt-6-astra / high. 현재 상태: 사용자 승인 후 #174 구현·자동 검증 완료. issue-work GitHub 경로로 커밋·PR 게시 진행. 실제 브라우저 시각 검증은 연결 가능한 브라우저 부재로 미실행이며 아래에 제한을 기록한다. 선행 #173은 PR #179로 병합되었고 현재 HEAD 85365a1에 포함된다. #172 PRD 전문 및 #174 본문·댓글 조회 완료(댓글 없음).</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">2</span>현황 분석</h2>
+    
+    <ul>
+<li><code>shared/registration.ts:1–70</code>은 원문 200·병음 1,000 코드 포인트, NFC·trim, 고정 허용 문자, 최소 한자·성조, 필수 필드 검증을 제공한다. 원본 A/B의 불허 문자를 trim 전에 검사한다. 서버 <code>worker/lib/register.ts:18</code>·<code>:81</code>은 이를 사용하고 zh 중복 비교 키만 정규화한다.</li>
+<li><code>src/lib/registerValidation.ts:52</code>의 필드 추출은 먼저 trim하며 <code>:155</code>는 여전히 한자 전용 정규식과 병음 불일치 차단을 사용한다. <code>:146</code>·<code>:178</code>의 중복은 정규화 전 정확 일치다. <code>:107</code>의 배치 파싱에는 서버의 100건 상한이 없다.</li>
+<li><code>src/lib/pinyinValidation.ts:17</code>·<code>:23</code>은 문자별 후보와 재귀 탐색으로 boolean을 반환한다. 접두사 가지치기는 있지만 연산 상한·메모이제이션이 없고 형식 오류와 자동 확인 불가를 구별하지 않는다.</li>
+<li><code>src/screens/RegisterScreen.tsx:193</code>부터 파싱→편집 오버레이→분류가 이어진다. <code>:216</code>의 중복 확인 키는 쉼표 연결이어서 신규 문장 쉼표와 충돌할 수 있다. <code>:222</code>은 blocked 외 전 행을 보내며 duplicate도 서버에서 최종 스킵한다. <code>:254</code>의 편집 저장 역시 trim으로 제어문자 증거를 지운다.</li>
+<li><code>src/screens/RegisterScreen.tsx:483</code>·<code>:521</code>, <code>src/screens/RegisterTable.tsx:9</code>, <code>src/screens/RegisterErrorModal.tsx:18</code>은 정상/오류/중복과 오류 행 편집만 지원한다. <code>src/index.css:1237</code> 이후가 등록 표·배너·모달 스타일이다.</li>
+<li><code>docs/registration-kit/schema_check.py:64</code>는 한자 전용·NFC 미적용·길이 상한 없음이며 zh 중복은 원문 비교다. <code>docs/registration-kit/extraction-prompt.md</code>는 문장부호·공백 제거와 간체 변환을 지시한다. 문장 원문 보존 계약과 충돌한다.</li>
+<li><code>tests/fixtures/chinese-sentence-registration.json</code>에는 등록 58개·중복 분할 3개·기존 장문 사례가 있다. 계획 단계에서 현재 Python CLI를 58개에 실행: <strong>47개 일치, 11개 불일치</strong>. 불일치: sentence, number-mixed, ascii-mixed, fullwidth-mixed, nfd-pinyin-trim, internal-spaces, hanzi-201, pinyin-1001, nfd-pinyin-1000, punctuation-distinct, nfc-hanzi.</li>
+</ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">3</span>설계</h2>
+    
+    <p><strong>형식과 의미 검토를 분리한다.</strong> zh 분류는 공통 <code>validateZhRegistrationWord</code>를 호출하고 필드별 오류를 한국어로 표시한다. 원본 A/B는 파싱·편집 오버레이에서 보존하여 먼저 검사하고, 통과한 값만 공통 반환값으로 표시·전송한다. 뜻과 generic은 기존 trim 정책을 유지한다.</p>
+<ul>
+<li><strong>행 모델:</strong> <code>valid | warning | blocked | duplicate</code>로 확장하고 차단/중복 사유와 검토 경고를 분리한다. 주 상태 우선순위는 blocked → duplicate → warning → valid. 중복 행에도 검토 경고가 있으면 보조 안내로 보존하되 주 상태 집계는 배타적으로 한다. 정상은 자동 검토 가능한 후보 일치를 뜻하며 발음 정확성을 보증하지 않는다.</li>
+<li><strong>병음 검토:</strong> 일치 / 불일치 / 자동 확인 불가 결과를 명시한다. 형식을 통과한 값에서만 안전한 구분 부호·공백·아포스트로피를 비교용으로 처리하며 저장 원문에는 적용하지 않는다. 숫자·영문 혼합, 복수 후보가 있는 다음자, 一·不 및 연속 3성처럼 문맥·변조를 확정할 수 없는 경우는 보수적으로 자동 확인 불가를 반환한다. 후보에 없는 성조를 발견해도 오류가 아닌 경고다. 안내는 “병음을 자동 확인하지 못했어요. 원문과 함께 확인하세요.”를 사용한다. 단어/문장 길이 분류에 따라 정책을 바꾸지 않는다.</li>
+<li><strong>연산 제한:</strong> 재귀 카티전 곱 대신 문자 위치·입력 병음 위치의 유한 상태 탐색을 사용하고 동일 상태를 재방문하지 않는다. 최대 20,000회 후보 전이 검사 예산을 두며 초과·후보 불명은 자동 확인 불가 경고다. 후보 중복 제거와 호출 내 문자 캐시를 사용한다. 테스트에서 예산 소진을 재현하고 미검증을 일치로 반환하지 않음을 확인한다.</li>
+<li><strong>중복:</strong> 신규 zh 배치와 선택 탭 모두 NFC·trim 복사 키로 대조한다. 문장부호·내부 공백은 보존하여 <code>你好</code>와 <code>你好。</code>를 구별한다. 기존 시트 행·기록 키는 변경하지 않는다. 중복 확인 서명은 선택 탭과 정렬한 중복 원문 목록을 구조적으로 JSON 직렬화하여 쉼표 충돌과 탭 변경 시 승인 재사용을 막는다.</li>
+<li><strong>제출·수정:</strong> 정상+경고+중복을 전송하고 차단만 제외하는 기존 서버 최종 스킵 흐름을 유지한다. 네 상태 합계=전체, 전송 건수=정상+경고+중복이며 실제 추가 건수는 서버 응답으로 표시한다. 경고 전용 검토/수정 버튼으로 기존 모달을 재사용하고(중국어는 장문을 읽고 고치는 textarea, generic은 기존 input), 저장 후 배치 전체를 재분류한다. 경고가 있다는 이유만으로 별도 확인을 강제하지 않는다. 오류/경고→정상/중복/차단 전환과 취소·직접수정 태그·탭 전환·재확인 무효화 계약을 유지한다.</li>
+<li><strong>배치 크기:</strong> 공유 MAX_REGISTER_WORDS=100을 프런트·킷에 적용하고 101건 이상은 분할 입력 안내와 함께 차단한다. UI에서 일부 오류 행을 제외하는 정책은 유지하며 묵시적으로 100건을 잘라 보내지 않는다.</li>
+<li><strong>Python:</strong> 표준 라이브러리만 사용하는 단일 파일 배포를 유지한다. unicodedata NFC·코드 포인트 길이·고정 문자 목록·정규화 중복을 JS와 맞춘다. 원본 문자 검사 전 strip하지 않으며 Python strip의 공백 집합 차이가 zh 키를 바꾸지 않도록 허용 공백 및 JS trim 계약을 명시한다. generic 추출 필드 term/note/meaning과 선택적 note, 기존 추가 필드 검사·CLI 입출력/종료 코드를 유지한다.</li>
+<li><strong>문서 범위:</strong> 중국어 킷에 단어·구·문장 추출, 내부 공백·문장부호·숫자·영문·원문 글자 보존, 병음·뜻 필수, 숫자 풀어쓰기와 약어 예제를 넣는다. 서버·킷 PASS는 형식 검사이고 발음 보증이 아님을 명시한다. 등록 화면의 안내·예제만 조정한다. 학습 채점(#175), 학습 레이아웃/모드 명칭(#176), TTS(#177), 전체 PRD 정합화(#178)는 후속 범위다.</li>
+</ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">4</span>작업 단계</h2>
+    <ol class="steps">
+      
+      <li><label><input type="checkbox" checked disabled> 프런트 입력 형식과 정규화·중복을 공통 계약으로 연결한다.</label><span class="files"><code>src/lib/registerValidation.ts</code>, <code>src/lib/registerValidation.test.ts</code>, <code>shared/registration.ts</code>(재사용), <code>tests/fixtures/chinese-sentence-registration.json</code>(재사용)</span>원본 A/B 보존, 필드별 오류, 100건 상한, 정규화 결과 및 배치/선택 탭 중복을 검증한다. generic 매핑과 기존 정책을 유지한다.</li>
+<li><label><input type="checkbox" checked disabled> 병음 검토 결과와 유한 탐색을 구현한다.</label><span class="files"><code>src/lib/pinyinValidation.ts</code>, <code>src/lib/pinyinValidation.test.ts</code>, <code>src/lib/registerValidation.ts</code>, <code>src/lib/registerValidation.test.ts</code></span>의미 불일치·다음자·혼합·변조 미확인·예산 초과를 경고로 연결한다. 문장부호와 아포스트로피 처리는 비교용으로만 수행한다. 기존 boolean 기반 테스트를 형식/검토 계약에 맞춰 갱신한다.</li>
+<li><label><input type="checkbox" checked disabled> 등록 경고 표시·수정·집계·전송 흐름을 확장한다.</label><span class="files"><code>src/screens/RegisterScreen.tsx</code>, <code>src/screens/RegisterTable.tsx</code>, <code>src/screens/RegisterErrorModal.tsx</code>, <code>src/index.css</code>, <code>src/lib/contentLabels.ts</code>, <code>src/lib/contentLabels.test.ts</code>, <code>src/lib/registerApi.ts</code>(전송 대상 주석), <code>src/screens/RegisterScreen.test.tsx</code></span>경고 배지·설명·수정 진입점, 네 상태 집계와 전송 건수, 원본을 지키는 편집 저장, 구조적 중복 서명을 구현한다. 콘텐츠 타입별 등록 안내/예제를 조정하고 문장 길이에서 표·모달 읽기와 버튼 접근을 확인한다.</li>
+<li><label><input type="checkbox" checked disabled> Python 형식 계약과 공통 fixture parity를 구현한다.</label><span class="files"><code>docs/registration-kit/schema_check.py</code>, <code>docs/registration-kit/test_schema_check.py</code>(신규), <code>src/lib/registerValidation.test.ts</code>, <code>tests/fixtures/chinese-sentence-registration.json</code></span>58개 등록 fixture를 소비한다. generic은 운반자 필드를 term/note로 매핑하고 원래 타입/누락을 유지한다. 형식 허용은 UI에서 blocked가 없는 것과 대응하며 warning을 실패로 보지 않는다. Python CLI PASS/FAIL와 100/101 경계를 추가 검증한다.</li>
+<li><label><input type="checkbox" checked disabled> 중국어 추출 프롬프트를 문장 계약에 맞추고 예제를 실행 검증한다.</label><span class="files"><code>docs/registration-kit/extraction-prompt.md</code>, <code>docs/registration-kit/en-extraction-prompt.md</code>(회귀 확인), <code>docs/registration-kit/test_schema_check.py</code></span><code>我今天很忙。 / wǒ jīntiān hěn máng.</code>, <code>我有2本书。 / wǒ yǒu liǎng běn shū.</code>, 영문 약어 예제와 형식 검사의 한계를 명시한다. 원문 문장부호 삭제·강제 간체 변환 지침을 교체한다.</li>
+<li><label><input type="checkbox" checked disabled> 전체 자동 검증과 등록 화면 검증 제한을 기록한다.</label><span class="files"><code>docs/plans/issue-174-sentence-registration-pinyin-kit.html</code>, 위 구현·테스트 파일</span>npm test/build/lint, Python 테스트와 예제 CLI 통과. 등록 동작은 jsdom에서 검증했으며 실제 화면 320px·375px·데스크톱 시각 확인은 브라우저 연결 부재로 미실행이다. 완료 조건과 실제 확인 범위를 기록하고 issue-work에 따라 논리별 커밋·최종 플랜 커밋 후 green일 때만 ready PR(Closes #174)을 게시한다. 현재 로컬 모드 마커 없음 → GitHub 경로. 병합·배포는 포함하지 않는다.</li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">5</span>리스크</h2>
+    <div class="scroll-x">
+    <table>
+      <thead><tr><th>리스크</th><th>영향</th><th>완화책</th></tr></thead>
+      <tbody>
+        
+        <tr><td>검사 전 trim·편집 저장</td><td>불허 제어문자가 사라져 서버와 다른 판정</td><td>raw 보존, 붙여넣기·모달 양쪽의 경계 제어문자 테스트</td></tr>
+<tr><td>후보 일치의 과도한 신뢰</td><td>다음자·문맥·변조를 발음 검증 완료로 오해</td><td>보수적 미확인 경고, 형식/의미 분리, 발음 보증 표현 배제</td></tr>
+<tr><td>긴 입력의 후보 탐색</td><td>메인 스레드 지연</td><td>유한 상태·명시적 예산·캐시와 예산 소진 테스트</td></tr>
+<tr><td>경고와 중복의 중첩</td><td>집계 불일치·중복 확인 누락·편집값 오전송</td><td>배타적 주 상태, 경고 보조 필드, JSON 서명, payload 통합 테스트</td></tr>
+<tr><td>언어 간 Unicode 처리 차이</td><td>Python PASS와 JS 차단이 불일치</td><td>NFC 후 코드 포인트 계수, raw 불허 문자 검사, 동일 fixture와 정규화 결과 검사</td></tr>
+<tr><td>공유 모듈·화면 변경 범위 확대</td><td>generic·학습·TTS 회귀</td><td>zh 등록 경계만 변경, generic 회귀 유지, 후속 이슈 범위 명시</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">6</span>테스트 계획</h2>
+    <ul>
+      
+      <li><strong>공통 parity:</strong> 기존 58개 전부에서 프런트 형식 허용/차단과 Python 결과를 expected accepted에 대조한다. 허용 시 expectedWords, 3개 partitions의 선택 탭 중복도 확인한다. semantic-mismatch·sandhi·polyphonic는 Python PASS이며 UI는 경고가 될 수 있다.</li>
+<li><strong>경계:</strong> 200/201 원문, 1,000/1,001 병음, 분해 성조 NFC, 100/101건, 빈 값·누락·잘못된 타입, 한자 없는 영문·숫자, 확장 한자·이모지·숫자성조·무성조·불허 부호. 내부/양끝 탭·개행·C0/C1·NBSP·ZWSP와 모달에 넣은 불허 문자를 차단한다.</li>
+<li><strong>병음:</strong> 기본 단어·문장 후보 일치, 경성 혼합, 공백·대소문자·아포스트로피, 다음자·변조·숫자/영문 혼합·불일치 경고, 최대 길이·모의 후보 확장·연산 예산 소진 시 종료 및 미확인 결과를 확인한다.</li>
+<li><strong>화면/전송:</strong> 정상·경고·차단·중복 혼합 배치 집계, 경고 단독 제출, 중복 확인 후 원문 payload, 차단 제외, 재클릭 중복 요청 방지. 경고 수정 후 정상/경고/차단/중복 전환, 중복 짝 행 재검증, 취소/직접수정/탭 변경/JSON 재확인, 쉼표를 포함하는 서로 다른 중복 집합의 확인 무효화를 검증한다.</li>
+<li><strong>generic:</strong> note 생략/빈 값, 영어 추출 예제, 자유 텍스트·긴 값, NFD/NFC 구분·선택 탭 정확 일치·스키마 오배치·추가 필드 검사를 회귀 확인한다. 신규 zh 병음 검토를 generic에 적용하지 않는다.</li>
+<li><strong>명령:</strong> <code>npm test</code>, <code>npm run build</code>, <code>npm run lint</code>, <code>python3 -m unittest discover -s docs/registration-kit -p 'test_*.py'</code>. 필요 시 Wrangler 로그는 <code>WRANGLER_LOG_PATH=/private/tmp/issue-174-wrangler.log</code>로 지정한다. 기존 저장소의 설치된 의존성을 재사용했다. Vite/TypeScript 캐시용 node_modules 디렉터리는 이 워크트리에 생성하여 저장소 상위 경로 쓰기를 피했다.</li>
+<li><strong>CLI/시각 확인:</strong> 프롬프트의 문장·숫자·영문 약어 샘플 PASS, 불허 샘플 FAIL/종료 코드 1. 320px·375px·데스크톱에서 등록 표의 긴 원문·병음·뜻과 경고 배너·수정 모달·제출 버튼을 확인한다. 로컬 테스트 데이터/API mock을 사용하고 실제 시트 쓰기·유료 TTS·배포는 하지 않는다.</li>
+<li><strong>최종 자동 검증(2026-09-24):</strong> npm test — 56개 파일, 1,029개 테스트 통과. npm run build 및 npm run lint 통과. Python unittest 7개 메서드 통과(공통 fixture 58개 전부, 전체 허용 부호, C0/C1·불허 공백·서로게이트, 뜻 trim, 100/101건, generic, 프롬프트 예제와 CLI 종료 코드 포함). 초기 Python 47/58 일치를 58/58로 개선했다. JS에서도 같은 58개와 선택 탭 중복 fixture 3개를 확인했다. 등록 화면 테스트 40개, 병음 테스트 22개가 전체 결과에 포함된다.</li>
+<li><strong>검증 제한/계획 조정:</strong> browser 스킬로 연결을 시도했으나 iab unavailable이며 사용 가능한 브라우저 목록이 비어 있었다. 따라서 320px·375px·데스크톱 실제 시각/키보드 검증은 수행하지 않았고 완료로 주장하지 않는다. jsdom으로 경고 전송·네 상태 집계·편집/취소/중복 재검증·쉼표 서명 충돌·탭 변경·재확인과 탭/개행 차단을 검증했다. 시각 확인은 브라우저를 사용할 수 있는 리뷰 환경 또는 #178 통합 검증에서 수행한다. #174의 이슈 완료 조건에 해당하는 구현·자동 테스트는 완료했으며 이 제한을 PR에도 공개한다. 실제 Sheets 쓰기·유료 TTS·배포는 수행하지 않았다. 최종 등록→학습→기록 E2E는 #178 담당이다.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">7</span>완료 조건</h2>
+    <ul class="done-list">
+      
+      <li>SENT-01 형식 계약을 프런트·Python에 적용하고 같은 fixture의 허용/차단 및 정규화 결과가 일치한다.</li><li>모든 zh 항목에서 형식 오류는 차단, 의미 불일치·자동 확인 불가는 제출 가능한 검토 경고다.</li><li>숫자·영문 혼합/다음자/변조를 검증 완료로 오인시키지 않고 긴 병음 탐색은 명시된 상한 안에서 종료한다.</li><li>오류/중복/경고를 구별하고 경고 제출·집계·직접 수정 후 전체 재검증과 실제 payload 테스트가 통과한다.</li><li>추출 프롬프트가 문장 원문·병음·뜻, 숫자 풀어쓰기와 영문 약어 예제를 제공하고 형식 PASS의 한계를 명시한다.</li><li>generic 추출/등록 회귀, 문장 Python PASS·불허 FAIL, npm test/build/lint가 통과하며 실제 환경/시각 미검증 사항을 구분하여 기록한다.</li>
+    </ul>
+  </section>
+
+  <footer>issue-plan · <a href="https://github.com/damdam6/vocabulary-study/issues/174">#174</a> · 2026-09-24</footer>
+</main>
+</body>
+</html>
