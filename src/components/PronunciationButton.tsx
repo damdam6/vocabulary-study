@@ -42,15 +42,24 @@ function statusDescription(status: PronunciationStatus) {
   }
 }
 
-export default function PronunciationButton({ snapshot, replay }: PronunciationButtonProps) {
+export default function PronunciationButton({ snapshot, replay, size = "default" }: PronunciationButtonProps) {
   const descriptionId = `pronunciation-button-description-${useId().replace(/:/g, "")}`;
   const inputMessage = snapshot.inputReason ? inputReasonMessage[snapshot.inputReason] : null;
   const message = snapshot.message ?? inputMessage ?? statusDescription(snapshot.status);
   const disabled = !snapshot.enabled || snapshot.inputReason !== null;
   const styledStatus = snapshot.status === "loading" || snapshot.status === "playing" ? snapshot.status : null;
+  // compact는 레이아웃 높이를 차지하지 않으므로 진행 상태 문구는 화면에서 숨기고 설명으로만 연결한다.
+  const messageHidden = size === "compact" && snapshot.message === null && inputMessage === null;
+  const className = [
+    "pronunciation-button",
+    size === "compact" ? "pronunciation-button--compact" : null,
+    styledStatus ? `pronunciation-button--${styledStatus}` : null,
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   return (
-    <div className={`pronunciation-button${styledStatus ? ` pronunciation-button--${styledStatus}` : ""}`}>
+    <div className={className}>
       <button
         type="button"
         className="pronunciation-button__control"
@@ -64,7 +73,7 @@ export default function PronunciationButton({ snapshot, replay }: PronunciationB
       </button>
       <div
         id={descriptionId}
-        className="pronunciation-button__message"
+        className={`pronunciation-button__message${messageHidden ? " pronunciation-button__message--hidden" : ""}`}
         aria-live={snapshot.message ? "polite" : undefined}
       >
         {message}

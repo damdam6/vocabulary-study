@@ -133,6 +133,31 @@ describe("PronunciationButton", () => {
     expect(replay).not.toHaveBeenCalled();
   });
 
+  it("compact는 modifier를 붙이고 진행 상태 문구는 숨긴 채 설명으로만 연결한다", () => {
+    const { button, container } = setup(snapshot({ status: "playing" }), (replay) => (
+      <PronunciationButton snapshot={snapshot({ status: "playing" })} replay={replay} size="compact" />
+    ));
+
+    expect(container.firstElementChild?.className).toBe(
+      "pronunciation-button pronunciation-button--compact pronunciation-button--playing",
+    );
+    const description = container.querySelector(`#${button.getAttribute("aria-describedby")}`);
+    expect(description?.textContent).toBe("발음을 재생하고 있어요.");
+    expect(description?.classList.contains("pronunciation-button__message--hidden")).toBe(true);
+    expect(button.querySelector(".pronunciation-button__icon")).not.toBeNull();
+  });
+
+  it("compact도 수동 오류 문구는 보이게 둔다", () => {
+    const current = snapshot({ status: "error", message: "발음을 다시 눌러 주세요." });
+    const { container } = setup(current, (replay) => (
+      <PronunciationButton snapshot={current} replay={replay} size="compact" />
+    ));
+
+    const message = container.querySelector("[aria-live='polite']");
+    expect(message?.textContent).toBe("발음을 다시 눌러 주세요.");
+    expect(message?.classList.contains("pronunciation-button__message--hidden")).toBe(false);
+  });
+
   it("form 안에서 클릭해도 replay 외 submit은 발생하지 않는다", () => {
     const submit = vi.fn((event: FormEvent<HTMLFormElement>) => event.preventDefault());
     const { button, replay } = setup(snapshot(), (onReplay) => (
