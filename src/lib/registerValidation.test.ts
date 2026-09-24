@@ -1,3 +1,5 @@
+import fixturesSource from "../../tests/fixtures/chinese-sentence-registration.json?raw";
+import { PINYIN_REVIEW_WARNING } from "./pinyinValidation";
 import { describe, expect, it } from "vitest";
 import {
   classifyRegistrationRows,
@@ -17,7 +19,7 @@ function genericBatch(words: unknown[], version: unknown = 1): string {
 }
 
 describe("validateRegistrationInput", () => {
-  it("정상 단어는 모두 valid로 분류된다", () => {
+  it("다음자가 있는 기존 단어도 제출 가능한 warning으로 분류된다", () => {
     const result = validateRegistrationInput(
       batch([{ hanzi: "经济", pinyin: "jīngjì", meaning: "경제" }]),
       EMPTY,
@@ -25,7 +27,7 @@ describe("validateRegistrationInput", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.rows).toEqual([
-      { hanzi: "经济", pinyin: "jīngjì", meaning: "경제", status: "valid", reasons: [] },
+      { hanzi: "经济", pinyin: "jīngjì", meaning: "경제", status: "warning", reasons: [], warnings: [PINYIN_REVIEW_WARNING] },
     ]);
   });
 
@@ -74,26 +76,26 @@ describe("validateRegistrationInput", () => {
   });
 
   it("한자 유니코드 범위를 벗어나면 blocked", () => {
-    const result = validateRegistrationInput(batch([{ hanzi: "abc经", pinyin: "jīngjì", meaning: "경제" }]), EMPTY);
+    const result = validateRegistrationInput(batch([{ hanzi: "😀经", pinyin: "jīngjì", meaning: "경제" }]), EMPTY);
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.rows[0].status).toBe("blocked");
-    expect(result.rows[0].reasons).toContain("한자 유니코드 범위를 벗어난 문자가 있습니다");
+    expect(result.rows[0].reasons).toContain("한자에 허용되지 않는 문자가 있습니다 (탭·개행·제어문자 포함)");
   });
 
-  it("한자와 병음이 일치하지 않으면 blocked", () => {
+  it("한자와 병음이 일치하지 않아도 warning", () => {
     const result = validateRegistrationInput(batch([{ hanzi: "经济", pinyin: "nǐhǎo", meaning: "경제" }]), EMPTY);
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.rows[0].status).toBe("blocked");
-    expect(result.rows[0].reasons).toContain("한자와 병음이 일치하지 않습니다");
+    expect(result.rows[0].status).toBe("warning");
+    expect(result.rows[0].warnings).toEqual([PINYIN_REVIEW_WARNING]);
   });
 
-  it("다음자 후보 중 하나만 일치해도 통과한다 (파이프라인 통합 확인)", () => {
+  it("다음자 후보 일치는 문맥 검토 경고다", () => {
     const result = validateRegistrationInput(batch([{ hanzi: "行", pinyin: "háng", meaning: "은행 등에서 쓰는 항" }]), EMPTY);
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.rows[0].status).toBe("valid");
+    expect(result.rows[0].status).toBe("warning");
   });
 
   it("입력 내 중복된 한자는 둘 다 blocked", () => {
@@ -125,6 +127,7 @@ describe("validateRegistrationInput", () => {
       meaning: "경제",
       status: "duplicate",
       reasons: ["선택한 탭에 이미 있는 한자입니다"],
+      warnings: [PINYIN_REVIEW_WARNING],
     });
   });
 
@@ -135,7 +138,7 @@ describe("validateRegistrationInput", () => {
     );
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.rows[0].status).toBe("valid");
+    expect(result.rows[0].status).toBe("warning");
   });
 
   it("우선순위: 형식 오류가 있으면 시트 중복이어도 blocked로 분류한다", () => {
@@ -277,11 +280,11 @@ describe("validateRegistrationInput — generic contentType", () => {
 // 등록 화면의 오류 행 직접 수정(#127)은 "파싱 결과를 편집값으로 갈아끼운 뒤 다시
 // 분류"하는 구조라, 분류 단계가 rawText 없이 ParsedWord[]만으로 도는 것이 전제다.
 describe("parseRegistrationInput / classifyRegistrationRows 분리", () => {
-  it("파싱 단계는 필드를 트림해 뽑기만 하고 분류하지 않는다", () => {
+  it("파싱 단계는 zh 원본 A/B를 보존하고 뜻만 트림한다", () => {
     const result = parseRegistrationInput(
       batch([{ hanzi: "  经济  ", pinyin: " jīngjì ", meaning: " 경제 " }]),
     );
-    expect(result).toEqual({ ok: true, words: [{ hanzi: "经济", pinyin: "jīngjì", meaning: "경제" }] });
+    expect(result).toEqual({ ok: true, words: [{ hanzi: "  经济  ", pinyin: " jīngjì ", meaning: "경제" }] });
   });
 
   it("파싱 단계는 스키마 오류를 그대로 낸다", () => {
@@ -299,7 +302,7 @@ describe("parseRegistrationInput / classifyRegistrationRows 분리", () => {
       ],
       new Set(["文化"]),
     );
-    expect(rows.map((row) => row.status)).toEqual(["valid", "duplicate", "blocked"]);
+    expect(rows.map((row) => row.status)).toEqual(["warning", "duplicate", "blocked"]);
   });
 
   it("입력 내 중복은 매 호출마다 배열 전체 기준으로 다시 집계된다", () => {
@@ -314,7 +317,7 @@ describe("parseRegistrationInput / classifyRegistrationRows 분리", () => {
 
     // 한 행의 한자만 고쳐 다시 분류하면 손대지 않은 짝 행의 중복 오류도 함께 풀린다.
     const fixed = [duplicated[0], { hanzi: "文化", pinyin: "wénhuà", meaning: "문화" }];
-    expect(classifyRegistrationRows(fixed, EMPTY).map((row) => row.status)).toEqual(["valid", "valid"]);
+    expect(classifyRegistrationRows(fixed, EMPTY).map((row) => row.status)).toEqual(["warning", "warning"]);
   });
 
   it("generic 분기도 분류 단계만으로 동작한다 — 보조 표기는 비어도 정상", () => {
@@ -363,5 +366,69 @@ describe("validateNewTabName", () => {
 
   it("_로 시작하면 오류 메시지", () => {
     expect(validateNewTabName("_보류")).toBe("탭 이름은 _로 시작할 수 없습니다");
+  });
+});
+
+const fixtures = JSON.parse(fixturesSource) as {
+  cases: { id: string; contentType: "zh" | "generic"; words: Record<string, unknown>[]; accepted: boolean; expectedWords?: unknown[] }[];
+  partitions: { id: string; contentType: "zh" | "generic"; words: { hanzi: string; pinyin: string; meaning: string }[]; existing: string[]; skipped: string[] }[];
+};
+describe("#173 공통 fixture parity", () => {
+  it.each(fixtures.cases)("$id", (fixture) => {
+    const words = fixture.contentType === "generic" ? fixture.words.map((w: Record<string, unknown>) =>
+      Object.fromEntries(Object.entries(w).map(([k, v]) => [({ hanzi: "term", pinyin: "note" } as Record<string, string>)[k] ?? k, v]))) : fixture.words;
+    const result = validateRegistrationInput(batch(words, 1, fixture.contentType), EMPTY, fixture.contentType);
+    expect(result.ok && result.rows.every((r) => r.status !== "blocked")).toBe(fixture.accepted);
+    if (result.ok && fixture.accepted) {
+      expect(result.rows.map(({ hanzi, pinyin, meaning }) => ({ hanzi, pinyin, meaning }))).toEqual(fixture.expectedWords);
+    }
+  });
+  it.each(fixtures.partitions)("$id", (fixture) => {
+    const rows = classifyRegistrationRows(fixture.words, new Set<string>(fixture.existing), fixture.contentType);
+    expect(rows.filter((r) => r.status === "duplicate").map((r) => r.hanzi)).toEqual(fixture.skipped);
+  });
+});
+
+describe("등록 배치 경계와 의미 검토", () => {
+  it.each(["zh", "generic"] as const)("%s 100건 허용/101건 차단", (type) => {
+    const words = Array.from({ length: 101 }, (_, i) => type === "zh"
+      ? { hanzi: `我${i}`, pinyin: "wǒ", meaning: "나" }
+      : { term: `item${i}`, meaning: "항목" });
+    expect(validateRegistrationInput(batch(words.slice(0, 100), 1, type), EMPTY, type).ok).toBe(true);
+    expect(validateRegistrationInput(batch(words, 1, type), EMPTY, type)).toEqual({ ok: false, error: expect.stringContaining("100") });
+  });
+  it("단일 발음 후보가 있는 항목은 일치/불일치를 구별하되 불일치도 제출 가능", () => {
+    const rows = classifyRegistrationRows([
+      { hanzi: "今天", pinyin: "jīntiān", meaning: "오늘" },
+      { hanzi: "今天。", pinyin: "nǐ hǎo.", meaning: "오늘" },
+    ], EMPTY);
+    expect(rows.map((r) => r.status)).toEqual(["valid", "warning"]);
+    expect(rows[1].warnings?.[0]).toContain("후보와 다릅니다");
+  });
+  it("직접 수정한 raw 값도 제어문자를 먼저 검사한다", () => {
+    const rows = classifyRegistrationRows([{ hanzi: "今天", pinyin: "jīntiān\t", meaning: "오늘" }], EMPTY);
+    expect(rows[0].status).toBe("blocked");
+  });
+});
+
+
+describe("리뷰 회귀: 형식 오류 행의 중복 집계 격리", () => {
+  const word = { hanzi: "今天", pinyin: "jīntiān", meaning: "오늘" };
+  it.each(["\t", "\n", "\u00a0", "\ufeff"])("양끝 불허 문자 %j은 자기 행만 차단한다", (control) => {
+    for (const hanzi of [control + word.hanzi, word.hanzi + control]) {
+      const rows = classifyRegistrationRows([word, { ...word, hanzi }], EMPTY);
+      expect(rows.map((row) => row.status)).toEqual(["valid", "blocked"]);
+      expect(rows[1].hanzi).toBe(hanzi);
+      expect(rows[1].reasons).toEqual([expect.stringContaining("허용되지 않는 문자")]);
+    }
+  });
+  it.each([{ pinyin: "jin1tian1" }, { meaning: "" }])("같은 한자라도 형식 오류가 있는 행은 정상 행을 막지 않는다: %j", (invalid) => {
+    expect(classifyRegistrationRows([word, { ...word, ...invalid }], EMPTY).map((r) => r.status)).toEqual(["valid", "blocked"]);
+  });
+  it("불허 행을 고쳐 저장 가능해지면 배치 중복이 양쪽에 적용된다", () => {
+    expect(classifyRegistrationRows([word, { ...word, hanzi: "　今天 " }], EMPTY).map((r) => r.status)).toEqual(["blocked", "blocked"]);
+  });
+  it("불허 행과 함께 있어도 정상 행의 선택 탭 중복은 유지된다", () => {
+    expect(classifyRegistrationRows([word, { ...word, hanzi: "今天\n" }], new Set(["今天"])).map((r) => r.status)).toEqual(["duplicate", "blocked"]);
   });
 });

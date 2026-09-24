@@ -4,7 +4,7 @@
  * 실측 계약 기준). 기존 wordsApi.ts/api.ts와 동일하게 apiFetch 경유 + 비정상
  * 응답 throw 패턴.
  *
- * POST 바디의 words는 registerValidation이 분류한 valid·duplicate 행만 담는다
+ * POST 바디의 words는 registerValidation이 분류한 valid·warning·duplicate 행만 담는다
  * (blocked 행은 애초에 전송하지 않음) — 시트 내 중복의 최종 스킵은 Worker
  * 책임(플랜 §2 신뢰 경계, worker/lib/register.ts의 partitionByExisting)이라,
  * duplicate로 표시된 행도 그대로 보내 Worker가 실제로 스킵하게 한다.

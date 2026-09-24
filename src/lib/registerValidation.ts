@@ -1,26 +1,12 @@
-/**
- * 붙여넣은 등록 배치를 검증해 정상/오류(차단)/중복 행으로 분류한다 (단어 등록
- * 시스템 플랜 §3 스키마, §5-2 기계 검토, #49; generic 분기는 등록 일반화 플랜
- * §3.1·§3.2, #96). 시트 중복 대조는 "선택 탭 기준"(이슈 #49 본문) — 호출부
- * (RegisterScreen)가 현재 선택된 탭의 기존 한자 집합만 골라 넘긴다. 이 모듈은
- * WordEntry/탭 개념을 몰라도 되게 문자열 집합만 받는다.
- *
- * 분류 우선순위: 오류(형식·병음불일치·빈 값·입력 내 중복) > 중복(시트 내). 입력
- * 내 중복 한자는 어느 쪽이 진짜인지 판별 불가하므로 시트-중복보다 먼저 차단한다.
- *
- * contentType별 붙여넣기 스키마의 소스 필드명(zh: hanzi/pinyin/meaning, generic:
- * term/note/meaning)만 다르고, 내부 표현(ParsedWord/ValidatedRow)과 와이어
- * (registerApi.ts)는 항상 hanzi/pinyin/meaning 운반자로 통일한다 — 등록 일반화
- * 플랜 §3.3(단일 와이어 계약 유지).
- *
- * 파싱(parseRegistrationInput)과 분류(classifyRegistrationRows)는 별도 진입점으로
- * 나뉘어 있다(#127) — 등록 화면의 오류 행 직접 수정이 "이미 파싱된 ParsedWord[]를
- * 편집값으로 갈아끼운 뒤 다시 분류"해야 하기 때문이다. validateRegistrationInput은
- * 둘을 잇는 합성 함수로, rawText 하나로 끝내는 기존 호출부의 계약을 그대로 유지한다.
+/** #174 등록 형식 오류 → 중복 → 병음 검토 경고 → 정상 순으로 분류한다.
+ * 파싱/편집에서는 zh 원본 A/B를 보존하고 분류할 때만 공통 계약으로 정규화한다.
+ * generic의 term/note/meaning은 기존 와이어 운반자 hanzi/pinyin/meaning으로 매핑한다.
  */
 
 import type { ContentType } from "./api";
-import { isPinyinMatch } from "./pinyinValidation";
+import { reviewPinyin, PINYIN_REVIEW_WARNING } from "./pinyinValidation";
+import { MAX_REGISTER_WORDS, normalizeRegistrationText, validateZhRegistrationWord } from "../../shared/registration";
+import type { RegistrationIssue } from "../../shared/registration";
 
 export interface ParsedWord {
   hanzi: string;
@@ -28,12 +14,14 @@ export interface ParsedWord {
   meaning: string;
 }
 
-export type RowStatus = "valid" | "blocked" | "duplicate";
+export type RowStatus = "valid" | "warning" | "blocked" | "duplicate";
 
 export interface ValidatedRow extends ParsedWord {
   status: RowStatus;
   /** blocked·duplicate 사유. valid는 빈 배열. */
   reasons: string[];
+  /** 의미 검토 안내. 중복 행에도 표시하지만 차단 사유와 구분한다. */
+  warnings?: string[];
 }
 
 export type RegisterValidationResult =
@@ -45,14 +33,10 @@ export type RegisterParseResult =
   | { ok: false; error: string }
   | { ok: true; words: ParsedWord[] };
 
-// 한자 유니코드 범위(플랜 §3, 기본 블록만 허용) — worker/lib/register.ts HANZI_RE와
-// 동일해야 드리프트가 없다(#57). CJK 확장 A(U+3400–)는 의도적으로 제외.
-const HANZI_RE = /^[一-鿿]+$/u;
-
-function stringField(obj: unknown, key: string): string {
+function stringField(obj: unknown, key: string, trim = true): string {
   if (obj !== null && typeof obj === "object" && key in obj) {
     const value = (obj as Record<string, unknown>)[key];
-    if (typeof value === "string") return value.trim();
+    if (typeof value === "string") return trim ? value.trim() : value;
   }
   return "";
 }
@@ -69,12 +53,12 @@ const SOURCE_FIELDS: Record<ContentType, SourceFieldNames> = {
   generic: { hanzi: "term", pinyin: "note", meaning: "meaning" },
 };
 
-/** 파싱 원본 하나에서 hanzi/pinyin/meaning 운반자를 안전하게 뽑아 트림한다. */
+/** 파싱 원본에서 필드를 뽑는다. zh A/B는 불허 문자 검사를 위해 raw를 보존한다. */
 function extract(raw: unknown, contentType: ContentType): ParsedWord {
   const fields = SOURCE_FIELDS[contentType];
   return {
-    hanzi: stringField(raw, fields.hanzi),
-    pinyin: stringField(raw, fields.pinyin),
+    hanzi: stringField(raw, fields.hanzi, contentType !== "zh"),
+    pinyin: stringField(raw, fields.pinyin, contentType !== "zh"),
     meaning: stringField(raw, fields.meaning),
   };
 }
@@ -125,6 +109,9 @@ export function parseRegistrationInput(
   if (body.words.length === 0) {
     return { ok: false, error: "words 배열이 비어 있습니다." };
   }
+  if (body.words.length > MAX_REGISTER_WORDS) {
+    return { ok: false, error: `한 번에 ${MAX_REGISTER_WORDS}건까지 등록할 수 있습니다. 나누어 입력하세요.` };
+  }
   const mismatch = detectSchemaMismatch(body.contentType, contentType);
   if (mismatch !== null) {
     return { ok: false, error: mismatch };
@@ -135,7 +122,7 @@ export function parseRegistrationInput(
 
 /**
  * 파싱된 행들을 정상/오류/중복으로 분류한다. 입력 내 중복 카운트(hanziCounts)는
- * 매 호출마다 words 배열 전체 기준으로 다시 집계된다 — 등록 화면이 오류 행을
+ * 매 호출마다 전체 배치에서 다시 집계한다. zh는 형식 검사를 통과한 행만 센다 — 등록 화면이 오류 행을
  * 고쳐 넘길 때(#127) 손대지 않은 짝 행의 중복 오류까지 함께 풀리는 근거다.
  */
 export function classifyRegistrationRows(
@@ -143,43 +130,57 @@ export function classifyRegistrationRows(
   existingHanziInTab: ReadonlySet<string>,
   contentType: ContentType = "zh",
 ): ValidatedRow[] {
+  const key = contentType === "zh" ? normalizeRegistrationText : (value: string) => value;
+  const existing = new Set(Array.from(existingHanziInTab, key));
   const hanziCounts = new Map<string, number>();
-  for (const { hanzi } of words) {
-    if (hanzi !== "") hanziCounts.set(hanzi, (hanziCounts.get(hanzi) ?? 0) + 1);
+  const checked = words.map((raw) => ({
+    raw,
+    validation: contentType === "zh" ? validateZhRegistrationWord(raw) : null,
+  }));
+  // 저장할 수 없는 zh 행의 불허 공백이 trim되어 정상 행과 충돌하지 않게 한다.
+  for (const { raw, validation } of checked) {
+    const normalized = validation ? (validation.ok ? validation.word.hanzi : "") : raw.hanzi;
+    if (normalized) hanziCounts.set(normalized, (hanziCounts.get(normalized) ?? 0) + 1);
   }
 
-  return words.map(({ hanzi, pinyin, meaning }): ValidatedRow => {
+  return checked.map(({ raw, validation }): ValidatedRow => {
     const reasons: string[] = [];
-
     const noun = headwordNoun(contentType);
-    if (contentType === "zh") {
-      const hanziValid = hanzi !== "" && HANZI_RE.test(hanzi);
-      if (hanzi === "") reasons.push(`${noun}가 비어 있습니다`);
-      else if (!hanziValid) reasons.push("한자 유니코드 범위를 벗어난 문자가 있습니다");
-      if (pinyin === "") reasons.push("병음이 비어 있습니다");
-      if (meaning === "") reasons.push("뜻이 비어 있습니다");
-      if (hanziValid && pinyin !== "" && !isPinyinMatch(hanzi, pinyin)) {
-        reasons.push("한자와 병음이 일치하지 않습니다");
-      }
-      if (hanzi !== "" && (hanziCounts.get(hanzi) ?? 0) > 1) {
-        reasons.push(`입력 내에 중복된 ${noun}입니다`);
-      }
+    let word = raw;
+    if (validation) {
+      if (validation.ok) word = validation.word;
+      else reasons.push(...validation.issues.map(formatIssue));
     } else {
-      if (hanzi === "") reasons.push(`${noun}가 비어 있습니다`);
-      if (meaning === "") reasons.push("뜻이 비어 있습니다");
-      if (hanzi !== "" && (hanziCounts.get(hanzi) ?? 0) > 1) {
-        reasons.push(`입력 내에 중복된 ${noun}입니다`);
-      }
+      if (!word.hanzi) reasons.push(`${noun}가 비어 있습니다`);
+      if (!word.meaning) reasons.push("뜻이 비어 있습니다");
     }
+    if ((!validation || validation.ok) && (hanziCounts.get(word.hanzi) ?? 0) > 1) {
+      reasons.push(`입력 내에 중복된 ${noun}입니다`);
+    }
+    if (reasons.length) return { ...word, status: "blocked", reasons };
 
-    if (reasons.length > 0) {
-      return { hanzi, pinyin, meaning, status: "blocked", reasons };
+    const review = contentType === "zh" ? reviewPinyin(word.hanzi, word.pinyin) : "match";
+    const warnings = review === "match" ? undefined : [review === "mismatch"
+      ? "병음이 문자별 발음 후보와 다릅니다. 원문과 함께 확인하세요."
+      : PINYIN_REVIEW_WARNING];
+    const reviewFields = warnings ? { warnings } : {};
+    if (existing.has(key(word.hanzi))) {
+      return { ...word, ...reviewFields, status: "duplicate", reasons: [`선택한 탭에 이미 있는 ${noun}입니다`] };
     }
-    if (existingHanziInTab.has(hanzi)) {
-      return { hanzi, pinyin, meaning, status: "duplicate", reasons: [`선택한 탭에 이미 있는 ${noun}입니다`] };
-    }
-    return { hanzi, pinyin, meaning, status: "valid", reasons: [] };
+    return { ...word, ...reviewFields, status: warnings ? "warning" : "valid", reasons: [] };
   });
+}
+
+function formatIssue({ field, code }: RegistrationIssue): string {
+  const label = { hanzi: "한자", pinyin: "병음", meaning: "뜻" }[field];
+  switch (code) {
+    case "required": return `${label}${field === "hanzi" ? "가" : "이"} 비어 있습니다`;
+    case "invalid_type": return `${label}은 문자열이어야 합니다`;
+    case "invalid_character": return `${label}에 허용되지 않는 문자가 있습니다 (탭·개행·제어문자 포함)`;
+    case "too_long": return `${label}은 ${field === "hanzi" ? "200" : "1,000"}자를 넘을 수 없습니다`;
+    case "missing_hanzi": return "중국어 원문에는 한자가 최소 1자 필요합니다";
+    case "missing_tone": return "병음에는 성조 부호가 최소 1개 필요합니다";
+  }
 }
 
 /** 파싱 + 분류를 한 번에 — rawText 하나로 끝내는 기존 호출부용 합성 함수. */

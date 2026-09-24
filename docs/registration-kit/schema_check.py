@@ -9,7 +9,7 @@ while only the prompts are language-specific.
 Schema sources of truth (this repo). Any change lands there first; this file
 follows it:
 
-    zh       docs/plans/word-registration-system.md §3
+    zh       shared/registration.ts / #172 PRD §3
     generic  docs/plans/registration-generalization.md §3.1
 
 Expected input (JSON, via file argument or stdin):
@@ -25,10 +25,11 @@ Expected input (JSON, via file argument or stdin):
                                           }
 
 "contentType" absent means "zh": the Chinese kit predates the field and its
-output must keep validating exactly as before.
+output retains the same version and field names.
 
-Checks, zh: required fields, hanzi Unicode range, pinyin tone-mark format
-(numeric tones rejected), duplicate hanzi within the array.
+Checks, zh: sentence characters, NFC, code-point limits, tone-mark format,
+required fields and normalized duplicates. PASS checks format only; it does
+not guarantee correct pronunciation. Up to 100 entries per batch.
 Checks, generic: term/meaning non-blank, note optional, no extra fields,
 duplicate term within the array. No language-specific checks — a generic
 term is free text.
@@ -40,73 +41,70 @@ claude.ai code-execution sandbox. Exit code 0 = PASS, 1 = FAIL.
 import json
 import re
 import sys
+import unicodedata
 
-# CJK Unified Ideographs, basic block only — matches src/lib/registerValidation.ts
-# HANZI_RE and worker/lib/register.ts HANZI_RE (schema source: word-registration-system.md
-# §3, no-drift fix #57). Extension A (U+3400-U+4DBF) is deliberately excluded even
-# though it used to be allowed here: simplified characters are entirely within the
-# basic block, and Extension A covers rare historical/name characters that never
-# appear in HSK/textbook vocabulary — a hit there almost always means an OCR
-# artifact or a traditional-only variant, not a real word.
-HANZI_RANGES = ((0x4E00, 0x9FFF),)
-
+# Standalone mirror of shared/registration.ts; shared JSON fixtures prevent drift.
+MAX_REGISTER_WORDS = 100
+MAX_HANZI_CODE_POINTS = 200
+MAX_PINYIN_CODE_POINTS = 1000
+REGISTRATION_PUNCTUATION = "，。！？；：、,.!?;:（）()【】[]《》〈〉“”‘’「」『』\"'…—-·／/％%＋+＝=．"
 TONED_VOWELS = "āáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜ"
-# Standard pinyin never uses the letter 'v' — it is a keyboard stand-in for
-# 'ü', which the schema requires spelled out.
-PLAIN_ALLOWED = "abcdefghijklmnopqrstuwxyzü'’ "
-ALLOWED_PINYIN_CHARS = set(TONED_VOWELS + PLAIN_ALLOWED)
+ALLOWED_PINYIN_CHARS = set("abcdefghijklmnopqrstuvwxyzü" + TONED_VOWELS)
+SEPARATORS = set(" \u3000" + REGISTRATION_PUNCTUATION)
+# ECMAScript String.trim, not Python's broader str.strip set.
+JS_WHITESPACE = "\u0009\u000a\u000b\u000c\u000d \u00a0\u1680" + "".join(chr(i) for i in range(0x2000, 0x200B)) + "\u2028\u2029\u202f\u205f\u3000\ufeff"
 
 
 def is_hanzi(ch):
-    return any(lo <= ord(ch) <= hi for lo, hi in HANZI_RANGES)
+    return "一" <= ch <= "鿿"
+
+
+def is_source_character(ch):
+    return (is_hanzi(ch) or ch in SEPARATORS or
+            any(lo <= ch <= hi for lo, hi in (("A", "Z"), ("a", "z"), ("0", "9"),
+                                             ("Ａ", "Ｚ"), ("ａ", "ｚ"), ("０", "９"))))
+
+
+def normalize_zh_word(word):
+    return {field: (value if field == "meaning" else unicodedata.normalize("NFC", value)).strip(JS_WHITESPACE)
+            for field, value in word.items() if field in ("hanzi", "pinyin", "meaning")}
 
 
 def check_word_zh(i, word, seen_hanzi, errors):
     def err(msg):
-        errors.append("words[%d]%s: %s" % (i, label, msg))
+        errors.append("words[%d]: %s" % (i, msg))
 
     if not isinstance(word, dict):
-        label = ""
         err("entry must be an object")
         return
-
-    hanzi = word.get("hanzi")
-    label = " (%s)" % hanzi if isinstance(hanzi, str) and hanzi else ""
-
-    for field in ("hanzi", "pinyin", "meaning"):
-        value = word.get(field)
-        if not isinstance(value, str) or not value.strip():
-            err("field '%s' is missing, not a string, or empty" % field)
-            return
-
     extra = sorted(set(word) - {"hanzi", "pinyin", "meaning"})
     if extra:
         err("unexpected field(s): %s" % ", ".join(extra))
+    if any(not isinstance(word.get(field), str) for field in ("hanzi", "pinyin", "meaning")):
+        err("hanzi, pinyin and meaning must be strings")
+        return
 
-    bad_chars = [ch for ch in hanzi if not is_hanzi(ch)]
-    if bad_chars:
-        err("hanzi contains non-CJK character(s): %s"
-            % ", ".join("%r (U+%04X)" % (ch, ord(ch)) for ch in bad_chars))
-
-    pinyin = word["pinyin"]
-    if re.search(r"\d", pinyin):
-        err("pinyin uses numeric tone notation (%r) — use tone marks "
-            "(e.g. jīngjì, not jing1ji4)" % pinyin)
-    else:
-        bad = sorted({ch for ch in pinyin.lower() if ch not in ALLOWED_PINYIN_CHARS})
-        if bad:
-            err("pinyin contains invalid character(s): %s"
-                % ", ".join("%r" % ch for ch in bad))
-        elif not any(ch in TONED_VOWELS for ch in pinyin.lower()):
-            # Per schema §3 tone marks are mandatory. A word whose every
-            # syllable is neutral tone (e.g. 的 "de") would trip this; such
-            # words are practically absent from vocabulary lists, so this is
-            # an error — escalate to the user if it is genuinely intended.
-            err("pinyin %r has no tone mark — tone marks are required" % pinyin)
-
+    normalized = normalize_zh_word(word)
+    for field, value in normalized.items():
+        if not value:
+            err("field '%s' is empty" % field)
+        if field == "meaning":
+            continue
+        # Inspect NFC input BEFORE trimming so edge controls cannot disappear.
+        raw_nfc = unicodedata.normalize("NFC", word[field])
+        allowed = is_source_character if field == "hanzi" else lambda ch: ch in SEPARATORS or ch.lower() in ALLOWED_PINYIN_CHARS
+        if any(not allowed(ch) for ch in raw_nfc):
+            err("field '%s' contains invalid character(s); tabs, newlines and numeric pinyin are not allowed" % field)
+        limit = MAX_HANZI_CODE_POINTS if field == "hanzi" else MAX_PINYIN_CODE_POINTS
+        if len(value) > limit:
+            err("field '%s' exceeds %d Unicode code points" % (field, limit))
+    hanzi, pinyin = normalized["hanzi"], normalized["pinyin"]
+    if hanzi and not any(is_hanzi(ch) for ch in hanzi):
+        err("hanzi must contain at least one CJK character")
+    if pinyin and not any(ch in TONED_VOWELS for ch in pinyin.lower()):
+        err("pinyin must contain at least one tone mark")
     if hanzi in seen_hanzi:
-        err("duplicate hanzi within this batch (first at words[%d])"
-            % seen_hanzi[hanzi])
+        err("duplicate hanzi within this batch (first at words[%d])" % seen_hanzi[hanzi])
     else:
         seen_hanzi[hanzi] = i
 
@@ -152,9 +150,8 @@ def check_word_generic(i, word, seen_terms, errors):
         return
 
     # Registration trims before writing and rejects duplicates on the trimmed
-    # value (worker/lib/register.ts), so compare trimmed here too. The zh path
-    # compares raw, which is equivalent there: whitespace can never survive
-    # the hanzi range check. Case is significant, matching the sheet-level
+    # value (worker/lib/register.ts), so compare trimmed here too.
+    # Case is significant, matching the sheet-level
     # duplicate rule (registration-generalization.md §3.2).
     key = term.strip()
     if key in seen_terms:
@@ -179,19 +176,8 @@ def strip_code_fence(text):
     return match.group(1) if match else text
 
 
-def main():
-    if len(sys.argv) > 1:
-        with open(sys.argv[1], encoding="utf-8") as f:
-            raw = f.read()
-    else:
-        raw = sys.stdin.read()
-
-    try:
-        data = json.loads(strip_code_fence(raw))
-    except json.JSONDecodeError as e:
-        print("FAIL: input is not valid JSON — %s" % e)
-        return 1
-
+def validate(data):
+    """Return format errors without changing input or promising pronunciation."""
     errors = []
     if not isinstance(data, dict):
         errors.append("top level must be an object")
@@ -210,10 +196,30 @@ def main():
             errors.append("'words' must be an array")
         elif not words:
             errors.append("'words' is empty — nothing to register")
+        elif len(words) > MAX_REGISTER_WORDS:
+            errors.append("batch exceeds 100 entries; split it before registration")
         elif check_word is not None:
             seen = {}
             for i, word in enumerate(words):
                 check_word(i, word, seen, errors)
+
+    return errors
+
+
+def main():
+    if len(sys.argv) > 1:
+        with open(sys.argv[1], encoding="utf-8") as f:
+            raw = f.read()
+    else:
+        raw = sys.stdin.read()
+
+    try:
+        data = json.loads(strip_code_fence(raw))
+    except json.JSONDecodeError as e:
+        print("FAIL: input is not valid JSON — %s" % e)
+        return 1
+
+    errors = validate(data)
 
     if errors:
         for e in errors:
@@ -221,7 +227,7 @@ def main():
         print("FAIL: %d error(s)" % len(errors))
         return 1
 
-    print("PASS: %d word(s) validated." % len(data["words"]))
+    print("PASS: %d item(s) validated (format only; pronunciation not verified)." % len(data["words"]))
     return 0
 
 
