@@ -145,7 +145,7 @@ describe("StudyScreen 중국어 음성 실제 연결 (#150)", () => {
     );
     unmountCurrent = rendered.unmount;
     await flush();
-    const front = rendered.container.querySelector<HTMLButtonElement>(".flip-face--front")!;
+    const front = rendered.container.querySelector<HTMLButtonElement>(".flip-reveal-button")!;
     fire(() => front.click());
     expect(ttsRequestCount()).toBe(1);
     const firstCard = rendered.container.querySelector(".flip-card")!;
@@ -166,7 +166,7 @@ describe("StudyScreen 중국어 음성 실제 연결 (#150)", () => {
     pendingTts = grading.promise;
     const first = renderComponent(<StudyScreen queue={[question("m1"), question("m2")]} profile={profile} tts={enabled} onExit={vi.fn()} onComplete={vi.fn()} />);
     const firstCard = first.container.querySelector(".flip-card")!;
-    fire(() => first.container.querySelector<HTMLButtonElement>(".flip-face--front")!.click());
+    fire(() => first.container.querySelector<HTMLButtonElement>(".flip-reveal-button")!.click());
     fire(() => transitionEnd(firstCard));
     fire(() => first.container.querySelector<HTMLButtonElement>(".judge--o")!.click());
     grading.resolve(ttsResponse());
@@ -177,7 +177,7 @@ describe("StudyScreen 중국어 음성 실제 연결 (#150)", () => {
     const leaving = deferred<Response>();
     pendingTts = leaving.promise;
     const second = renderComponent(<StudyScreen queue={[question("m1")]} profile={profile} tts={enabled} onExit={vi.fn()} onComplete={vi.fn()} />);
-    fire(() => second.container.querySelector<HTMLButtonElement>(".flip-face--front")!.click());
+    fire(() => second.container.querySelector<HTMLButtonElement>(".flip-reveal-button")!.click());
     fire(() => transitionEnd(second.container.querySelector(".flip-card")!));
     second.unmount();
     leaving.resolve(ttsResponse());
@@ -219,7 +219,7 @@ describe("StudyScreen 중국어 음성 실제 연결 (#150)", () => {
   it("C5: B열 병음이 비어도 모드1 공개 뒤 A열만으로 실제 Audio를 재생한다", async () => {
     const rendered = renderComponent(<StudyScreen queue={[{ word: { ...word, pinyin: "" }, mode: "m1", isReview: false }]} profile={profile} tts={enabled} onExit={vi.fn()} onComplete={vi.fn()} />);
     unmountCurrent = rendered.unmount;
-    fire(() => rendered.container.querySelector<HTMLButtonElement>(".flip-face--front")!.click());
+    fire(() => rendered.container.querySelector<HTMLButtonElement>(".flip-reveal-button")!.click());
     fire(() => transitionEnd(rendered.container.querySelector(".flip-card")!));
     await vi.waitFor(() => expect(ttsRequestCount()).toBe(1));
     expect(JSON.parse(String(fetchMock.mock.calls[0][1].body))).toEqual({ text: "经济" });
@@ -229,7 +229,7 @@ describe("StudyScreen 중국어 음성 실제 연결 (#150)", () => {
   it("C3: hidden은 실제 Audio URL을 정리하고 visible 복귀는 자동 요청·재생 없이 수동 replay만 허용한다", async () => {
     const rendered = renderComponent(<StudyScreen queue={[question("m1")]} profile={profile} tts={enabled} onExit={vi.fn()} onComplete={vi.fn()} />);
     unmountCurrent = rendered.unmount;
-    fire(() => rendered.container.querySelector<HTMLButtonElement>(".flip-face--front")!.click());
+    fire(() => rendered.container.querySelector<HTMLButtonElement>(".flip-reveal-button")!.click());
     fire(() => transitionEnd(rendered.container.querySelector(".flip-card")!));
     await vi.waitFor(() => expect(audio.calls).toContain("play"));
 
@@ -251,7 +251,7 @@ describe("StudyScreen 중국어 음성 실제 연결 (#150)", () => {
   it("C4: 실제 App/Home/Study 경계에서 provider 503은 로그인 상태를 보존하고 앱 401은 활성 Audio와 URL을 정리한다", async () => {
     nextTtsStatus = 503;
     const rendered = await startApp();
-    fire(() => rendered.container.querySelector<HTMLButtonElement>(".flip-face--front")!.click());
+    fire(() => rendered.container.querySelector<HTMLButtonElement>(".flip-reveal-button")!.click());
     fire(() => transitionEnd(rendered.container.querySelector(".flip-card")!));
     await vi.waitFor(() => expect(ttsRequestCount()).toBe(1));
     await flush();
@@ -264,7 +264,7 @@ describe("StudyScreen 중국어 음성 실제 연결 (#150)", () => {
     localStorage.setItem("app-password", "test-password");
     nextTtsStatus = 200;
     const active = await startApp();
-    fire(() => active.container.querySelector<HTMLButtonElement>(".flip-face--front")!.click());
+    fire(() => active.container.querySelector<HTMLButtonElement>(".flip-reveal-button")!.click());
     fire(() => transitionEnd(active.container.querySelector(".flip-card")!));
     await vi.waitFor(() => expect(audio.calls).toContain("play"));
     nextWordsStatus = 401;
@@ -287,7 +287,7 @@ describe("StudyScreen 중국어 음성 실제 연결 (#150)", () => {
     await vi.waitFor(() => expect(fetchMock.mock.calls.filter(([path]) => path === "/api/answer")).toHaveLength(1));
     expect(JSON.parse(localStorage.getItem(RETRY_QUEUE_STORAGE_KEY)!)).toHaveLength(1);
     answerStatus = 200;
-    fire(() => rendered.container.querySelector<HTMLButtonElement>(".flip-face--front")!.click());
+    fire(() => rendered.container.querySelector<HTMLButtonElement>(".flip-reveal-button")!.click());
     fire(() => transitionEnd(rendered.container.querySelector(".flip-card")!));
     await vi.waitFor(() => expect(fetchMock.mock.calls.filter(([path]) => path === "/api/answer")).toHaveLength(2));
     expect(localStorage.getItem(RETRY_QUEUE_STORAGE_KEY)).toBe("[]");
@@ -304,7 +304,7 @@ describe("StudyScreen 중국어 음성 실제 연결 (#150)", () => {
         <StudyScreen queue={[question("m1")]} profile={profile} tts={scenario === "off" ? disabled : enabled} onExit={vi.fn()} onComplete={onComplete} />,
       );
       const card = rendered.container.querySelector(".flip-card")!;
-      fire(() => rendered.container.querySelector<HTMLButtonElement>(".flip-face--front")!.click());
+      fire(() => rendered.container.querySelector<HTMLButtonElement>(".flip-reveal-button")!.click());
       fire(() => transitionEnd(card));
       await flush();
       fire(() => rendered.container.querySelector<HTMLButtonElement>(".judge--o")!.click());
@@ -339,7 +339,7 @@ describe("StudyScreen 중국어 음성 실제 연결 (#150)", () => {
       localStorage.setItem("vocab-study:profile", JSON.stringify(profile));
       const complete = vi.fn(); const start = fetchMock.mock.calls.length;
       const rendered = renderComponent(<StudyScreen queue={queue} profile={profile} tts={scenario === "off" ? disabled : enabled} onExit={vi.fn()} onComplete={complete} />);
-      const answerM1 = (correct: boolean) => { fire(() => rendered.container.querySelector<HTMLButtonElement>(".flip-face--front")!.click()); fire(() => transitionEnd(rendered.container.querySelector(".flip-card")!)); fire(() => rendered.container.querySelector<HTMLButtonElement>(correct ? ".judge--o" : ".judge--x")!.click()); finishFeedback(rendered.container.querySelector<HTMLElement>(".study-feedback-glyph")!); };
+      const answerM1 = (correct: boolean) => { fire(() => rendered.container.querySelector<HTMLButtonElement>(".flip-reveal-button")!.click()); fire(() => transitionEnd(rendered.container.querySelector(".flip-card")!)); fire(() => rendered.container.querySelector<HTMLButtonElement>(correct ? ".judge--o" : ".judge--x")!.click()); finishFeedback(rendered.container.querySelector<HTMLElement>(".study-feedback-glyph")!); };
       answerM1(true); expect(rendered.container.querySelector(".study-progress-now")?.textContent).toBe("2");
       answerM1(false); expect(rendered.container.querySelector(".study-progress-now")?.textContent).toBe("3");
       fire(() => rendered.container.querySelector<HTMLButtonElement>('button[type="submit"]')!.click());
@@ -373,7 +373,7 @@ describe("StudyScreen 중국어 음성 실제 연결 (#150)", () => {
       answerStatus = 500;
       const start = fetchMock.mock.calls.length;
       const rendered = renderComponent(<StudyScreen queue={queue} profile={profile} tts={scenario === "off" ? disabled : enabled} onExit={vi.fn()} onComplete={vi.fn()} />);
-      const answerM1 = (correct: boolean) => { fire(() => rendered.container.querySelector<HTMLButtonElement>(".flip-face--front")!.click()); fire(() => transitionEnd(rendered.container.querySelector(".flip-card")!)); fire(() => rendered.container.querySelector<HTMLButtonElement>(correct ? ".judge--o" : ".judge--x")!.click()); finishFeedback(rendered.container.querySelector<HTMLElement>(".study-feedback-glyph")!); };
+      const answerM1 = (correct: boolean) => { fire(() => rendered.container.querySelector<HTMLButtonElement>(".flip-reveal-button")!.click()); fire(() => transitionEnd(rendered.container.querySelector(".flip-card")!)); fire(() => rendered.container.querySelector<HTMLButtonElement>(correct ? ".judge--o" : ".judge--x")!.click()); finishFeedback(rendered.container.querySelector<HTMLElement>(".study-feedback-glyph")!); };
       answerM1(true); answerM1(false);
       fire(() => rendered.container.querySelector<HTMLButtonElement>('button[type="submit"]')!.click());
       fire(() => [...rendered.container.querySelectorAll<HTMLButtonElement>("button")].find((button) => button.textContent === "다음")!.click());

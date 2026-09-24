@@ -65,17 +65,23 @@ describe('Mode1Card 접근성 플립', () => {
     document.body.replaceChildren()
   })
 
-  it('비대화형 래퍼와 형제인 앞면 버튼·숨겨진 뒷면을 렌더한다', () => {
+  it('앞면 scroll 영역과 공개 버튼을 분리하고 숨겨진 뒷면을 렌더한다', () => {
     const { container, unmount } = renderCard()
     const card = container.querySelector('.flip-card')!
-    const front = container.querySelector('.flip-face--front') as HTMLButtonElement
+    const front = container.querySelector('.flip-face--front') as HTMLDivElement
+    const scroll = front.querySelector('.flip-hanzi') as HTMLElement
+    const revealButton = front.querySelector('.flip-reveal-button') as HTMLButtonElement
     const back = container.querySelector('.flip-face--back') as HTMLDivElement
 
     expect(card.tagName).toBe('DIV')
+    expect(front.tagName).toBe('DIV')
     expect(front.parentElement).toBe(card)
     expect(back.parentElement).toBe(card)
     expect(container.querySelector('button button')).toBeNull()
-    expect(front.disabled).toBe(false)
+    expect(scroll.tabIndex).toBe(0)
+    expect(scroll.getAttribute('role')).toBe('region')
+    expect(scroll.getAttribute('aria-label')).toBe('문제 중국어')
+    expect(revealButton.disabled).toBe(false)
     expect(front.getAttribute('aria-hidden')).toBe('false')
     expect(front.hasAttribute('inert')).toBe(false)
     expect(back.getAttribute('aria-hidden')).toBe('true')
@@ -87,10 +93,11 @@ describe('Mode1Card 접근성 플립', () => {
     const clearTimeoutSpy = vi.spyOn(globalThis, 'clearTimeout')
     const { container, unmount } = renderCard()
     const card = container.querySelector('.flip-card')!
-    const front = container.querySelector('.flip-face--front') as HTMLButtonElement
+    const front = container.querySelector('.flip-face--front') as HTMLDivElement
+    const revealButton = container.querySelector('.flip-reveal-button') as HTMLButtonElement
     const back = container.querySelector('.flip-face--back')!
-    front.focus()
-    fire(() => front.click())
+    revealButton.focus()
+    fire(() => revealButton.click())
 
     expect(container.querySelector('.judge--x')).not.toBeNull()
     expect(back.getAttribute('aria-hidden')).toBe('true')
@@ -109,7 +116,7 @@ describe('Mode1Card 접근성 플립', () => {
 
   it('계산한 최대 transform 시간과 buffer 뒤 fallback으로 한 번 완료한다', () => {
     const { container, unmount } = renderCard()
-    const front = container.querySelector('.flip-face--front') as HTMLButtonElement
+    const front = container.querySelector('.flip-reveal-button') as HTMLButtonElement
     const back = container.querySelector('.flip-face--back')!
     fire(() => front.click())
 
@@ -130,7 +137,7 @@ describe('Mode1Card 접근성 플립', () => {
     } as CSSStyleDeclaration)
     vi.mocked(matchMedia).mockReturnValue({ matches: reduced } as MediaQueryList)
     const { container, unmount } = renderCard()
-    fire(() => (container.querySelector('.flip-face--front') as HTMLButtonElement).click())
+    fire(() => (container.querySelector('.flip-reveal-button') as HTMLButtonElement).click())
     expect(container.querySelector('.flip-face--back')?.getAttribute('aria-hidden')).toBe('false')
     expect(vi.getTimerCount()).toBe(0)
     unmount()
@@ -139,7 +146,7 @@ describe('Mode1Card 접근성 플립', () => {
   it('전환 중 옮긴 초점을 빼앗지 않고 빠른 O/X 판정과 timer 정리를 보존한다', () => {
     const clearTimeoutSpy = vi.spyOn(globalThis, 'clearTimeout')
     const { container, onJudged, unmount } = renderCard()
-    const front = container.querySelector('.flip-face--front') as HTMLButtonElement
+    const front = container.querySelector('.flip-reveal-button') as HTMLButtonElement
     front.focus()
     fire(() => front.click())
     const correct = container.querySelector('.judge--o') as HTMLButtonElement
@@ -161,8 +168,11 @@ describe('Mode1Card 접근성 플립', () => {
     const pinyin = 'cháng '.repeat(200).trim()
     const meaning = '아주 긴 뜻 '.repeat(100).trim()
     const { container, unmount } = renderCard({ hanzi, pinyin, meaning }, 'generic')
-    expect(container.querySelector('.flip-hanzi--generic')?.textContent).toBe(hanzi)
-    fire(() => (container.querySelector('.flip-face--front') as HTMLButtonElement).click())
+    const scroll = container.querySelector<HTMLElement>('.flip-hanzi--generic')!
+    expect(scroll.textContent).toBe(hanzi)
+    expect(scroll.tabIndex).toBe(0)
+    expect(scroll.getAttribute('aria-label')).toBe('문제 단어')
+    fire(() => (container.querySelector('.flip-reveal-button') as HTMLButtonElement).click())
     const back = container.querySelector('.flip-face--back')!
     const content = back.querySelector('.flip-face-back-content')!
     expect(content.parentElement).toBe(back)
@@ -189,6 +199,21 @@ describe('Mode1Card 접근성 플립', () => {
     unmount()
   })
 
+  it('앞면 scroll 영역의 Enter는 공개하지 않고 별도 버튼만 공개한다', () => {
+    const { container, unmount } = renderCard({ hanzi: '长'.repeat(200) })
+    const scroll = container.querySelector('.flip-hanzi') as HTMLElement
+    scroll.focus()
+    fire(() => scroll.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true })))
+    expect(container.querySelector('.judge--x')).toBeNull()
+    expect(document.activeElement).toBe(scroll)
+
+    const revealButton = container.querySelector('.flip-reveal-button') as HTMLButtonElement
+    revealButton.focus()
+    fire(() => revealButton.click())
+    expect(container.querySelector('.judge--x')).not.toBeNull()
+    unmount()
+  })
+
   it('짧은 답도 긴 답과 같은 내부 정렬 래퍼에 배치한다', () => {
     const { container, unmount } = renderCard()
     const back = container.querySelector('.flip-face--back')!
@@ -202,7 +227,7 @@ describe('Mode1Card 접근성 플립', () => {
   it('binding은 첫 플립에서 prepare하고 카드 공개 완료 뒤 reveal을 한 번만 전달한다', () => {
     const pronunciation = createPronunciation()
     const { container, unmount } = renderCard({}, 'zh', pronunciation)
-    const front = container.querySelector('.flip-face--front') as HTMLButtonElement
+    const front = container.querySelector('.flip-reveal-button') as HTMLButtonElement
     const card = container.querySelector('.flip-card')!
 
     fire(() => front.click())
@@ -219,7 +244,7 @@ describe('Mode1Card 접근성 플립', () => {
   it('공개 후 발음 버튼은 replay만 호출하고 판정을 발생시키지 않는다', () => {
     const pronunciation = createPronunciation()
     const { container, onJudged, unmount } = renderCard({}, 'zh', pronunciation)
-    const front = container.querySelector('.flip-face--front') as HTMLButtonElement
+    const front = container.querySelector('.flip-reveal-button') as HTMLButtonElement
     fire(() => front.click())
     fire(() => transitionEnd(container.querySelector('.flip-card')!, 'transform'))
 
@@ -240,7 +265,7 @@ describe('Mode1Card 접근성 플립', () => {
   it('병음이 없어도 발음 버튼 영역을 유지한다', () => {
     const pronunciation = createPronunciation()
     const { container, unmount } = renderCard({ pinyin: '' }, 'zh', pronunciation)
-    fire(() => (container.querySelector('.flip-face--front') as HTMLButtonElement).click())
+    fire(() => (container.querySelector('.flip-reveal-button') as HTMLButtonElement).click())
     fire(() => transitionEnd(container.querySelector('.flip-card')!, 'transform'))
     expect(container.querySelector('.mode-card-pinyin')).toBeNull()
     expect(container.querySelector('.mode-card-pinyin-area')).not.toBeNull()
@@ -252,7 +277,7 @@ describe('Mode1Card 접근성 플립', () => {
   it('generic/off에서는 버튼과 발음 호출이 없고 기존 판정 focus fallback을 유지한다', () => {
     const pronunciation = createPronunciation()
     const { container, unmount } = renderCard({}, 'generic', pronunciation)
-    const front = container.querySelector('.flip-face--front') as HTMLButtonElement
+    const front = container.querySelector('.flip-reveal-button') as HTMLButtonElement
     front.focus()
     fire(() => front.click())
     fire(() => transitionEnd(container.querySelector('.flip-card')!, 'transform'))
@@ -266,7 +291,7 @@ describe('Mode1Card 접근성 플립', () => {
   it('빠른 판정 뒤 늦은 완료가 reveal을 호출하지 않는다', () => {
     const pronunciation = createPronunciation()
     const { container, onJudged, unmount } = renderCard({}, 'zh', pronunciation)
-    const front = container.querySelector('.flip-face--front') as HTMLButtonElement
+    const front = container.querySelector('.flip-reveal-button') as HTMLButtonElement
     fire(() => front.click())
     fire(() => (container.querySelector('.judge--o') as HTMLButtonElement).click())
     fire(() => transitionEnd(container.querySelector('.flip-card')!, 'transform'))

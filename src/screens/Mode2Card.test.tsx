@@ -50,6 +50,8 @@ describe("Mode2Card 정답 음성", () => {
     expect(zh.container.querySelector("input.mode-input")).toBeNull();
     expect(zh.container.querySelector(".mode-input")?.getAttribute("enterkeyhint")).toBe("done");
     expect(zh.container.querySelector(".mode-input")?.getAttribute("aria-label")).toContain("단어·문장");
+    expect(zh.container.querySelector<HTMLElement>(".mode2-question-scroll")?.tabIndex).toBe(0);
+    expect(zh.container.querySelector(".mode2-question-scroll")?.getAttribute("aria-label")).toBe("문제 뜻");
     zh.unmount();
 
     const generic = renderComponent(
@@ -58,6 +60,8 @@ describe("Mode2Card 정답 음성", () => {
     unmountCurrent = generic.unmount;
     expect(generic.container.querySelector("input.mode-input")).not.toBeNull();
     expect(generic.container.querySelector("textarea.mode-input")).toBeNull();
+    expect(generic.container.querySelector(".mode2-question-scroll .mode-card-meaning")?.textContent).toBe("경제");
+    expect(generic.container.querySelector<HTMLElement>(".mode2-question-scroll")?.tabIndex).toBe(0);
   });
 
   it("textarea Enter는 한 번 제출하고 Shift+Enter와 IME Enter는 제출하지 않는다", () => {
@@ -88,6 +92,9 @@ describe("Mode2Card 정답 음성", () => {
     const enter = new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true });
     fire(() => textarea.dispatchEvent(enter));
     expect(enter.defaultPrevented).toBe(true);
+    const repeated = new KeyboardEvent("keydown", { key: "Enter", repeat: true, bubbles: true, cancelable: true });
+    fire(() => textarea.dispatchEvent(repeated));
+    expect(repeated.defaultPrevented).toBe(true);
     expect(onJudged).toHaveBeenCalledTimes(1);
     expect(onJudged).toHaveBeenCalledWith(true);
   });
@@ -269,6 +276,7 @@ describe("Mode2Card 정답 음성", () => {
     );
     unmountCurrent = unmount;
     expect(container.querySelector(".mode2-question-scroll")?.textContent).toBe(longMeaning);
+    expect(container.querySelector<HTMLElement>(".mode2-question-scroll")?.tabIndex).toBe(0);
     submit(container, longAnswer);
     const scroll = container.querySelector(".mode2-result-scroll")!;
     expect(scroll.querySelector(".pinyin-speaker .mode-card-pinyin")?.textContent).toBe(longPinyin);

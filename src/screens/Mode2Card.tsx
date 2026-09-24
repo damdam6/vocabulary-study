@@ -31,6 +31,7 @@ function Mode2Card({ question, contentType, onJudged, onProceed, pronunciation }
   const proceedRef = useRef<HTMLButtonElement>(null)
   const shouldMoveFocusRef = useRef(false)
   const revealConsumedRef = useRef(false)
+  const submittedRef = useRef(false)
   const { word } = question
   const lang = headwordLang(contentType)
   const isChinese = contentType === 'zh'
@@ -67,7 +68,8 @@ function Mode2Card({ question, contentType, onJudged, onProceed, pronunciation }
 
   const submit = (event: FormEvent) => {
     event.preventDefault()
-    if (wrongAnswer !== null) return
+    if (wrongAnswer !== null || submittedRef.current) return
+    submittedRef.current = true
     const { correct, answer } = gradeMode2(value, word.hanzi, contentType)
     if (correct) {
       onJudged(true)
@@ -126,7 +128,7 @@ function Mode2Card({ question, contentType, onJudged, onProceed, pronunciation }
   return (
     <form className="mode-area mode-area--m2" onSubmit={submit}>
       <div className="mode-card">
-        <div className="mode2-question-scroll">
+        <div className="mode2-question-scroll" tabIndex={0} aria-label="문제 뜻">
           <span className="mode-card-meaning mode-card-meaning--question">{word.meaning}</span>
         </div>
         <span className="mode-card-hint">{mode2Hint(contentType)}</span>

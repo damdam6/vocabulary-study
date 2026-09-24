@@ -603,6 +603,12 @@ button {
   white-space: normal;
 }
 
+.flip-hanzi:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+  border-radius: 8px;
+}
+
 /* §1.2 글자 수 적응 크기(zh 전용) — 클래스 선택은 hanziFontSize(src/lib/hanziSize.ts) */
 .flip-hanzi--84 {
   font-size: 84px;
@@ -634,11 +640,28 @@ button {
   letter-spacing: normal;
 }
 
-.flip-hint {
+.flip-reveal-button {
   position: absolute;
-  bottom: 22px;
+  right: 24px;
+  bottom: 6px;
+  left: 24px;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
   font-size: 13px;
   color: var(--text-faint);
+}
+
+.flip-reveal-button:hover,
+.flip-reveal-button:focus-visible {
+  color: var(--text-muted);
+}
+
+.flip-reveal-button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+  border-radius: 8px;
 }
 
 /* 목업 판정 영역(min-height 132/padding-top 18)에서 mode-area gap 14px만큼 차감 */
