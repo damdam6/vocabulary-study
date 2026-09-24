@@ -15,6 +15,12 @@ const word: WordEntry = {
   tab: "HSK4", hanzi: "经济", pinyin: "jīngjì", meaning: "경제",
   m1: 1, m2: 1, nextReview: null, interval: null,
 };
+const sentenceWord: WordEntry = {
+  ...word,
+  hanzi: "今天下午三点，我们  一起去图书馆学习。价格是3.5元，增长了５％！",
+  pinyin: "jīntiān xiàwǔ sān diǎn, wǒmen yìqǐ qù túshūguǎn xuéxí.",
+  meaning: "오늘 오후 세 시에 우리는 함께 도서관에 가서 공부한다.",
+};
 
 class NativeAudioDouble {
   currentTime = 0;
@@ -24,7 +30,10 @@ class NativeAudioDouble {
   readonly calls: string[] = [];
   readonly listeners = new Map<string, Set<() => void>>([["ended", new Set()], ["error", new Set()]]);
 
-  play() { this.calls.push("play"); return Promise.resolve(); }
+  play() {
+    this.calls.push("play");
+    return nextAudioPlayError === null ? Promise.resolve() : Promise.reject(nextAudioPlayError);
+  }
   pause() { this.calls.push("pause"); }
   load() { this.calls.push("load"); }
   removeAttribute(name: string) { this.calls.push(`remove:${name}`); this.attributes.delete(name); }
@@ -42,6 +51,7 @@ let nextTtsStatus = 200;
 let nextWordsStatus = 200;
 let answerStatus = 200;
 let pendingTts: Promise<Response> | null = null;
+let nextAudioPlayError: Error | null = null;
 
 function deferred<T>() {
   let resolve!: (value: T) => void;
@@ -127,6 +137,7 @@ beforeEach(() => {
   nextWordsStatus = 200;
   answerStatus = 200;
   pendingTts = null;
+  nextAudioPlayError = null;
 });
 
 afterEach(() => {
@@ -139,6 +150,77 @@ afterEach(() => {
 });
 
 describe("StudyScreen 중국어 음성 실제 연결 (#150)", () => {
+  it("SENT-05: 모드1은 채점 정규화 전 문장 원문을 자동 한 번 전송하고 수동 replay는 cache를 재사용한다", async () => {
+    const rendered = renderComponent(
+      <StudyScreen queue={[{ word: sentenceWord, mode: "m1", isReview: false }]} profile={profile} tts={enabled} onExit={vi.fn()} onComplete={vi.fn()} />,
+    );
+    unmountCurrent = rendered.unmount;
+    fire(() => rendered.container.querySelector<HTMLButtonElement>(".flip-reveal-button")!.click());
+    fire(() => transitionEnd(rendered.container.querySelector(".flip-card")!));
+    await vi.waitFor(() => expect(audio.calls.filter((call) => call === "play")).toHaveLength(1));
+
+    const ttsCall = fetchMock.mock.calls.find(([path]) => path === "/api/tts")!;
+    expect(JSON.parse(String((ttsCall[1] as RequestInit).body))).toEqual({
+      text: sentenceWord.hanzi,
+      pinyin: sentenceWord.pinyin,
+    });
+    expect(String((ttsCall[1] as RequestInit).body)).not.toContain("价格是35元");
+
+    fire(() => rendered.container.querySelector<HTMLButtonElement>('[aria-label="발음 듣기"]')!.click());
+    await vi.waitFor(() => expect(audio.calls.filter((call) => call === "play")).toHaveLength(2));
+    expect(ttsRequestCount()).toBe(1);
+
+    fire(() => rendered.container.querySelector<HTMLButtonElement>(".judge--o")!.click());
+    await flush();
+    const answerCall = fetchMock.mock.calls.find(([path]) => path === "/api/answer")!;
+    expect(JSON.parse(String((answerCall[1] as RequestInit).body)).hanzi).toBe(sentenceWord.hanzi);
+  });
+
+  it("SENT-05: 모드2 오답 공개도 문장 원문을 자동 한 번 재생하고 수동 반복은 합성을 늘리지 않는다", async () => {
+    const rendered = renderComponent(
+      <StudyScreen queue={[{ word: sentenceWord, mode: "m2", isReview: false }]} profile={profile} tts={enabled} onExit={vi.fn()} onComplete={vi.fn()} />,
+    );
+    unmountCurrent = rendered.unmount;
+    fire(() => setInput(rendered.container.querySelector<HTMLTextAreaElement>(".mode-input")!, "가격이 다른 오답"));
+    fire(() => rendered.container.querySelector<HTMLButtonElement>('button[type="submit"]')!.click());
+    await vi.waitFor(() => expect(audio.calls.filter((call) => call === "play")).toHaveLength(1));
+    expect(JSON.parse(String((fetchMock.mock.calls.find(([path]) => path === "/api/tts")![1] as RequestInit).body)).text).toBe(sentenceWord.hanzi);
+    fire(() => rendered.container.querySelector<HTMLButtonElement>('[aria-label="발음 듣기"]')!.click());
+    await vi.waitFor(() => expect(audio.calls.filter((call) => call === "play")).toHaveLength(2));
+    expect(ttsRequestCount()).toBe(1);
+  });
+
+  it("SENT-05: 200 code point는 요청하고 201자는 안내만 하며 원문 학습·기록을 계속한다", async () => {
+    const boundary200 = `𠀀${"中".repeat(199)}`;
+    const boundary201 = `${boundary200}中`;
+    expect(boundary200.length).toBe(201);
+    expect(Array.from(boundary200)).toHaveLength(200);
+
+    const accepted = renderComponent(
+      <StudyScreen queue={[{ word: { ...sentenceWord, hanzi: boundary200 }, mode: "m1", isReview: false }]} profile={profile} tts={enabled} onExit={vi.fn()} onComplete={vi.fn()} />,
+    );
+    fire(() => accepted.container.querySelector<HTMLButtonElement>(".flip-reveal-button")!.click());
+    fire(() => transitionEnd(accepted.container.querySelector(".flip-card")!));
+    await vi.waitFor(() => expect(ttsRequestCount()).toBe(1));
+    accepted.unmount();
+
+    const start = fetchMock.mock.calls.length;
+    const rejected = renderComponent(
+      <StudyScreen queue={[{ word: { ...sentenceWord, hanzi: boundary201 }, mode: "m1", isReview: false }]} profile={profile} tts={enabled} onExit={vi.fn()} onComplete={vi.fn()} />,
+    );
+    unmountCurrent = rejected.unmount;
+    expect(rejected.container.textContent).toContain(boundary201);
+    fire(() => rejected.container.querySelector<HTMLButtonElement>(".flip-reveal-button")!.click());
+    fire(() => transitionEnd(rejected.container.querySelector(".flip-card")!));
+    expect(rejected.container.textContent).toContain("발음은 200자까지 지원해요.");
+    expect(rejected.container.querySelector<HTMLButtonElement>('[aria-label="발음 듣기"]')?.disabled).toBe(true);
+    fire(() => rejected.container.querySelector<HTMLButtonElement>(".judge--o")!.click());
+    await flush();
+    const calls = fetchMock.mock.calls.slice(start);
+    expect(calls.filter(([path]) => path === "/api/tts")).toHaveLength(0);
+    expect(calls.filter(([path]) => path === "/api/answer").map(([, init]) => JSON.parse(String((init as RequestInit).body)).hanzi)).toEqual([boundary201]);
+  });
+
   it("C1: StrictMode 모드1은 공개 완료 뒤 실제 transport/controller/audio를 한 번만 연결하고 빠른 판정 뒤 늦은 완료를 막는다", async () => {
     const rendered = renderComponent(
       <StrictMode><StudyScreen queue={[question("m1"), question("m2")]} profile={profile} tts={enabled} onExit={vi.fn()} onComplete={vi.fn()} /></StrictMode>,
@@ -294,10 +376,11 @@ describe("StudyScreen 중국어 음성 실제 연결 (#150)", () => {
     expect(fetchMock.mock.calls.filter(([path]) => path === "/api/tts")).toHaveLength(1);
   });
 
-  it("C6: TTS 성공·실패·off 모두 같은 모드1 채점 기록을 남긴다", async () => {
+  it("C6: TTS 성공·실패·off·자동재생 차단 모두 같은 모드1 채점 기록을 남긴다", async () => {
     const outcomes: Array<{ records: unknown[]; ttsCalls: number }> = [];
-    for (const scenario of ["success", "failure", "off"] as const) {
+    for (const scenario of ["success", "failure", "off", "blocked"] as const) {
       nextTtsStatus = scenario === "failure" ? 503 : 200;
+      nextAudioPlayError = scenario === "blocked" ? new DOMException("자동재생이 차단됨", "NotAllowedError") : null;
       const onComplete = vi.fn();
       const start = fetchMock.mock.calls.length;
       const rendered = renderComponent(
@@ -321,8 +404,9 @@ describe("StudyScreen 중국어 음성 실제 연결 (#150)", () => {
       { records: [{ tab: "HSK4", hanzi: "经济", mode: "m1", isReview: false, timestamp: expect.any(String) }] },
       { records: [{ tab: "HSK4", hanzi: "经济", mode: "m1", isReview: false, timestamp: expect.any(String) }] },
       { records: [{ tab: "HSK4", hanzi: "经济", mode: "m1", isReview: false, timestamp: expect.any(String) }] },
+      { records: [{ tab: "HSK4", hanzi: "经济", mode: "m1", isReview: false, timestamp: expect.any(String) }] },
     ]);
-    expect(outcomes.map(({ ttsCalls }) => ttsCalls)).toEqual([1, 1, 0]);
+    expect(outcomes.map(({ ttsCalls }) => ttsCalls)).toEqual([1, 1, 0, 1]);
   });
 
   it("C6: 혼합 4문제 transcript는 TTS success/failure/off에서도 진행·기록·통계를 보존한다", async () => {

@@ -68,6 +68,12 @@ describe("R2 오디오 키", () => {
     await expect(buildAudioObjectKey(profile, { ...input, text: "重" }, config)).resolves.not.toBe(key);
     await expect(buildAudioObjectKey(profile, input, { ...config, revision: "tts-v2" })).resolves.not.toBe(key);
     await expect(buildAudioObjectKey(profile, input, { ...config, rate: 1.5 })).resolves.not.toBe(key);
+
+    const sentence = { text: "今天下午三点，我们  一起去图书馆学习。价格是3.5元。", pinyin: "jīntiān xiàwǔ" };
+    const sentenceKey = await buildAudioObjectKey(profile, sentence, config);
+    await expect(buildAudioObjectKey(profile, { ...sentence, pinyin: "jīn tiān xià wǔ" }, config)).resolves.not.toBe(sentenceKey);
+    await expect(buildAudioObjectKey(profile, { ...sentence, text: sentence.text.replace("3.5", "35") }, config)).resolves.not.toBe(sentenceKey);
+    await expect(buildAudioObjectKey(profile, sentence, { ...config, revision: "tts-v2" })).resolves.not.toBe(sentenceKey);
   });
 
   it("정규화 전후 동치 입력과 metadata allowlist를 고정한다", async () => {

@@ -12,5 +12,10 @@ describe("병음 미적용 정책", () => {
   it("제공자 입력은 같은 A열 text 한 필드만 가진다", () => {
     expect(createSynthesisInput({ text: "经济" })).toEqual({ text: "经济" });
     expect(createSynthesisInput({ text: "行" })).toEqual({ text: "行" });
+    const sentence = "今天下午三点，我们  一起去图书馆学习。价格是3.5元。";
+    expect(createSynthesisInput({ text: sentence })).toEqual({ text: sentence });
+    expect(decidePronunciation({ pinyin: "jīntiān xiàwǔ sān diǎn" })).toEqual({
+      status: "ignored", reason: "provider_hint_unsupported", effectiveHint: null,
+    });
   });
 });
