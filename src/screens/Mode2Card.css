@@ -1,6 +1,7 @@
 .mode2-result-scroll {
   width: 100%;
-  flex: 1;
+  /* #169: 내용 높이만큼만 차지해 카드가 제목+결과 묶음을 세로 가운데에 둔다. 넘치면 줄어들며 스크롤. */
+  flex: 0 1 auto;
   min-width: 0;
   min-height: 0;
   overflow-y: auto;
@@ -8,29 +9,15 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 11px;
+  gap: 14px;
   padding: 4px;
 }
 
-.mode2-result-headword {
-  width: 100%;
-  min-width: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 8px 12px;
-}
-
-.mode2-result-headword .mode-card-hanzi,
+.mode2-result-scroll .mode-card-hanzi,
 .mode2-result-scroll .mode-card-pinyin,
 .mode2-result-scroll .mode-card-meaning,
 .mode2-result-scroll .mode-my-answer {
   max-width: 100%;
   overflow-wrap: anywhere;
   white-space: normal;
-}
-
-.mode2-result-pronunciation {
-  flex: 0 0 auto;
 }

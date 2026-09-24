@@ -72,7 +72,7 @@ describe("Mode2Card 정답 음성", () => {
     if (renderedAnswer === "") expect(container.querySelector(".mode-my-answer")).toBeNull();
   });
 
-  it("수동 버튼은 replay만 호출하고 정답 표제어와 같은 행에 있다", () => {
+  it("수동 버튼은 replay만 호출하고 정답 병음 오른쪽 같은 행에 있다", () => {
     const pronunciation = binding();
     const onJudged = vi.fn();
     const onProceed = vi.fn();
@@ -81,9 +81,11 @@ describe("Mode2Card 정답 음성", () => {
     );
     unmountCurrent = unmount;
     submit(container, "오답");
-    const row = container.querySelector(".mode2-result-headword")!;
+    const row = container.querySelector(".pinyin-speaker")!;
     const button = row.querySelector<HTMLButtonElement>('[aria-label="발음 듣기"]')!;
-    expect(row.textContent).toContain(word.hanzi);
+    expect(row.querySelector(".mode-card-pinyin")?.textContent).toBe(word.pinyin);
+    expect(row.textContent).not.toContain(word.hanzi);
+    expect(row.querySelector(".pronunciation-button--compact")).not.toBeNull();
     expect(button.type).toBe("button");
     fire(() => button.click());
     expect(pronunciation.replay).toHaveBeenCalledTimes(1);
@@ -195,6 +197,7 @@ describe("Mode2Card 정답 음성", () => {
     const scroll = container.querySelector(".mode2-result-scroll")!;
     expect(scroll.textContent).toContain(longHanzi);
     expect(scroll.querySelector(".mode-card-pinyin")).toBeNull();
+    expect(scroll.querySelector(".pinyin-speaker--no-pinyin")).not.toBeNull();
     expect(scroll.textContent).toContain("사용자 오답");
     expect(scroll.querySelector('button[aria-label="발음 듣기"]')).not.toBeNull();
     expect(scroll.contains(container.querySelector(".primary-button"))).toBe(false);

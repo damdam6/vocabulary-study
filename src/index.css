@@ -375,6 +375,50 @@ button {
   font-weight: 500;
 }
 
+/* #169 Speaker Position: 병음은 카드 가운데, 발음 버튼은 병음 오른쪽 10px.
+   좌우 40px(30px 원 + 10px 간격) 대칭 열로 병음 중심을 유지하고, 긴 병음은 가운데 열에서 줄바꿈한다.
+   보이는 오류 문구는 둘째 줄 전체 폭에 놓는다. */
+.pinyin-speaker {
+  position: relative;
+  display: grid;
+  grid-template-columns: 40px minmax(0, auto) 40px;
+  justify-content: center;
+  align-items: center;
+  max-width: 100%;
+}
+
+.pinyin-speaker > .mode-card-pinyin {
+  grid-column: 2;
+  min-width: 0;
+  line-height: 1.2;
+}
+
+.pinyin-speaker__button,
+.pinyin-speaker .pronunciation-button--compact {
+  display: contents;
+}
+
+.pinyin-speaker .pronunciation-button__control {
+  grid-column: 3;
+  grid-row: 1;
+  justify-self: end;
+}
+
+.pinyin-speaker--no-pinyin .pronunciation-button__control {
+  grid-column: 1 / -1;
+  justify-self: center;
+}
+
+.pinyin-speaker .pronunciation-button__message:not(.pronunciation-button__message--hidden) {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  justify-self: center;
+}
+
+.pinyin-speaker .pronunciation-button__message:empty {
+  display: none;
+}
+
 .mode-card-meaning {
   font-size: 23px;
   font-weight: 500;
@@ -396,21 +440,23 @@ button {
 /* §4.3 모드2 오답 결과 화면 — 카드 fadeup 등장, 정답 한자 50px·병음 19px·뜻 21px.
    결과 카드 스코프로만 오버라이드해 공용 기본값(#16 몫)을 건드리지 않는다. */
 .mode-card--result {
-  gap: 11px;
+  gap: 14px;
   animation: fadeup 0.3s ease;
 }
 
 .mode-card--result .mode-card-hanzi {
-  font-size: 50px;
+  font-size: 52px;
+  font-weight: 700;
+  line-height: 1.1;
   margin-top: 4px;
 }
 
 .mode-card--result .mode-card-pinyin {
-  font-size: 19px;
+  font-size: 20px;
 }
 
 .mode-card--result .mode-card-meaning {
-  font-size: 21px;
+  font-size: 20px;
 }
 
 .mode-result-title {
@@ -490,7 +536,7 @@ button {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 12px;
+  gap: 14px;
 }
 
 .flip-face-back-content > * {
@@ -501,6 +547,22 @@ button {
 .flip-face--back .mode-card-meaning {
   white-space: normal;
   overflow-wrap: anywhere;
+}
+
+/* #169 Speaker Position 01 한자→뜻: 한자 52/700 · 병음 24 · 뜻 24(위 22px 여백) */
+.flip-face--back .mode-card-hanzi {
+  font-size: 52px;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.flip-face--back .mode-card-pinyin {
+  font-size: 24px;
+}
+
+.flip-face--back .mode-card-meaning {
+  margin-top: 22px;
+  font-size: 24px;
 }
 
 .flip-hanzi {
