@@ -8,7 +8,7 @@ import type { ContentType } from "./api.ts";
 import type { QuizMode } from "./sessionQueue.ts";
 
 export function modeChipLabel(contentType: ContentType, mode: QuizMode): string {
-  if (contentType === "zh") return mode === "m1" ? "한자 → 뜻" : "뜻 → 한자";
+  if (contentType === "zh") return mode === "m1" ? "중국어 → 뜻" : "뜻 → 중국어";
   return mode === "m1" ? "단어 → 뜻" : "뜻 → 단어";
 }
 
@@ -22,11 +22,11 @@ export function supportsPronunciation(contentType: ContentType): boolean {
 }
 
 export function mode2Hint(contentType: ContentType): string {
-  return contentType === "zh" ? "이 뜻의 한자를 입력하세요" : "이 뜻에 해당하는 단어를 입력하세요";
+  return contentType === "zh" ? "이 뜻의 중국어 단어·문장을 입력하세요" : "이 뜻에 해당하는 단어를 입력하세요";
 }
 
 export function mode2Placeholder(contentType: ContentType): string | undefined {
-  return contentType === "zh" ? "汉字" : undefined;
+  return contentType === "zh" ? "중국어" : undefined;
 }
 
 export interface RegisterTableHeaders {

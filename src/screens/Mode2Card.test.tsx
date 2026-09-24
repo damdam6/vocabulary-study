@@ -16,14 +16,17 @@ function binding(snapshot: PronunciationSnapshot = idleSnapshot): PronunciationB
   return { snapshot, prepare: vi.fn(), reveal: vi.fn(), replay: vi.fn() };
 }
 
-function setInput(input: HTMLInputElement, value: string) {
-  const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
+type ModeInput = HTMLInputElement | HTMLTextAreaElement;
+
+function setInput(input: ModeInput, value: string) {
+  const prototype = input instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
+  const setter = Object.getOwnPropertyDescriptor(prototype, "value")?.set;
   setter?.call(input, value);
   input.dispatchEvent(new Event("input", { bubbles: true }));
 }
 
 function submit(container: HTMLElement, value: string) {
-  const input = container.querySelector<HTMLInputElement>(".mode-input")!;
+  const input = container.querySelector<ModeInput>(".mode-input")!;
   input.focus();
   fire(() => setInput(input, value));
   fire(() => container.querySelector<HTMLButtonElement>('button[type="submit"]')!.click());
@@ -39,6 +42,63 @@ afterEach(() => {
 });
 
 describe("Mode2Card 정답 음성", () => {
+  it("zh만 textarea를 사용하고 generic은 기존 단일 행 input을 유지한다", () => {
+    const zh = renderComponent(
+      <Mode2Card question={question} contentType="zh" onJudged={vi.fn()} onProceed={vi.fn()} />,
+    );
+    expect(zh.container.querySelector("textarea.mode-input")).not.toBeNull();
+    expect(zh.container.querySelector("input.mode-input")).toBeNull();
+    expect(zh.container.querySelector(".mode-input")?.getAttribute("enterkeyhint")).toBe("done");
+    expect(zh.container.querySelector(".mode-input")?.getAttribute("aria-label")).toContain("단어·문장");
+    expect(zh.container.querySelector<HTMLElement>(".mode2-question-scroll")?.tabIndex).toBe(0);
+    expect(zh.container.querySelector(".mode2-question-scroll")?.getAttribute("aria-label")).toBe("문제 뜻");
+    zh.unmount();
+
+    const generic = renderComponent(
+      <Mode2Card question={question} contentType="generic" onJudged={vi.fn()} onProceed={vi.fn()} />,
+    );
+    unmountCurrent = generic.unmount;
+    expect(generic.container.querySelector("input.mode-input")).not.toBeNull();
+    expect(generic.container.querySelector("textarea.mode-input")).toBeNull();
+    expect(generic.container.querySelector(".mode2-question-scroll .mode-card-meaning")?.textContent).toBe("경제");
+    expect(generic.container.querySelector<HTMLElement>(".mode2-question-scroll")?.tabIndex).toBe(0);
+  });
+
+  it("textarea Enter는 한 번 제출하고 Shift+Enter와 IME Enter는 제출하지 않는다", () => {
+    const onJudged = vi.fn();
+    const { container, unmount } = renderComponent(
+      <Mode2Card question={question} contentType="zh" onJudged={onJudged} onProceed={vi.fn()} />,
+    );
+    unmountCurrent = unmount;
+    const textarea = container.querySelector<HTMLTextAreaElement>("textarea")!;
+    fire(() => setInput(textarea, "经济"));
+
+    const shifted = new KeyboardEvent("keydown", { key: "Enter", shiftKey: true, bubbles: true, cancelable: true });
+    fire(() => textarea.dispatchEvent(shifted));
+    expect(shifted.defaultPrevented).toBe(false);
+    expect(onJudged).not.toHaveBeenCalled();
+
+    const composing = new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true, isComposing: true });
+    fire(() => textarea.dispatchEvent(composing));
+    expect(composing.defaultPrevented).toBe(false);
+    expect(onJudged).not.toHaveBeenCalled();
+
+    const legacyComposition = new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true });
+    Object.defineProperty(legacyComposition, "keyCode", { value: 229 });
+    fire(() => textarea.dispatchEvent(legacyComposition));
+    expect(legacyComposition.defaultPrevented).toBe(false);
+    expect(onJudged).not.toHaveBeenCalled();
+
+    const enter = new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true });
+    fire(() => textarea.dispatchEvent(enter));
+    expect(enter.defaultPrevented).toBe(true);
+    const repeated = new KeyboardEvent("keydown", { key: "Enter", repeat: true, bubbles: true, cancelable: true });
+    fire(() => textarea.dispatchEvent(repeated));
+    expect(repeated.defaultPrevented).toBe(true);
+    expect(onJudged).toHaveBeenCalledTimes(1);
+    expect(onJudged).toHaveBeenCalledWith(true);
+  });
+
   it("입력 중과 정답 제출에는 음성 UI나 명령이 없다", () => {
     const pronunciation = binding();
     const onJudged = vi.fn();
@@ -200,6 +260,28 @@ describe("Mode2Card 정답 음성", () => {
     expect(scroll.querySelector(".pinyin-speaker--no-pinyin")).not.toBeNull();
     expect(scroll.textContent).toContain("사용자 오답");
     expect(scroll.querySelector('button[aria-label="발음 듣기"]')).not.toBeNull();
+    expect(scroll.contains(container.querySelector(".primary-button"))).toBe(false);
+  });
+
+  it("긴 문제 뜻과 1,000자 병음·긴 오답을 전용 scroll 영역에 원문 그대로 둔다", () => {
+    const longPinyin = "hǎo ".repeat(200).trim();
+    const longMeaning = "아주 긴 문장 뜻 ".repeat(80).trim();
+    const longAnswer = "사용자가 입력한 긴 오답\n둘째 줄 ".repeat(25).trim();
+    const longQuestion: StudyQuestion = {
+      ...question,
+      word: { ...word, hanzi: "汉".repeat(200), pinyin: longPinyin, meaning: longMeaning },
+    };
+    const { container, unmount } = renderComponent(
+      <Mode2Card question={longQuestion} contentType="zh" onJudged={vi.fn()} onProceed={vi.fn()} pronunciation={binding()} />,
+    );
+    unmountCurrent = unmount;
+    expect(container.querySelector(".mode2-question-scroll")?.textContent).toBe(longMeaning);
+    expect(container.querySelector<HTMLElement>(".mode2-question-scroll")?.tabIndex).toBe(0);
+    submit(container, longAnswer);
+    const scroll = container.querySelector(".mode2-result-scroll")!;
+    expect(scroll.querySelector(".pinyin-speaker .mode-card-pinyin")?.textContent).toBe(longPinyin);
+    expect(scroll.querySelector(".mode-card-meaning")?.textContent).toBe(longMeaning);
+    expect(scroll.querySelector(".mode-my-answer s")?.textContent).toBe(longAnswer);
     expect(scroll.contains(container.querySelector(".primary-button"))).toBe(false);
   });
 

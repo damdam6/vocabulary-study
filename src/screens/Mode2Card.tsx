@@ -3,8 +3,8 @@
 //   - 정답이면 셸이 즉시 다음 문제로 전환한다(§4.5) — 결과 화면 없음.
 //   - 오답이면 이 컴포넌트가 결과 화면(정답 한자·병음·뜻·내 답)을 띄운 채 머물고,
 //     "다음" 버튼에서 onProceed를 호출해야 셸이 진행한다.
-//   - 셸이 문제마다 key를 바꿔 리마운트하므로 내부 상태는 초기화를 신경 쓰지 않는다.
-import { useEffect, useLayoutEffect, useRef, useState, type FormEvent } from 'react'
+//   - 셸이 문제마다 key를 바꿔 리마운트하므로 값·높이·scroll·focus는 새 입력 기준으로 초기화한다.
+import { useEffect, useLayoutEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react'
 import { headwordLang, mode2Hint, mode2Placeholder } from '../lib/contentLabels.ts'
 import { gradeMode2, type StudyQuestion } from '../lib/studySession.ts'
 import type { ContentType } from '../lib/api.ts'
@@ -25,13 +25,26 @@ function Mode2Card({ question, contentType, onJudged, onProceed, pronunciation }
   const [value, setValue] = useState('')
   // null이 아니면 오답 결과 화면 표시 중 — 값은 사용자가 제출한 원문이다.
   const [wrongAnswer, setWrongAnswer] = useState<string | null>(null)
-  const inputRef = useRef<HTMLInputElement>(null)
+  const textInputRef = useRef<HTMLInputElement>(null)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
   const pronunciationRef = useRef<HTMLDivElement>(null)
   const proceedRef = useRef<HTMLButtonElement>(null)
   const shouldMoveFocusRef = useRef(false)
   const revealConsumedRef = useRef(false)
+  const submittedRef = useRef(false)
   const { word } = question
   const lang = headwordLang(contentType)
+  const isChinese = contentType === 'zh'
+
+  useLayoutEffect(() => {
+    const input = textareaRef.current
+    if (input === null) return
+    input.style.height = '60px'
+    const nextHeight = Math.max(60, Math.min(input.scrollHeight, 144))
+    input.style.height = `${nextHeight}px`
+    input.style.overflowY = input.scrollHeight > 144 ? 'auto' : 'hidden'
+    if (value === '') input.scrollTop = 0
+  }, [value])
 
   useEffect(() => {
     if (wrongAnswer === null || pronunciation === undefined || revealConsumedRef.current) return
@@ -46,23 +59,34 @@ function Mode2Card({ question, contentType, onJudged, onProceed, pronunciation }
     if (wrongAnswer === null || !shouldMoveFocusRef.current) return
     shouldMoveFocusRef.current = false
     const activeElement = document.activeElement
-    if (activeElement !== document.body && activeElement !== null && activeElement !== inputRef.current) return
+    const input = isChinese ? textareaRef.current : textInputRef.current
+    if (activeElement !== document.body && activeElement !== null && activeElement !== input) return
     const pronunciationButton = pronunciationRef.current?.querySelector<HTMLButtonElement>('button:not(:disabled)')
     const focusTarget = pronunciationButton ?? proceedRef.current
     focusTarget?.focus()
-  }, [wrongAnswer])
+  }, [isChinese, wrongAnswer])
 
   const submit = (event: FormEvent) => {
     event.preventDefault()
-    if (wrongAnswer !== null) return
+    if (wrongAnswer !== null || submittedRef.current) return
+    submittedRef.current = true
     const { correct, answer } = gradeMode2(value, word.hanzi, contentType)
     if (correct) {
       onJudged(true)
     } else {
-      shouldMoveFocusRef.current = document.activeElement === inputRef.current
+      const input = isChinese ? textareaRef.current : textInputRef.current
+      shouldMoveFocusRef.current = document.activeElement === input
       setWrongAnswer(answer)
       onJudged(false)
     }
+  }
+
+  const handleTextareaKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (event.key !== 'Enter' || event.shiftKey) return
+    const nativeEvent = event.nativeEvent
+    if (nativeEvent.isComposing || nativeEvent.keyCode === 229) return
+    event.preventDefault()
+    event.currentTarget.form?.requestSubmit()
   }
 
   if (wrongAnswer !== null) {
@@ -104,24 +128,47 @@ function Mode2Card({ question, contentType, onJudged, onProceed, pronunciation }
   return (
     <form className="mode-area mode-area--m2" onSubmit={submit}>
       <div className="mode-card">
-        <span className="mode-card-meaning mode-card-meaning--question">{word.meaning}</span>
+        <div className="mode2-question-scroll" tabIndex={0} aria-label="문제 뜻">
+          <span className="mode-card-meaning mode-card-meaning--question">{word.meaning}</span>
+        </div>
         <span className="mode-card-hint">{mode2Hint(contentType)}</span>
       </div>
-      <input
-        ref={inputRef}
-        className="mode-input"
-        type="text"
-        lang={lang}
-        placeholder={mode2Placeholder(contentType)}
-        value={value}
-        onChange={(event) => setValue(event.target.value)}
-        autoFocus
-        autoComplete="off"
-        autoCorrect="off"
-        autoCapitalize="off"
-        spellCheck={false}
-        enterKeyHint="done"
-      />
+      {isChinese ? (
+        <textarea
+          ref={textareaRef}
+          className="mode-input mode-input--textarea"
+          lang={lang}
+          rows={1}
+          aria-label={mode2Hint(contentType)}
+          placeholder={mode2Placeholder(contentType)}
+          value={value}
+          onChange={(event) => setValue(event.target.value)}
+          onKeyDown={handleTextareaKeyDown}
+          autoFocus
+          autoComplete="off"
+          autoCorrect="off"
+          autoCapitalize="off"
+          spellCheck={false}
+          enterKeyHint="done"
+        />
+      ) : (
+        <input
+          ref={textInputRef}
+          className="mode-input"
+          type="text"
+          lang={lang}
+          aria-label={mode2Hint(contentType)}
+          placeholder={mode2Placeholder(contentType)}
+          value={value}
+          onChange={(event) => setValue(event.target.value)}
+          autoFocus
+          autoComplete="off"
+          autoCorrect="off"
+          autoCapitalize="off"
+          spellCheck={false}
+          enterKeyHint="done"
+        />
+      )}
       <button type="submit" className="primary-button">
         제출
       </button>

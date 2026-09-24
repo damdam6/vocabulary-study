@@ -54,6 +54,7 @@ function Mode1Card({ question, contentType, onJudged, pronunciation }: Mode1Card
   const pronunciationBinding = contentType === 'zh' ? pronunciation : undefined
   // 글자 수 적응 스케일은 zh 전용(이슈 #80) — generic은 고정 클래스로 표시.
   const frontSizeClass = contentType === 'zh' ? `flip-hanzi--${hanziFontSize(word.hanzi)}` : 'flip-hanzi--generic'
+  const backSizeClass = contentType === 'zh' ? `mode-card-hanzi--${hanziFontSize(word.hanzi)}` : ''
 
   const clearFallback = useCallback(() => {
     if (fallbackRef.current !== null) {
@@ -140,23 +141,29 @@ function Mode1Card({ question, contentType, onJudged, pronunciation }: Mode1Card
           className={`flip-card${revealed ? ' flip-card--revealed' : ''}`}
           onTransitionEnd={handleTransitionEnd}
         >
-          <button
-            ref={revealButtonRef}
-            type="button"
-            className="flip-face flip-face--front"
-            onClick={reveal}
-            disabled={revealed}
-            aria-hidden={revealed}
-            inert={revealed}
-          >
-            <span lang={lang} className={`flip-hanzi ${frontSizeClass}`}>
+          <div className="flip-face flip-face--front" aria-hidden={revealed} inert={revealed}>
+            <span
+              lang={lang}
+              className={`flip-hanzi ${frontSizeClass}`}
+              role="region"
+              aria-label={contentType === 'zh' ? '문제 중국어' : '문제 단어'}
+              tabIndex={0}
+            >
               {word.hanzi}
             </span>
-            <span className="flip-hint">탭해서 뜻 보기</span>
-          </button>
+            <button
+              ref={revealButtonRef}
+              type="button"
+              className="flip-reveal-button"
+              onClick={reveal}
+              disabled={revealed}
+            >
+              탭해서 뜻 보기
+            </button>
+          </div>
           <div className="flip-face flip-face--back" aria-hidden={!viewReady} inert={!viewReady}>
             <div className="flip-face-back-content">
-              <span lang={lang} className="mode-card-hanzi">{word.hanzi}</span>
+              <span lang={lang} className={`mode-card-hanzi${backSizeClass ? ` ${backSizeClass}` : ''}`}>{word.hanzi}</span>
               <div className={`mode-card-pinyin-area pinyin-speaker${word.pinyin ? '' : ' pinyin-speaker--no-pinyin'}`}>
                 {word.pinyin && <span className="mode-card-pinyin">{word.pinyin}</span>}
                 {viewReady && pronunciationBinding && (

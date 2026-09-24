@@ -48,7 +48,7 @@ describe("StudyScreen 문장 원문 기록", () => {
       <StudyScreen queue={queue} profile={profile} tts={tts} onExit={vi.fn()} onComplete={vi.fn()} />,
     );
     unmountCurrent = unmount;
-    const input = container.querySelector<HTMLInputElement>(".mode-input")!;
+    const input = container.querySelector<HTMLTextAreaElement>(".mode-input")!;
     fire(() => setInput(input, "我有2本书"));
     fire(() => container.querySelector<HTMLButtonElement>("button[type=submit]")!.click());
     await flush();
@@ -73,7 +73,7 @@ describe("StudyScreen 문장 원문 기록", () => {
       <StudyScreen queue={queue} profile={profile} tts={tts} onExit={vi.fn()} onComplete={vi.fn()} />,
     );
     unmountCurrent = unmount;
-    const input = container.querySelector<HTMLInputElement>(".mode-input")!;
+    const input = container.querySelector<HTMLTextAreaElement>(".mode-input")!;
     fire(() => setInput(input, "我有3本书"));
     fire(() => container.querySelector<HTMLButtonElement>("button[type=submit]")!.click());
     await flush();
@@ -84,8 +84,9 @@ describe("StudyScreen 문장 원문 기록", () => {
   });
 });
 
-function setInput(input: HTMLInputElement, value: string) {
-  const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
+function setInput(input: HTMLInputElement | HTMLTextAreaElement, value: string) {
+  const prototype = input instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
+  const setter = Object.getOwnPropertyDescriptor(prototype, "value")?.set;
   setter?.call(input, value);
   input.dispatchEvent(new Event("input", { bubbles: true }));
 }
@@ -97,7 +98,7 @@ describe("StudyScreen 발음 정지 경계 (#145)", () => {
       <StudyScreen queue={[question("m2")]} profile={profile} tts={tts} onExit={vi.fn()} onComplete={onComplete} />,
     );
     unmountCurrent = unmount;
-    const input = container.querySelector<HTMLInputElement>(".mode-input")!;
+    const input = container.querySelector<HTMLTextAreaElement>(".mode-input")!;
     fire(() => setInput(input, "经济"));
     fire(() => container.querySelector<HTMLButtonElement>("button[type=submit]")!.click());
     await flush();
@@ -112,7 +113,7 @@ describe("StudyScreen 발음 정지 경계 (#145)", () => {
       <StudyScreen queue={[question("m2"), question("m1")]} profile={profile} tts={tts} onExit={vi.fn()} onComplete={vi.fn()} />,
     );
     unmountCurrent = unmount;
-    const input = container.querySelector<HTMLInputElement>(".mode-input")!;
+    const input = container.querySelector<HTMLTextAreaElement>(".mode-input")!;
     fire(() => setInput(input, "오답"));
     fire(() => container.querySelector<HTMLButtonElement>("button[type=submit]")!.click());
 
@@ -132,5 +133,58 @@ describe("StudyScreen 발음 정지 경계 (#145)", () => {
     fire(() => container.querySelector<HTMLButtonElement>(".study-exit")!.click());
     expect(mocks.stop).toHaveBeenCalledWith("exit");
     expect(mocks.stop.mock.invocationCallOrder[0]).toBeLessThan(onExit.mock.invocationCallOrder[0]);
+  });
+
+  it("정답 즉시 다음 문제는 새 textarea의 값·높이·scroll·focus로 초기화한다", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(Response.json(word)));
+    const secondWord = { ...word, hanzi: "学习", meaning: "공부하다" };
+    const { container, unmount } = renderComponent(
+      <StudyScreen
+        queue={[question("m2"), { word: secondWord, mode: "m2", isReview: false }]}
+        profile={profile}
+        tts={tts}
+        onExit={vi.fn()}
+        onComplete={vi.fn()}
+      />,
+    );
+    unmountCurrent = unmount;
+    const first = container.querySelector<HTMLTextAreaElement>(".mode-input")!;
+    Object.defineProperty(first, "scrollHeight", { configurable: true, value: 220 });
+    first.scrollTop = 48;
+    fire(() => setInput(first, "经济"));
+    expect(first.style.height).toBe("144px");
+    fire(() => container.querySelector<HTMLButtonElement>("button[type=submit]")!.click());
+    await flush();
+
+    const next = container.querySelector<HTMLTextAreaElement>(".mode-input")!;
+    expect(next).not.toBe(first);
+    expect(next.value).toBe("");
+    expect(next.style.height).toBe("60px");
+    expect(next.scrollTop).toBe(0);
+    expect(document.activeElement).toBe(next);
+  });
+
+  it("오답 다음도 새 textarea 상태와 focus를 초기화한다", () => {
+    const secondWord = { ...word, hanzi: "学习", meaning: "공부하다" };
+    const { container, unmount } = renderComponent(
+      <StudyScreen
+        queue={[question("m2"), { word: secondWord, mode: "m2", isReview: false }]}
+        profile={profile}
+        tts={tts}
+        onExit={vi.fn()}
+        onComplete={vi.fn()}
+      />,
+    );
+    unmountCurrent = unmount;
+    const first = container.querySelector<HTMLTextAreaElement>(".mode-input")!;
+    fire(() => setInput(first, "오답\n둘째 줄"));
+    fire(() => container.querySelector<HTMLButtonElement>("button[type=submit]")!.click());
+    fire(() => [...container.querySelectorAll<HTMLButtonElement>("button")].find((button) => button.textContent === "다음")!.click());
+
+    const next = container.querySelector<HTMLTextAreaElement>(".mode-input")!;
+    expect(next.value).toBe("");
+    expect(next.style.height).toBe("60px");
+    expect(next.scrollTop).toBe(0);
+    expect(document.activeElement).toBe(next);
   });
 });
