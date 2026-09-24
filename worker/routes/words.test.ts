@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 // sheets.ts가 이 모듈의 getAccessToken을 그대로 가져다 쓴다.
 vi.mock("../lib/google-auth.ts", () => ({ getAccessToken: async () => "test-token" }));
 
+import fixturesSource from "../../tests/fixtures/chinese-sentence-registration.json?raw";
 import worker from "../index.ts";
 import { makeEnv, makeRequest } from "../test-utils.ts";
 import { DEFAULT_SESSION_LIMIT, SESSION_LIMIT_KEY, SETTINGS_TAB } from "../lib/settings.ts";
@@ -182,4 +183,15 @@ describe("GET /api/words — TTS capability", () => {
       expect(urls.length).toBeGreaterThan(0);
     }
   });
+});
+
+
+it("신규 등록 제한을 기존 장문 조회에 적용하지 않고 원문 키·병음을 보존한다", async () => {
+  const fixtures = JSON.parse(fixturesSource) as { existingRows: { hanzi: string; pinyin: string; meaning: string }[] };
+  const { hanzi, pinyin, meaning } = fixtures.existingRows[0];
+  const original = { hanzi, pinyin, meaning };
+  stubSheets({ titles: ["문장"], settingsRows: [], rows: { 문장: [[original.hanzi, original.pinyin, original.meaning, "3", "4", "2026-10-01|7"]] } });
+  const { res, body } = await getWords();
+  expect(res.status).toBe(200);
+  expect(body.words).toEqual([{ ...original, tab: "문장", m1: 3, m2: 4, nextReview: "2026-10-01", interval: 7 }]);
 });

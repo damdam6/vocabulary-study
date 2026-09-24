@@ -344,3 +344,17 @@ describe("POST /api/words/register — generic 프로필", () => {
     }
   });
 });
+
+
+it("generic 선택 탭 중복은 NFC·trim으로 기존 행을 바꾸지 않는 정확 일치다", async () => {
+  const sheets = baseSheets();
+  sheets["sheet-en"].rows.표현.push(["cafe\u0301", "", "분해형"], [" padded ", "", "공백 포함"]);
+  const before = structuredClone(sheets["sheet-en"].rows.표현);
+  const { putCalls } = stubSheetsFetch(sheets);
+  const words = ["café", "padded"].map((hanzi) => ({ hanzi, pinyin: "", meaning: "신규" }));
+  const res = await worker.fetch(registerRequest("pw-en", { tab: "표현", words }), env);
+  expect(res.status).toBe(200);
+  expect(await res.json()).toMatchObject({ skipped: [], added: words });
+  expect(putCalls).toEqual([{ sheetId: "sheet-en", tab: "표현", range: "A5:C6", values: [["café", "", "신규"], ["padded", "", "신규"]] }]);
+  expect(sheets["sheet-en"].rows.표현.slice(0, 4)).toEqual(before);
+});

@@ -6,6 +6,7 @@ vi.mock("../lib/google-auth.ts", () => ({ getAccessToken: async () => "test-toke
 
 import worker from "../index.ts";
 import { MAX_REGISTER_WORDS } from "../lib/register.ts";
+import fixturesSource from "../../tests/fixtures/chinese-sentence-registration.json?raw";
 import { makeEnv } from "../test-utils.ts";
 
 const PASSWORD = "test-password";
@@ -82,7 +83,7 @@ function sliceRange(rows: string[][], range: string): string[][] {
     return rows[0] ? [rows[0]] : [];
   }
   if (range === "A2:A") {
-    return rows.slice(1).filter((r) => r[0]).map((r) => [r[0]]);
+    return rows.slice(1).map((r) => r[0] ? [r[0]] : []);
   }
   throw new Error(`sliceRange: unsupported range ${range}`);
 }
@@ -341,5 +342,86 @@ describe("POST /api/words/register — 탭 0개 부트스트랩", () => {
       env,
     );
     expect(res.status).toBe(400);
+  });
+});
+
+
+describe("POST /api/words/register — 문장 계약", () => {
+  const fixtures = JSON.parse(fixturesSource) as {
+    cases: { id: string; contentType: string; words: unknown[]; accepted: boolean; expectedWords?: unknown[] }[];
+  };
+  it.each(fixtures.cases.filter((c) => c.contentType === "zh"))("공유 fixture $id", async (c) => {
+    const { putCalls } = stubSheetsFetch({ titles: ["문장"], rows: { 문장: [HEADER] } });
+    const res = await worker.fetch(registerRequest({ tab: "문장", words: c.words }), env);
+    expect(res.status).toBe(c.accepted ? 200 : 400);
+    if (c.accepted) {
+      expect(await res.json()).toMatchObject({ added: c.expectedWords, skipped: [] });
+      expect(putCalls).toHaveLength(1);
+      expect(putCalls[0].values).toEqual(c.expectedWords?.map((w) => {
+        const v = w as { hanzi: string; pinyin: string; meaning: string };
+        return [v.hanzi, v.pinyin, v.meaning];
+      }));
+    } else {
+      expect(putCalls).toEqual([]);
+      expect(fetch).not.toHaveBeenCalled();
+    }
+  });
+
+  it("기존 원문·진도를 보존하고 정규화 중복만 건너뛰어 내부 빈 행 뒤에 저장한다", async () => {
+    const state: SheetsState = { titles: ["문장"], rows: { 문장: [
+      HEADER,
+      ["　你好 ", "ni\u030c hǎo", "안녕", "3", "4", "2026-10-01|7", "old-timestamp"],
+      [],
+      ["豈", "qǐ", "어찌", "1", "2", "", "history"],
+    ] } };
+    const before = structuredClone(state.rows.문장);
+    const { putCalls } = stubSheetsFetch(state);
+    const sentence = { hanzi: " 你好。　", pinyin: " ni\u030c hǎo. ", meaning: " 안녕 " };
+    const res = await worker.fetch(registerRequest({ tab: "문장", words: [
+      { hanzi: "你好", pinyin: "nǐ hǎo", meaning: "새 뜻" },
+      { hanzi: "豈", pinyin: "qǐ", meaning: "새 뜻" }, sentence,
+    ] }), env);
+    expect(res.status).toBe(200);
+    expect(await res.json()).toMatchObject({ skipped: ["你好", "豈"], added: [
+      { hanzi: "你好。", pinyin: "nǐ hǎo.", meaning: "안녕" },
+    ] });
+    expect(putCalls).toEqual([{ tab: "문장", range: "A5:C5", values: [["你好。", "nǐ hǎo.", "안녕"]] }]);
+    expect(state.rows.문장.slice(0, 4)).toEqual(before);
+  });
+
+  it("다른 탭의 문장은 중복이 아니며 선택한 탭에만 기록한다", async () => {
+    const state = { titles: ["기존", "신규"], rows: {
+      기존: [HEADER, ["你好。", "nǐ hǎo.", "안녕"]], 신규: [HEADER],
+    } };
+    const { putCalls } = stubSheetsFetch(state);
+    const res = await worker.fetch(registerRequest({ tab: "신규", words: [
+      { hanzi: "你好。", pinyin: "nǐ hǎo.", meaning: "안녕" },
+    ] }), env);
+    expect(res.status).toBe(200);
+    expect(await res.json()).toMatchObject({ skipped: [] });
+    expect(putCalls).toEqual([{ tab: "신규", range: "A2:C2", values: [["你好。", "nǐ hǎo.", "안녕"]] }]);
+  });
+
+  it("100개 문장 배치는 통과하고 101개는 쓰기 전에 차단한다", async () => {
+    for (const count of [100, 101]) {
+      const { putCalls } = stubSheetsFetch({ titles: ["문장"], rows: { 문장: [HEADER] } });
+      const words = Array.from({ length: count }, (_, n) => ({ hanzi: `第${n}句。`, pinyin: "jù", meaning: "문장" }));
+      const res = await worker.fetch(registerRequest({ tab: "문장", words }), env);
+      expect(res.status).toBe(count === 100 ? 200 : 400);
+      expect(putCalls).toHaveLength(count === 100 ? 1 : 0);
+    }
+  });
+
+  it("길이 초과는 제한을 안내하고 자동 절단하거나 일부 저장하지 않는다", async () => {
+    const { putCalls } = stubSheetsFetch(baseState());
+    const res = await worker.fetch(registerRequest({ tab: "HSK6급", words: [
+      { hanzi: "你好。", pinyin: "nǐ hǎo.", meaning: "안녕" },
+      { hanzi: "你".repeat(201), pinyin: "nǐ", meaning: "초과" },
+    ] }), env);
+    expect(res.status).toBe(400);
+    const body = await res.json() as { error: string };
+    expect(body.error).toContain("200 코드 포인트");
+    expect(body.error).toContain("1,000 코드 포인트");
+    expect(putCalls).toEqual([]);
   });
 });
