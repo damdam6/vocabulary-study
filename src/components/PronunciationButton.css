@@ -107,6 +107,10 @@
   border-color: #2f3542;
 }
 
+.pronunciation-button--compact .pronunciation-button__control:disabled {
+  border-color: var(--border-faint);
+}
+
 .pronunciation-button--compact .pronunciation-button__control::before {
   content: "";
   position: absolute;
@@ -114,7 +118,8 @@
   border-radius: 50%;
 }
 
-.pronunciation-button--compact .pronunciation-button__control:hover:not(:disabled) {
+/* 재생 중에는 hover가 accent 표시를 덮지 않게 한다 — 모바일은 탭 후 hover가 남는다. */
+.pronunciation-button--compact:not(.pronunciation-button--playing) .pronunciation-button__control:hover:not(:disabled) {
   border-color: #2f3542;
   color: #e8eaee;
   background: #222733;
