@@ -56,7 +56,7 @@ flowchart LR
 | [src/screens/Mode2Card.tsx](../../src/screens/Mode2Card.tsx) | `wrongAnswer !== null`이면 결과 화면 | 빈 문자열 오답도 공개 사건으로 처리 |
 | [src/main.tsx](../../src/main.tsx) | React StrictMode 활성 | effect 재실행·정리에도 자동재생 유실/중복 방지 |
 | [src/lib/pinyinValidation.ts](../../src/lib/pinyinValidation.ts) | `pinyin-pro` 문자별 후보 조합으로 일치 여부만 반환 | 기존 등록 검증으로 유지. 첫 버전 TTS에서 재사용하지 않음 |
-| [worker/lib/register.ts](../../worker/lib/register.ts) | `HANZI_RE = /^[一-鿿]+$/u`, 병음 필수 | TTS 문장 지원과 등록 계약 확장을 구분 |
+| [worker/lib/register.ts](../../worker/lib/register.ts) | 공유 `zh` 문장 형식 계약과 병음 필수 재검증 | 등록 원문과 TTS 원문 계약을 같은 fixture로 회귀 검증 |
 | [src/test-utils.tsx](../../src/test-utils.tsx) | React `act`·jsdom 렌더 헬퍼 | 신규 UI 테스트도 같은 도구 사용 |
 
 ## 2. 제공자 선택과 어댑터

@@ -198,7 +198,7 @@ function Mode1Card({ question, contentType, onJudged, pronunciation }: Mode1Card
             </div>
           </div>
         ) : (
-          <p className="mode-footnote">카드를 탭하면 뜻이 보입니다</p>
+          <p className="mode-footnote">“탭해서 뜻 보기” 버튼을 누르면 뜻이 보입니다</p>
         )}
       </div>
     </div>

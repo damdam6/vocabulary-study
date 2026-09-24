@@ -100,7 +100,7 @@
   <li><strong>구현:</strong> production 코드는 변경하지 않고 controller, Worker 입력, Qwen text-only payload, R2 key, StudyScreen 통합 회귀를 문장 fixture와 200/201 code point 경계로 보강했다.</li>
   <li><strong>선택 테스트:</strong> 13 files, 153 tests 통과.</li>
   <li><strong>전체 검사:</strong> <code>npm test</code> 57 files, 1080 tests 통과; <code>npm run build</code> 통과; <code>npm run lint</code> 통과.</li>
-  <li><strong>자동 검증 범위:</strong> mock transport/audio/provider/R2를 사용해 원문 전달, 자동·수동 재생, cache, 취소·늦은 결과, 실패·비활성·autoplay denial의 비차단성을 확인했다.</li>
+  <li><strong>자동 검증 범위:</strong> 문장 fixture 통합 테스트는 mock transport/audio/provider/R2를 사용해 원문 전달, 자동·수동 재생, cache, 실패·비활성·autoplay denial의 비차단성을 확인했다. 취소·늦은 결과 차단은 새 문장 fixture가 아니라 기존 짧은 표제어 기반 <code>speak.test.ts</code> controller 회귀를 다시 실행해 확인했다.</li>
   <li><strong>미검증:</strong> 실제 유료 Qwen 합성, 운영 R2 쓰기/조회, Google Sheets 쓰기, iOS/Android 실기기 자동재생과 음질 청취는 수행하지 않았다. resource 변경과 배포도 수행하지 않았다.</li>
 </ul></section>
 
