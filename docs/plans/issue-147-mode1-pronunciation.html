@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>#147 [TTS-13] 모드1 정답 공개 시 중국어 음성을 연결한다 — 작업 플랜</title>
+<style>
+  :root { --bg:#f7f7f8; --card:#fff; --ink:#1c1c1e; --muted:#6e6e73; --line:#e3e3e6; --accent:#3b6ef5; --accent-soft:#e8eefe; --ok:#2e8b57; --warn:#b25e09; --code-bg:#f0f0f2; }
+  @media (prefers-color-scheme:dark) { :root { --bg:#161618; --card:#202024; --ink:#ececf0; --muted:#98989f; --line:#333338; --accent:#7a9bff; --accent-soft:#26304a; --ok:#58c088; --warn:#e0a35c; --code-bg:#2a2a2f; } }
+  * { box-sizing:border-box; } body { margin:0; padding:40px 20px 80px; background:var(--bg); color:var(--ink); font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Segoe UI","Noto Sans KR",sans-serif; line-height:1.65; }
+  main { max-width:860px; margin:0 auto; } a { color:var(--accent); text-decoration:none; } a:hover { text-decoration:underline; } code { font-family:"SF Mono",ui-monospace,Menlo,monospace; font-size:.86em; background:var(--code-bg); border-radius:5px; padding:2px 6px; }
+  header { margin-bottom:28px; } .issue-chip { display:inline-block; font-weight:700; color:var(--accent); background:var(--accent-soft); border-radius:999px; padding:3px 14px; font-size:.95rem; margin-bottom:10px; } .type-chip { display:inline-block; font-weight:600; color:var(--muted); border:1px solid var(--line); border-radius:999px; padding:3px 12px; font-size:.8rem; margin-left:8px; vertical-align:2px; }
+  h1 { font-size:1.7rem; margin:0 0 14px; letter-spacing:-.02em; } .meta { display:flex; flex-wrap:wrap; gap:6px 22px; color:var(--muted); font-size:.87rem; } .meta b { color:var(--ink); font-weight:600; }
+  section.card { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:24px 28px; margin-top:18px; } h2 { font-size:1.05rem; margin:0 0 14px; letter-spacing:-.01em; display:flex; align-items:center; gap:8px; } h2 .no { color:var(--accent); font-size:.8rem; font-weight:700; border:1.5px solid var(--accent); border-radius:6px; padding:0 6px; }
+  ul,ol { margin:0; padding-left:22px; } li { margin:6px 0; } .steps { list-style:none; padding:0; counter-reset:step; } .steps li { counter-increment:step; position:relative; padding:10px 0 10px 44px; border-bottom:1px dashed var(--line); } .steps li:last-child { border-bottom:none; } .steps li::before { content:counter(step); position:absolute; left:0; top:10px; width:28px; height:28px; border-radius:8px; background:var(--accent-soft); color:var(--accent); font-weight:700; font-size:.85rem; display:flex; align-items:center; justify-content:center; } .steps .files { display:block; margin-top:4px; font-size:.85rem; color:var(--muted); }
+  table { width:100%; border-collapse:collapse; font-size:.92rem; } th,td { text-align:left; padding:8px 12px; border-bottom:1px solid var(--line); vertical-align:top; } th { color:var(--muted); font-weight:600; font-size:.82rem; } .done-list { list-style:none; padding:0; } .done-list li { padding-left:30px; position:relative; } .done-list li::before { content:""; position:absolute; left:2px; top:7px; width:15px; height:15px; border:2px solid var(--ok); border-radius:5px; } .scroll-x { overflow-x:auto; } footer { margin-top:30px; color:var(--muted); font-size:.8rem; text-align:center; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <span class="issue-chip"><a href="https://github.com/damdam6/vocabulary-study/issues/147">#147</a></span><span class="type-chip">기능 개선</span>
+    <h1>[TTS-13] 모드1 정답 공개 시 중국어 음성을 연결한다</h1>
+    <div class="meta">
+      <span><b>damdam6/vocabulary-study</b></span>
+      <span>브랜치 <b><code>feat/147-mode1-pronunciation</code></b> ← <code>feat/ch-sound</code></span>
+      <span>라벨 <b>enhancement</b></span>
+      <span>2026-09-16</span>
+    </div>
+  </header>
+
+  <section class="card">
+    <h2><span class="no">1</span>요약</h2>
+    <p>#145(PR #162)의 세션 binding을 모드1 카드에서 소비한다. 앞면 클릭은 준비만 시작하고, #146이 이미 보장하는 <code>viewReady</code> 완료 뒤에만 자동 공개를 한 번 전달하며, 뒷면에는 공통 발음 버튼으로 수동 반복을 제공한다. 변경은 <code>Mode1Card</code>와 그 전용 jsdom 테스트에만 한정하고 controller·세션·공통 버튼 CSS·모드2·Worker 설정은 바꾸지 않는다.</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">2</span>현황 분석</h2>
+    <ul>
+      <li><code>src/screens/StudyScreen.tsx:66-74</code>는 세션 고유 question ID로 <code>usePronunciation</code>을 활성화하고, <code>src/screens/StudyScreen.tsx:171-177</code>에서 그 선택적 binding을 모드1 카드에 이미 전달한다. 다음 문제·종료 시 <code>stop</code>도 셸이 먼저 처리한다(<code>src/screens/StudyScreen.tsx:114-146</code>).</li>
+      <li><code>src/screens/Mode1Card.tsx:10-16</code>에는 optional <code>pronunciation</code> prop만 있고, 컴포넌트 본문은 이를 destructuring하지 않는다(<code>src/screens/Mode1Card.tsx:40</code>). 따라서 현 HEAD에서는 카드가 <code>prepare</code>/<code>reveal</code>/<code>replay</code>를 호출하지 않고 공통 버튼도 렌더하지 않는다.</li>
+      <li>#146이 소유한 플립 완료 계약은 이미 있다. <code>completeView</code>는 닫힘 게이트와 fallback 정리 후 <code>viewReady</code>만 바꾸며(<code>src/screens/Mode1Card.tsx:55-67</code>), 실제 transform 이벤트는 카드 자신만 통과시키고(<code>src/screens/Mode1Card.tsx:108-110</code>), reduced-motion/0초와 계산된 fallback 모두 같은 완료 함수를 사용한다(<code>src/screens/Mode1Card.tsx:69-80</code>).</li>
+      <li>빠른 O/X 판정은 이미 completion gate와 fallback을 먼저 닫은 뒤 상위로 전달한다(<code>src/screens/Mode1Card.tsx:100-106</code>). 이 경계를 유지하면 늦은 transition/fallback이 카드에서 공개 호출로 이어지지 않는다.</li>
+      <li>공통 <code>PronunciationButton</code>은 type=button, 접근성 이름, loading busy 및 수동 오류 메시지를 자체 소유한다(<code>src/components/PronunciationButton.tsx:45-72</code>). <code>PronunciationBinding</code>의 책임도 세 호출뿐이다(<code>src/lib/ttsTypes.ts:96-101</code>).</li>
+      <li>binding wrapper는 현재 controller/question ID/hidden 상태가 맞을 때만 controller를 호출한다(<code>src/hooks/usePronunciation.ts:136-150</code>). controller는 <code>reveal</code>에서 자동 기회를 한 번 소비하고(<code>src/lib/speak.ts:313-332</code>), 이전 질문의 비동기 결과도 generation으로 막는다. #147은 이 정책을 복제하지 않는다.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">3</span>설계</h2>
+    <p>기존 플립 타이머·transition 계산·fallback을 수정하지 않는다. 카드가 소유하는 것은 세 UI 사건을 binding에 전달하는 얇은 연결뿐이다: 클릭 직후 <code>prepare()</code>, 기존 완료 gate가 DOM을 공개한 뒤 <code>reveal()</code>, 공통 버튼 클릭의 <code>replay()</code>이다.</p>
+    <ul>
+      <li><strong>공개 1회 gate:</strong> <code>viewReady</code>를 관찰하는 effect에 카드 수명 ref를 둔다. snapshot 변경으로 binding 객체가 새로 생기거나 StrictMode effect가 재실행돼도 한 question/card에서 <code>reveal()</code>을 한 번만 호출한다. 판정·언마운트가 먼저 completion gate를 닫으면 effect가 실행될 경로도 남기지 않는다.</li>
+      <li><strong>노출 및 초점:</strong> 버튼은 <code>viewReady &amp;&amp; pronunciation</code>일 때만 뒷면의 병음/발음 제어 영역에 렌더한다. 병음이 빈 문자열이어도 이 영역과 버튼은 남긴다. 키보드로 앞면을 공개했고 실제 발음 control이 enabled면 그 control에 초점을 이동하고, binding이 없거나 control이 disabled면 기존 첫 판정 버튼으로 fallback한다. 사용자가 플립 중 이미 O/X 등 다른 제어로 옮긴 경우에는 초점을 빼앗지 않는다.</li>
+      <li><strong>제외한 선택지:</strong> controller의 자동재생·generation·요청 dedupe를 카드에 다시 만들지 않고, <code>StudyScreen</code>의 stop 경계도 변경하지 않는다. 공통 버튼을 복제하거나 <code>src/index.css</code>/<code>PronunciationButton.css</code>를 수정하지 않아 #144/#146의 소유 경계를 유지한다.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">4</span>작업 단계</h2>
+    <ol class="steps">
+      <li>기존 optional binding을 실제로 소비하도록 카드에 공통 <code>PronunciationButton</code>을 import하고, 공개 버튼의 첫 유효 클릭에서만 <code>prepare()</code>를 호출한 뒤 기존 <code>revealed</code> 상태 전환을 유지한다. front/flip 단계에는 버튼·<code>reveal</code>·<code>replay</code>가 없도록 조건을 둔다.<span class="files"><code>src/screens/Mode1Card.tsx</code></span></li>
+      <li>#146의 <code>completeView</code>, transition filtering, computed fallback은 그대로 두고, <code>viewReady</code>가 된 렌더 이후 카드별 1회 ref gate를 통해 <code>pronunciation?.reveal()</code>을 전달한다. 중복 transition event·fallback·StrictMode와 binding snapshot 재렌더가 자동 기회를 다시 전달하지 않게 한다.<span class="files"><code>src/screens/Mode1Card.tsx</code></span></li>
+      <li>뒷면의 표제어·병음 인접 제어 영역에 기존 공통 버튼을 배치하고 snapshot/replay를 그대로 넘긴다. 병음이 없어도 발음 control 영역을 유지하며, 공통 버튼의 <code>type=&quot;button&quot;</code>과 접근성 메시지는 재구현하지 않는다. 기존 CSS는 변경하지 않는다.<span class="files"><code>src/screens/Mode1Card.tsx</code>, <code>src/components/PronunciationButton.tsx</code> (읽기 전용 재사용)</span></li>
+      <li>기존 키보드 공개 focus effect를 확장한다. front에 초점이 남은 경우 enabled 발음 control을 먼저 focus하고, binding 부재·비활성 control에서는 <code>firstJudgeRef</code> fallback을 유지한다. 플립 중 사용자가 옮긴 focus와 빠른 판정의 timer/cancel 경계는 바꾸지 않는다.<span class="files"><code>src/screens/Mode1Card.tsx</code></span></li>
+      <li>카드 전용 helper에 binding double(고정 snapshot과 <code>prepare/reveal/replay</code> spies)을 추가하고, 기존 transition helper/fake timer를 재사용해 동작·회수·접근성 회귀를 고정한다. controller·hook·StudyScreen을 새로 mock/변경하지 않는다.<span class="files"><code>src/screens/Mode1Card.test.tsx</code></span></li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">5</span>리스크</h2>
+    <div class="scroll-x"><table><thead><tr><th>리스크</th><th>영향</th><th>완화책</th></tr></thead><tbody>
+      <tr><td>snapshot 변화가 binding 객체/effect를 다시 만든다.</td><td>자동재생 기회를 중복 전달할 수 있다.</td><td>카드별 reveal-delivered ref로 호출 횟수를 1회로 잠그고 event·fallback·StrictMode를 double로 검증한다.</td></tr>
+      <tr><td>플립 완료 전 빠른 판정·종료가 발생한다.</td><td>늦은 완료가 이전 질문의 재생을 유발할 수 있다.</td><td>기존 completionClosed/fallback cancel 순서를 보존하고, 카드 테스트에서 판정 후 reveal 0회를 확인한다. 세션 stop/generation은 #145/#143 계약에 맡긴다.</td></tr>
+      <tr><td>병음 없음 또는 200자 초과 입력에서 control 상태가 다르다.</td><td>영역이 사라지거나 disabled control로 초점을 보내 접근성이 나빠질 수 있다.</td><td>병음과 버튼 렌더 조건을 분리하고 enabled control만 focus한다. 입력 검증/문구는 공통 버튼/controller의 기존 계약을 사용한다.</td></tr>
+      <tr><td>실제 브라우저 자동재생 정책·키·R2 상태를 jsdom double로 혼동한다.</td><td>검증 범위를 과장할 수 있다.</td><td>카드 double은 호출 순서·DOM만 증명한다고 기록한다. 실제 키·청취·모바일·R2·유료 TTS는 이 이슈에서 실행하거나 통과 주장하지 않으며 <code>TTS_ENABLED=false</code>를 유지한다.</td></tr>
+    </tbody></table></div>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">6</span>테스트 계획</h2>
+    <ul>
+      <li><code>src/screens/Mode1Card.test.tsx</code>: binding double로 앞면 클릭은 <code>prepare</code> 1회, transform 이전에는 <code>reveal</code> 0회, 카드 자신의 transform 완료 뒤에는 <code>reveal</code> 1회를 확인한다. 자식/opacity event, fallback, duplicate event와 StrictMode가 2회 호출하지 않는지 검증한다.</li>
+      <li>reduced-motion과 0초 transition에서도 기존 즉시 viewReady 경로를 사용해 reveal 1회를 확인하고, 새 transition 시간 계산이나 타이머를 추가하지 않았음을 회귀한다.</li>
+      <li>공개 뒤 공통 control의 accessible name <code>발음 듣기</code>와 <code>type=button</code>을 확인하고 클릭이 <code>replay</code>만 호출하며 O/X 판정은 호출하지 않음을 검증한다. 병음 빈칸에서도 control이 남는지 확인한다.</li>
+      <li>generic/off(binding 없음)에서는 front·flip·완료 모두 button/세 호출이 없고 기존 첫 판정 focus fallback이 유지되는지 검증한다. enabled binding에서는 키보드 공개 후 발음 control로 focus가 이동하며, disabled control 또는 사용자가 focus를 옮긴 경우에는 해당 규칙을 지키는지 확인한다.</li>
+      <li>앞면 클릭 직후 빠른 O/X·언마운트에서 fallback을 정리하고 늦은 event/timer가 <code>reveal</code>을 호출하지 않는지 검증한다. 이는 카드의 경계 검증이며 실제 Audio 재생은 시험하지 않는다.</li>
+      <li>구현 후 관련 집중 테스트(<code>npm test -- src/screens/Mode1Card.test.tsx</code>)를 먼저 실행하고, 최종 이슈 검증으로 <code>npm test</code>, <code>npm run lint</code>, <code>npm run build</code>를 실행한다. 계획 단계에서는 앱 테스트를 실행하지 않았으며 실제 키·청취·모바일·R2 검증도 포함하지 않는다.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">7</span>완료 조건</h2>
+    <ul class="done-list">
+      <li class="done">모드1 앞면은 발음 요청/재생을 시작하지 않고, 첫 유효 플립 클릭에서 prepare 기회만 한 번 전달한다.</li>
+      <li class="done">기존 viewReady gate 뒤에만 reveal을 정확히 한 번 전달하며, transition 중·중복 이벤트·fallback·StrictMode에서 재생 기회가 중복되지 않는다.</li>
+      <li class="done">뒷면에 공통 발음 버튼이 표시되고 병음이 비어도 제어 영역이 유지된다. 버튼 클릭은 replay만 수행하고 판정/진행을 발생시키지 않는다.</li>
+      <li class="done">generic/off에서는 버튼과 발음 호출이 없고, 키보드 공개 시 usable button 우선 및 불가 시 판정 control fallback이 적용되며 사용자의 중간 focus 이동을 방해하지 않는다.</li>
+      <li class="done">빠른 판정·종료 뒤 늦은 카드 완료가 이전 질문의 reveal을 호출하지 않으며, controller·세션·CSS·모드2는 변경하지 않는다.</li>
+      <li class="done">관련 jsdom double과 전체 test/lint/build 결과를 PR에 기록한다. 실제 키·청취·모바일·R2·운영 TTS 활성화는 별도 출시 검증으로 남기고 <code>TTS_ENABLED=false</code>를 유지한다.</li>
+    </ul>
+  </section>
+  <section class="card">
+    <h2><span class="no">8</span>구현·검증 결과</h2>
+    <ul>
+      <li><code>Mode1Card</code>가 첫 유효 플립에서 <code>prepare</code>, 카드 자신의 <code>viewReady</code> 이후 카드 수명 ref로 잠근 <code>reveal</code>, 뒷면 공통 버튼의 <code>replay</code>를 연결했다.</li>
+      <li>binding double: 집중 테스트 13개 통과. 전체 테스트 49개 파일·639개 통과, <code>npm run lint</code> 및 <code>npm run build</code> 통과.</li>
+      <li>실제 API 키·유료 TTS·청취·모바일·R2·배포는 검증하지 않았으며 운영 <code>TTS_ENABLED=false</code>를 유지한다.</li>
+    </ul>
+  </section>
+  <footer>issue-plan · <a href="https://github.com/damdam6/vocabulary-study/issues/147">#147</a> · 2026-09-16</footer>
+</main>
+</body>
+</html>

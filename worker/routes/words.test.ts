@@ -30,6 +30,7 @@ interface WordsBody {
   words: { tab: string }[];
   profile: unknown;
   settings: { sessionLimit: number };
+  tts: { enabled: boolean; revision?: string; maxTextLength?: number };
 }
 
 /**
@@ -147,5 +148,38 @@ describe("GET /api/words — '_정보' 탭은 학습에서 자연 제외된다 (
       env,
     );
     expect((await res.json()) as object).toEqual({ tabs: ["HSK6급"] });
+  });
+});
+
+describe("GET /api/words — TTS capability", () => {
+  it("중국어 프로필에서 유효한 TTS 설정만 공개 capability를 켠다", async () => {
+    const { urls } = stubSheets({ titles: ["HSK6급"] });
+    const readyEnv = makeEnv({
+      PROFILES: JSON.stringify([{ id: "zh", name: "중국어", password: "pw-zh", sheetId: "sheet-zh", modes: ["m1"], contentType: "zh" }]),
+      TTS_ENABLED: "true",
+      DASHSCOPE_API_KEY: "test-only-key",
+      TTS_AUDIO: { get() {}, put() {} },
+    });
+    const res = await worker.fetch(makeRequest("/api/words", { Authorization: "Bearer pw-zh" }), readyEnv);
+
+    expect(res.status).toBe(200);
+    expect(((await res.json()) as WordsBody).tts).toEqual({ enabled: true, revision: "tts-v1", maxTextLength: 200 });
+    expect(urls.length).toBeGreaterThan(0);
+  });
+
+  it("비활성·미설정·잘못된 설정은 words의 Sheets 계약을 바꾸지 않고 capability만 끈다", async () => {
+    for (const ttsEnv of [
+      { TTS_ENABLED: "false" },
+      { TTS_ENABLED: "true" },
+      { TTS_ENABLED: "true", DASHSCOPE_API_KEY: "test-only-key", TTS_AUDIO: { get() {}, put() {} }, TTS_MODEL: "other" },
+    ]) {
+      const { urls } = stubSheets({ titles: ["HSK6급"] });
+      const res = await worker.fetch(makeRequest("/api/words", { Authorization: "Bearer pw-zh" }), makeEnv({ PROFILES: JSON.stringify([{ id: "zh", name: "중국어", password: "pw-zh", sheetId: "sheet-zh", modes: ["m1"], contentType: "zh" }]), ...ttsEnv }));
+      const body = (await res.json()) as WordsBody;
+      expect(res.status).toBe(200);
+      expect(body.tts).toEqual({ enabled: false });
+      expect(body.words).toHaveLength(1);
+      expect(urls.length).toBeGreaterThan(0);
+    }
   });
 });

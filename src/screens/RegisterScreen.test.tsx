@@ -37,7 +37,7 @@ vi.mock("../lib/api.ts", async (importOriginal) => {
 });
 
 const profile: PublicProfile = { id: "hsk6", name: "HSK 6급", modes: ["m1", "m2"], contentType: "zh" };
-const wordsResponse: WordsResponse = { profile, words: [], settings: { sessionLimit: 30 } };
+const wordsResponse: WordsResponse = { profile, words: [], settings: { sessionLimit: 30 }, tts: { enabled: false } };
 
 // React 19의 controlled input은 인스턴스에 자체 value 세터를 얹어 "값이 바뀌었는지"를
 // 추적한다 — el.value = x로 직접 대입하면 이 추적을 건너뛰어 이후 dispatchEvent가

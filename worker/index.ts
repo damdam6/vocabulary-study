@@ -4,11 +4,12 @@ import { handleReviewFail } from "./routes/review-fail.ts";
 import { handleCreateTab, handleGetTabs } from "./routes/tabs.ts";
 import { handleWordsRegister } from "./routes/register.ts";
 import { handleSettingsPost } from "./routes/settings.ts";
+import { handleTtsPost } from "./routes/tts.ts";
 import { resolveProfile } from "./lib/auth.ts";
 import { ProfileConfigError, toPublicProfile, type Profile } from "./lib/profiles.ts";
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx?: ExecutionContext) {
     const url = new URL(request.url);
     // 배포 전파 윈도우(신/구 버전 혼재) 중 어떤 버전이 응답했는지 식별하기 위해 노출 (#23)
     const version = env.CF_VERSION_METADATA?.id ?? "unknown";
@@ -24,15 +25,19 @@ export default {
         }
         // 설정 오류는 비밀번호 불일치(401)와 구분해 500으로 — 설정 사고를 관측 가능하게 (#71)
         console.error("[profiles]", err);
+        const headers: HeadersInit = { "X-Worker-Version": version };
+        if (url.pathname === "/api/tts") headers["Cache-Control"] = "private, no-store";
         return Response.json(
           { error: "invalid profile configuration" },
-          { status: 500, headers: { "X-Worker-Version": version } },
+          { status: 500, headers },
         );
       }
       if (!profile) {
+        const headers: HeadersInit = { "WWW-Authenticate": "Bearer", "X-Worker-Version": version };
+        if (url.pathname === "/api/tts") headers["Cache-Control"] = "private, no-store";
         return new Response(null, {
           status: 401,
-          headers: { "WWW-Authenticate": "Bearer", "X-Worker-Version": version },
+          headers,
         });
       }
 
@@ -49,6 +54,20 @@ export default {
         } catch (err) {
           console.error("[GET /api/words]", err);
           return Response.json({ error: "failed to load words" }, { status: 500 });
+        }
+      }
+
+      if (url.pathname === "/api/tts") {
+        try {
+          return await handleTtsPost(request, env, profile, ctx);
+        } catch (err) {
+          if (request.signal.aborted) throw err;
+          // 예외 객체는 provider/요청 원문을 포함할 수 있으므로 로그 경계 밖으로 내보내지 않는다.
+          console.error("tts_unexpected_error", { profileId: profile.id, error: "internal_error" });
+          return Response.json(
+            { error: "tts_unavailable", message: "발음을 불러올 수 없습니다." },
+            { status: 500, headers: { "Cache-Control": "private, no-store" } },
+          );
         }
       }
 

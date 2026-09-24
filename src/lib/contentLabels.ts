@@ -16,6 +16,11 @@ export function headwordLang(contentType: ContentType): string | undefined {
   return contentType === "zh" ? "zh-Hans" : undefined;
 }
 
+/** 중국어 세션만 현재 TTS 계약을 제공한다. */
+export function supportsPronunciation(contentType: ContentType): boolean {
+  return contentType === "zh";
+}
+
 export function mode2Hint(contentType: ContentType): string {
   return contentType === "zh" ? "이 뜻의 한자를 입력하세요" : "이 뜻에 해당하는 단어를 입력하세요";
 }

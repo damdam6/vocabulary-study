@@ -82,6 +82,16 @@ describe("프로필 설정 오류 → /api/* 500 (401 아님)", () => {
     expect(res.status).toBe(500);
   });
 
+  it("TTS 경로의 기존 PROFILES 500에도 no-store를 추가한다", async () => {
+    spyConsoleError();
+    const res = await worker.fetch(
+      makeRequest("/api/tts", { Authorization: "Bearer any-token", "Content-Type": "application/json" }, { method: "POST", body: "{}" }),
+      makeEnv({ PROFILES: "[{broken" }),
+    );
+    expect(res.status).toBe(500);
+    expect(res.headers.get("Cache-Control")).toBe("private, no-store");
+  });
+
   it("오류 로그에 비밀번호 값이 실리지 않는다 — #70의 메시지 규약이 경로 전체에서 유지", async () => {
     const errorSpy = spyConsoleError();
     await worker.fetch(

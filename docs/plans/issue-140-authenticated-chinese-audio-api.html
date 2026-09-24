@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>#140 인증된 중국어 음성 API와 기능 활성 정보 — 작업 플랜</title>
+<style>
+  :root {
+    --bg: #f7f7f8; --card: #ffffff; --ink: #1c1c1e; --muted: #6e6e73;
+    --line: #e3e3e6; --accent: #3b6ef5; --accent-soft: #e8eefe;
+    --ok: #2e8b57; --warn: #b25e09; --code-bg: #f0f0f2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161618; --card: #202024; --ink: #ececf0; --muted: #98989f;
+      --line: #333338; --accent: #7a9bff; --accent-soft: #26304a;
+      --ok: #58c088; --warn: #e0a35c; --code-bg: #2a2a2f;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 40px 20px 80px; background: var(--bg); color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+                 "Segoe UI", "Noto Sans KR", sans-serif;
+    line-height: 1.65;
+  }
+  main { max-width: 860px; margin: 0 auto; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code {
+    overflow-wrap: anywhere;
+    font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 0.86em;
+    background: var(--code-bg); border-radius: 5px; padding: 2px 6px;
+  }
+  header { margin-bottom: 28px; }
+  .issue-chip {
+    display: inline-block; font-weight: 700; color: var(--accent);
+    background: var(--accent-soft); border-radius: 999px;
+    padding: 3px 14px; font-size: 0.95rem; margin-bottom: 10px;
+  }
+  .type-chip {
+    display: inline-block; font-weight: 600; color: var(--muted);
+    border: 1px solid var(--line); border-radius: 999px;
+    padding: 3px 12px; font-size: 0.8rem; margin-left: 8px; vertical-align: 2px;
+  }
+  h1 { font-size: 1.7rem; margin: 0 0 14px; letter-spacing: -0.02em; }
+  .meta {
+    display: flex; flex-wrap: wrap; gap: 6px 22px;
+    color: var(--muted); font-size: 0.87rem;
+  }
+  .meta b { color: var(--ink); font-weight: 600; }
+  section.card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 24px 28px; margin-top: 18px;
+  }
+  h2 {
+    font-size: 1.05rem; margin: 0 0 14px; letter-spacing: -0.01em;
+    display: flex; align-items: center; gap: 8px;
+  }
+  h2 .no {
+    color: var(--accent); font-size: 0.8rem; font-weight: 700;
+    border: 1.5px solid var(--accent); border-radius: 6px; padding: 0 6px;
+  }
+  ul, ol { margin: 0; padding-left: 22px; }
+  li { margin: 6px 0; }
+  .steps { list-style: none; padding: 0; counter-reset: step; }
+  .steps li {
+    counter-increment: step; position: relative; padding: 10px 0 10px 44px;
+    border-bottom: 1px dashed var(--line);
+  }
+  .steps li:last-child { border-bottom: none; }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 10px;
+    width: 28px; height: 28px; border-radius: 8px; background: var(--accent-soft);
+    color: var(--accent); font-weight: 700; font-size: 0.85rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .steps .files { display: block; margin-top: 4px; font-size: 0.85rem; color: var(--muted); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 0.82rem; }
+  .done-list { list-style: none; padding: 0; }
+  .done-list li { padding-left: 30px; position: relative; }
+  .done-list li::before {
+    content: ""; position: absolute; left: 2px; top: 7px; width: 15px; height: 15px;
+    border: 2px solid var(--ok); border-radius: 5px;
+  }
+  .scroll-x { overflow-x: auto; }
+  footer { margin-top: 30px; color: var(--muted); font-size: 0.8rem; text-align: center; }
+  h3 { font-size: 0.98rem; margin: 22px 0 8px; }
+  input[type="checkbox"] { margin-right: 7px; }
+  @media (max-width: 600px) { body { padding: 22px 12px 50px; } section.card { padding: 18px 16px; } h1 { font-size: 1.4rem; } }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <span class="issue-chip"><a href="https://github.com/damdam6/vocabulary-study/issues/140">#140</a></span><span class="type-chip">기능 개선 · 구현·검증 완료 / 독립 리뷰 대기</span>
+    <h1>인증된 중국어 음성 API와 기능 활성 정보</h1>
+    <div class="meta">
+      <span><b>damdam6/vocabulary-study</b></span>
+      <span>브랜치 <b><code>feat/140-authenticated-chinese-audio-api</code></b> ← <code>feat/ch-sound</code></span>
+      <span>라벨 <b>enhancement</b></span>
+      <span>2026-09-16</span>
+    </div>
+  </header>
+
+  <section class="card">
+    <h2><span class="no">1</span>요약</h2>
+    <p>기존 프로필 인증 안에 POST /api/tts를 연결해 검증된 중국어 요청만 선행 음성 서비스에 전달한다. 서비스 결과를 MP3·공개 헤더·안정적인 한국어 오류로 직렬화하고, 요청 취소와 ctx.waitUntil을 연결한다. GET /api/words에는 설정상 사용 가능 여부를 나타내는 선택적 tts 정보를 추가한다. 이 문서는 계획 산출물이며 구현·기능 테스트는 아직 수행하지 않았다.</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">2</span>현황 분석</h2>
+
+
+<ul>
+<li><b>조사 기준.</b> HEAD <code>3a73dc497aaa5c7064531415b896969cc9643126</code>, 지정 브랜치 일치·초기 작업 트리 clean. GitHub #140 OPEN / enhancement / 댓글 0개를 원격 확인했다. <a href="https://github.com/damdam6/vocabulary-study/pull/161">선행 PR #161</a>은 <code>feat/ch-sound</code>에 MERGED이며 merge SHA가 현재 HEAD와 같다. 상위 경로 및 worktree에서 적용 가능한 AGENTS.md는 발견되지 않았다.</li>
+<li><b>인증과 HTTP 진입.</b> <code>worker/index.ts:11</code>은 fetch의 세 번째 ctx를 받지 않는다. <code>worker/index.ts:17</code>의 resolveProfile 인증 뒤 health·words·기록 경로를 분기하고, TTS 경로는 없어 404로 끝난다. 기존 401은 빈 본문·WWW-Authenticate·X-Worker-Version을 유지한다(<code>worker/index.ts:32</code>). PROFILES 구성 오류는 인증과 별개의 기존 500이다(<code>worker/index.ts:21</code>).</li>
+<li><b>재사용할 계약.</b> <code>worker/lib/tts/input.ts:14</code>가 16KiB 스트림 제한, JSON allowlist와 정규화를 이미 제공한다. <code>worker/lib/tts/config.ts:27</code>은 disabled/not_configured/ready를 반환한다. 오류 코드·한국어 문구·헤더·optional Env·capability는 <code>worker/lib/tts/types.ts:46</code>, <code>:79</code>, <code>:135</code>, <code>:176</code>에 확정돼 있다.</li>
+<li><b>선행 서비스와 r1 수정.</b> <code>worker/lib/tts/service.ts:99</code>는 프로필 id/sheetId·입력·설정·signal을 받아 조회→정상 miss일 때만 합성→조건부 저장한다. r1의 동기 MP3 검사 후 abort/deadline 재확인이 <code>service.ts:127</code> 및 <code>:135</code>에 포함됐다. 회귀 테스트는 <code>worker/lib/tts/service.test.ts:191</code>, <code>:224</code>다. 이 탭은 코드와 merge 내역을 확인했으며 해당 테스트를 재실행하지 않았다.</li>
+<li><b>실제 연결 포트.</b> <code>service.ts:193</code>의 createR2TtsAudioService, <code>worker/lib/tts/providers/qwen.ts:50</code>의 createQwenTtsProvider를 사용한다. 작업 등록은 <code>service.ts:159</code>에서 원래 put의 성공·실패를 처리한 observation Promise를 받는다. 라우트에서 서비스 정책·MP3 검사·2/12/2초 timer를 다시 만들 필요가 없다.</li>
+<li><b>words와 클라이언트.</b> <code>worker/routes/words.ts:18</code>은 기존 단어/설정 Sheets 조회만 하고 응답에 tts가 없다. <code>src/lib/wordsApi.ts</code>는 optional capability와 누락→off 처리를 이미 구현했고 <code>src/lib/ttsApi.ts</code>는 세 성공 조합과 기존 오류 allowlist를 소비한다. 프론트 변경 없이 그 계약을 제공한다.</li>
+<li><b>테스트 영향.</b> <code>worker/test-utils.ts</code>에는 makeRequest/makeEnv만 있다. 직접 worker.fetch 호출이 있는 기존 테스트 파일 11개는 ctx가 필수가 되면 함께 수정해야 한다. <code>worker/lib/profiles.ts:77</code>의 isolate 캐시 때문에 새 HTTP 테스트는 파일 안에서 고정된 다중 프로필 fixture를 사용한다.</li>
+</ul>
+<p>명세: <a href="chinese-tts-audio-issues/TTS-06.md">TTS-06</a> · <a href="../PRD-chinese-tts-audio.md">PRD</a> AC-01/10/14/18/24 · <a href="../architecture/chinese-tts-audio.md">아키텍처</a> §3~4·§9 · <a href="chinese-tts-audio-tasks.md">태스크 지도</a>. 상세 저장/경합 검증은 #139의 테스트를 재사용한다.</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">3</span>설계</h2>
+
+
+<h3>1. 요청 경계와 우선순위</h3>
+<p><code>/api/tts</code> 경로 전체를 기존 인증 블록 안에서 dispatch한다. 순서는 PROFILES 확인·앱 인증 → POST 여부 → 인증 프로필의 zh 여부 → resolveTtsConfig → Content-Type → readTtsRequest → 서비스 호출이다. 다른 메서드를 404로 흘리지 않고 인증 뒤 405와 <code>Allow: POST</code>를 반환한다. Content-Type은 매개변수를 제거하고 대소문자를 정규화해 application/json만 허용하며 charset=utf-8은 허용한다.</p>
+<p>서비스·provider 생성은 모든 사전 검증 뒤에 둔다. 요청의 profileId/contentType/sheetId/provider/URL 등은 기존 입력 allowlist가 거부한다. 서비스에는 인증에서 얻은 <code>{ id, sheetId }</code>만 넘기며 비밀번호는 전달하지 않는다. 정상 요청도 Sheets 조회·등록 상태 확인을 추가하지 않는다.</p>
+<h3>2. 조합과 수명</h3>
+<p>새 <code>worker/routes/tts.ts</code>의 handler가 TtsWorkerEnv와 인증 Profile, ExecutionContext를 받는다. ready 설정으로 createQwenTtsProvider와 createR2TtsAudioService를 요청별 생성하고 <code>request.signal</code>을 그대로 넘긴다. 최소 TtsAudioBinding과 storage의 구체 버킷 타입 연결은 이 조합 지점 한 곳에서만 좁힌다. 생성 Env·공통 타입의 소유 경계를 확장하지 않는다.</p>
+<p><code>registerBackgroundTask: (promise) =&gt; ctx.waitUntil(promise)</code>로 연결해 this 바인딩을 보존한다. 원래 put이 늦게 끝나도 서비스가 등록한 observation Promise를 회수하며, 라우트는 HTTP 반환 전에 그 Promise를 추가 await하지 않는다. 취소는 request.signal.aborted를 우선 확인해 signal.reason을 재전파한다. 종료된 요청의 abort를 일반 500이나 provider 장애로 기록하지 않는다. 서비스의 합성 deadline은 그대로 504로 직렬화한다.</p>
+<h3>3. HTTP 응답</h3>
+<div class="scroll-x"><table><thead><tr><th>결과</th><th>응답</th></tr></thead><tbody>
+<tr><td>성공</td><td>200 + 정확한 audio 바이트 구간 + audio/mpeg + nosniff. Uint8Array의 byteOffset/byteLength를 보존해 backing buffer의 다른 바이트가 섞이지 않게 한다.</td></tr>
+<tr><td>세 진단 조합</td><td>STORED/PRESENT · GENERATED/SAVED · GENERATED/UNCONFIRMED. X-TTS-Pronunciation은 absent/ignored, X-TTS-Revision은 서비스 결과. 저장 객체 metadata/URL/key를 헤더로 복사하지 않는다.</td></tr>
+<tr><td>사전 검증 오류</td><td>400 invalid_tts_request · 403 tts_not_allowed · 405 method_not_allowed · 413 tts_request_too_large · 415 unsupported_media_type · 503 tts_disabled/tts_not_configured.</td></tr>
+<tr><td>서비스 오류</td><td>TtsServiceError.code를 공통 TTS_ERROR_RESPONSES로 직렬화: 503 tts_unavailable/tts_storage_unavailable · 502 tts_upstream_error · 504 tts_timeout. provider 인증/할당량/429는 앱 401로 전달하지 않는다.</td></tr>
+<tr><td>앱 인증·구성 오류</td><td>기존 빈 401 본문과 WWW-Authenticate/X-Worker-Version, PROFILES의 기존 500 JSON을 유지한다. index의 해당 응답에는 pathname이 /api/tts일 때만 no-store를 추가한다.</td></tr>
+<tr><td>예상 못 한 내부 오류</td><td>HTTP 500, 공개 본문은 기존 tts_unavailable 코드·고정 한국어 문구를 재사용한다. 이 상태 예외를 라우트 테스트와 아키텍처 §3.2에 명시하며 새 오류 코드를 발명하지 않는다. 임의 error.code/status/message를 그대로 반환하지 않는다.</td></tr>
+</tbody></table></div>
+<p>모든 <code>/api/tts</code> HTTP 응답에 <code>Cache-Control: private, no-store</code>를 적용한다. 성공 전용 X-TTS 헤더는 실패 응답에 붙이지 않는다. 응답은 필드를 명시해 만들고 config/dependencies/profile/서비스 결과 전체를 JSON으로 펼치지 않는다.</p>
+<h3>4. capability와 로그</h3>
+<p>words 응답 최상위에 <code>tts: { enabled: false }</code>를 기본값으로 둔다. 인증 프로필이 zh이고 resolveTtsConfig가 ready일 때만 <code>{ enabled: true, revision, maxTextLength: 200 }</code>을 만든다. 설정 resolver만 재사용하고 R2/provider 네트워크나 service를 호출하지 않는다. words의 fetchedAt/profile/words/settings와 기존 조회 횟수, health/PROFILES 스키마를 보존한다.</p>
+<p>라우트가 생성한 requestId를 서비스의 createRequestId에 주입해 foreground 결과와 늦은 저장 로그를 연결한다. 로그는 명시한 allowlist 객체로 작성한다: requestId, profileId, provider/model/revision, 정규화 문자 수, 실제 billedCharacters(존재할 때), hint 상태/사유, source/storage, 응답 byteLength, 정규화 오류 코드. 서비스가 제공하는 저장 outcome/elapsedMs만 사용하며 노출되지 않은 단계별 시간을 추정하지 않는다. 원문 예외·본문·병음·시트 ID·키·객체 키·제공자 원문은 기록하지 않는다.</p>
+<h3>5. 소유 경계와 인계</h3>
+<p>변경은 routes/tts·index·routes/words·test-utils 및 해당 테스트, 이 계획과 HTTP 계약 보충 문서에 한정한다. service/storage/provider 정책, 프론트, Wrangler/생성 Env, graph는 변경하지 않는다. 계획 완료 뒤 root가 Terra high 구현 surface를 시작한다. 이 탭의 모델은 Astra high 계획 담당이며 구현·커밋·push를 수행하지 않는다. 이후 독립 리뷰와 GitHub squash merge 대상은 feat/ch-sound다.</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">4</span>작업 단계</h2>
+    <ol class="steps">
+
+
+<li><label><input type="checkbox" checked> 실행 컨텍스트 테스트 기반과 fetch 시그니처를 연결한다.</label> makeExecutionContext에서 등록 Promise와 drain을 제공하고 테스트 종료 전에 성공·실패를 회수한다. production ctx를 선택적으로 만들어 테스트 오류를 숨기지 않는다.
+<span class="files"><code>worker/index.ts</code>, <code>worker/test-utils.ts</code>; 기존 <code>worker/index.test.ts</code>, <code>index.profiles.test.ts</code>, <code>index.config-error.test.ts</code>, <code>index.sheet-isolation.test.ts</code>; <code>worker/routes/{answer,tabs,tabs.generic,register,register.generic,settings,words}.test.ts</code></span></li>
+<li><label><input type="checkbox" checked> 인증 이후 TTS 경로와 사전 검증을 구현한다.</label> 메서드/zh/설정/media/body 순서를 고정하고 기존 401·PROFILES 500의 TTS 전용 cache 헤더를 보완한다. 차단 요청은 본문·서비스·네트워크로 진행하지 않는지 검증한다.
+<span class="files"><code>worker/index.ts</code>, <code>worker/routes/tts.ts</code> (신규), <code>worker/routes/tts.test.ts</code> (신규), <code>worker/index.config-error.test.ts</code></span></li>
+<li><label><input type="checkbox" checked> 실제 provider/storage/service를 조합하고 결과를 직렬화한다.</label> 공통 입력/설정/오류/헤더를 import하고 바이트 구간과 세 성공 조합을 보존한다. signal, waitUntil, requestId 연결 및 안전한 내부 500/진단을 구현한다.
+<span class="files"><code>worker/routes/tts.ts</code>, <code>worker/routes/tts.test.ts</code>; 재사용 <code>worker/lib/tts/{types,input,config,service}.ts</code>, <code>providers/qwen.ts</code></span></li>
+<li><label><input type="checkbox" checked> words capability를 추가하고 기존 응답 계약을 검증한다.</label> generic·disabled·미설정은 false, 설정이 유효한 zh만 true. capability 계산으로 추가 외부 호출이 없고 TTS 설정 오류가 기존 words를 실패시키지 않는지 확인한다.
+<span class="files"><code>worker/routes/words.ts</code>, <code>worker/routes/words.test.ts</code>, <code>worker/index.sheet-isolation.test.ts</code></span></li>
+<li><label><input type="checkbox" checked> 실제 서비스에 연결한 HTTP 대표 시나리오와 격리·취소를 검증한다.</label> 실제 service/storage/MP3 검사는 유지하고 외부 R2·Upgrade fetch·socket만 더블로 대체한다. 늦은 put Promise와 로그의 requestId를 회수한다. 필요하면 TTS 전용 테스트 fixture를 추가한다.
+<span class="files"><code>worker/routes/tts.integration.test.ts</code> (신규), 필요 시 <code>worker/routes/tts.test-fixtures.ts</code> (신규), <code>worker/test-utils.ts</code>; 재사용 <code>worker/lib/tts/fixtures/mp3.ts</code>, <code>worker/lib/tts/service.test.ts</code></span></li>
+<li><label><input type="checkbox" checked> 관련 테스트와 전체 검증을 마치고 구현 증거를 기록한다.</label> HTTP 500의 공개 코드와 cache/abort 정책을 해당 계약에 보충한다. 실제 검증 한계를 남기고 이 계획 체크박스를 완료 상태로 갱신한 뒤 feat/ch-sound 대상 ready PR을 준비한다. 구현 완료 콜백 뒤 독립 리뷰는 root가 인계한다.
+<span class="files"><code>docs/architecture/chinese-tts-audio.md</code> §3~4, <code>docs/plans/issue-140-authenticated-chinese-audio-api.html</code>, <code>.issue-codex/interactive-state.json</code> (git 제외)</span></li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">5</span>리스크</h2>
+    <div class="scroll-x">
+    <table>
+      <thead><tr><th>리스크</th><th>영향</th><th>완화책</th></tr></thead>
+      <tbody>
+
+
+<tr><td>인증보다 먼저 서비스 실행</td><td>미인증 합성/프로필 간 접근</td><td>index 인증 블록 내 dispatch; 다중 프로필·위조 필드·외부 호출 0회 검사.</td></tr>
+<tr><td>ctx 전달 시 기존 테스트 누락</td><td>타입 검사 실패 또는 저장 Promise 유실</td><td>11개 파일의 모든 직접 fetch 호출을 검색해 ctx 전달, waitUntil의 this 및 drain 검증.</td></tr>
+<tr><td>generic/잘못된 TTS 설정</td><td>기존 words·health 실패</td><td>ready일 때만 capability on; PROFILES 파서와 TTS 검증 분리.</td></tr>
+<tr><td>서비스 정책 중복·deadline 퇴행</td><td>초과 대기, 저장 실패 시 재합성</td><td>#139 구현과 r1 테스트 재사용, 라우트는 직렬화·수명 연결만 수행.</td></tr>
+<tr><td>원문 예외/객체 전체 로깅</td><td>키·원문·시트·객체 경로 노출</td><td>명시적 allowlist, 악성 sentinel 오류의 응답·로그 비노출 검사.</td></tr>
+<tr><td>isolate 프로필 캐시와 네트워크 더블</td><td>테스트 간 오염 또는 실제 외부 호출</td><td>파일별 고정 프로필 구성, 요청별 ctx, 전역 fetch 기본 실패 더블과 cleanup.</td></tr>
+<tr><td>실환경 및 의존성 준비</td><td>더블 결과를 출시 검증으로 오인</td><td>현재 worktree node_modules 없음. 구현 탭에서 기존 lockfile 기준 준비 후 검사. 운영 flag 기본 off 유지; 실제 키·R2·청취·모바일은 미검증으로 남김.</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">6</span>테스트 계획</h2>
+    <ul>
+
+
+<li><b>HTTP 차단 행렬.</b> 인증 없음/잘못된 토큰 → 빈 401; 인증된 GET/PUT/OPTIONS → 405+Allow; generic POST → 403; disabled/미설정 → 각각 503; media 누락/text/plain → 415; application/json;charset=utf-8 허용. 우선순위가 겹치는 요청도 인증→메서드→zh→설정 순서를 확인한다. spy로 서비스 생성·R2·provider·Sheets 0회를 확인한다.</li>
+<li><b>본문 경계.</b> 배열/null/잘못된 JSON/알 수 없는 필드/위조 profileId·URL·설정 → 400; 0/1/200/201 Unicode 코드 포인트, 확장 한자·문장·NFC·CRLF, 빈/과대 병음; Content-Length 없음/거짓 값에도 실제 스트림 16KiB 경계와 초과 → 413. 상세 정규화는 기존 input.test를 재사용한다.</li>
+<li><b>응답과 오류.</b> 세 성공 조합 × absent/ignored, exact MP3 바이트·MIME·nosniff·revision·no-store, Uint8Array subarray 사례. 공통 오류 코드 11개 모두 status/message와 일치하며 앱 401/PROFILES 500/내부 500도 확인한다. 내부 500은 명시한 tts_unavailable 본문을 사용한다. provider 인증 오류는 503으로 앱 토큰을 만료시키지 않는다. TTS 실패는 성공 헤더/객체 URL/key를 포함하지 않는다.</li>
+<li><b>실제 서비스 연결.</b> 실제 service/storage/MP3 검사 + R2 더블에서 hit는 같은 바이트·provider 0회, miss→생성/저장은 SAVED, put 실패 또는 2초 초과는 200 UNCONFIRMED. 늦게 resolve/reject한 put의 등록 Promise를 drain해 미처리 rejection 없음과 같은 requestId를 확인한다. R2 get 오류/손상은 503·provider 0회. 모든 TTS 요청에서 Sheets 0회.</li>
+<li><b>취소와 deadline.</b> 이미 취소한 요청은 부작용 없음. 진행 중 request.signal 취소가 실제 service를 통해 adapter handshake signal/socket 종료에 전달되고 원래 reason이 보존된다. 저장 시작 후 취소해도 등록한 put observation은 회수된다. 서비스의 12초 timeout→HTTP 504 대표 사례를 fake timer로 확인하고 r1의 동기 검사 deadline/abort 회귀 테스트를 함께 실행한다.</li>
+<li><b>격리와 로그.</b> 고정된 두 zh 프로필의 같은 입력은 서로 다른 R2 key를 사용하고 각각의 바이트만 반환한다. generic 차단, body로 프로필 변경 불가. 응답·로그에서 password/apiKey/text/pinyin/sheetId/provider 원문 sentinel·객체 키가 나오지 않는다. 관측 필드는 allowlist로 제한한다.</li>
+<li><b>capability·회귀.</b> zh ready→true/revision/200, missing/false/잘못된 flag·키 없음·R2 없음·잘못된 모델/음색/속도/revision→false, generic+ready도 false. 기존 fetchedAt/profile/settings/words와 Sheets 호출 수·대상 유지. health·PROFILES 오류·answer/review-fail/register/settings 기존 테스트를 모두 통과한다. src/lib/api.test.ts·ttsApi.test.ts·wordsApi.test.ts로 소비자 계약 회귀를 확인한다.</li>
+<li><b>실행 명령.</b> 구현 탭에서 <code>npm test -- worker/routes/tts.test.ts worker/routes/tts.integration.test.ts worker/routes/words.test.ts worker/lib/tts worker/index.test.ts worker/index.profiles.test.ts worker/index.config-error.test.ts worker/index.sheet-isolation.test.ts src/lib/api.test.ts src/lib/ttsApi.test.ts src/lib/wordsApi.test.ts</code> 후 <code>npm test</code>, <code>npm run lint</code>, <code>npm run build</code>. 새 파일명은 구현의 실제 파일과 맞춘다. 빌드는 수동 deploy를 포함하지 않는다.</li>
+<li><b>계획 단계 검증과 한계.</b> 문서/코드·원격 이슈/PR·HEAD 조사 완료. HTML placeholder·구조·localhost 응답·cmux 표시를 검증한 뒤 상태 파일에 결과와 SHA-256을 기록한다. 앱 테스트/린트/빌드는 계획 단계에서 실행하지 않았다. 실제 시크릿·유료 합성·리소스 생성·수동 배포·실제 R2·청취·모바일·실측 지연은 수행하지 않는다. TTS_ENABLED는 기본 false를 유지한다.</li>
+<li><b>구현 단계 검증과 한계.</b> 2026-09-16에 TTS HTTP·words·서비스 경계 집중 테스트 15파일 141개, 전체 <code>npm test</code> 51파일 664개, <code>npm run lint</code>, <code>npm run build</code>를 통과했다. 독립 리뷰 r1의 P1/P2 수정 뒤에는 TTS·words·설정·격리·service 집중 테스트 5파일 50개와 전체 <code>npm test</code> 51파일 665개, lint, build를 다시 통과했다. 예상 밖 예외는 허용 필드만 로그에 남기고, 분류되지 않은 서비스 내부 오류는 고정 본문의 500으로 검증했다. 빌드의 Wrangler 로그 디렉터리 쓰기 경고는 sandbox 제약이었고 명령 종료 상태는 성공이었다. R2/Upgrade/socket은 테스트 더블만 사용했다. 실제 시크릿·유료 합성·리소스 생성·수동 배포·실제 R2·청취·모바일·실측 지연은 검증하지 않았으며 <code>TTS_ENABLED=false</code>는 유지했다.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">7</span>완료 조건</h2>
+    <ul class="done-list">
+
+
+<li>미인증/generic/disabled/잘못된 요청이 서비스·R2·provider 전에 종료됨을 HTTP 테스트로 증명한다.</li>
+<li>세 성공 헤더 조합과 모든 공개 오류 계약·no-store가 명세에 맞고 객체 키·직접 URL·비밀이 노출되지 않는다.</li>
+<li>앱 빈 401과 provider 인증 503을 구분하고 기존 health/words/PROFILES/학습 기록 API가 유지된다.</li>
+<li>실제 서비스 연결 테스트에서 waitUntil·취소·프로필 격리를 확인하고 추가 Sheets 호출이 없다.</li>
+<li>소유 모듈의 정상·실패·관련 계약 및 전체 test/lint/build 증거를 구현 탭이 기록하고, 실환경 미검증을 명시한다.</li>
+<li>PR base/head는 feat/ch-sound ← feat/140-authenticated-chinese-audio-api, Closes #140. root가 구현→독립 리뷰→GitHub squash merge를 단계별 인계한다.</li>
+<li>운영 TTS_ENABLED=false, 키 원문 미접근·유료 TTS/리소스 생성/수동 배포 없음. graph 수정과 다른 모델 직접 실행 없음.</li>
+    </ul>
+  </section>
+
+  <footer>issue-plan · <a href="https://github.com/damdam6/vocabulary-study/issues/140">#140</a> · 2026-09-16</footer>
+</main>
+</body>
+</html>

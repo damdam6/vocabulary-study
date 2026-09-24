@@ -15,7 +15,7 @@ const { fetchWordsMock } = vi.hoisted(() => ({ fetchWordsMock: vi.fn() }));
 vi.mock("../lib/wordsApi.ts", () => ({ fetchWords: fetchWordsMock }));
 
 const profile: PublicProfile = { id: "hsk6", name: "HSK 6급", modes: ["m1", "m2"], contentType: "zh" };
-const wordsResponse: WordsResponse = { profile, words: [], settings: { sessionLimit: 60 } };
+const wordsResponse: WordsResponse = { profile, words: [], settings: { sessionLimit: 60 }, tts: { enabled: false } };
 
 let unmountCurrent: (() => void) | null = null;
 
@@ -125,6 +125,7 @@ describe("세션 시작 — 시트 문제 수 설정이 큐에 반영된다 (#11
       profile,
       words: Array.from({ length: 50 }, (_, i) => learningWord(`词${i}`)),
       settings: { sessionLimit: 35 },
+      tts: { enabled: true, revision: "session-r1", maxTextLength: 200 },
     } satisfies WordsResponse);
     const { onStart, startButton } = setup();
     await flush();
@@ -132,7 +133,11 @@ describe("세션 시작 — 시트 문제 수 설정이 큐에 반영된다 (#11
     fire(() => startButton().click());
 
     expect(onStart).toHaveBeenCalledTimes(1);
-    expect(onStart.mock.calls[0]).toHaveLength(1); // 재삽입 상한용 둘째 인자는 사라졌다
+    expect(onStart.mock.calls[0]).toHaveLength(2);
     expect(onStart.mock.calls[0][0]).toHaveLength(35);
+    expect(onStart.mock.calls[0][1]).toEqual({
+      profile,
+      tts: { enabled: true, revision: "session-r1", maxTextLength: 200 },
+    });
   });
 });

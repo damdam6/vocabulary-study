@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>#135 [TTS-01] 중국어 TTS 공통 계약·입력·설정·병음 정책 — 작업 플랜</title>
+<style>
+  :root {
+    --bg: #f7f7f8; --card: #ffffff; --ink: #1c1c1e; --muted: #6e6e73;
+    --line: #e3e3e6; --accent: #3b6ef5; --accent-soft: #e8eefe;
+    --ok: #2e8b57; --warn: #b25e09; --code-bg: #f0f0f2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161618; --card: #202024; --ink: #ececf0; --muted: #98989f;
+      --line: #333338; --accent: #7a9bff; --accent-soft: #26304a;
+      --ok: #58c088; --warn: #e0a35c; --code-bg: #2a2a2f;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 40px 20px 80px; background: var(--bg); color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+                 "Segoe UI", "Noto Sans KR", sans-serif;
+    line-height: 1.65;
+  }
+  main { max-width: 860px; margin: 0 auto; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code {
+    font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 0.86em;
+    background: var(--code-bg); border-radius: 5px; padding: 2px 6px;
+  }
+  header { margin-bottom: 28px; }
+  .issue-chip {
+    display: inline-block; font-weight: 700; color: var(--accent);
+    background: var(--accent-soft); border-radius: 999px;
+    padding: 3px 14px; font-size: 0.95rem; margin-bottom: 10px;
+  }
+  .type-chip {
+    display: inline-block; font-weight: 600; color: var(--muted);
+    border: 1px solid var(--line); border-radius: 999px;
+    padding: 3px 12px; font-size: 0.8rem; margin-left: 8px; vertical-align: 2px;
+  }
+  h1 { font-size: 1.7rem; margin: 0 0 14px; letter-spacing: -0.02em; }
+  .meta {
+    display: flex; flex-wrap: wrap; gap: 6px 22px;
+    color: var(--muted); font-size: 0.87rem;
+  }
+  .meta b { color: var(--ink); font-weight: 600; }
+  section.card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 24px 28px; margin-top: 18px;
+  }
+  h2 {
+    font-size: 1.05rem; margin: 0 0 14px; letter-spacing: -0.01em;
+    display: flex; align-items: center; gap: 8px;
+  }
+  h2 .no {
+    color: var(--accent); font-size: 0.8rem; font-weight: 700;
+    border: 1.5px solid var(--accent); border-radius: 6px; padding: 0 6px;
+  }
+  ul, ol { margin: 0; padding-left: 22px; }
+  li { margin: 6px 0; }
+  .steps { list-style: none; padding: 0; counter-reset: step; }
+  .steps li {
+    counter-increment: step; position: relative; padding: 10px 0 10px 44px;
+    border-bottom: 1px dashed var(--line);
+  }
+  .steps li:last-child { border-bottom: none; }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 10px;
+    width: 28px; height: 28px; border-radius: 8px; background: var(--accent-soft);
+    color: var(--accent); font-weight: 700; font-size: 0.85rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .steps .files { display: block; margin-top: 4px; font-size: 0.85rem; color: var(--muted); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 0.82rem; }
+  .done-list { list-style: none; padding: 0; }
+  .done-list li { padding-left: 30px; position: relative; }
+  .done-list li::before {
+    content: ""; position: absolute; left: 2px; top: 7px; width: 15px; height: 15px;
+    border: 2px solid var(--ok); border-radius: 5px;
+  }
+  .scroll-x { overflow-x: auto; }
+  footer { margin-top: 30px; color: var(--muted); font-size: 0.8rem; text-align: center; }
+
+  h3 { font-size: 1rem; margin: 24px 0 10px; }
+  body { overflow-wrap: anywhere; }
+  main, .meta > span { min-width: 0; }
+  code { overflow-wrap: anywhere; }
+  .steps p { margin: 8px 0; }
+  input[type="checkbox"] { accent-color: var(--accent); }
+  @media (max-width: 600px) { body { padding: 22px 12px 50px; } section.card { padding: 20px 16px; } h1 { font-size: 1.35rem; } th, td { min-width: 135px; padding: 8px; } }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <span class="issue-chip"><a href="https://github.com/damdam6/vocabulary-study/issues/135">#135</a></span><span class="type-chip">기능 개선 · 공통 기반</span>
+    <h1>[TTS-01] 중국어 TTS 공통 계약·입력·설정·병음 정책</h1>
+    <div class="meta">
+      <span><b>damdam6/vocabulary-study</b></span>
+      <span>브랜치 <b><code>feat/135-chinese-tts-contracts</code></b> ← <code>feat/ch-sound</code></span>
+      <span>라벨 <b>enhancement</b></span>
+      <span>2026-09-15</span>
+    </div>
+  </header>
+
+  <section class="card">
+    <h2><span class="no">1</span>요약</h2>
+    <p>후속 Worker·클라이언트가 공유할 TTS 계약과 입력·설정·병음 검증을 다섯 소유 모듈에 정의한다. 정규화된 A열만 합성 입력으로 전달하고 B열은 저장 키와 미적용 진단에 보존한다. 설정 오류는 TTS 기능만 끄는 결과로 반환하며, 이번 이슈는 네트워크·저장소·오디오·화면 구현을 포함하지 않는다. 이 문서는 계획 산출물이며 구현과 검증은 지정된 다음 대화형 세션이 수행한다.</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">2</span>현황 분석</h2>
+
+
+<p><b>조사 기준:</b> 현재 HEAD <code>07d72a7</code>, 이슈 #135 본문 및 댓글 조회 완료(댓글 0개). 작업 시작 시 worktree 변경 없음. 근거 문서는 <a href="../PRD-chinese-tts-audio.md">PRD</a>, <a href="../architecture/chinese-tts-audio.md">아키텍처</a>, <a href="chinese-tts-audio-issues/TTS-01.md">TTS-01 소유 명세</a>다. 문서의 이전 분석 커밋 대신 아래 실제 코드도 확인했다.</p>
+<div class="scroll-x"><table><thead><tr><th>현재 구조 / 근거</th><th>이번 계획에 반영할 사항</th></tr></thead><tbody><tr><td><code>worker/index.ts:16</code>, <code>worker/index.ts:32</code>, <code>worker/index.ts:46</code></td><td>모든 API는 resolveProfile 인증 후 분기한다. 앱 인증 실패는 빈 401, 프로필 설정 실패는 500이다. 현재 TTS 라우트는 없으며 라우팅 연결은 #140 소유다.</td></tr><tr><td><code>worker/lib/profiles.ts:48</code>, <code>worker/lib/profiles.ts:73</code></td><td>ProfilesEnv는 optional 조각 타입이지만 잘못된 PROFILES는 ProfileConfigError를 던진다. TTS 설정은 독립된 optional TtsEnv와 명시적 비활성 결과로 처리한다.</td></tr><tr><td><code>worker/lib/register.ts:23</code>, <code>worker/lib/register.ts:68</code>, <code>src/lib/pinyinValidation.ts:23</code></td><td>등록은 기본 한자 블록 전용 정규식·필수 병음·성조 검사를 사용한다. TTS는 문장·확장 한자·빈 B열을 허용하므로 기존 검증을 재사용하거나 수정하지 않는다.</td></tr><tr><td><code>worker/routes/words.ts:37</code>, <code>src/lib/wordsApi.ts:17</code>, <code>src/lib/wordsApi.ts:41</code></td><td>words 응답은 profile/words/settings이며 아직 capability가 없다. 이번에는 TtsCapability 타입만 제공한다. 서버 응답 추가는 #140, 클라이언트 정규화와 세션 전달은 #145 소유다.</td></tr><tr><td><code>src/lib/api.ts:28</code>, <code>src/lib/api.ts:90</code></td><td>기존 공개 타입은 양쪽 런타임에 미러를 둔다. apiFetch가 Bearer·401·성공 콜백을 맡으므로 전송 포트는 이를 사용하는 #141에 연결할 수 있어야 한다.</td></tr><tr><td><code>src/screens/StudyScreen.tsx:56</code>, <code>src/screens/StudyScreen.tsx:139</code>, <code>src/screens/Mode1Card.tsx:28</code>, <code>src/screens/Mode2Card.tsx:38</code></td><td>학습 기록은 비동기 처리하고 카드는 pos별 리마운트된다. 모드1은 버튼 전체 플립, 모드2는 빈 오답도 결과 화면을 연다. controller·binding 타입을 설계하되 기존 채점·큐·카드 코드는 수정하지 않는다.</td></tr><tr><td><code>tsconfig.app.json:25</code>, <code>tsconfig.worker.json:5</code>, <code>worker-configuration.d.ts:4</code></td><td>브라우저와 Worker가 분리되어 있고 생성 Env에는 TTS 필드가 없다. src에서 Worker 전용 타입·설정·시크릿을 import하지 않는다. 생성 Env와 Wrangler는 #149 소유다.</td></tr><tr><td><code>vitest.config.ts:3</code>, <code>worker/test-utils.ts:21</code>, <code>package.json:8</code></td><td>Vitest는 Cloudflare Vite 플러그인 없이 node 단위 테스트를 실행한다. 기존 env 더블·프로필 회귀 테스트를 참고하고 npm test/lint/build로 최종 검증한다.</td></tr></tbody></table></div>
+<p><b>소유 파일:</b> <code>worker/lib/tts/{types,config,input,pronunciation}.ts</code>, <code>src/lib/ttsTypes.ts</code>와 해당 테스트·전용 fixture를 새로 만든다. MP3 검사·R2·provider·service·라우트·전송·Audio·controller·UI 실행 코드는 각 후속 이슈가 구현한다.</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">3</span>설계</h2>
+
+
+<h3>1. 런타임 경계와 공통 계약</h3>
+<p>Worker의 <code>types.ts</code>를 서버 계약의 소유점으로, <code>src/lib/ttsTypes.ts</code>를 브라우저 공개 계약·포트의 소유점으로 둔다. 외부로 전달되는 요청·오류 코드·헤더·capability·공통 제한만 미러하며, 교차 호환 검사는 Worker 쪽 전용 테스트에서 수행한다. 브라우저 런타임 import가 Worker로 이어지거나 tsconfig 범위를 넓히지 않는다.</p>
+<div class="scroll-x"><table><thead><tr><th>계약</th><th>구체적인 형태와 책임</th></tr></thead><tbody><tr><td>요청·정규화 결과</td><td><code>TtsRequest = { text: string; pinyin?: string }</code>. 내부 검증 결과는 <code>{ text: string; pinyin: string | null }</code>로 고정해 빈 B열을 null로 통일한다. 원본 객체를 그대로 넘기지 않고 허용 필드만 새로 구성한다.</td></tr><tr><td>합성·발음</td><td><code>SynthesisInput = { text: string }</code>; <code>PronunciationDecision</code>은 absent 또는 ignored/provider_hint_unsupported이며 effectiveHint는 항상 null. <code>TtsProvider.pronunciationMode</code>는 none, <code>synthesize(input, signal)</code>은 <code>Promise&lt;{ audio: Uint8Array; contentType: "audio/mpeg"; billedCharacters?: number }&gt;</code>를 반환한다. 과금 문자 수는 선택적 실제 값이고 추정 기본값을 만들지 않는다.</td></tr><tr><td>MP3 검사 주입</td><td><code>ValidateAudio = (audio: Uint8Array, contentType: string) =&gt; boolean</code> 형태의 순수 동기 포트를 export한다. true는 MIME·비어 있지 않은 완성 MP3·4MiB 제한 통과를 뜻한다. 실제 검사는 #137, R2에서 사용은 #136, 서비스 주입은 #139다. 더블을 실제 검증기로 취급하지 않는다.</td></tr><tr><td>설정 / 환경</td><td><code>TtsEnv</code>는 TTS_ENABLED/PROVIDER/MODEL/VOICE/RATE/REVISION과 DASHSCOPE_API_KEY를 optional string, TTS_AUDIO를 optional R2Bucket으로 둔다. <code>TtsWorkerEnv = Env &amp; TtsEnv</code> 별칭만 소유 types.ts에 정의한다. 생성 Env·index.ts는 이번 이슈에서 수정하지 않는다.</td></tr><tr><td>공개 capability</td><td><code>TtsCapability = { enabled: false } | { enabled: true; revision: string; maxTextLength: 200 }</code>. 비활성 사유·시크릿·버킷·설정 전체는 공개 capability에 넣지 않는다. 누락/잘못된 구 서버 필드의 false 처리는 #145에서 구현한다.</td></tr><tr><td>응답 진단</td><td><code>{ source: "STORED"; storage: "PRESENT" } | { source: "GENERATED"; storage: "SAVED" | "UNCONFIRMED" }</code>와 pronunciation/revision을 조합한다. 불가능한 STORED/SAVED 등의 조합을 타입으로 막는다. 내부 ignored reason과 effectiveHint를 HTTP 헤더 값에 섞지 않는다.</td></tr><tr><td>제한 상수</td><td>text 200 코드 포인트, pinyin 1,000 코드 포인트, 요청 16×1024 bytes, MP3 4×1024² bytes, provider JSON 64×1024/전체 1024² bytes. R2 조회/저장 2,000ms, 합성 12,000ms, 클라이언트 준비 20,000ms, Blob LRU 20개/8×1024² bytes. 각 런타임에서 필요한 상수만 노출하며 교차 값은 계약 테스트로 일치시킨다. 타이머 구현은 포함하지 않는다.</td></tr></tbody></table></div>
+<h3>2. 입력을 제한하며 읽고 검증</h3>
+<p><code>input.ts</code>는 <code>readTtsRequest(request)</code>와 <code>normalizeTtsInput(raw: unknown)</code>의 두 경계로 나눈다. 전자는 본문 스트림의 실제 바이트를 합산하고 상한 통과 후 JSON을 해석한다. 후자는 순수 입력 검증을 소유한다. Content-Type·메서드·인증·HTTP 응답 생성은 #140이 담당하고 이 helper는 Response를 만들지 않는다.</p>
+<ol>
+<li>Content-Length는 조기 거부의 보조 자료일 뿐이다. 누락·작게 위조한 헤더에서도 읽은 바이트가 16KiB를 넘으면 <code>tts_request_too_large</code>다. 초과 chunk를 누적 복사하기 전에 확인하고 reader를 취소·해제한다. 정상·오류 경로 모두 lock을 해제하며 UTF-8 다중바이트가 chunk 경계에 나뉘어도 원문을 보존한다. 무제한 <code>request.json()</code>/<code>text()</code> 선호출은 하지 않는다.</li>
+<li>JSON 객체만 허용한다. null·배열·primitive·깨진 JSON·text 누락/비문자열·pinyin의 null/숫자/배열/객체와 text/pinyin 이외 키를 거부한다. JSON.parse 오류의 원문 메시지는 폐기하고 고정된 오류를 반환한다.</li>
+<li>A열은 CRLF/CR→LF, NFC, trim을 적용한다. 금지 C0는 trim으로 사라지기 전에 검사하여 VT/FF 등이 끝에 있어도 조용히 허용되지 않게 한다. 탭·LF와 정규화 전 CR만 허용하고 NUL 및 나머지 C0를 거부한다. 정규화 후 <code>Array.from(text).length</code>가 1~200이고 <code>\p{Script=Han}</code>이 하나 이상이어야 한다. 문장부호·숫자·라틴문자·내부 공백을 유지하며 자르거나 나누지 않는다.</li>
+<li>B열은 NFC·trim 후 최대 1,000 코드 포인트다. 생략/빈칸은 null, 나머지 문자열은 그대로 보존한다. 의미·음절·성조·A열과의 대응을 검사하지 않는다. A열의 Han/길이 규칙을 B열에 적용하지 않는다. B열 줄바꿈은 명세 §5.1의 NFC·trim 계약을 유지한다.</li>
+<li><code>pronunciation.ts</code>는 정규화된 B열만으로 absent/ignored를 결정한다. 합성 입력은 명시적으로 <code>{ text: normalized.text }</code>를 구성하는 계약으로 분리한다. normalized.pinyin은 후속 저장 키 입력에 남기며 이번에는 키 계산을 구현하지 않는다.</li>
+</ol>
+<h3>3. 설정 검증과 기능 격리</h3>
+<p><code>resolveTtsConfig(env: TtsEnv)</code>는 예외 대신 판별 가능한 결과를 반환한다: 비활성(<code>tts_disabled</code>), 잘못된/누락 설정(<code>tts_not_configured</code>), 준비됨(검증된 config와 서버 전용 의존성). TTS_ENABLED 생략 또는 문자열 false는 비활성이고 true만 활성 요청으로 해석한다. 그 밖의 flag 값은 미설정 오류다. <code>PROFILES</code>·Google 설정을 읽거나 기존 파서 캐시를 변경하지 않는다.</p>
+<ul>
+<li>기본값은 문서 §9의 qwen / qwen-audio-3.0-tts-flash / longanfengyue / rate 1.0 / revision tts-v1이다. 해당 선택 var가 <em>생략</em>되면 기본값을 쓰고, 명시된 빈 문자열·잘못된 값은 기본값으로 숨기지 않는다. 키와 R2는 기본값이 없으며 활성 요청에서 둘 다 필요하다.</li>
+<li>provider·model·voice는 현재 확정값 allowlist만 허용한다. rate는 빈 문자열·부분 숫자·NaN·Infinity를 거부하고 완전한 십진수로 파싱한 유한 [0.5, 2.0]만 허용한다. revision은 <code>^[A-Za-z0-9_-]{1,64}$</code>로 제한한다.</li>
+<li>region=intl, outputFormat=mp3, adapterVersion=qwen-ws-v1, 발음 정책 pinyin-none-v1과 고정 endpoint를 코드 상수로 둔다. audioSettings는 <code>[24000, 128, 50, 1.0, 0, ["zh"], false, null]</code>의 readonly 튜플로 정의한다(sampleRate/bitRate/volume/pitch/seed/languageHints/enableSsml/instruction). 설정·튜플·기본값을 요청 간 변이시키지 않는다.</li>
+<li>국제 주소 <code>wss://dashscope-intl.aliyuncs.com/api-ws/v1/inference</code>와 후속 Worker Upgrade용 같은 주소의 https 형태만 계약에 둔다. 다른 모델·음색·지역·SSML·hot_fix·자동 재시도는 추가하지 않는다.</li>
+<li>API 키는 비어 있지 않은 값인지, R2는 필요한 get/put binding 형태가 있는지만 검사한다. 네트워크 접근 가능성을 확인하지 않는다. 키·R2는 해시용 TtsConfig와 분리한 서버 전용 결과로 돌려주고 capability·오류·로그·fixture에는 실제 값을 넣지 않는다. 운영 TTS_ENABLED=false와 실제 바인딩은 그대로 유지한다.</li>
+</ul>
+<h3>4. HTTP와 클라이언트 포트</h3>
+<p>공개 오류 body는 <code>{ error: TtsErrorCode; message: string }</code>이며 안정적인 한국어 문구를 사용한다. 오류/상태 매핑과 헤더 이름을 중앙 정의하되 라우트 응답·오류 처리기는 후속 소유자가 연결한다.</p>
+<div class="scroll-x"><table><thead><tr><th>상태</th><th>계약</th></tr></thead><tbody><tr><td>400 / 403 / 405 / 413 / 415</td><td>invalid_tts_request / tts_not_allowed / method_not_allowed / tts_request_too_large / unsupported_media_type. 405는 후속 라우트에서 Allow: POST.</td></tr><tr><td>503</td><td>tts_disabled, tts_not_configured, tts_unavailable, tts_storage_unavailable. 앞의 둘은 세션 기능 비활성, R2 조회 오류는 합성 시작 금지라는 의미를 문서화한다.</td></tr><tr><td>502 / 504</td><td>tts_upstream_error / tts_timeout. 제공자 401/403은 앱 401로 노출하지 않고 tts_unavailable로 정규화한다.</td></tr><tr><td>기존 401 / 500</td><td>앱 401 빈 body와 기존 프로필 구성 오류 500 계약은 유지한다. 일반 내부 500은 공개 정보만 반환하는 후속 라우트 책임이며 제공자 원문을 노출하지 않는다.</td></tr><tr><td>성공 헤더</td><td>Content-Type: audio/mpeg, Cache-Control: private, no-store, X-Content-Type-Options: nosniff, X-TTS-Source, X-TTS-Storage, X-TTS-Pronunciation(absent/ignored), X-TTS-Revision. 실패도 private, no-store.</td></tr></tbody></table></div>
+<p>아래 이름은 구현 시 export할 계약 이름이다. 필요한 필드는 타입과 주석으로 확정하며 네트워크·DOM·React·LRU 알고리즘을 이 파일에 넣지 않는다.</p>
+<div class="scroll-x"><table><thead><tr><th>src/lib/ttsTypes.ts 계약</th><th>포트 형태 / 의미</th></tr></thead><tbody><tr><td>TtsTransport</td><td><code>(input: TtsRequest, signal: AbortSignal) =&gt; Promise&lt;TtsAudioResponse&gt;</code>. 응답은 Blob과 source/storage/pronunciation/revision 진단. 오류는 HTTP 정규화 코드와 별개로 취소·네트워크·준비 timeout·잘못된 응답을 구분할 클라이언트 오류 타입을 제공한다. 실제 apiFetch 호출은 #141.</td></tr><tr><td>TtsAudioOutput</td><td><code>play(blob: Blob): Promise&lt;TtsPlayResult&gt;</code>, stop(), dispose(), subscribe(listener): unsubscribe. play는 호출한 동기 경로에서 native play를 시작해야 한다. 결과는 started/blocked/cancelled/error를 구분하고 종료·출력 오류 event를 구독할 수 있어야 한다. source 세대 검증은 출력 구현 #142가 소유하며 질문 ID를 입력받지 않는다.</td></tr><tr><td>TtsBlobCache</td><td>get(key): Blob | undefined, set(key, blob), pin(key), unpin(key), clear(), dispose(). 키 입력은 세션 프로필 ID + revision + 정규화 text/pinyin. get은 동기이며 준비/재생 항목 pin 보호와 20개/8MiB 제한을 문서화한다. 캐시에는 Object URL을 저장하지 않는다. set 결과에는 보관 여부를 표현해 보관 불가여도 받은 Blob의 재생을 막지 않는다.</td></tr><tr><td>PronunciationSnapshot</td><td>idle/loading/ready/playing/blocked/error 상태와 현재 questionId, 기능 활성 여부, 입력 비활성 사유, 사용자 표시 메시지를 분리한다. 메시지는 수동 오류/수동 차단에서만 주어지며 자동 실패·자동 차단은 조용히 표시할 수 있어야 한다. 내부 generation·autoConsumed·viewReady는 controller 책임이다.</td></tr><tr><td>PronunciationController</td><td>activate(questionId, input), prepare(questionId), reveal(questionId), replay(questionId), stop(advance | hidden | exit), dispose(), getSnapshot(), subscribe(listener): unsubscribe. activate는 동일 질문에 멱등, reveal은 공개 완료 신호, replay는 동기 호출 가능한 void 명령이다. stop은 재생·현재 의도를 중단하고 dispose는 캐시·구독까지 정리한다. 구현은 #143이다.</td></tr><tr><td>PronunciationBinding / PronunciationButtonProps</td><td>카드의 선택적 pronunciation prop이 사용할 binding은 snapshot과 prepare/reveal/replay callback을 가진다. questionId는 상위에서 callback에 묶어 카드는 controller를 생성하지 않는다. 버튼은 snapshot과 replay callback만 받는다. 사용 불가 사유(text_too_long / invalid_text)와 수동 안내를 구분하며 generic/기능 비활성은 상위가 binding을 제공하지 않는다. 실제 카드 prop 추가는 #145, 버튼은 #144다.</td></tr></tbody></table></div>
+<p><b>후속 연결만 규정:</b> R2 첫 요청 생성·비공개 지속 보관, 조회 오류 때 재합성 금지, 저장만 실패하면 GENERATED/UNCONFIRMED로 생성 음성 반환을 유지한다. 원격 리소스·저장 키·MP3 파서·WebSocket·service·플레이어는 이 계획의 구현 대상이 아니다.</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">4</span>작업 단계</h2>
+    <ol class="steps">
+
+      <li><label><input type="checkbox" disabled> <b>서버 공통 타입·상수·오류 계약 작성</b></label><p>위 계약표의 요청/정규화/합성/발음/설정/환경/검사 주입/capability/응답 진단을 export한다. 허용 응답 조합과 고정 오류·헤더·제한을 정의하고 시크릿을 포함하는 의존성은 공개/저장 키용 설정과 분리한다.</p><span class="files"><code>worker/lib/tts/types.ts</code></span></li><li><label><input type="checkbox" disabled> <b>설정 검증 구현</b></label><p>optional env를 검증해 disabled/not_configured/ready 결과를 반환한다. 문서 기본값과 엄격한 override 검증, 고정 출력 튜플, 키·binding 유무 검사를 구현한다. 기존 Env와의 조합은 타입 별칭으로만 제공한다.</p><span class="files"><code>worker/lib/tts/config.ts</code>, <code>worker/lib/tts/config.test.ts</code>, <code>worker/lib/tts/types.ts</code></span></li><li><label><input type="checkbox" disabled> <b>제한된 JSON 읽기와 A/B 정규화 구현</b></label><p>16KiB 실제 스트림 상한·취소/lock 해제·고정 JSON 오류를 처리하고, allowlist 객체와 코드 포인트·Han·C0 검증을 순수 함수로 분리한다. 정규화 pinyin을 null 또는 문자열로 보존한다.</p><span class="files"><code>worker/lib/tts/input.ts</code>, <code>worker/lib/tts/input.test.ts</code></span></li><li><label><input type="checkbox" disabled> <b>병음 미적용 정책 구현</b></label><p>B열 값의 유무만으로 absent/ignored를 반환한다. 경제/문장/行의 xíng·háng·임의의 병음 의미가 같은 A열 합성을 유지하는 fixture를 추가한다. 병음이 provider payload에 들어가지 않는 소비 예제를 테스트한다.</p><span class="files"><code>worker/lib/tts/pronunciation.ts</code>, <code>worker/lib/tts/pronunciation.test.ts</code></span></li><li><label><input type="checkbox" disabled> <b>브라우저 계약과 전용 fixture 확정</b></label><p>공개 요청/capability/오류/진단을 미러하고 전송·Audio·Blob cache·controller·snapshot·binding·버튼 prop을 타입으로 정의한다. fixture는 무네트워크 정상/실패 HTTP 메타데이터·입력·상태 데이터로 한정한다. 가짜 MP3를 유효한 완성 MP3라고 제공하지 않는다.</p><span class="files"><code>src/lib/ttsTypes.ts</code>, <code>src/lib/ttsFixtures.ts</code>, <code>src/lib/ttsTypes.test.ts</code></span></li><li><label><input type="checkbox" disabled> <b>계약 호환성과 기존 회귀 검증</b></label><p>Worker 쪽 계약 테스트에서 브라우저 중립 타입의 양방향 호환과 헤더/제한/오류 매핑 일치를 검사한다. 기존 프로필 설정·API·words·등록 테스트와 전체 test/lint/build를 실행한다. 실제 외부 접근·청취를 미검증으로 기록한다.</p><span class="files"><code>worker/lib/tts/contracts.test.ts</code>, <code>worker/lib/tts/config.test.ts</code>, <code>src/lib/ttsTypes.test.ts</code>, <code>docs/plans/issue-135-chinese-tts-contracts.html</code></span></li><li><label><input type="checkbox" disabled> <b>구현 결과를 다음 리뷰 단계에 인계</b></label><p>완료한 항목만 체크하고 명령별 결과·미검증 사항을 계획과 로컬 상태에 기록한다. 구현 세션이 repo 방식으로 커밋·push·ready PR을 만들며 base feat/ch-sound, head feat/135-chinese-tts-contracts와 Closes #135를 명시한다. .issue-codex는 커밋하지 않는다. 이번 계획 세션은 HTML·상태 작성과 plan-done 콜백까지만 수행한다.</p><span class="files"><code>docs/plans/issue-135-chinese-tts-contracts.html</code>, <code>.issue-codex/interactive-state.json</code></span></li>
+    </ol>
+    <p><b>구현 완료 기록 (2026-09-16):</b> Worker 공통 계약·설정 검증·16KiB 스트림 입력 정규화·병음 미적용 정책·브라우저 포트/fixture·양쪽 계약 검사를 구현했다. <code>npm test</code> 37 files/475 tests, <code>npm run lint</code>, <code>npm run build</code>를 통과했다. 실제 DashScope 호출, R2 읽기/쓰기, MP3 청취, 모바일 자동재생·지연 검증은 이 이슈의 범위 밖이며 미검증 상태다.</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">5</span>리스크</h2>
+    <div class="scroll-x">
+    <table>
+      <thead><tr><th>리스크</th><th>영향</th><th>완화책</th></tr></thead>
+      <tbody>
+
+        <tr><td>공개 계약의 양쪽 타입 드리프트</td><td>후속 이슈가 다른 오류·capability를 해석</td><td>Worker 전용 계약 테스트에서 중립 src 계약과 호환 검사. src→worker import와 생성 Env 편집 금지.</td></tr><tr><td>Unicode·바이트 길이 혼동</td><td>확장 한자를 2자로 세거나 다중바이트 본문이 한도를 우회</td><td>NFC 후 코드 포인트 길이와 UTF-8 실제 바이트를 별개 검사. chunk 분할·위조 Content-Length 테스트.</td></tr><tr><td>trim이 금지 C0를 제거</td><td>끝의 VT/FF가 조용히 허용</td><td>text 제어문자를 trim 이전에 검사하고 CR만 LF로 정규화. 양 끝·중간 금지 문자 테스트.</td></tr><tr><td>설정 오류가 기존 인증을 막음</td><td>로그인·words·학습 전체 장애</td><td>ProfilesEnv/PROFILES 파서와 독립된 결과 union 사용. 기존 프로필 오류 500 회귀 확인.</td></tr><tr><td>키·제공자 오류 원문의 유출</td><td>응답·로그·저장 메타데이터로 민감 정보 전파</td><td>실제 시크릿 파일 미접근. 고정 오류 메시지, 비밀 없는 TtsConfig와 서버 전용 의존성 분리. 테스트용 sentinel 누출 검사.</td></tr><tr><td>후속 실행 코드의 선행 구현</td><td>소유 파일 충돌·다른 이슈 완료를 잘못 주장</td><td>포트·상수·입력/설정/병음만 구현. #136~#151의 런타임·인프라·UI 파일 수정 금지.</td></tr><tr><td>설정 유효성을 실제 가용성으로 오인</td><td>키 발급·R2 더블 통과를 운영 성공으로 기록</td><td>capability는 설정상 준비만 뜻함. 실제 버킷 정보는 #149, 모델 접근·청취·모바일은 출시 검증에 남김. TTS_ENABLED=false 유지.</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">6</span>테스트 계획</h2>
+    <ul>
+
+      <li><b>입력 경계:</b> 빈 문자열·공백·0/1/200/201 코드 포인트, Han 없음, 확장 한자 U+20000 포함, 문장부호/숫자/라틴문자 혼합. 200자 허용·201자 거부와 NFC 조합형/분해형의 동일 결과를 검사한다.</li><li><b>제어문자:</b> CRLF/CR→LF, 내부 tab/LF 허용, NUL·VT·FF 등 금지 C0의 앞/뒤/중간 위치 거부. 내부 공백과 원문 의미가 유지되는지 확인한다.</li><li><b>JSON/바디:</b> 잘못된 JSON·null·배열·primitive·필드 누락·pinyin 비문자열·알 수 없는 provider/profileId/SSML 키 거부. 16KiB 정확히 허용(유효 JSON의 공백 padding), 16KiB+1 거부. Content-Length 누락/작은 거짓값/과대값, 여러 chunk와 단일 과대 chunk, UTF-8 문자 중간 분할, reader 오류·초과 시 cancel/lock 해제를 검사한다.</li><li><b>병음:</b> 생략·빈칸은 null/absent. 1,000/1,001 코드 포인트 경계, NFC·trim, xíng/háng/무의미 문자열 모두 ignored/provider_hint_unsupported. effectiveHint=null, 정규화한 B열 값은 보존되고 합성 소비 예제는 text 한 필드만 받는다. 실제 R2 키 차이 검증은 #136이다.</li><li><b>설정:</b> 기본 false, 명시 false, 잘못된 flag, 선택 var 생략 기본값, 빈 override 거부, provider/model/voice allowlist, rate 0.5/1/2 및 범위 밖/NaN/Infinity/부분숫자, revision 1/64/65자·슬래시·개행, 키 누락/공백, R2 누락/잘못된 binding 형태. 정상 더블에서도 네트워크 0회이며 오류 결과·메시지에 sentinel 키가 없다.</li><li><b>타입/포트:</b> request/capability/error/metadata 미러를 양방향 타입 검사하고 상수 값도 비교한다. allowed source/storage 조합, effectiveHint=null, maxTextLength=200, text 전용 provider 입력, optional billedCharacters, Env &amp; TtsEnv 호환을 tsc가 검사하게 한다. src 테스트에서 Worker를 import하지 않는다.</li><li><b>소유 테스트 실행:</b> <code>npm test -- worker/lib/tts src/lib/ttsTypes.test.ts</code>. 타입 오류는 Vitest 실행만으로 검증되지 않으므로 전체 build의 <code>tsc -b</code>도 필수다.</li><li><b>기존 회귀:</b> <code>npm test -- worker/index.config-error.test.ts worker/index.profiles.test.ts worker/routes/words.test.ts worker/lib/profiles.test.ts worker/lib/register.test.ts src/lib/api.test.ts src/lib/wordsApi.test.ts src/lib/pinyinValidation.test.ts</code>. TTS 키/R2가 없는 기존 fixture로 인증·조회·등록 계약이 유지되어야 한다.</li><li><b>구현 완료 시:</b> <code>npm test</code>, <code>npm run lint</code>, <code>npm run build</code>를 실행하고 실제 결과를 기록한다. Wrangler typegen·배포·리소스 생성·유료 합성은 실행하지 않는다. 기존 GitHub AI 리뷰 workflow는 그대로 유지한다.</li><li><b>이 계획 단계의 검증:</b> HTML placeholder·구조·참조 경로·변경 범위와 로컬 HTTP 표시를 확인한다. 애플리케이션 테스트는 아직 실행하지 않았으며 기능 통과를 주장하지 않는다. 실제 키·모델 접근·R2 읽기/쓰기·MP3 청취·모바일 자동재생·지연도 미검증이다.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">7</span>완료 조건</h2>
+    <ul class="done-list">
+
+      <li>AC-11 / 이슈 입력 조건: 0/201자·한자 없음·금지 제어문자·과대 바디·잘못된 JSON/pinyin 타입을 거부하고 200자 문장을 허용한다.</li><li>AC-05·AC-12: 유효한 A열은 B열 의미와 무관하게 보존하며 빈 병음은 absent, xíng/háng은 모두 ignored다. 정규화 B열을 저장 키 소비자에 제공하고 provider 입력과 분리한다.</li><li>AC-14의 공통 설정 부분: 키·R2·설정 오류는 TTS만 끄는 결과이며 기존 PROFILES·프로필 공개 스키마·인증 401/구성 오류 500을 바꾸지 않는다. 실제 인증 라우트 연결은 #140에 남긴다.</li><li>AC-18의 타입 부분: 선택 capability와 false/true 형태를 양쪽에 정의한다. 구 서버 응답의 실제 fallback·세션 전달은 #145이며 이 이슈에서 해당 AC 전체 완료를 주장하지 않는다.</li><li>후속 이슈가 공통 타입·제한·fixture를 import해 사용할 수 있고 Worker MP3 주입·클라이언트 전송/Audio/cache/controller/카드 포트가 명시돼 있다.</li><li>소유 모듈·테스트만 구현하고 test/lint/build 결과와 미검증 사항을 함께 남긴다. 앱 설정·Wrangler·생성 Env·다른 이슈 파일·GitHub 리뷰 workflow를 선행 수정하지 않는다.</li><li>구현 PR은 feat/ch-sound를 base로 하고 변경 범위·검증·Closes #135를 기록한다. 계획 단계에서는 커밋·push·PR·앱 코드 변경을 하지 않는다.</li><li>계획 완료 시 .issue-codex/interactive-state.json에 산출물과 계획 검증을 기록하고, 지정 오케스트레이터 workspace/surface에 issue-stage #135 plan-done을 전송한다. 단계 전환·구현 모델 실행·graph 갱신은 오케스트레이터가 맡는다.</li>
+    </ul>
+  </section>
+
+  <footer>issue-plan · <a href="https://github.com/damdam6/vocabulary-study/issues/135">#135</a> · 2026-09-15</footer>
+</main>
+</body>
+</html>

@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>#148 [TTS-14] 모드2 오답 결과에 정답의 중국어 음성을 연결한다 — 작업 플랜</title>
+<style>
+  :root {
+    --bg: #f7f7f8; --card: #ffffff; --ink: #1c1c1e; --muted: #6e6e73;
+    --line: #e3e3e6; --accent: #3b6ef5; --accent-soft: #e8eefe;
+    --ok: #2e8b57; --warn: #b25e09; --code-bg: #f0f0f2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161618; --card: #202024; --ink: #ececf0; --muted: #98989f;
+      --line: #333338; --accent: #7a9bff; --accent-soft: #26304a;
+      --ok: #58c088; --warn: #e0a35c; --code-bg: #2a2a2f;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 40px 20px 80px; background: var(--bg); color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+                 "Segoe UI", "Noto Sans KR", sans-serif;
+    line-height: 1.65;
+  }
+  main { max-width: 860px; margin: 0 auto; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code {
+    font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 0.86em;
+    background: var(--code-bg); border-radius: 5px; padding: 2px 6px;
+  }
+  header { margin-bottom: 28px; }
+  .issue-chip {
+    display: inline-block; font-weight: 700; color: var(--accent);
+    background: var(--accent-soft); border-radius: 999px;
+    padding: 3px 14px; font-size: 0.95rem; margin-bottom: 10px;
+  }
+  .type-chip {
+    display: inline-block; font-weight: 600; color: var(--muted);
+    border: 1px solid var(--line); border-radius: 999px;
+    padding: 3px 12px; font-size: 0.8rem; margin-left: 8px; vertical-align: 2px;
+  }
+  h1 { font-size: 1.7rem; margin: 0 0 14px; letter-spacing: -0.02em; }
+  .meta {
+    display: flex; flex-wrap: wrap; gap: 6px 22px;
+    color: var(--muted); font-size: 0.87rem;
+  }
+  .meta b { color: var(--ink); font-weight: 600; }
+  section.card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 24px 28px; margin-top: 18px;
+  }
+  h2 {
+    font-size: 1.05rem; margin: 0 0 14px; letter-spacing: -0.01em;
+    display: flex; align-items: center; gap: 8px;
+  }
+  h2 .no {
+    color: var(--accent); font-size: 0.8rem; font-weight: 700;
+    border: 1.5px solid var(--accent); border-radius: 6px; padding: 0 6px;
+  }
+  ul, ol { margin: 0; padding-left: 22px; }
+  li { margin: 6px 0; }
+  .steps { list-style: none; padding: 0; counter-reset: step; }
+  .steps li {
+    counter-increment: step; position: relative; padding: 10px 0 10px 44px;
+    border-bottom: 1px dashed var(--line);
+  }
+  .steps li:last-child { border-bottom: none; }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 10px;
+    width: 28px; height: 28px; border-radius: 8px; background: var(--accent-soft);
+    color: var(--accent); font-weight: 700; font-size: 0.85rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .steps li.done::before { content: "✓"; background: #dcfce7; color: var(--ok); }
+  .steps .files { display: block; margin-top: 4px; font-size: 0.85rem; color: var(--muted); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 0.82rem; }
+  .done-list { list-style: none; padding: 0; }
+  .done-list li { padding-left: 30px; position: relative; }
+  .done-list li::before {
+    content: ""; position: absolute; left: 2px; top: 7px; width: 15px; height: 15px;
+    border: 2px solid var(--ok); border-radius: 5px;
+  }
+  .scroll-x { overflow-x: auto; }
+  footer { margin-top: 30px; color: var(--muted); font-size: 0.8rem; text-align: center; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <span class="issue-chip"><a href="https://github.com/damdam6/vocabulary-study/issues/148">#148</a></span><span class="type-chip">기능 개선</span>
+    <h1>[TTS-14] 모드2 오답 결과에 정답의 중국어 음성을 연결한다</h1>
+    <div class="meta">
+      <span><b>damdam6/vocabulary-study</b></span>
+      <span>브랜치 <b><code>feat/148-mode2-correct-answer-audio</code></b> ← <code>feat/ch-sound</code></span>
+      <span>라벨 <b>enhancement</b></span>
+      <span>2026-09-16</span>
+    </div>
+  </header>
+
+  <section class="card">
+    <h2><span class="no">1</span>요약</h2>
+    <p>모드2의 오답 결과가 실제 DOM에 반영된 뒤, 정답 A열인 <code>word.hanzi</code>에 대해 공개당 자동 재생 기회를 정확히 한 번 전달하고 같은 표제어 옆에 기존 공통 발음 버튼을 배치한다. 정답·입력 중·generic/off 경로에는 요청과 재생 UI를 만들지 않으며, 빈 문자열 오답도 일반 오답과 동일한 공개 사건으로 취급한다. 공개 예약, 키보드 초점, 긴 결과의 wrapping/scroll은 <code>Mode2Card</code>와 전용 CSS·테스트에만 한정하고 공통 버튼·controller·세션·모드1 계약은 변경하지 않는다.</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">2</span>현황 분석</h2>
+    <ul>
+      <li><code>src/screens/Mode2Card.tsx:22-39</code>는 입력값을 <code>gradeMode2(value, word.hanzi)</code>로 채점하고, 오답이면 트림된 답을 <code>wrongAnswer</code>에 먼저 기록한 뒤 <code>onJudged(false)</code>를 호출한다. <code>wrongAnswer !== null</code>이 결과 화면의 유일한 공개 상태이므로 <code>''</code>도 손실 없이 구분된다.</li>
+      <li><code>src/screens/Mode2Card.tsx:41-60</code>는 오답에서 정답 한자·선택적 병음·뜻·사용자 오답과 별도 <code>type="button"</code>인 다음 제어를 렌더하지만, <code>src/screens/Mode2Card.tsx:18-19</code>에 추가된 선택적 <code>PronunciationBinding</code>은 아직 소비하지 않는다.</li>
+      <li><code>src/screens/StudyScreen.tsx:67-74</code>가 이미 질문별 ID와 <code>{ text: question.word.hanzi, pinyin: question.word.pinyin || null }</code>을 공통 hook에 전달한다. 따라서 카드가 사용자 오답이나 뜻을 합성 입력으로 조립할 필요도, 그렇게 해서는 안 될 이유도 이미 계약으로 고정돼 있다.</li>
+      <li><code>src/hooks/usePronunciation.ts:136-150</code>는 zh + enabled + 현재 질문일 때만 binding을 내보내고 각 명령을 현재 controller/question ID에 고정한다. <code>generic</code>, 기능 off, hidden, 오래된 질문은 카드에 <code>undefined</code>로 보이므로 카드에서는 선택적 렌더만 하면 된다.</li>
+      <li><code>src/components/PronunciationButton.tsx:45-73</code>는 전달된 snapshot과 <code>replay</code>만 소비하며, 내부 버튼을 이미 <code>type="button"</code>으로 선언하고 접근성 이름·busy·설명·수동 오류 live 영역을 제공한다. <code>src/components/PronunciationButton.css:1-22</code>에는 최소 44px 제어 크기도 구현돼 있다.</li>
+      <li><code>src/screens/StudyScreen.tsx:114-137</code>는 모드2 오답에서 결과 화면에 머물고, 정답은 즉시 <code>stop('advance')</code>, 오답의 다음은 <code>stop('advance')</code>, 종료는 <code>stop('exit')</code> 후 진행한다. 빠른 다음·종료의 음성 정리 책임은 이미 세션에 있으므로 이번 카드 변경은 이를 우회하거나 기다리지 않는다.</li>
+      <li><code>src/index.css:325-430</code>의 현재 공통/모드2 결과 규칙은 카드·한자·병음·뜻 크기를 정하지만 긴 A열과 버튼을 같은 줄에 놓는 래퍼, 결과 내부 scroll 경계는 없다. 기준 HEAD에는 <code>src/screens/Mode2Card.css</code>와 <code>src/screens/Mode2Card.test.tsx</code>가 없으므로 이번 이슈가 두 전용 파일을 신설한다.</li>
+      <li><code>src/test-utils.tsx:18-49</code>는 React 19 <code>act</code> 기반 jsdom 렌더·조작·flush를 제공하고, <code>src/hooks/usePronunciation.test.tsx:85-99</code>는 StrictMode controller 재설정 검증 관례를, <code>src/screens/StudyScreen.test.tsx:39-82</code>는 정답/오답/다음/종료의 기존 stop 경계를 이미 고정한다.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">3</span>설계</h2>
+    <ul>
+      <li><b>공개 사건:</b> <code>wrongAnswer !== null</code>가 된 커밋 이후 effect에서 취소 가능한 0-delay 작업을 예약해 <code>pronunciation.reveal()</code>을 호출한다. 예약 ref와 소비 ref로 StrictMode의 setup/cleanup, binding snapshot에 따른 재렌더, 중복 effect를 흡수하고 실제 공개당 한 번만 소비한다. cleanup은 빠른 다음·종료·언마운트가 예약보다 앞서면 호출 자체를 취소한다.</li>
+      <li><b>호출 위치:</b> <code>onJudged(false)</code> 안에서 호출하는 안은 결과 DOM보다 앞서고 기록 계약과 재생 정책을 섞으므로 제외한다. render 중 호출하는 안도 React 순수성을 깨므로 제외한다. 별도 controller나 API를 카드에서 만드는 안은 #145의 세션 수명·질문 generation을 중복하므로 제외한다.</li>
+      <li><b>내용 경계:</b> 카드는 공개 명령과 공통 버튼에 binding만 전달한다. 합성 입력은 상위가 활성화할 때 이미 고정한 <code>word.hanzi</code>이며, <code>wrongAnswer</code>, <code>word.meaning</code>, 안내 문구는 어떤 음성 명령의 인자에도 넣지 않는다. 병음은 기존 상위 입력의 선택 메타데이터일 뿐 카드가 합성 텍스트에 붙이지 않는다.</li>
+      <li><b>UI와 초점:</b> 결과 카드 안에 정답 A열과 <code>PronunciationButton</code>을 형제인 전용 headword 행으로 묶는다. binding이 없으면 버튼 DOM 자체를 만들지 않는다. 제출 당시 입력에 초점이 있었다는 사실만 기록하고, 결과 커밋 직후 사용자가 아직 다른 제어로 이동하지 않았을 때 활성 발음 버튼으로, 버튼이 없거나 비활성이면 다음 버튼으로 초점을 옮긴다.</li>
+      <li><b>스타일 소유:</b> 새 <code>Mode2Card.css</code>를 컴포넌트에서 import하고 Mode2 전용 class만 선택한다. headword 행은 좁은 폭에서 wrap되고 텍스트는 임의 잘림 없이 줄바꿈되며, 결과 카드만 세로 scroll을 허용해 카드 밖의 다음·종료를 가리지 않는다. <code>src/index.css</code>, 공통 버튼 CSS, 모드1 CSS는 건드리지 않는다.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">4</span>작업 단계</h2>
+    <ol class="steps">
+      <li class="done">선택적 <code>pronunciation</code> prop을 실제로 소비하고, 입력/결과/다음 DOM ref와 “입력에서 결과로 넘어갈 때만 초점 이동” 상태를 추가한다. 정답은 기존 즉시 진행을 그대로 두고, 일반 오답과 빈 문자열 오답만 결과 상태로 전환한다.
+        <span class="files"><code>src/screens/Mode2Card.tsx</code></span>
+      </li>
+      <li class="done">오답 결과 커밋 뒤 취소 가능한 예약으로 <code>reveal()</code>을 정확히 한 번 호출하는 effect를 추가한다. binding이 늦게 준비되는 경우에는 결과가 남아 있는 동안 한 번 예약할 수 있게 하되, snapshot 재렌더·StrictMode 재실행 뒤에는 재소비하지 않고 빠른 unmount에서는 timer를 정리한다.
+        <span class="files"><code>src/screens/Mode2Card.tsx</code></span>
+      </li>
+      <li class="done">정답 A열과 기존 <code>PronunciationButton</code>을 전용 결과 headword 행에 배치하고 <code>snapshot</code>/<code>replay</code>를 그대로 전달한다. 입력 중·정답·binding 없는 generic/off에는 버튼이 없고, 수동 버튼은 제출/판정/다음 callback과 독립된 채 유지한다. 결과 후 초점은 활성 발음 버튼 우선, 없거나 비활성이면 다음 버튼으로 안전하게 이동한다.
+        <span class="files"><code>src/screens/Mode2Card.tsx</code>, <code>src/components/PronunciationButton.tsx</code> (재사용만; 수정 없음)</span>
+      </li>
+      <li class="done">긴 한자·병음·뜻·사용자 답이 보존되도록 결과 카드 내부 scroll과 headword/button wrapping, overflow wrapping, 폭 축소 규칙을 Mode2 전용 class로 정의한다. 200자 A열에서도 버튼과 정답이 함께 접근 가능하고, 다음 버튼은 scroll 영역 밖에 남도록 DOM/CSS 경계를 맞춘다.
+        <span class="files"><code>src/screens/Mode2Card.css</code>, <code>src/screens/Mode2Card.tsx</code></span>
+      </li>
+      <li class="done">제어 가능한 binding fixture와 jsdom 테스트를 신설해 입력/정답 요청 0회, 일반·빈 오답 공개당 1회, 수동 replay와 submit/판정 분리, generic/off 및 빈 병음, 초점 fallback, 200자 결과 구조, 빠른 다음·종료에 해당하는 unmount cleanup, StrictMode 중복 방지를 고정한다.
+        <span class="files"><code>src/screens/Mode2Card.test.tsx</code> (신규; fixture 포함), <code>src/test-utils.tsx</code> (재사용만; 수정 없음)</span>
+      </li>
+      <li class="done">소유 테스트를 먼저 통과시킨 뒤 전체 테스트·lint·build를 실행하고, 변경 파일이 Mode2Card 전용 범위와 계획에만 머무는지 확인한다. 실제 키·유료 합성·R2·청취·모바일 실기기 검증은 수행하거나 더블 통과로 주장하지 않으며 <code>TTS_ENABLED=false</code>를 유지한다.
+        <span class="files"><code>src/screens/Mode2Card.tsx</code>, <code>src/screens/Mode2Card.css</code>, <code>src/screens/Mode2Card.test.tsx</code>, <code>docs/plans/issue-148-mode2-correct-answer-audio.html</code></span>
+      </li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">5</span>리스크</h2>
+    <div class="scroll-x">
+    <table>
+      <thead><tr><th>리스크</th><th>영향</th><th>완화책</th></tr></thead>
+      <tbody>
+        <tr><td>binding은 snapshot이 바뀔 때 새 객체가 된다</td><td>effect dependency만 따르면 loading/playing 갱신마다 <code>reveal()</code>이 재호출될 수 있다</td><td>예약/소비 ref로 질문 카드 수명 안의 공개 기회를 1회로 고정하고 binding 갱신 fixture로 회귀 테스트한다.</td></tr>
+        <tr><td>StrictMode cleanup과 0-delay 예약의 경합</td><td>자동 공개가 0회로 유실되거나 개발 환경에서 2회 실행될 수 있다</td><td>cleanup이 자기 예약만 취소하고 미소비 상태는 유지하게 설계하며, fake timer + <code>&lt;StrictMode&gt;</code>에서 최종 1회를 검증한다.</td></tr>
+        <tr><td>오답 제출 직후 다음/종료</td><td>결과를 떠난 뒤 늦게 reveal되어 이전 음성이 시작될 수 있다</td><td>카드 cleanup에서 미실행 예약을 취소하고, 실행 뒤에는 기존 <code>StudyScreen.stop('advance'/'exit')</code> 계약이 generation과 재생을 정리하게 둔다. 진행 callback은 음성을 await하지 않는다.</td></tr>
+        <tr><td>공개 후 강제 초점 이동</td><td>포인터 사용자나 이미 다른 제어로 이동한 키보드 사용자의 초점을 빼앗을 수 있다</td><td>제출 시점에 input이 active였던 경우만 이동하고, 결과 커밋 시 현재 초점이 다른 제어에 있지 않은지 확인한 뒤 활성 스피커→다음 순으로 선택한다.</td></tr>
+        <tr><td>200자 결과와 공통 버튼 메시지</td><td>정답/설명 폭이 버튼을 밀어내거나 다음 버튼을 화면 밖으로 보낼 수 있다</td><td>전용 flex-wrap·min-width:0·overflow-wrap과 결과 카드 내부 scroll을 사용하고, DOM 구조/문자 보존 자동 테스트 뒤 390px·200% 실제 화면 확인은 별도 미검증으로 남긴다.</td></tr>
+        <tr><td>범위 확장</td><td>공통 CSS/controller/세션 수정이 병렬 이슈 소유권과 충돌할 수 있다</td><td><code>Mode2Card.tsx/.css</code>와 전용 테스트/fixture만 수정하고 모드1·공통 버튼·<code>src/index.css</code>·controller·세션은 기존 계약의 증거로만 사용한다.</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">6</span>테스트 계획</h2>
+    <ul>
+      <li><code>npm test -- src/screens/Mode2Card.test.tsx</code>: 입력 중에는 발음 버튼이 없고 <code>reveal/replay</code>가 0회이며, 정답 제출도 <code>onJudged(true)</code> 외 음성 호출 없이 결과 DOM을 만들지 않는지 확인한다.</li>
+      <li>같은 테스트에서 일반 오답과 공백을 트림한 빈 문자열 오답을 각각 제출한다. 결과 DOM이 먼저 존재하고 예약 전 <code>reveal</code> 0회, timer flush 후 정확히 1회인지, <code>onJudged(false)</code>도 제출당 한 번인지 확인한다.</li>
+      <li>오답 결과의 공통 제어가 <code>word.hanzi</code>와 같은 전용 행에 있고 <code>type="button"</code>·<code>aria-label="발음 듣기"</code>를 유지하는지 확인한다. 클릭은 <code>replay</code>만 한 번 호출하고 <code>onJudged</code>, <code>onProceed</code>, form submit 횟수를 바꾸지 않아야 한다.</li>
+      <li>binding snapshot을 loading/ready/playing으로 갱신해도 공개 호출은 1회에 머물고, <code>&lt;StrictMode&gt;</code>의 effect setup/cleanup 및 fake timer 재실행에서도 0회/2회가 아닌 1회인지 확인한다.</li>
+      <li>오답 직후 다음으로 부모가 카드를 제거하는 fixture와 직접 unmount(종료 경계 대역)를 timer 전에 실행해, callback은 즉시 완료되고 예약된 <code>reveal</code>은 0회이며 pending timer가 남지 않는지 확인한다. 이미 공개된 경우에는 카드가 추가 대기나 재생 정리를 만들지 않고 기존 세션 stop 계약을 침범하지 않는지 확인한다.</li>
+      <li><code>generic</code> 또는 기능 off를 나타내는 undefined binding에서는 버튼/음성 명령이 0회이고 제출 input에서 다음 버튼으로 초점이 이동하는지 확인한다. enabled binding은 활성 발음 버튼으로 이동하고, 사용자가 다른 제어에 둔 초점은 빼앗지 않는지 확인한다.</li>
+      <li>빈 <code>pinyin</code>과 정확히 200 코드 포인트인 A열, 긴 뜻·사용자 오답 fixture에서 원문이 손실·합성되지 않고 그대로 렌더되며 headword/button은 result scroll 영역 안, 다음 버튼은 그 밖에 있는지 확인한다. 시각적 390px·200%/실기기 결과는 jsdom 통과와 구분해 미검증으로 기록한다.</li>
+      <li>회귀 명령 <code>npm test</code>, <code>npm run lint</code>, <code>npm run build</code>가 모두 성공해야 한다. 실제 <code>DASHSCOPE_API_KEY</code>, 유료 TTS, 실제 청취, 모바일 브라우저, R2 접근은 사용하지 않으며 이 자동 검증의 통과 항목으로 보고하지 않는다.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">7</span>완료 조건</h2>
+    <ul class="done-list">
+      <li>모드2 입력 중과 정답 경로는 발음 버튼·<code>reveal</code>·<code>replay</code>가 모두 0회다.</li>
+      <li>일반 오답과 빈 문자열 오답 모두 결과 DOM 커밋 뒤 공개당 <code>reveal()</code> 자동 기회를 정확히 한 번 소비하며 <code>onJudged(false)</code> 기록 callback에 결합하지 않는다.</li>
+      <li>오답 결과의 공통 발음 버튼은 정답 A열 <code>word.hanzi</code> 옆에 배치되고 수동 클릭은 <code>replay()</code>만 호출한다. 뜻·사용자 오답·안내 문구를 합성 입력으로 사용하지 않는다.</li>
+      <li>버튼 클릭은 form submit·재판정·다음 진행을 만들지 않고, 다음·종료는 음성 준비/재생을 기다리지 않으며 빠른 이탈 뒤 늦은 공개/재생을 남기지 않는다.</li>
+      <li>StrictMode와 binding 상태 재렌더에서도 공개가 유실·중복되지 않으며 예약 timer는 unmount에서 정리된다.</li>
+      <li>generic/off에는 버튼과 음성 명령이 없고, 빈 B열에는 활성 버튼이 유지된다. 200자 A열과 긴 병음·뜻·사용자 답은 잘리지 않고 전용 wrapping/scroll 안에서 다음·종료 제어를 가리지 않는다.</li>
+      <li>키보드 제출 후 활성 발음 버튼 또는 다음 버튼으로 예측 가능하게 이동하고, 공통 버튼의 접근성 이름·busy·설명·최소 44px 제어를 보존하며 사용자가 옮긴 초점을 뒤늦게 빼앗지 않는다.</li>
+      <li>변경은 <code>Mode2Card.tsx</code>, 새 <code>Mode2Card.css</code>, 관련 전용 테스트/fixture와 이 계획에 한정되고 모드1·공통 CSS/버튼·controller·세션·<code>src/index.css</code>는 수정하지 않는다.</li>
+      <li>소유 테스트, 전체 <code>npm test</code>, <code>npm run lint</code>, <code>npm run build</code>가 통과하고 PR base는 <code>feat/ch-sound</code>다. <code>TTS_ENABLED=false</code>를 유지하며 실제 키·청취·모바일·R2는 자동 더블 통과로 검증했다고 주장하지 않는다.</li>
+    </ul>
+  </section>
+
+  <footer>issue-plan · <a href="https://github.com/damdam6/vocabulary-study/issues/148">#148</a> · 2026-09-16</footer>
+</main>
+</body>
+</html>

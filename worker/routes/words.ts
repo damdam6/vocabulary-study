@@ -11,10 +11,12 @@ import { getValues } from "../lib/sheets.ts";
 import { getWordTabTitles, parseWordRow, WORD_ROW_RANGE, type WordEntry } from "../lib/words.ts";
 import { toPublicProfile, type Profile } from "../lib/profiles.ts";
 import { readSettings } from "../lib/settings.ts";
+import { resolveTtsConfig } from "../lib/tts/config.ts";
+import { MAX_TTS_TEXT_LENGTH, type TtsCapability, type TtsWorkerEnv } from "../lib/tts/types.ts";
 
 export async function handleGetWords(
   _request: Request,
-  env: Env,
+  env: TtsWorkerEnv,
   profile: Profile,
 ): Promise<Response> {
   // 설정 읽기는 단어 조회와 독립이므로 병렬로 — 시트 왕복이 직렬로 늘지 않는다.
@@ -34,10 +36,16 @@ export async function handleGetWords(
     }
   });
 
+  const resolvedTts = profile.contentType === "zh" ? resolveTtsConfig(env) : undefined;
+  const tts: TtsCapability = resolvedTts?.status === "ready"
+    ? { enabled: true, revision: resolvedTts.config.revision, maxTextLength: MAX_TTS_TEXT_LENGTH }
+    : { enabled: false };
+
   return Response.json({
     fetchedAt: formatSeoulDateTime(new Date()),
     words,
     profile: toPublicProfile(profile),
     settings,
+    tts,
   });
 }

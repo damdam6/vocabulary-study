@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>#138 Qwen WebSocket 합성과 연결 수명 구현 — 작업 플랜</title>
+<style>
+  :root {
+    --bg: #f7f7f8; --card: #ffffff; --ink: #1c1c1e; --muted: #6e6e73;
+    --line: #e3e3e6; --accent: #3b6ef5; --accent-soft: #e8eefe;
+    --ok: #2e8b57; --warn: #b25e09; --code-bg: #f0f0f2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161618; --card: #202024; --ink: #ececf0; --muted: #98989f;
+      --line: #333338; --accent: #7a9bff; --accent-soft: #26304a;
+      --ok: #58c088; --warn: #e0a35c; --code-bg: #2a2a2f;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 40px 20px 80px; background: var(--bg); color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+                 "Segoe UI", "Noto Sans KR", sans-serif;
+    line-height: 1.65;
+  }
+  code { overflow-wrap: anywhere; }
+  h3 { font-size: 1rem; margin-top: 24px; }
+  input[type="checkbox"] { accent-color: var(--accent); }
+  main { max-width: 960px; margin: 0 auto; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code {
+    font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 0.86em;
+    background: var(--code-bg); border-radius: 5px; padding: 2px 6px;
+  }
+  header { margin-bottom: 28px; }
+  .issue-chip {
+    display: inline-block; font-weight: 700; color: var(--accent);
+    background: var(--accent-soft); border-radius: 999px;
+    padding: 3px 14px; font-size: 0.95rem; margin-bottom: 10px;
+  }
+  .type-chip {
+    display: inline-block; font-weight: 600; color: var(--muted);
+    border: 1px solid var(--line); border-radius: 999px;
+    padding: 3px 12px; font-size: 0.8rem; margin-left: 8px; vertical-align: 2px;
+  }
+  h1 { font-size: 1.7rem; margin: 0 0 14px; letter-spacing: -0.02em; }
+  .meta {
+    display: flex; flex-wrap: wrap; gap: 6px 22px;
+    color: var(--muted); font-size: 0.87rem;
+  }
+  .meta b { color: var(--ink); font-weight: 600; }
+  section.card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 24px 28px; margin-top: 18px;
+  }
+  h2 {
+    font-size: 1.05rem; margin: 0 0 14px; letter-spacing: -0.01em;
+    display: flex; align-items: center; gap: 8px;
+  }
+  h2 .no {
+    color: var(--accent); font-size: 0.8rem; font-weight: 700;
+    border: 1.5px solid var(--accent); border-radius: 6px; padding: 0 6px;
+  }
+  ul, ol { margin: 0; padding-left: 22px; }
+  li { margin: 6px 0; }
+  .steps { list-style: none; padding: 0; counter-reset: step; }
+  .steps li {
+    counter-increment: step; position: relative; padding: 10px 0 10px 44px;
+    border-bottom: 1px dashed var(--line);
+  }
+  .steps li:last-child { border-bottom: none; }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 10px;
+    width: 28px; height: 28px; border-radius: 8px; background: var(--accent-soft);
+    color: var(--accent); font-weight: 700; font-size: 0.85rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .steps .files { display: block; margin-top: 4px; font-size: 0.85rem; color: var(--muted); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 0.82rem; }
+  .done-list { list-style: none; padding: 0; }
+  .done-list li { padding-left: 30px; position: relative; }
+  .done-list li::before {
+    content: ""; position: absolute; left: 2px; top: 7px; width: 15px; height: 15px;
+    border: 2px solid var(--ok); border-radius: 5px;
+  }
+  .scroll-x { overflow-x: auto; }
+  footer { margin-top: 30px; color: var(--muted); font-size: 0.8rem; text-align: center; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <span class="issue-chip"><a href="https://github.com/damdam6/vocabulary-study/issues/138">#138</a></span><span class="type-chip">기능 개선 · 구현·검증 완료</span>
+    <h1>Qwen WebSocket 합성과 연결 수명 구현</h1>
+    <div class="meta">
+      <span><b>damdam6/vocabulary-study</b></span>
+      <span>브랜치 <b><code>feat/138-qwen-websocket-lifecycle</code></b> ← <code>feat/ch-sound</code></span>
+      <span>라벨 <b>enhancement</b></span>
+      <span>2026-09-16</span>
+    </div>
+  </header>
+
+  <section class="card">
+    <h2><span class="no">1</span>요약</h2>
+    <p>기존 Qwen 프로토콜 처리기를 Workers Upgrade fetch와 연결하는 TtsProvider를 구현했다. 한 합성에 연결·UUID task를 하나씩 만들고, 유효한 task-finished와 완성 MP3가 확인될 때만 성공한다. 호출자의 AbortSignal을 연결 대기부터 완료까지 관측하고 늦은 Upgrade·오류·취소에서도 한 번만 종료하며 자원을 해제한다. 구현은 gpt-5.6-terra / high 탭에서 완료했고, 독립 리뷰·머지는 별도 탭이 맡는다.</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">2</span>현황 분석</h2>
+    <ul>
+<li><b>기준과 선행 결과:</b> HEAD/base는 <code>f46080a2c68c4e38f12551208402779ef7d0d0bf</code>. #137은 <a href="https://github.com/damdam6/vocabulary-study/pull/157">PR #157</a>로 <code>feat/ch-sound</code>에 squash merge되었고 merge SHA <code>bcae17328be777fee0b30d0339f4550924971433</code>가 HEAD의 조상이다. 이슈 #137 CLOSED, #138 OPEN·댓글 0개를 확인했다.</li>
+<li><b>이미 있는 계약:</b> <code>worker/lib/tts/types.ts:119</code>의 <code>TtsProvider.synthesize(input, signal)</code>는 MP3와 선택적 billedCharacters를 반환한다. <code>types.ts:25</code>에 고정 국제 endpoint가 있고, <code>config.ts:27</code>은 비활성·미설정·정상 설정을 구분하며 API 키를 config와 분리한다. 설정 검증은 호출부가 맡는다.</li>
+<li><b>프로토콜 흐름:</b> <code>providers/qwenProtocol.ts:36</code>이 run/continue/finish/cancel을 직렬화한다. <code>:59</code>의 처리기는 JSON·ID·순서·크기·MP3를 검증하고 pending/completed/failed를 반환한다. <code>:93</code>상 시작 전 유일한 정상 pending 입력은 task-started다. 현재 시작 전이 플래그를 노출하지 않으므로 adapter의 첫 pending 처리에 이 불변식을 명시하고 통합 테스트로 고정한다.</li>
+<li><b>정상 종료의 의미:</b> <code>providers/qwenProtocol.ts:97</code>은 sentence-synthesis 메타데이터 뒤 binary 한 개를 요구한다. <code>:105</code>는 task-finished에서 조립·검증하고 <code>:125</code>의 end()는 미완료 스트림을 실패 처리한다. 임의 binary를 그대로 보내는 더블은 정상 fixture가 아니다. <code>fixtures/mp3.ts:2</code>를 재사용한다.</li>
+<li><b>아직 없는 연결 계층:</b> <code>worker/lib/tts/providers/qwen.ts</code>와 provider 수명 테스트가 없다. <code>vitest.config.ts:1</code>은 Node 순수 테스트를 사용한다. Upgrade 전용 구조적 응답 더블을 사용해야 하며 <code>new Response(..., {status: 101})</code>에 의존할 수 없다.</li>
+<li><b>런타임 근거:</b> <code>wrangler.jsonc:9</code>의 compatibility_date는 2026-07-13. <code>worker-configuration.d.ts:3147</code>의 accept, <code>:3159</code>의 close, <code>:3191</code>의 binaryType이 필요한 표면이다. 현재 날짜의 <a href="https://developers.cloudflare.com/workers/runtime-apis/websockets/#binary-messages">Workers 공식 문서</a>에서 이 날짜의 기본 binaryType이 blob임을 확인했다. accept 전에 arraybuffer를 지정해 동기 수신 처리를 사용한다.</li>
+</ul><p><b>추적:</b> <code>docs/plans/chinese-tts-audio-issues/TTS-04.md</code>, 아키텍처 §2.2~2.5·§4 및 PRD AC-08·AC-10의 서버 adapter 부분. 조상 디렉터리와 worktree의 적용 경로를 검색했으며 AGENTS.md는 발견되지 않았다.</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">3</span>설계</h2>
+    <h3>1. provider 생성과 최소 주입 경계</h3>
+<p><code>qwen.ts</code>에 <code>createQwenTtsProvider(config, apiKey, options?)</code>를 export하고 <code>TtsProvider</code>를 반환한다. options는 테스트 가능한 Upgrade fetch와 UUID 생성 함수만 선택적으로 받는다. 기본 fetch는 함수 호출 시 global fetch를 감싸며 import 시 네트워크 작업을 하지 않는다. UUID 기본값은 <code>crypto.randomUUID()</code>다. socket·task·processor는 synthesize 호출마다 생성하며 전역 상태나 연결 풀을 두지 않는다. API 키는 closure에만 보유하고 <code>pronunciationMode: "none"</code>을 제공한다. 최소 UpgradeResponse / socket 포트는 실제 Workers Response/WebSocket과 구조적으로 호환되게 같은 파일에서 정의한다. 생성 Env와 공통 타입은 수정하지 않는다.</p>
+<h3>2. handshake와 전송·수신</h3>
+<p><code>signal.aborted</code>를 먼저 검사한 뒤 abort handler를 등록하고 다시 검사한다. 고정 <code>TTS_UPGRADE_ENDPOINT</code>에 GET, <code>Upgrade: websocket</code>, <code>Authorization: Bearer …</code>, <code>redirect: "manual"</code>, 전달받은 signal로 fetch를 정확히 한 번 호출한다. 모든 3xx를 거부해 Bearer가 다른 호스트로 전달되지 않게 한다. status 101과 webSocket 모두 필요하다. 비정상 응답 본문은 읽지 않고, body가 있으면 cancel의 실패까지 관측하며 기다리지 않는다.</p>
+<p>socket 소유권을 기록하고 <code>binaryType = "arraybuffer"</code> 설정 → message/close/error listener 등록 → accept → run-task 순서로 진행한다. 각 외부 호출 뒤 terminal 여부를 확인해 동기 예외나 재진입 취소 이후 추가 전송을 막는다. run-task의 시작 상태는 send 이전에 설정한다. string은 그대로, ArrayBuffer는 복사 없는 Uint8Array view로 processor.push에 전달한다. arraybuffer 설정 아래 다른 payload 타입은 안전한 upstream 오류로 종료한다. async Blob 변환을 추가하지 않는다.</p>
+<p>processor의 첫 정상 pending에서 입력 전송 여부를 먼저 표시한 뒤 continueTask와 finishTask를 순서대로 각 한 번 보낸다. 이 연결은 <code>qwenProtocol.ts:75-106</code>의 시작 전 검사에 의존한다. adapter에서 JSON.parse·task ID 확인·MP3 검사·과금 추정을 다시 구현하지 않는다. 이후 pending은 대기, failed는 정규화 오류, completed는 status를 제외한 audio/contentType/billedCharacters만 반환한다. task-finished 전 정상 code 1000 close도 end()를 통해 실패한다.</p>
+<h3>3. 한 번만 종료하는 자원 소유</h3>
+<p>단일 terminal gate를 모든 성공·실패·abort 경로가 공유한다. gate를 먼저 닫은 뒤 abort handler와 등록된 socket listeners를 해제한다. 실패/취소 시 processor.end()로 부분 chunk를 폐기하고 processor·직렬화 메시지·socket 참조를 해제한다. 성공 바이트는 결과에만 남긴다. socket.close는 고정된 비밀 없는 code/reason 또는 기본값으로 수행하며 close 오류가 원래 결과를 바꾸지 않게 한다. listener 등록·binaryType 설정·accept·각 send·fetch의 동기 throw와 비동기 reject도 이 경로로 수렴한다.</p>
+<p>abort는 pending handshake가 끝날 때까지 기다리지 않고 즉시 <code>signal.reason</code> 자체로 reject한다. 이미 완료된 결과를 뒤집지 않는다. 열린 task가 있으면 serializer의 cancelTask를 best effort로 한 번 시도하되 실패나 응답을 기다리지 않는다. 12초 timer와 504 변환은 #139 서비스가 소유하므로 여기서는 새 timeout, AbortSignal.timeout, 자동 재연결을 만들지 않는다. 호출자는 원래 reason 객체를 통해 timeout과 일반 취소를 구분할 수 있다.</p>
+<p><b>늦은 Upgrade:</b> 외부 Promise를 race에서 버리지 않는다. fetch의 양쪽 후속 처리를 계속 관측하여 terminal 이후 response에 socket이 생기면 정상 task를 시작하지 않고 닫는다. 아직 accept하지 않은 Upgrade socket은 정리용 accept가 필요한 런타임 상태를 고려해 accept 후 close한다. 정리용 accept 중에도 task listener·runTask·continueTask는 생성하지 않는다. 이미 닫힌 소켓과 accept/close 실패는 방어적으로 처리한다. 늦은 fetch rejection도 처리해 unhandled rejection을 남기지 않는다.</p>
+<h3>4. 오류 계약과 후속 소비자</h3>
+<p><code>qwen.ts</code>에 <code>QwenTtsError</code>를 export하고 <code>code: "tts_unavailable" | "tts_upstream_error"</code>만 안정적으로 제공한다. 메시지는 code 또는 공통 안전 문구, status는 기존 <code>TTS_ERROR_RESPONSES</code>에서 유도한다. handshake 401/403/429는 503 계열, 5xx·3xx·101 socket 누락·그 밖의 비정상 handshake·socket/프로토콜/전송 실패는 502 계열이다. task-failed는 processor의 code를 그대로 사용한다. 원본 provider/fetch/socket 예외를 cause·message·로그·close reason에 복사하지 않는다. 신뢰된 호출부의 AbortSignal reason 보존은 별도 내부 계약이고, #139/140이 HTTP 공개 오류를 정규화한다.</p>
+<p><b>소유 범위:</b> qwen.ts와 그 테스트·전용 fixture만 구현한다. 기존 qwenProtocol.ts/audio.ts/types.ts/config.ts는 소비한다. R2·라우트·서비스·프론트·Wrangler·환경 활성화는 후속 이슈 소유다. 프로토콜 API를 변경하는 대안은 현재 첫 pending 불변식으로 요구를 충족하므로 선택하지 않는다.</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">4</span>작업 단계</h2>
+    <ol class="steps">
+      <li><label><input type="checkbox" checked disabled> <b>provider·오류·Upgrade 포트를 정의했다.</b></label> config와 API 키를 분리해 받고 production 기본 fetch/UUID 및 테스트 주입을 제공한다. 공통 TtsProvider와 실제 Workers 타입의 할당 호환성을 build로 확인했다.<span class="files"><code>worker/lib/tts/providers/qwen.ts</code>, <code>worker/lib/tts/providers/qwen.test.ts</code></span></li>
+<li><label><input type="checkbox" checked disabled> <b>제어 가능한 Upgrade·WebSocket 더블을 만들었다.</b></label> deferred fetch, status/socket, accept 전 listener·binaryType 순서, listener 수와 send/close 예외를 관측한다. 정상 흐름은 실제 protocol 처리기와 기존 MP3 fixture를 사용한다.<span class="files"><code>worker/lib/tts/providers/qwen.test.ts</code>, 재사용: <code>worker/lib/tts/fixtures/mp3.ts</code></span></li>
+<li><label><input type="checkbox" checked disabled> <b>고정 handshake와 task 송수신을 연결했다.</b></label> redirect 거부, 101/socket 검증, arraybuffer·listener·accept·run 순서, 첫 pending의 continue/finish 1회를 구현했다. processor completed만 성공으로 반환하고 조기 close는 end() 실패로 처리한다.<span class="files"><code>worker/lib/tts/providers/qwen.ts</code>, <code>worker/lib/tts/providers/qwen.test.ts</code>; 소비: <code>worker/lib/tts/providers/qwenProtocol.ts</code></span></li>
+<li><label><input type="checkbox" checked disabled> <b>모든 terminal 경로와 늦은 Upgrade를 정리했다.</b></label> AbortSignal reason 보존, 즉시 reject, cancel best effort, listener/abort handler/부분 데이터 해제, fetch 후속 관측과 accept 전 socket 정리를 단일 종료 gate로 통합했다.<span class="files"><code>worker/lib/tts/providers/qwen.ts</code>, <code>worker/lib/tts/providers/qwen.test.ts</code></span></li>
+<li><label><input type="checkbox" checked disabled> <b>실패 분류와 경쟁 상태 회귀를 검증했다.</b></label> 오류 매핑, 민감정보 sentinel 비노출, 늦은 resolve, setup/send 예외, 동시 합성의 task/socket 분리를 확인했다.<span class="files"><code>worker/lib/tts/providers/qwen.test.ts</code></span></li>
+<li><label><input type="checkbox" checked disabled> <b>필수 검증과 인계 기록을 마무리했다.</b></label> 관련 테스트 후 npm test·lint·build를 실행하고 실제 결과와 미검증을 아래에 기록했다. 구현 담당은 base <code>feat/ch-sound</code>, head <code>feat/138-qwen-websocket-lifecycle</code>, <code>Closes #138</code>의 ready PR을 만든다. 독립 리뷰·머지는 지정 별도 탭에서 진행한다.<span class="files"><code>docs/plans/issue-138-qwen-websocket-lifecycle.html</code>, 로컬 기록 <code>.issue-codex/interactive-state.json</code> (커밋 제외)</span></li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">5</span>리스크</h2>
+    <div class="scroll-x">
+    <table>
+      <thead><tr><th>리스크</th><th>영향</th><th>완화책</th></tr></thead>
+      <tbody>
+        <tr><td>취소 뒤 Upgrade</td><td>settle만 끝내고 fetch를 버리면 연결이 남는다.</td><td>늦은 socket의 accept/close와 늦은 rejection 관측을 별도로 테스트한다.</td></tr>
+<tr><td>Blob 기본 수신</td><td>비동기 변환이 완료 이벤트보다 늦어질 수 있다.</td><td>accept 전 arraybuffer 고정과 호출 순서를 더블에서 검증한다.</td></tr>
+<tr><td>첫 pending 계약</td><td>처리기 확장으로 의미가 달라지면 입력이 일찍 전송될 수 있다.</td><td>시작 전 모든 대표 불법 입력에서 continue 0회, 유효 시작에서 1회인 연결 테스트를 고정한다.</td></tr>
+<tr><td>정리 재진입·예외</td><td>close/error/abort가 추가 전송이나 중복 정리를 유발할 수 있다.</td><td>terminal을 먼저 표시하고 각 send 이후 상태를 재확인한다. cleanup 예외는 원래 결과를 보존한다.</td></tr>
+<tr><td>부분 오디오·오류 유출</td><td>잘못된 바이트 저장 또는 제공자 원문 공개로 이어질 수 있다.</td><td>processor completed만 반환하며 safe code만 예외에 담는다. error/close/body sentinel 검증.</td></tr>
+<tr><td>더블과 실환경 차이</td><td>실제 모델 접근·합성 취소·음질·과금을 증명하지 못한다.</td><td>실제 키·청취·모바일·R2·지연은 미검증으로 명시하고 출시 확인 전 TTS_ENABLED=false 유지.</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">6</span>테스트 계획</h2>
+    <ul>
+      <li><b>정상 경로:</b> 한 fetch·UUID·run, listener와 arraybuffer가 accept 이전에 설정됨, start 이전 continue/finish 0회, start 이후 각각 1회. sentence-synthesis/binary 교차·frame 중간 분할 후 task-finished에서 동일 MP3와 선택적 usage를 반환한다. 완료 직후 close/error/abort는 결과를 바꾸지 않는다.</li>
+<li><b>handshake 표:</b> 401/403/429 → tts_unavailable/503; 500/502/503, 301/302/307/308, 200, 101+socket 없음 → tts_upstream_error/502. redirect manual·고정 URL·Bearer/Upgrade·동일 signal, 재요청 0회. 비정상 response가 socket도 가진 더블은 socket 정리까지 확인한다.</li>
+<li><b>프로토콜 연결:</b> 잘못된 JSON·task ID·중복 started·시작 전 result/binary·지원하지 않는 데이터 타입·과대 JSON/오디오·손상 MP3·빈 완료·task-failed 분류·정상 1000 조기 close·완료 누락을 검증한다. parser 상세 조합은 기존 qwenProtocol/audio 테스트를 재사용하며 adapter의 송신·종료·자원 해제를 함께 assert한다.</li>
+<li><b>취소 지점:</b> 사전 취소는 fetch/UUID/task 0회. 연결 중 취소는 fetch가 무시해도 즉시 reason 그대로 reject. 이후 늦은 101 socket은 task 전송 0회·정리 완료, 늦은 reject는 미처리 예외 0개. accept 직전/직후, run 중, started 대기, continue/finish 중, binary 수신 중, task-finished 직전 취소를 제어한다. task-finished→abort는 성공 유지, abort→task-finished는 취소 유지.</li>
+<li><b>deadline 경계:</b> 테스트 호출자가 controller를 abort(new DOMException(..., "TimeoutError"))하여 동일 reason 객체 보존과 즉시 정리를 확인한다. idle handshake/start/finish 대기를 모두 종료한다. provider가 자체 12초 timer를 만들지 않는 것은 정적 검토로 확인하며 서비스 예산 자체는 #139의 테스트다.</li>
+<li><b>예외·누수:</b> fetch 동기 throw/reject, binaryType 설정·listener 등록·accept·run/continue/finish send 실패, cancel send·close throw, cleanup의 동기 close/error 재진입을 검증한다. terminal 후 listener와 abort handler가 0이고 추가 송신/재합성이 없으며, 성공/실패/취소 outcome 관측은 1회다. provider를 재사용하는 동시 호출 2개는 task ID와 socket이 분리되고 한쪽 abort가 다른 쪽에 영향이 없다.</li>
+<li><b>민감정보:</b> 가짜 apiKey·원문·추가 병음 sentinel·provider error_message·fetch/close 원문을 사용한다. 반환 오류의 own fields/message/cause 및 console 호출에 포함되지 않는다. 헤더의 가짜 키와 continueTask의 원문은 허용된 전송 위치이며 pinyin은 전송되지 않는다. 실키·환경 파일을 읽지 않는다.</li>
+<li><b>구현 후 명령:</b> <code>npm test -- worker/lib/tts/providers/qwen.test.ts worker/lib/tts/providers/qwenProtocol.test.ts worker/lib/tts/audio.test.ts</code> → <code>npm test</code> → <code>npm run lint</code> → <code>npm run build</code>. 실패는 수정 후 재검증하며 성공으로 기록하지 않는다.</li>
+<li><b>계획 단계 검증:</b> 이슈/댓글·선행 MERGED·base 조상·적용 지침·파일 및 타입 계약·공식 런타임 문서 확인. HTML placeholder/섹션/링크·로컬 HTTP 내용·cmux 렌더를 확인하고 SHA-256을 상태 파일에 기록한다. 계획 단계 앱 테스트는 미실행이며 기능 검증 통과를 주장하지 않는다.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">7</span>완료 조건</h2>
+    <ul class="done-list">
+      <li>한 합성당 연결/task 하나. task-finished와 유효 MP3 전 close는 부분 성공이 아니다.</li>
+<li>연결 중·수신 중·완료 직후 취소 및 늦은 Upgrade에서 listener·socket 누수와 중복 settle이 없다.</li>
+<li>주입된 signal이 모든 대기를 끝내고 timeout reason을 호출부에 보존한다. provider 내부 deadline·재연결·재합성·벤더 전환은 없다.</li>
+<li>키·원문·병음·제공자 원문 오류가 공개 결과·로그·close reason에 나오지 않는다.</li>
+<li>qwen.ts와 전용 테스트·필요 fixture 및 계획 기록만 변경하며 정상·실패·취소 검증을 완료한다.</li>
+<li>npm test, npm run lint, npm run build의 실제 결과를 기록한다. 실키·모델 접근·청취·모바일·R2·지연은 별도 미검증으로 남긴다.</li>
+<li>PR base와 squash merge 대상은 feat/ch-sound. 독립 리뷰는 지정 별도 탭이 맡고 계획 담당은 plan-done 콜백 후 대기한다.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">8</span>구현·검증 기록</h2>
+    <ul>
+      <li><b>구현:</b> <code>qwen.ts</code>에 Upgrade fetch, WebSocket 수명, 단일 settle, 오류 정규화와 늦은 Upgrade 정리를 추가했다. 기존 <code>qwenProtocol.ts</code>와 MP3 검사기를 변경하지 않고 소비한다.</li>
+      <li><b>대상 테스트:</b> <code>npm test -- worker/lib/tts/providers/qwen.test.ts worker/lib/tts/providers/qwenProtocol.test.ts worker/lib/tts/audio.test.ts</code> — 3 files, 51 tests passed. 독립 리뷰 r1의 보완으로 partial MP3 수신 중 abort reason 보존·cancel·listener/socket 정리와 늦은 task-finished/message/close/error 무해성을 회귀 테스트로 고정했다.</li>
+      <li><b>전체 검증:</b> <code>npm test</code> — 45 files, 592 tests passed. <code>npm run lint</code>와 <code>npm run build</code>도 모두 통과했다.</li>
+      <li><b>미검증:</b> 실제 키·Qwen 모델 접근·청취·모바일·R2·실제 네트워크 지연은 실행하지 않았다. 운영 설정은 변경하지 않아 <code>TTS_ENABLED=false</code>를 유지한다.</li>
+    </ul>
+  </section>
+
+  <footer>issue-plan · <a href="https://github.com/damdam6/vocabulary-study/issues/138">#138</a> · 2026-09-16</footer>
+</main>
+</body>
+</html>

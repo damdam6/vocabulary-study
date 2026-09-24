@@ -4,13 +4,15 @@
  * UI는 Mode1Card/Mode2Card(#16/#17)에 위임하고, 진행 템포는 여기가 소유한다:
  * 모드1 O/X·모드2 정답은 즉시 다음 문제, 모드2 오답만 결과 화면 후 "다음"으로.
  */
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 import Mode1Card from './Mode1Card.tsx'
 import Mode2Card from './Mode2Card.tsx'
 import { modeChipLabel } from '../lib/contentLabels.ts'
-import { postAnswer, postReviewFail, type AnswerRecord, type ContentType, type WordEntry } from '../lib/api.ts'
+import { postAnswer, postReviewFail, type AnswerRecord, type PublicProfile, type WordEntry } from '../lib/api.ts'
 import { enqueueAnswer, enqueueReviewFail } from '../lib/retryQueue.ts'
 import type { SessionQuestion } from '../lib/sessionQueue.ts'
+import type { TtsCapability } from '../lib/ttsTypes.ts'
+import { usePronunciation } from '../hooks/usePronunciation.ts'
 import {
   advance,
   applyWordUpdate,
@@ -31,8 +33,10 @@ export interface SessionResult {
 interface StudyScreenProps {
   /** 홈이 시트 설정 상한까지 잘라 만든 큐 — 세션 중 늘지 않으므로 문제 수는 여기서 확정된다(#116). */
   queue: SessionQuestion<WordEntry>[]
-  /** 프로필 콘텐츠 타입(#78) — 칩 문구·lang·크기 스케일 등 렌더링 분기에 쓰인다(#80). */
-  contentType: ContentType
+  /** Home의 words 응답에서 고정한 세션 프로필 — 저장소 재조회로 바꾸지 않는다. */
+  profile: PublicProfile
+  /** Home의 words 응답에서 고정한 capability — 세션 도중 재조회하지 않는다. */
+  tts: TtsCapability
   onExit: () => void
   onComplete: (result: SessionResult) => void
 }
@@ -43,15 +47,31 @@ interface Feedback {
   seq: number
 }
 
-function StudyScreen({ queue, contentType, onExit, onComplete }: StudyScreenProps) {
+let sessionSequence = 0
+
+function createStudySessionId(): string {
+  const generated = globalThis.crypto?.randomUUID?.()
+  return generated ?? `study-${++sessionSequence}`
+}
+
+function StudyScreen({ queue, profile, tts, onExit, onComplete }: StudyScreenProps) {
   const [session, setSession] = useState<StudySessionState>(() => startSession(queue))
   const [feedback, setFeedback] = useState<Feedback | null>(null)
+  const [sessionId] = useState(createStudySessionId)
   // 마지막 문제의 판정 피드백이 화면 전환으로 유실되지 않도록, 오버레이가 재생 중일
   // 때의 완료 전환만 오버레이 종료(onAnimationEnd) 시점으로 미룬다. 문제 간 전환은
   // 항상 즉시(§4.4 논블로킹).
-  const pendingComplete = useRef<SessionResult | null>(null)
+  const [pendingComplete, setPendingComplete] = useState<SessionResult | null>(null)
 
   const question = currentQuestion(session)
+  const questionId = question === null ? null : `${sessionId}:${session.pos}`
+  const { pronunciation, stop } = usePronunciation({
+    profileId: profile.id,
+    contentType: profile.contentType,
+    capability: tts,
+    questionId,
+    input: question === null ? null : { text: question.word.hanzi, pinyin: question.word.pinyin || null },
+  })
 
   // 기록 전송은 문제 단위 비동기 fire-and-forget — 실패가 진행을 막지 않는다(§6.2).
   // 실패분은 재시도 큐(#18, #43)에 적재해 재전송한다 — answer의 timestamp는
@@ -83,15 +103,18 @@ function StudyScreen({ queue, contentType, onExit, onComplete }: StudyScreenProp
     }
     const result = { correct: next.correct, wrong: next.wrong }
     if (overlayPlaying) {
-      pendingComplete.current = result
+      setPendingComplete(result)
       setSession(next)
     } else {
+      stop('exit')
       onComplete(result)
     }
   }
 
   const handleJudged = (correct: boolean) => {
     if (!question) return
+    // 다음 문제로 곧바로 진행하는 분기는 기록·state 갱신보다 먼저 이전 질문을 멈춘다.
+    if (question.mode !== 'm2' || correct) stop('advance')
     const { state: recorded, effect } = recordAnswer(session, correct)
     fireEffect(effect)
     if (question.mode === 'm2' && !correct) {
@@ -104,23 +127,32 @@ function StudyScreen({ queue, contentType, onExit, onComplete }: StudyScreenProp
     proceed(recorded, true)
   }
 
-  const handleProceed = () => proceed(session, false)
+  const handleProceed = () => {
+    stop('advance')
+    proceed(session, false)
+  }
+
+  const handleExit = () => {
+    stop('exit')
+    onExit()
+  }
 
   const handleFeedbackEnd = () => {
     setFeedback(null)
-    if (pendingComplete.current) {
-      const result = pendingComplete.current
-      pendingComplete.current = null
+    if (pendingComplete !== null) {
+      const result = pendingComplete
+      setPendingComplete(null)
+      stop('exit')
       onComplete(result)
     }
   }
 
   return (
     <>
-      <div className="study" data-content-type={contentType}>
+      <div className="study" data-content-type={profile.contentType}>
         <header className="study-header">
           {/* §4.1: 종료는 확인 다이얼로그 없이 즉시 홈 복귀 — 기록은 문제 단위로 이미 반영됨(§6.2) */}
-          <button type="button" className="study-exit" onClick={onExit}>
+          <button type="button" className="study-exit" onClick={handleExit}>
             종료
           </button>
           <div className="study-progress">
@@ -133,17 +165,24 @@ function StudyScreen({ queue, contentType, onExit, onComplete }: StudyScreenProp
           <>
             <div className="study-chips">
               {question.isReview && <span className="study-chip study-chip--review">복습</span>}
-              <span className="study-chip">{modeChipLabel(contentType, question.mode)}</span>
+              <span className="study-chip">{modeChipLabel(profile.contentType, question.mode)}</span>
             </div>
             {question.mode === 'm1' ? (
-              <Mode1Card key={session.pos} question={question} contentType={contentType} onJudged={handleJudged} />
+              <Mode1Card
+                key={session.pos}
+                question={question}
+                contentType={profile.contentType}
+                onJudged={handleJudged}
+                pronunciation={pronunciation}
+              />
             ) : (
               <Mode2Card
                 key={session.pos}
                 question={question}
-                contentType={contentType}
+                contentType={profile.contentType}
                 onJudged={handleJudged}
                 onProceed={handleProceed}
+                pronunciation={pronunciation}
               />
             )}
           </>

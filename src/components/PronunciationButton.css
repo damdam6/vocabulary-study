@@ -1,0 +1,151 @@
+.pronunciation-button {
+  display: inline-flex;
+  min-width: 44px;
+  min-height: 68px;
+  flex-direction: column;
+  align-items: center;
+  color: var(--text-muted);
+}
+
+.pronunciation-button__control {
+  display: inline-flex;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid var(--border-input);
+  border-radius: 50%;
+  color: inherit;
+  background: transparent;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+
+.pronunciation-button__control:hover:not(:disabled) {
+  border-color: var(--accent-light);
+  color: var(--accent-light);
+  background: color-mix(in srgb, var(--accent-light) 12%, transparent);
+}
+
+.pronunciation-button__control:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.pronunciation-button__control:disabled {
+  cursor: not-allowed;
+  border-color: var(--border-faint);
+  color: var(--text-faint);
+  background: var(--bg-disabled);
+}
+
+.pronunciation-button--playing .pronunciation-button__control {
+  border-color: var(--accent-light);
+  color: var(--accent-light);
+  background: color-mix(in srgb, var(--accent-light) 18%, transparent);
+}
+
+.pronunciation-button--loading .pronunciation-button__control {
+  color: var(--accent-light);
+}
+
+.pronunciation-button__icon {
+  width: 20px;
+  height: 20px;
+}
+
+.pronunciation-button__spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: pronunciation-button-spin 0.8s linear infinite;
+}
+
+.pronunciation-button__message {
+  width: max-content;
+  max-width: 220px;
+  min-height: 24px;
+  padding-top: 4px;
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  line-height: 1.35;
+  text-align: center;
+}
+
+@keyframes pronunciation-button-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pronunciation-button__control {
+    transition: none;
+  }
+
+  .pronunciation-button__spinner {
+    animation: none;
+  }
+}
+
+/* #169 Speaker Position: 병음 옆에 붙는 30px 원. 아이콘은 기존 SVG를 크기만 줄여 쓰고,
+   보이는 원보다 넓은 44px 히트 영역을 ::before로 확보한다. 배치는 .pinyin-speaker(index.css). */
+.pronunciation-button--compact {
+  min-width: 30px;
+  min-height: 30px;
+  color: #9aa1ad;
+}
+
+.pronunciation-button--compact .pronunciation-button__control {
+  position: relative;
+  width: 30px;
+  height: 30px;
+  flex-basis: 30px;
+  border-color: #2f3542;
+}
+
+.pronunciation-button--compact .pronunciation-button__control:disabled {
+  border-color: var(--border-faint);
+}
+
+.pronunciation-button--compact .pronunciation-button__control::before {
+  content: "";
+  position: absolute;
+  inset: -8px;
+  border-radius: 50%;
+}
+
+/* 재생 중에는 hover가 accent 표시를 덮지 않게 한다 — 모바일은 탭 후 hover가 남는다. */
+.pronunciation-button--compact:not(.pronunciation-button--playing) .pronunciation-button__control:hover:not(:disabled) {
+  border-color: #2f3542;
+  color: #e8eaee;
+  background: #222733;
+}
+
+.pronunciation-button--compact.pronunciation-button--playing .pronunciation-button__control {
+  border-color: var(--accent-light);
+  color: var(--accent-light);
+}
+
+.pronunciation-button--compact .pronunciation-button__icon,
+.pronunciation-button--compact .pronunciation-button__spinner {
+  width: 18px;
+  height: 18px;
+}
+
+.pronunciation-button--compact .pronunciation-button__message {
+  min-height: 0;
+}
+
+.pronunciation-button__message--hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

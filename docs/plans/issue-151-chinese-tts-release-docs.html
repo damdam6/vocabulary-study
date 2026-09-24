@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>#151 중국어 TTS 운영·출시 절차와 제품 문서를 완성한다 — 작업 플랜</title>
+<style>
+  :root { --bg:#f7f7f8; --card:#fff; --ink:#1c1c1e; --muted:#6e6e73; --line:#e3e3e6; --accent:#3b6ef5; --accent-soft:#e8eefe; --ok:#2e8b57; --warn:#b25e09; --code-bg:#f0f0f2; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#161618; --card:#202024; --ink:#ececf0; --muted:#98989f; --line:#333338; --accent:#7a9bff; --accent-soft:#26304a; --ok:#58c088; --warn:#e0a35c; --code-bg:#2a2a2f; } }
+  * { box-sizing:border-box; } body { margin:0; padding:40px 20px 80px; background:var(--bg); color:var(--ink); font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Segoe UI","Noto Sans KR",sans-serif; line-height:1.65; }
+  main { max-width:860px; margin:0 auto; } a { color:var(--accent); text-decoration:none; } a:hover { text-decoration:underline; } code { font-family:"SF Mono",ui-monospace,Menlo,monospace; font-size:.86em; background:var(--code-bg); border-radius:5px; padding:2px 6px; overflow-wrap:anywhere; }
+  header { margin-bottom:28px; } .issue-chip { display:inline-block; font-weight:700; color:var(--accent); background:var(--accent-soft); border-radius:999px; padding:3px 14px; font-size:.95rem; margin-bottom:10px; } .type-chip { display:inline-block; font-weight:600; color:var(--muted); border:1px solid var(--line); border-radius:999px; padding:3px 12px; font-size:.8rem; margin-left:8px; vertical-align:2px; }
+  h1 { font-size:1.7rem; margin:0 0 14px; letter-spacing:-.02em; } .meta { display:flex; flex-wrap:wrap; gap:6px 22px; color:var(--muted); font-size:.87rem; } .meta b { color:var(--ink); font-weight:600; }
+  section.card { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:24px 28px; margin-top:18px; } h2 { font-size:1.05rem; margin:0 0 14px; letter-spacing:-.01em; display:flex; align-items:center; gap:8px; } h2 .no { color:var(--accent); font-size:.8rem; font-weight:700; border:1.5px solid var(--accent); border-radius:6px; padding:0 6px; }
+  ul,ol { margin:0; padding-left:22px; } li { margin:6px 0; } .steps { list-style:none; padding:0; counter-reset:step; } .steps li { counter-increment:step; position:relative; padding:10px 0 10px 44px; border-bottom:1px dashed var(--line); } .steps li:last-child { border-bottom:none; } .steps li::before { content:counter(step); position:absolute; left:0; top:10px; width:28px; height:28px; border-radius:8px; background:var(--accent-soft); color:var(--accent); font-weight:700; font-size:.85rem; display:flex; align-items:center; justify-content:center; } .steps .files { display:block; margin-top:4px; font-size:.85rem; color:var(--muted); }
+  table { width:100%; border-collapse:collapse; font-size:.92rem; } th,td { text-align:left; padding:8px 12px; border-bottom:1px solid var(--line); vertical-align:top; } th { color:var(--muted); font-weight:600; font-size:.82rem; } .done-list { list-style:none; padding:0; } .done-list li { padding-left:30px; position:relative; } .done-list li::before { content:""; position:absolute; left:2px; top:7px; width:15px; height:15px; border:2px solid var(--ok); border-radius:5px; } .done-list.all-done li::before { content:"✓"; color:var(--ok); font-size:12px; line-height:11px; text-align:center; } .scroll-x { overflow-x:auto; } .note { color:var(--muted); font-size:.92rem; } .warning { color:var(--warn); font-weight:600; } footer { margin-top:30px; color:var(--muted); font-size:.8rem; text-align:center; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <span class="issue-chip"><a href="https://github.com/damdam6/vocabulary-study/issues/151">#151</a></span><span class="type-chip">문서화 · 출시 운영 정리</span>
+    <h1>중국어 TTS 운영·출시 절차와 제품 문서를 완성한다</h1>
+    <div class="meta">
+      <span><b>damdam6/vocabulary-study</b></span>
+      <span>브랜치 <b><code>docs/151-chinese-tts-release-docs</code></b> ← <code>feat/ch-sound</code></span>
+      <span>라벨 <b>documentation</b></span>
+      <span>2026-09-17</span>
+    </div>
+  </header>
+
+  <section class="card">
+    <h2><span class="no">1</span>요약</h2>
+    <p>#149의 환경 기록과 #150의 자동 통합 검증이 <code>feat/ch-sound</code>에 병합된 상태를 제품·설계 문서에 반영한다. 새 운영 문서는 비공개 R2 재사용, Qwen task 완료, <code>UNCONFIRMED</code>, <code>usage.characters</code> 기반 계량, revision 롤백과 명시적 이전 파일 정리를 하나의 실행 순서로 묶는다. 이 이슈는 문서만 변경하며 API 키 주입, Worker 배포·활성화, 실제 R2 객체 접근, 유료 합성·청취, 모바일·지연 측정은 수행하거나 완료로 기록하지 않는다.</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">2</span>현황 분석</h2>
+    <ul>
+      <li>추적 설정은 이미 <code>wrangler.jsonc:26-40</code>에 <code>TTS_ENABLED=false</code>, Qwen 모델·음색·속도·revision 및 운영 <code>vocabulary-study-tts-audio</code>/개발·테스트 <code>audio-uploads</code> R2 binding을 둔다. 환경 문서는 두 버킷의 Standard·비공개·<code>r2.dev</code> 비활성·완성 객체 자동 만료 없음은 관찰했지만 객체 접근은 미검증이라고 구분한다.</li>
+      <li><code>worker/routes/words.ts:39-50</code>은 인증된 <code>zh</code> 프로필에서만 준비된 설정을 <code>{ enabled, revision, maxTextLength: 200 }</code> capability로 공개한다. <code>worker/routes/tts.ts:24-84</code>는 <code>POST /api/tts</code>의 profile/설정/입력 검증을 R2·Qwen보다 앞에 두고 MP3와 <code>X-TTS-Source</code>, <code>X-TTS-Storage</code>, <code>X-TTS-Pronunciation</code>, <code>X-TTS-Revision</code>만 반환한다.</li>
+      <li>저장 서비스는 R2 hit를 <code>STORED/PRESENT</code>로, 새 MP3의 조건부 저장 성공을 <code>GENERATED/SAVED</code>로 반환한다. 2초 쓰기 대기 초과·실패·경합 재조회 실패는 이미 검증한 생성 MP3를 <code>GENERATED/UNCONFIRMED</code>로 반환하고 원래 put 관측은 background task에 남긴다(<code>worker/lib/tts/service.ts:150-188</code>). 그러므로 <code>UNCONFIRMED</code>는 저장 성공·실패의 확정 표기가 아니다.</li>
+      <li>Qwen adapter는 task가 <code>task-finished</code>가 되고 유효한 MP3가 조립될 때만 완료한다. 제공자가 보낸 정수 <code>payload.usage.characters</code>만 billed characters로 보존한다(<code>worker/lib/tts/providers/qwenProtocol.ts:97-120</code>, <code>:148-152</code>). 원문 코드 포인트 수나 무료 할당량으로 실제 비용을 추정·확정할 수 없다.</li>
+      <li>계획 당시 제품 PRD는 “구현용 초안/기능 미구현”, 기본 PRD는 TTS 비범위·v2 후보로 기록되어 있었으나, 작업 1~4에서 이를 병합된 구현 계약과 출시 전 미검증 경계로 갱신했다(<code>docs/PRD-chinese-tts-audio.md</code> §1~2, <code>docs/PRD.md</code> §3·§7.3·§11). 현재 문서는 모드1 공개 뒤와 모드2 오답 결과의 선택적 버튼·상태를 실제 UI와 연결하며, #150 자동 증거와 라이브 출시 확인을 구분한다(<code>src/screens/Mode1Card.tsx:85-102</code>, <code>:157-169</code>, <code>src/screens/Mode2Card.tsx:36-43</code>, <code>:68-94</code>).</li>
+      <li>#150의 자동 증거는 <code>docs/plans/chinese-tts-audio-verification.md</code>에 AC-01~24별 테스트와 55 files/696 tests·lint·build 결과로 기록되어 있다. 실제 키/endpoint, 객체 격리·재사용, 청취, iOS/Android, p95는 그 문서와 환경 기록 모두에서 출시 전 미검증으로 남아 있다.</li>
+    </ul>
+    <div class="scroll-x" style="margin-top:16px"><table><thead><tr><th>이슈 완료 조건</th><th>계획의 근거·반영 위치</th></tr></thead><tbody>
+      <tr><td>기존 3개 PRD와 저장·길이·재생·병음·API 상태 일치</td><td>작업 1~3. 코드의 200자 capability, <code>zh</code> 한정, A열 합성/B열 진단, 공개 시점·버튼 상태, <code>POST /api/tts</code> 응답 진단을 공통 표현으로 맞춘다.</td></tr>
+      <tr><td>환경·검증 증거·운영 절차 링크 유효</td><td>작업 4~5. #149의 <code>...-environment.md</code>, #150의 <code>...-verification.md</code>, 새 operations runbook을 상호 링크하고 AC 증거와 라이브 한계를 분리한다.</td></tr>
+      <tr><td>키 없이 환경별 주입·무료량 미확인 상태 안내</td><td>작업 5. 키 발급·staged upload·배포된 secret·국제 endpoint/model 접근을 각각 별도 체크로 기록하고, 계량은 <code>usage.characters</code>와 제공자/R2 청구 자료로만 대조한다.</td></tr>
+      <tr><td>그래프 완료와 출시 검증 완료 구분</td><td>작업 4·6. 자동 회귀 완료는 명시하되 실제 오디오·보안 격리·모바일·p95·활성화 체크리스트는 미완료 상태를 유지한다.</td></tr>
+      <tr><td><code>feat/ch-sound</code> base 및 문서 검증 기록</td><td>메타·작업 7. 문서 PR의 base와 문서 전용 링크/anchor·설정명·diff 검증 결과를 기록한다.</td></tr>
+    </tbody></table></div>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">3</span>설계</h2>
+    <p>문서를 세 층으로 정리한다. 제품 PRD는 사용자·API 계약을, 아키텍처는 코드와 R2/Qwen의 수명·진단 계약을, 새 운영 문서는 승인된 사람이 실제 환경에서 따라야 할 비파괴적 출시 순서를 소유한다. 자동 테스트의 더블 증거와 실제 환경의 관찰은 같은 표에서 합격으로 합치지 않는다.</p>
+    <ul>
+      <li><strong>선택:</strong> 기존 <code>docs/plans/chinese-tts-audio-environment.md</code>와 <code>...-verification.md</code>를 사실 기록으로 유지하고, 절차만 새 <code>...-operations.md</code>에 둔다. 이미 검증한 #149/#150 내용을 복제하면 날짜·상태가 다시 어긋날 수 있기 때문이다.</li>
+      <li><strong>선택:</strong> cost는 Qwen의 완료 이벤트에서 나온 <code>usage.characters</code>와 실제 provider/R2 청구 정보를 대조하는 절차로만 기술한다. 현재의 고정 가격·무료 사용량 또는 원문 길이로 비용을 단정하는 예시는 제거하거나 비규범적 기록으로 격리한다.</li>
+      <li><strong>선택:</strong> secret 운영은 Cloudflare 공식 문서의 현행 의미를 따른다. <code>wrangler secret put</code>은 새 version을 만들고 즉시 배포하지만, <code>wrangler versions secret put</code>은 version만 만들며 별도의 <code>wrangler versions deploy</code>가 필요하다. 조사 시 확인한 프로젝트 Wrangler는 4.110.0이며 두 상태를 혼동하지 않는다.</li>
+      <li><strong>배제:</strong> 문서 이슈에서 <code>TTS_ENABLED=true</code>로 바꾸거나, 새 named 환경·bucket lifecycle·자동 cleanup·batch/pre-generation·SSML/hot_fix/provider fallback을 도입하지 않는다. 이들은 계약상 별도 승인·기능 범위다.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">4</span>작업 단계</h2>
+    <ol class="steps">
+      <li>기본 기능 PRD에서 TTS를 더 이상 비범위/v2 후보로 두지 않고, 기존 학습 계약을 침범하지 않는 <code>zh</code> 전용 음성 기능으로 연결한다. 범위·시스템 구조·환경/시크릿 설명·<code>GET /api/words</code> capability·<code>POST /api/tts</code>·학습 화면·비기능 요구사항을 실제 코드의 200자 제한, private/no-store, 비차단·retryQueue 제외와 일치시키고 오래된 등록 흐름은 다시 쓰지 않는다.<span class="files"><code>docs/PRD.md</code> · 근거: <code>worker/routes/words.ts</code>, <code>worker/routes/tts.ts</code>, <code>worker/lib/tts/types.ts</code></span></li>
+      <li>범용화 PRD에 A열만 합성하고 B열은 표시·정규화된 객체 키의 식별 입력이지만 첫 버전 provider hint에는 적용하지 않는 정책을 추가한다. <code>profile.contentType === "zh"</code>만 capability/버튼/route를 쓸 수 있고 <code>generic</code> 및 기능 off는 기존 학습을 유지한다는 점, TTS 요청은 profile-tagged 학습 retryQueue에 들어가지 않는 점을 API·화면·큐 절에 정확히 반영한다.<span class="files"><code>docs/PRD-general.md</code> · 근거: <code>worker/routes/words.ts:39-50</code>, <code>worker/routes/tts.ts:24-29</code>, <code>worker/lib/tts/types.ts:94-114</code></span></li>
+      <li>디자인 PRD의 모드1 공개와 모드2 오답 결과에 공통 발음 버튼의 위치·focus·loading/playing/수동 오류/200자 비활성 상태를 추가한다. B열이 비어도 버튼은 유지하고, generic·모드2 정답에는 노출/요청이 없으며, 자동 시도는 모드1 transform 완료 또는 모드2 결과 DOM 반영 뒤 1회이고 판정·다음·기록을 기다리지 않는다고 명시한다.<span class="files"><code>docs/design-prd.md</code> · 근거: <code>src/screens/Mode1Card.tsx:85-102</code>, <code>:157-169</code>, <code>src/screens/Mode2Card.tsx:36-43</code>, <code>:68-94</code>, <code>src/components/PronunciationButton.tsx:45-72</code></span></li>
+      <li>중국어 TTS PRD와 아키텍처의 상태를 실제 병합된 구현/자동 증거 기준으로 갱신한다. API의 오류·진단 header, R2 key/revision 보관·조건부 저장, Qwen <code>task-finished</code>과 billed characters, <code>UNCONFIRMED</code>의 의미, capability 및 비목표를 코드와 맞춘다. AC-01/14는 parameterized route 검증이 직접 증거임을 정확히 링크하고, #150의 자동 증거와 실환경·청취·모바일·p95 한계를 명확히 분리한다.<span class="files"><code>docs/PRD-chinese-tts-audio.md</code>, <code>docs/architecture/chinese-tts-audio.md</code> · 근거: <code>worker/lib/tts/service.ts:150-188</code>, <code>worker/lib/tts/providers/qwenProtocol.ts:97-120</code>, <code>docs/plans/chinese-tts-audio-verification.md</code></span></li>
+      <li>새 운영 runbook을 작성한다. (1) 운영/개발·테스트 bucket 역할과 <code>TTS_ENABLED=false</code> baseline, (2) secret 값 비노출 원칙과 key 발급·staged secret version·명시적 deployment·live endpoint/model 접근의 분리, (3) authenticated <code>zh</code> 요청으로 Qwen 완료와 MP3/header를 확인하는 방법, (4) <code>SAVED</code> 뒤 새 수명/기기 재요청의 <code>STORED/PRESENT</code>·동일 바이트·provider 미호출 확인, (5) <code>UNCONFIRMED</code>일 때 저장 성공으로 가정하지 않고 background write 관찰 후 새 요청에서 재확인하는 방법을 순서화한다.<span class="files"><code>docs/plans/chinese-tts-audio-operations.md</code> (신규) · 참조: <code>docs/plans/chinese-tts-audio-environment.md</code>, <code>docs/plans/chinese-tts-audio-verification.md</code>, <code>worker/routes/tts.ts:56-80</code></span></li>
+      <li>같은 runbook에 비용·롤백·정리·출시 gate를 추가한다. 생성 응답에서만 제공될 수 있는 <code>usage.characters</code>와 provider/R2 청구를 대조하고 무료량/가격은 확인 전 미확정으로 둔다. 장애 시 flag off, 음질/설정 rollback 시 revision을 포함한 전체 설정 tuple 복원, 이전 prefix 보존, 명시적 대상 prefix 확인 후의 수동 객체 정리와 승인 기록을 구분한다. 20개 청취 표본, iOS Safari/Android Chrome, private object/profile isolation, stored reuse, latency 목표, secret·배포·활성화는 모두 체크되지 않은 출시 작업으로 남긴다.<span class="files"><code>docs/plans/chinese-tts-audio-operations.md</code> (신규), <code>docs/PRD-chinese-tts-audio.md</code>, <code>docs/architecture/chinese-tts-audio.md</code> · 근거: <code>worker/lib/tts/types.ts:79-114</code>, <code>docs/architecture/chinese-tts-audio.md:295-309</code>, <code>:399-447</code></span></li>
+      <li>문서 간 링크·anchor·설정명·AC 인용을 최종 대조하고, 변경 목록과 문서 전용 검증 결과를 PR 설명에 기록한다. 구현 코드나 generated Env는 건드리지 않고, 이미 #150에서 통과한 앱 test/lint/build를 문구 수정만으로 재실행하지 않는다.<span class="files"><code>docs/PRD.md</code>, <code>docs/PRD-general.md</code>, <code>docs/design-prd.md</code>, <code>docs/PRD-chinese-tts-audio.md</code>, <code>docs/architecture/chinese-tts-audio.md</code>, <code>docs/plans/chinese-tts-audio-operations.md</code></span></li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">5</span>리스크</h2>
+    <div class="scroll-x"><table><thead><tr><th>리스크</th><th>영향</th><th>완화책</th></tr></thead><tbody>
+      <tr><td>자동 더블 검증을 실제 출시 성공으로 서술</td><td>키/R2/청취/모바일/지연의 미확인 위험이 숨겨짐</td><td>각 표에 “자동 증거”와 “라이브 출시 확인” 열을 분리하고 #149/#150 문서의 한계를 그대로 링크한다.</td></tr>
+      <tr><td>secret 명령의 deploy 의미 혼동</td><td>의도하지 않은 version 배포 또는 “주입됨” 오기록</td><td>staged <code>versions secret put</code>, 별도 deployment, deployed secret-name 확인, endpoint/model 호출 성공을 순서가 다른 네 상태로 기록한다.</td></tr>
+      <tr><td><code>UNCONFIRMED</code>를 저장 실패/성공으로 단정</td><td>불필요한 재합성·비용·운영 오판</td><td>응답은 생성 MP3의 foreground 성공임을, R2 상태는 새 요청과 background write 관찰로만 확인함을 runbook에 적는다.</td></tr>
+      <tr><td>현재 가격·Free Tier를 고정값으로 문서화</td><td>계정·시점별 과금 조건을 잘못 안내</td><td>문자 수는 provider가 반환한 <code>usage.characters</code>로, 비용/무료량은 운영 시점의 공식 provider·R2 청구 화면으로 확인하도록 한다.</td></tr>
+      <tr><td>이전 R2 object cleanup을 자동화하거나 넓은 prefix로 실행</td><td>롤백에 필요한 파일을 비가역 삭제</td><td>자동 lifecycle/삭제는 비범위로 유지하고, 현재 profile partition·revision을 읽기 전용으로 확인한 뒤 승인된 좁은 대상만 수동 정리하도록 한다.</td></tr>
+      <tr><td>상호 링크·anchor 또는 설정 이름 드리프트</td><td>운영자가 잘못된 절차/계약을 따름</td><td><code>TTS_ENABLED</code>, <code>DASHSCOPE_API_KEY</code>, bucket binding, source/storage 진단, AC-01~24를 코드·문서 간 검색하고 모든 변경 링크를 해석한다.</td></tr>
+    </tbody></table></div>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">6</span>테스트 계획</h2>
+    <p><strong>구현 상태: 완료.</strong> 6개 문서를 수정하고 운영 런북을 추가했다. 문서 링크·anchor, 계약 문자열·설정명·AC 인용, placeholder/비밀값/허위 라이브 성공 여부를 검사했으며 <code>git diff --check</code>가 통과했다. 문서 전용 변경이므로 앱 test/lint/build와 cloud command·키 입력·배포·유료 합성·R2 조작은 실행하지 않았고, #150 선행 동일 HEAD의 결과로만 기록한다.</p>
+    <ul>
+      <li>문서 링크·anchor 검사: 여섯 대상 문서의 상대 링크가 실제 파일과 제목 anchor를 가리키는지, 새 operations 문서가 환경 기록·검증 기록·PRD·아키텍처와 양방향으로 연결되는지 확인한다. 외부 Cloudflare secret reference는 열람일과 함께 URL만 기록한다.</li>
+      <li>계약 일치 검사: <code>rg</code>로 <code>TTS_ENABLED</code>, <code>DASHSCOPE_API_KEY</code>, <code>TTS_AUDIO</code>, <code>qwen-audio-3.0-tts-flash</code>, <code>longanfengyue</code>, <code>1.0</code>, <code>tts-v1</code>, <code>UNCONFIRMED</code>, <code>usage.characters</code>, 200자 및 AC-01~24를 대상 문서와 <code>wrangler.jsonc</code>/<code>worker/lib/tts</code>에 대조한다.</li>
+      <li>증거 정밀도 검사: #150 검증 표에서 generic API 거부는 <code>worker/routes/tts.test.ts</code>의 parameterized validation 사례가 직접 커버한다는 R3 관찰을 정확히 적고, 대표 제목을 coverage 부재로 오해하지 않게 한다.</li>
+      <li>문서 diff 품질: 미치환 placeholder·비밀값·실제 키 문자열·“완료”로 잘못 표시한 라이브 항목이 없는지 검색하고 <code>git diff --check</code>를 통과시킨다.</li>
+      <li><span class="warning">실행하지 않을 검증:</span> 이 문서 변경만으로 <code>npm test</code>, lint, build를 재실행하거나 cloud command, key 입력, 배포, 유료 Qwen 요청, R2 list/get/put/delete를 실행하지 않는다. #150의 55 files/696 tests·lint·build는 선행 동일 HEAD의 증거로만 인용한다.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">7</span>완료 조건</h2>
+    <ul class="done-list all-done">
+      <li><code>docs/PRD.md</code>, <code>docs/PRD-general.md</code>, <code>docs/design-prd.md</code>가 실제 <code>zh</code> scope, capability/API, A/B열 정책, 200자, 공개·재생 상태와 TTS의 학습 비차단 경계를 같은 의미로 설명한다.</li>
+      <li>중국어 TTS PRD와 아키텍처가 merged implementation·#149 환경 기록·#150 자동 AC 증거를 링크하고, 자동 그래프 완료와 라이브 출시 완료를 구분한다.</li>
+      <li>새 operations 문서가 비밀값 없이 secret lifecycle, Qwen completion, stored reuse, <code>UNCONFIRMED</code>, <code>usage.characters</code> accounting, revision rollback, 이전 object의 명시적 정리를 실행 순서로 제공한다.</li>
+      <li>운영/개발·테스트 bucket의 실제 확인 범위와 아직 미실행인 object access·isolation/reuse·endpoint/model·청취·iOS/Android·p95·활성화가 정확히 표시되고 <code>TTS_ENABLED=false</code>가 유지된다.</li>
+      <li>선생성·배치·강제 병음·SSML/hot_fix·자동 provider fallback·자동 object 삭제는 첫 범위 밖이라는 내용이 모든 관련 문서에서 일치한다.</li>
+      <li>모든 내부 링크/anchor·설정명·AC 인용이 확인되고 문서 전용 <code>git diff --check</code>가 통과하며, PR은 <code>feat/ch-sound</code>를 base로 문서 변경과 검증 한계를 기록한다.</li>
+    </ul>
+  </section>
+  <footer>issue-plan · <a href="https://github.com/damdam6/vocabulary-study/issues/151">#151</a> · 2026-09-17</footer>
+</main>
+</body>
+</html>
