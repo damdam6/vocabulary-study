@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>#169 Speaker Position 디자인을 학습 화면에 반영 — 작업 플랜</title>
+<style>
+  :root {
+    --bg: #f7f7f8; --card: #ffffff; --ink: #1c1c1e; --muted: #6e6e73;
+    --line: #e3e3e6; --accent: #3b6ef5; --accent-soft: #e8eefe;
+    --ok: #2e8b57; --warn: #b25e09; --code-bg: #f0f0f2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161618; --card: #202024; --ink: #ececf0; --muted: #98989f;
+      --line: #333338; --accent: #7a9bff; --accent-soft: #26304a;
+      --ok: #58c088; --warn: #e0a35c; --code-bg: #2a2a2f;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 40px 20px 80px; background: var(--bg); color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+                 "Segoe UI", "Noto Sans KR", sans-serif;
+    line-height: 1.65;
+  }
+  main { max-width: 860px; margin: 0 auto; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code {
+    font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 0.86em;
+    background: var(--code-bg); border-radius: 5px; padding: 2px 6px;
+  }
+  header { margin-bottom: 28px; }
+  .issue-chip {
+    display: inline-block; font-weight: 700; color: var(--accent);
+    background: var(--accent-soft); border-radius: 999px;
+    padding: 3px 14px; font-size: 0.95rem; margin-bottom: 10px;
+  }
+  .type-chip {
+    display: inline-block; font-weight: 600; color: var(--muted);
+    border: 1px solid var(--line); border-radius: 999px;
+    padding: 3px 12px; font-size: 0.8rem; margin-left: 8px; vertical-align: 2px;
+  }
+  h1 { font-size: 1.7rem; margin: 0 0 14px; letter-spacing: -0.02em; }
+  .meta {
+    display: flex; flex-wrap: wrap; gap: 6px 22px;
+    color: var(--muted); font-size: 0.87rem;
+  }
+  .meta b { color: var(--ink); font-weight: 600; }
+  section.card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 24px 28px; margin-top: 18px;
+  }
+  h2 {
+    font-size: 1.05rem; margin: 0 0 14px; letter-spacing: -0.01em;
+    display: flex; align-items: center; gap: 8px;
+  }
+  h2 .no {
+    color: var(--accent); font-size: 0.8rem; font-weight: 700;
+    border: 1.5px solid var(--accent); border-radius: 6px; padding: 0 6px;
+  }
+  ul, ol { margin: 0; padding-left: 22px; }
+  li { margin: 6px 0; }
+  .steps { list-style: none; padding: 0; counter-reset: step; }
+  .steps li {
+    counter-increment: step; position: relative; padding: 10px 0 10px 44px;
+    border-bottom: 1px dashed var(--line);
+  }
+  .steps li:last-child { border-bottom: none; }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 10px;
+    width: 28px; height: 28px; border-radius: 8px; background: var(--accent-soft);
+    color: var(--accent); font-weight: 700; font-size: 0.85rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .steps .files { display: block; margin-top: 4px; font-size: 0.85rem; color: var(--muted); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 0.82rem; }
+  .done-list { list-style: none; padding: 0; }
+  .done-list li { padding-left: 30px; position: relative; }
+  .done-list li::before {
+    content: ""; position: absolute; left: 2px; top: 7px; width: 15px; height: 15px;
+    border: 2px solid var(--ok); border-radius: 5px;
+  }
+  .scroll-x { overflow-x: auto; }
+  footer { margin-top: 30px; color: var(--muted); font-size: 0.8rem; text-align: center; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <span class="issue-chip"><a href="https://github.com/damdam6/vocabulary-study/issues/169">#169</a></span><span class="type-chip">기능 개선</span>
+    <h1>Speaker Position 디자인을 학습 화면에 반영</h1>
+    <div class="meta">
+      <span><b>damdam6/vocabulary-study</b></span>
+      <span>브랜치 <b><code>feat/169-speaker-position</code></b> ← <code>feat/ch-sound</code></span>
+      <span>라벨 <b>enhancement</b></span>
+      <span>2026-09-24</span>
+    </div>
+  </header>
+
+  <section class="card">
+    <h2><span class="no">1</span>요약</h2>
+    <p>Claude Design의 Speaker Position.dc.html은 학습 화면 두 장면(모드1 뒷면, 모드2 오답 결과)에서 발음 버튼을 병음 바로 오른쪽에 붙이고, 병음은 카드 가운데에 그대로 두도록 바꾼다. 현재 앱은 모드1에서 버튼이 병음 옆 흐름 안에 44px 원 + 아래 안내 문구로 놓이고, 모드2 오답에서는 한자 옆에 붙는다. 버튼 위치·크기·스타일과 두 카드의 글자 크기만 디자인에 맞추고, 자동/수동 재생·채점·다음 문제 이동 로직은 건드리지 않는다.</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">2</span>현황 분석</h2>
+    
+    <p><b>디자인 원본 (DesignSync로 가져와 확인함)</b></p>
+<ul>
+<li><code>Speaker Position.dc.html</code>: 420×800 화면 두 장. <b>01 한자→뜻</b>: 카드 안 한자 52px/700 → 병음 24px(<code>#7ea0f0</code>) → 뜻 24px(<code>margin-top:22px</code>), 아래 X/O 80px 원. <b>02 뜻→한자 오답</b>: "오답" 19px/700 → 한자 52px → 병음 20px → 뜻 20px, 아래 "다음" 버튼.</li>
+<li>두 장면 모두 발음 버튼은 <code>position:relative; display:inline-flex</code>인 병음 래퍼 안에 <code>position:absolute; left:100%; top:50%; translateY(-50%); margin-left:10px</code>로 놓인다. 30px 원, 테두리 <code>#2f3542</code>, 아이콘 색 <code>#9aa1ad</code>, 마우스를 올리면 배경 <code>#222733</code>·아이콘 <code>#e8eaee</code>. 버튼이 레이아웃 흐름 밖에 있으므로 <b>병음은 정확히 가운데</b>에 온다.</li>
+<li><code>support.js</code>: dc-runtime을 빌드한 파일(템플릿 파싱·컴파일·helmet·<code>style-hover</code>→<code>:hover</code> 클래스 변환 등)이다. 앱 동작 로직은 없으며, 여기서 가져올 건 <code>style-hover</code>가 hover 스타일이라는 점 하나뿐이다.</li>
+<li><code>uploads/*.png</code> 3장: 현재 앱 스크린샷. 모드1은 버튼이 병음 옆에 흐름대로 붙어 병음이 왼쪽으로 밀리고, 모드2 오답은 버튼이 한자 옆에 있다. 디자인이 고치려는 부분이 바로 이것이다.</li>
+</ul>
+<p><b>현재 코드</b></p>
+<ul>
+<li><code>src/screens/Mode1Card.tsx:170-178</code>: 뒷면 <code>.mode-card-pinyin-area</code> 안에 병음 <code>span</code>과 <code>PronunciationButton</code>을 흐름대로 나란히 둔다. 이 영역에는 CSS 규칙이 없어서 버튼(44px + 아래 문구 영역 68px)이 병음 옆에 인라인으로 붙는다.</li>
+<li><code>src/screens/Mode2Card.tsx:83-91</code>: 오답 결과의 <code>.mode2-result-headword</code> 행에 한자와 버튼이 함께 있다(<code>src/screens/Mode2Card.css:15-24</code>). 병음은 그 아래 따로 있다.</li>
+<li><code>src/components/PronunciationButton.tsx</code>와 <code>.css</code>: 44px 원형 컨트롤과 아래 <code>__message</code> 칸(min-height 24px, 불러오는 중·재생 중·오류 문구)이 세로로 쌓이는 구조다. 이 구조 때문에 병음 옆에 두면 줄 높이가 커지고 정렬이 어긋난다.</li>
+<li>재생 흐름(<code>StudyScreen.tsx:66-72</code>의 <code>usePronunciation</code>, 모드1 <code>viewReady</code> 시점의 <code>reveal()</code>, 모드2 오답 <code>reveal()</code>, 판정·다음·종료 때의 <code>stop()</code>)은 버튼 위치와 무관하다. 이번 작업에서 수정하지 않는다.</li>
+<li>관련 테스트: <code>Mode1Card.test.tsx:229</code>(병음이 없어도 <code>.mode-card-pinyin-area</code> 유지), <code>Mode2Card.test.tsx:84</code>(버튼이 한자와 같은 <code>.mode2-result-headword</code> 행에 있음 → 디자인에 맞게 바꿔야 함), <code>PronunciationButton.test.tsx:109</code>(<code>__message</code> 설명 연결).</li>
+</ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">3</span>설계</h2>
+    
+    <ul>
+<li><b>공용 병음+버튼 행</b>: 모드1·모드2가 같은 마크업을 쓴다. <code>.pinyin-speaker</code>(<code>position:relative; display:inline-flex</code>) 안에 병음 <code>span</code>과 버튼 래퍼 <code>.pinyin-speaker__button</code>(<code>position:absolute; left:100%; top:50%; transform:translateY(-50%); margin-left:10px</code>)을 둔다. 병음이 없으면 버튼만 가운데에 흐름대로 놓는다(기존 "병음 없어도 버튼 유지" 동작 보존).</li>
+<li><b>PronunciationButton 크기 옵션</b>: <code>size?: 'default' | 'compact'</code> prop을 추가한다. compact는 <b>보이는 원은 30px</b>(테두리 <code>#2f3542</code>, 아이콘 색 <code>#9aa1ad</code>, hover 배경 <code>#222733</code>·아이콘 <code>#e8eaee</code>)이다. <b>아이콘은 디자인의 🔊︎ 글리프가 아니라 기존 <code>SpeakerIcon</code> SVG와 로딩 스피너를 그대로 쓰고</b>, 30px 원에 맞게 크기만 18px로 줄인다이지만, <code>::before</code>로 누를 수 있는 영역을 44px까지 넓혀 모바일 터치 목표를 지킨다. 재생 중·불러오는 중 색 표현은 그대로 유지한다.</li>
+<li><b>안내 문구 처리</b>: compact에서는 <code>__message</code>가 레이아웃 높이를 차지하지 않는다. 불러오는 중·재생 중 문구는 화면에서 숨기고 스크린리더에만 읽힌다(<code>aria-describedby</code> 연결 유지). 오류 문구(<code>snapshot.message</code>, 입력 사유)는 버튼 아래에 absolute로 작게 띄워 사용자가 볼 수 있게 한다. 기본(default) 사용처는 동작이 바뀌지 않는다.</li>
+<li><b>모드2 오답 순서</b>: 오답 → 한자 → [병음 + 버튼] → 뜻 → 내 답. 한자 행에서 버튼을 뺀다.</li>
+<li><b>글자 크기 맞춤</b>: 디자인 수치로 조정한다. 모드1 뒷면 <code>.mode-card-hanzi</code>는 52px/700, 병음 24px, 뜻 24px + <code>margin-top:22px</code>(뒷면 범위로만). 모드2 결과 카드는 한자 52px/700, 병음 20px, 뜻 20px. 앞면·출제 화면·헤더·판정 버튼은 이미 디자인과 같으므로 바꾸지 않는다.</li>
+<li><b>좁은 화면 대비</b>: 병음이 길면 absolute 버튼이 카드 밖으로 나갈 수 있다. 행 최대 너비를 <code>calc(100% - 2 × (30px + 10px))</code>로 좌우 대칭 제한해 병음은 줄바꿈되고 버튼은 카드 안에 남게 한다.</li>
+<li>포커스 이동(모드1 공개 후 <code>.pronunciation-button__control</code>, 모드2 오답 후 버튼 → 다음)은 클래스명을 유지하므로 코드 변경이 없다.</li>
+</ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">4</span>작업 단계</h2>
+    <ol class="steps">
+      
+      <li><b>✅ PronunciationButton compact 크기 추가</b>: <code>size</code> prop과 <code>pronunciation-button--compact</code> 클래스 추가. 30px 원 + 44px 누를 수 있는 영역(<code>::before</code>), 디자인 색·hover 적용. 아이콘은 기존 SVG를 그대로 쓰고 크기만 18px. 문구는 진행 상태면 스크린리더 전용, 오류면 absolute로 표시. 기본 크기는 그대로. <span class="files"><code>src/components/PronunciationButton.tsx</code>, <code>src/components/PronunciationButton.css</code></span><br><span class="files">📝 구현: 누를 수 있는 영역은 <code>inset:-8px</code>로 46px. 진행 문구는 <code>__message--hidden</code>(스크린리더 전용).</span></li>
+<li><b>✅ 병음+버튼 행 공용 스타일</b>: <code>.pinyin-speaker</code>와 <code>.pinyin-speaker__button</code> 규칙 추가(가운데 정렬, 버튼 absolute, 좌우 대칭 max-width, 병음 없을 때 흐름대로 배치). <span class="files"><code>src/index.css</code></span><br><span class="files">📝 변경: absolute 대신 <code>40px | 병음 | 40px</code> 3열 grid로 같은 모양을 냈다(병음 가운데, 버튼은 오른쪽 10px). 오류 문구를 행 아래 가운데에 흐름대로 놓고 좁은 폭에서 버튼이 카드 안에 남게 하려는 선택이다.</span></li>
+<li><b>✅ 모드1 뒷면에 적용</b>: <code>.mode-card-pinyin-area</code>에 <code>pinyin-speaker</code> 클래스를 더하고 버튼을 <code>size="compact"</code>로 래퍼 안에 둔다. 한자 52/700·병음 24·뜻 24(margin-top 22) 적용. <span class="files"><code>src/screens/Mode1Card.tsx:170-178</code>, <code>src/index.css</code>(<code>.flip-face--back</code> 범위)</span><br><span class="files">📝 디자인의 카드 간격 14px도 함께 적용했다.</span></li>
+<li><b>✅ 모드2 오답 결과에 적용</b>: 한자 행에서 버튼을 빼고 병음 행(<code>pinyin-speaker</code>)으로 옮긴다. <code>pronunciationRef</code>는 버튼 래퍼로 옮겨 포커스 대상을 유지한다. 한자 52/700·병음 20·뜻 20 적용. <span class="files"><code>src/screens/Mode2Card.tsx:83-91</code>, <code>src/screens/Mode2Card.css</code>, <code>src/index.css</code>(<code>.mode-card--result</code>)</span><br><span class="files">📝 추가: 디자인처럼 결과 묶음을 세로 가운데에 두도록 <code>.mode2-result-scroll</code>을 <code>flex: 0 1 auto</code>로 바꾸고 간격을 14px로 맞췄다. 넘치면 기존처럼 스크롤된다. 빈 <code>.mode2-result-headword</code> 스타일은 제거했다.</span></li>
+<li><b>✅ 테스트 갱신·추가</b>: 모드2: 버튼이 병음과 같은 <code>.pinyin-speaker</code> 행에 있고 한자 행에는 없는지 확인. 모드1: 버튼이 병음 행 안에 있는지 확인. compact: 클래스 적용, 진행 문구는 설명으로 연결되지만 숨김 클래스, 오류 문구는 표시. <span class="files"><code>src/screens/Mode2Card.test.tsx:75-92</code>, <code>src/screens/Mode1Card.test.tsx</code>, <code>src/components/PronunciationButton.test.tsx</code></span></li>
+<li><b>✅ 전체 검사</b>: 기존 TTS·채점·진행 테스트(<code>StudyScreen*.test.tsx</code>, <code>usePronunciation.test.tsx</code>)가 모두 통과하는지 확인. <span class="files"><code>npm test</code>, <code>npm run lint</code>, <code>npm run build</code></span><br><span class="files">📝 결과: vitest 55 files / 698 tests 통과, oxlint 0, build 성공.</span></li>
+<li><b>✅ 데스크톱·모바일 화면 확인</b>: 모드1 뒷면과 모드2 오답 캡처를 디자인과 나란히 비교한다. 병음이 가운데에 오는지, 버튼 위치, 긴 병음 줄바꿈, 버튼 클릭 재생, hover·focus 표시를 확인한다. TTS는 fixture나 꺼진 상태로 확인하고 유료 TTS나 실제 쓰기는 하지 않는다. <span class="files">vite dev(워크트리 전용 포트, 메인 dev 서버는 건드리지 않음) + 브라우저 390px·데스크톱 폭</span><br><span class="files">📝 결과: 임시 하네스(커밋 안 함)를 headless Chrome으로 390×844(iframe)와 1280×800에서 캡처. 병음이 한자와 같은 중심선에 오고, 버튼은 오른쪽 10px, 긴 병음(줄바꿈)+오류 문구에서도 카드 안에 머무는 것을 확인. 버튼 클릭 → replay는 단위 테스트로 확인.</span></li>
+<li><b>PR 작성</b>: 본문에 Closes #169, 디자인 대비 결과(캡처), 검증 내용을 적는다. 이 계획 HTML도 최종 상태로 커밋한다. <span class="files"><code>gh pr create --base feat/ch-sound --head feat/169-speaker-position</code></span></li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">5</span>리스크</h2>
+    <div class="scroll-x">
+    <table>
+      <thead><tr><th>리스크</th><th>영향</th><th>완화책</th></tr></thead>
+      <tbody>
+        
+        <tr><td>보이는 버튼 30px는 44px 터치 기준보다 작다</td><td>중</td><td><code>::before</code>로 누를 수 있는 영역을 44px로 넓혀, 보이는 모습은 디자인대로 두고 터치 목표는 지킨다.</td></tr>
+<tr><td>absolute 버튼이 긴 병음이나 좁은 폭에서 카드 밖으로 넘친다</td><td>중</td><td>행 max-width를 좌우 대칭으로 제한하고, 390px에서 긴 병음 샘플로 확인한다.</td></tr>
+<tr><td>오류·상태 문구가 보이지 않아 사용자가 실패를 모름</td><td>중</td><td>오류 문구는 버튼 아래에 계속 표시하고, 진행 상태만 스크린리더 전용으로 둔다. 재생 중 색 표현은 유지한다.</td></tr>
+<tr><td>글자 크기를 키워 긴 뜻이나 한자가 모드2 결과 스크롤에서 넘침</td><td>하</td><td>기존 <code>.mode2-result-scroll</code>과 <code>overflow-wrap:anywhere</code>는 유지한다. 모드1 앞면 적응 크기(<code>hanziFontSize</code>)는 건드리지 않는다.</td></tr>
+<tr><td>포커스 대상 선택자가 바뀌어 접근성 흐름이 깨짐</td><td>하</td><td><code>.pronunciation-button__control</code>과 <code>pronunciationRef</code> 대상 유지. 기존 포커스 테스트로 회귀를 확인한다.</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">6</span>테스트 계획</h2>
+    <ul>
+      
+      <li><code>npx vitest run src/components/PronunciationButton.test.tsx src/screens/Mode1Card.test.tsx src/screens/Mode2Card.test.tsx</code>: 새 배치와 compact 동작 확인</li>
+<li><code>npx vitest run src/screens/StudyScreen.test.tsx src/screens/StudyScreen.tts.integration.test.tsx src/hooks/usePronunciation.test.tsx</code>: 자동/수동 재생, stop, 채점, 진행 회귀 없음</li>
+<li><code>npm test</code>, <code>npm run lint</code>, <code>npm run build</code> 전부 통과</li>
+<li>화면 확인: 390×844와 1280×800에서 모드1 뒷면·모드2 오답 캡처. 병음이 가운데에 오고 버튼이 오른쪽 10px에 붙는지, 긴 병음에서 넘치지 않는지, 버튼 클릭·키보드 포커스가 동작하는지 확인</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">7</span>완료 조건</h2>
+    <ul class="done-list">
+      
+      <li>MCP로 <code>Speaker Position.dc.html</code>과 <code>support.js</code>를 확인하고 내용을 계획에 적었다 ✅</li>
+<li>모드1 뒷면·모드2 오답에서 발음 버튼이 병음 오른쪽 absolute(30px, 디자인 색·hover, 기존 SVG 아이콘 유지)에 놓이고 병음이 가운데에 온다</li>
+<li>모드1 뒷면·모드2 결과 카드 글자 크기가 디자인 수치와 같다</li>
+<li>자동/수동 음성 재생, 채점, 다음 문제 이동, 포커스 이동이 기존과 같다(테스트 통과)</li>
+<li>데스크톱·모바일 캡처로 배치와 조작을 확인했다</li>
+<li>디자인 대비 결과와 검증 내용을 적은 PR을 <code>feat/ch-sound</code> 대상으로 올리고 Closes #169를 넣었다</li>
+    </ul>
+  </section>
+
+  <footer>issue-plan · <a href="https://github.com/damdam6/vocabulary-study/issues/169">#169</a> · 2026-09-24</footer>
+</main>
+</body>
+</html>

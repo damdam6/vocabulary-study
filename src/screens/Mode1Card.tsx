@@ -157,13 +157,16 @@ function Mode1Card({ question, contentType, onJudged, pronunciation }: Mode1Card
           <div className="flip-face flip-face--back" aria-hidden={!viewReady} inert={!viewReady}>
             <div className="flip-face-back-content">
               <span lang={lang} className="mode-card-hanzi">{word.hanzi}</span>
-              <div className="mode-card-pinyin-area">
+              <div className={`mode-card-pinyin-area pinyin-speaker${word.pinyin ? '' : ' pinyin-speaker--no-pinyin'}`}>
                 {word.pinyin && <span className="mode-card-pinyin">{word.pinyin}</span>}
                 {viewReady && pronunciationBinding && (
-                  <PronunciationButton
-                    snapshot={pronunciationBinding.snapshot}
-                    replay={pronunciationBinding.replay}
-                  />
+                  <div className="pinyin-speaker__button">
+                    <PronunciationButton
+                      snapshot={pronunciationBinding.snapshot}
+                      replay={pronunciationBinding.replay}
+                      size="compact"
+                    />
+                  </div>
                 )}
               </div>
               <span className="mode-card-meaning">{word.meaning}</span>

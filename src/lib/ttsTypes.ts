@@ -103,4 +103,6 @@ export interface PronunciationBinding {
 export interface PronunciationButtonProps {
   snapshot: PronunciationSnapshot;
   replay(): void;
+  /** compact: 병음 옆 30px 원(#169). 진행 상태 문구는 스크린리더 전용, 오류 문구만 버튼 아래에 띄운다. */
+  size?: "default" | "compact";
 }

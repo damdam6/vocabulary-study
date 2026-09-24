@@ -90,3 +90,62 @@
     animation: none;
   }
 }
+
+/* #169 Speaker Position: 병음 옆에 붙는 30px 원. 아이콘은 기존 SVG를 크기만 줄여 쓰고,
+   보이는 원보다 넓은 44px 히트 영역을 ::before로 확보한다. 배치는 .pinyin-speaker(index.css). */
+.pronunciation-button--compact {
+  min-width: 30px;
+  min-height: 30px;
+  color: #9aa1ad;
+}
+
+.pronunciation-button--compact .pronunciation-button__control {
+  position: relative;
+  width: 30px;
+  height: 30px;
+  flex-basis: 30px;
+  border-color: #2f3542;
+}
+
+.pronunciation-button--compact .pronunciation-button__control:disabled {
+  border-color: var(--border-faint);
+}
+
+.pronunciation-button--compact .pronunciation-button__control::before {
+  content: "";
+  position: absolute;
+  inset: -8px;
+  border-radius: 50%;
+}
+
+/* 재생 중에는 hover가 accent 표시를 덮지 않게 한다 — 모바일은 탭 후 hover가 남는다. */
+.pronunciation-button--compact:not(.pronunciation-button--playing) .pronunciation-button__control:hover:not(:disabled) {
+  border-color: #2f3542;
+  color: #e8eaee;
+  background: #222733;
+}
+
+.pronunciation-button--compact.pronunciation-button--playing .pronunciation-button__control {
+  border-color: var(--accent-light);
+  color: var(--accent-light);
+}
+
+.pronunciation-button--compact .pronunciation-button__icon,
+.pronunciation-button--compact .pronunciation-button__spinner {
+  width: 18px;
+  height: 18px;
+}
+
+.pronunciation-button--compact .pronunciation-button__message {
+  min-height: 0;
+}
+
+.pronunciation-button__message--hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

@@ -212,6 +212,10 @@ describe('Mode1Card 접근성 플립', () => {
 
     const button = container.querySelector('.pronunciation-button__control') as HTMLButtonElement
     expect(button).not.toBeNull()
+    const row = container.querySelector('.pinyin-speaker')!
+    expect(row.contains(button)).toBe(true)
+    expect(row.querySelector('.mode-card-pinyin')).not.toBeNull()
+    expect(row.querySelector('.pronunciation-button--compact')).not.toBeNull()
     expect(button.type).toBe('button')
     expect(button.getAttribute('aria-label')).toBe('발음 듣기')
     fire(() => button.click())
@@ -227,6 +231,7 @@ describe('Mode1Card 접근성 플립', () => {
     fire(() => transitionEnd(container.querySelector('.flip-card')!, 'transform'))
     expect(container.querySelector('.mode-card-pinyin')).toBeNull()
     expect(container.querySelector('.mode-card-pinyin-area')).not.toBeNull()
+    expect(container.querySelector('.pinyin-speaker--no-pinyin')).not.toBeNull()
     expect(container.querySelector('.pronunciation-button__control')).not.toBeNull()
     unmount()
   })

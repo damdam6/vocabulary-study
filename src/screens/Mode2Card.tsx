@@ -71,15 +71,21 @@ function Mode2Card({ question, contentType, onJudged, onProceed, pronunciation }
         <div className="mode-card mode-card--result">
           <span className="mode-result-title">오답</span>
           <div className="mode2-result-scroll">
-            <div className="mode2-result-headword">
-              <span lang={lang} className="mode-card-hanzi">{word.hanzi}</span>
-              {pronunciation && (
-                <div className="mode2-result-pronunciation" ref={pronunciationRef}>
-                  <PronunciationButton snapshot={pronunciation.snapshot} replay={pronunciation.replay} />
-                </div>
-              )}
-            </div>
-            {word.pinyin && <span className="mode-card-pinyin">{word.pinyin}</span>}
+            <span lang={lang} className="mode-card-hanzi">{word.hanzi}</span>
+            {(word.pinyin || pronunciation) && (
+              <div className={`pinyin-speaker${word.pinyin ? '' : ' pinyin-speaker--no-pinyin'}`}>
+                {word.pinyin && <span className="mode-card-pinyin">{word.pinyin}</span>}
+                {pronunciation && (
+                  <div className="pinyin-speaker__button" ref={pronunciationRef}>
+                    <PronunciationButton
+                      snapshot={pronunciation.snapshot}
+                      replay={pronunciation.replay}
+                      size="compact"
+                    />
+                  </div>
+                )}
+              </div>
+            )}
             <span className="mode-card-meaning">{word.meaning}</span>
             {wrongAnswer !== '' && (
               <span className="mode-my-answer">
