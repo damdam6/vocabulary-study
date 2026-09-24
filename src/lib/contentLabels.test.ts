@@ -75,7 +75,7 @@ describe("registerPlaceholder", () => {
     expect(placeholder).toContain('"pinyin"');
     expect(JSON.parse(placeholder)).toEqual({
       version: 1,
-      words: [{ hanzi: "经济", pinyin: "jīngjì", meaning: "경제" }],
+      words: [{ hanzi: "我今天很忙。", pinyin: "wǒ jīntiān hěn máng.", meaning: "나는 오늘 매우 바쁘다." }],
     });
   });
 

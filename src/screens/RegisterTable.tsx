@@ -1,4 +1,4 @@
-// 검증 결과 테이블 (#49, design-prd 등록 화면 절) — 정상/오류/중복 구분 표시.
+// 검증 결과 테이블 (#49, #174) — 정상/경고/오류/중복 구분 표시.
 // 분류 로직은 lib/registerValidation.ts 책임 — 여기는 순수 표시만 담당한다.
 // 헤더 라벨·A열 lang은 contentType별로 분기(#96) — 분기값은 lib/contentLabels.ts에서
 // 가져온다(컴포넌트 테스트 하네스가 없어 분기 로직 자체는 그쪽에서 vitest로 고정).
@@ -8,6 +8,7 @@ import type { ValidatedRow } from '../lib/registerValidation.ts'
 
 const STATUS_LABEL: Record<ValidatedRow['status'], string> = {
   valid: '정상',
+  warning: '경고',
   blocked: '오류',
   duplicate: '중복',
 }
@@ -48,6 +49,7 @@ function RegisterTable({ rows, contentType, editedIndexes }: RegisterTableProps)
                 </span>
                 {/* 상태 배지를 대체하지 않고 병기한다 — 상태는 제출 여부를 결정하는 정보다. */}
                 {editedIndexes?.has(index) && <span className="register-status register-status--edited">직접수정</span>}
+                {row.warnings && <ul className="register-warnings">{row.warnings.map((warning) => <li key={warning}>{warning}</li>)}</ul>}
                 {row.reasons.length > 0 && (
                   <ul className="register-reasons">
                     {row.reasons.map((reason) => (

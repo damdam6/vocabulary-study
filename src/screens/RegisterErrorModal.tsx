@@ -1,5 +1,5 @@
-// 오류 행 직접 수정 모달 (#127, design-prd §6 "오류 수정 모달") — 검증에서 blocked로
-// 분류된 행만 모아 세 값(zh: 한자/병음/뜻, generic: 표제어/보조 표기/뜻)을 모두 고칠
+// 등록 검토 모달 (#127, #174) — 오류 또는 경고 행의 세 값을 고친다.
+// zh는 문장을 읽고 편집할 수 있는 textarea, generic은 기존 input으로 표시하며 모두 고칠
 // 수 있게 한다. 열려 있는 동안의 편집은 이 컴포넌트의 draft 상태에만 쌓이고, "저장"을
 // 눌러야 부모(RegisterScreen)로 올라가 배치 전체가 재검증된다 — "취소"는 draft를 버린다.
 //
@@ -15,20 +15,22 @@ import { registerTableHeaders } from '../lib/contentLabels.ts'
 import type { ParsedWord, ValidatedRow } from '../lib/registerValidation.ts'
 
 /** 편집 대상 행 — index는 배치 전체(파싱 결과) 기준이라 오버레이 키로 그대로 쓰인다. */
-export interface BlockedRow {
+export interface EditableRow {
   index: number
   row: ValidatedRow
 }
 
 interface RegisterErrorModalProps {
-  rows: BlockedRow[]
+  rows: EditableRow[]
   contentType: ContentType
+  kind: 'blocked' | 'warning'
   onCancel: () => void
   onSave: (edits: Record<number, ParsedWord>) => void
 }
 
-function RegisterErrorModal({ rows, contentType, onCancel, onSave }: RegisterErrorModalProps) {
+function RegisterErrorModal({ rows, contentType, kind, onCancel, onSave }: RegisterErrorModalProps) {
   const headers = registerTableHeaders(contentType)
+  const Field = contentType === 'zh' ? 'textarea' : 'input'
   // 열릴 때의 값으로 draft를 채운다 — 부모가 열 때마다 새로 마운트하므로 초기화 훅은 없다.
   const [draft, setDraft] = useState<Record<number, ParsedWord>>(() =>
     Object.fromEntries(rows.map(({ index, row }) => [index, { hanzi: row.hanzi, pinyin: row.pinyin, meaning: row.meaning }])),
@@ -50,7 +52,7 @@ function RegisterErrorModal({ rows, contentType, onCancel, onSave }: RegisterErr
     <div className="register-modal-backdrop">
       <div className="register-modal" role="dialog" aria-modal="true" aria-labelledby="register-error-modal-title">
         <h2 className="register-modal-title" id="register-error-modal-title">
-          오류 {rows.length}건 수정
+          {kind === 'warning' ? '병음 검토' : '오류'} {rows.length}건 수정
         </h2>
         <p className="register-modal-hint">
           값을 고치고 저장하면 배치 전체를 다시 검증합니다 — 표제어를 바꾸면 중복 판정도 달라집니다.
@@ -60,16 +62,16 @@ function RegisterErrorModal({ rows, contentType, onCancel, onSave }: RegisterErr
           {rows.map(({ index, row }) => (
             <div className="register-modal-row" key={index}>
               <ul className="register-reasons">
-                {row.reasons.map((reason) => (
+                {[...row.reasons, ...(row.warnings ?? [])].map((reason) => (
                   <li key={reason}>{reason}</li>
                 ))}
               </ul>
               <div className="register-modal-fields">
                 <label className="register-modal-field">
                   <span className="register-modal-field-label">{headers.headword}</span>
-                  <input
+                  <Field
                     className="register-modal-input"
-                    type="text"
+                    rows={contentType === 'zh' ? 3 : undefined}
                     value={draft[index].hanzi}
                     onChange={(event) => updateField(index, 'hanzi', event.target.value)}
                     spellCheck={false}
@@ -79,9 +81,9 @@ function RegisterErrorModal({ rows, contentType, onCancel, onSave }: RegisterErr
                 </label>
                 <label className="register-modal-field">
                   <span className="register-modal-field-label">{headers.note}</span>
-                  <input
+                  <Field
                     className="register-modal-input"
-                    type="text"
+                    rows={contentType === 'zh' ? 3 : undefined}
                     value={draft[index].pinyin}
                     onChange={(event) => updateField(index, 'pinyin', event.target.value)}
                     spellCheck={false}
@@ -91,9 +93,9 @@ function RegisterErrorModal({ rows, contentType, onCancel, onSave }: RegisterErr
                 </label>
                 <label className="register-modal-field">
                   <span className="register-modal-field-label">{headers.meaning}</span>
-                  <input
+                  <Field
                     className="register-modal-input"
-                    type="text"
+                    rows={contentType === 'zh' ? 3 : undefined}
                     value={draft[index].meaning}
                     onChange={(event) => updateField(index, 'meaning', event.target.value)}
                   />

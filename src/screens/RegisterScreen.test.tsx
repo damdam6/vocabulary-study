@@ -99,7 +99,7 @@ function setup(contentType: ContentType = "zh") {
     errorBanner: () => container.querySelector(".register-error-banner"),
     fixButton: () => container.querySelector<HTMLButtonElement>(".register-error-fix-button"),
     modal: () => container.querySelector(".register-modal"),
-    modalInputs: () => Array.from(container.querySelectorAll<HTMLInputElement>(".register-modal-input")),
+    modalInputs: () => Array.from(container.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>(".register-modal-input")),
     modalSave: () => container.querySelector<HTMLButtonElement>(".register-modal-save")!,
     modalCancel: () => container.querySelector<HTMLButtonElement>(".register-modal-cancel")!,
     statusCells: () =>
@@ -386,7 +386,7 @@ describe("RegisterScreen 탭 우선 흐름 (#118·#120)", () => {
 });
 
 describe("RegisterScreen 오류 행 직접 수정 (#127)", () => {
-  // 병음이 한자와 어긋나 blocked가 되는 행 + 정상 행 하나.
+  // 병음에 성조가 없어 blocked가 되는 행 + 정상 행 하나.
   const MIXED_BATCH = JSON.stringify({
     version: 1,
     words: [
@@ -424,14 +424,14 @@ describe("RegisterScreen 오류 행 직접 수정 (#127)", () => {
     expect(errorBanner()).toBeNull();
   });
 
-  it("모달에서 값을 고쳐 저장하면 정상으로 승격되고 배너가 사라지며 '직접수정' 태그가 병기된다", async () => {
+  it("모달에서 값을 고쳐 저장하면 제출 가능한 경고로 바뀌고 오류 배너가 사라지며 '직접수정' 태그가 병기된다", async () => {
     const { fixButton, modal, modalInputs, modalSave, errorBanner, statusCells } =
       await confirmed(MIXED_BATCH);
 
     fire(() => fixButton()!.click());
     // 모달에는 blocked 행만 — 행 하나 × 세 입력.
     expect(modalInputs()).toHaveLength(3);
-    expect(modal()?.textContent).toContain("한자와 병음이 일치하지 않습니다");
+    expect(modal()?.textContent).toContain("병음에는 성조 부호가 최소 1개 필요합니다");
 
     fire(() => setNativeValue(modalInputs()[1], "jīngjì"));
     fire(() => modalSave().click());
@@ -439,7 +439,7 @@ describe("RegisterScreen 오류 행 직접 수정 (#127)", () => {
     expect(modal()).toBeNull();
     expect(errorBanner()).toBeNull();
     // 상태 배지를 대체하지 않고 그 옆에 붙는다. 손대지 않은 둘째 행에는 태그가 없다.
-    expect(statusCells()).toEqual([["정상", "직접수정"], ["정상"]]);
+    expect(statusCells()).toEqual([["경고", "직접수정"], ["경고"]]);
   });
 
   it("취소하면 편집값을 버린다", async () => {
@@ -452,7 +452,7 @@ describe("RegisterScreen 오류 행 직접 수정 (#127)", () => {
 
     expect(modal()).toBeNull();
     expect(errorBanner()).not.toBeNull();
-    expect(statusCells()).toEqual([["오류"], ["정상"]]);
+    expect(statusCells()).toEqual([["오류"], ["경고"]]);
   });
 
   it("고쳐도 여전히 blocked면 오류로 남고 사유가 갱신된다", async () => {
@@ -466,7 +466,7 @@ describe("RegisterScreen 오류 행 직접 수정 (#127)", () => {
 
     expect(errorBanner()).not.toBeNull();
     expect(container.textContent).toContain("뜻이 비어 있습니다");
-    expect(statusCells()).toEqual([["오류", "직접수정"], ["정상"]]);
+    expect(statusCells()).toEqual([["오류", "직접수정"], ["경고"]]);
   });
 
   it("표제어를 시트에 있는 값으로 고치면 중복으로 전환되고 중복 확인이 다시 요구된다", async () => {
@@ -481,7 +481,7 @@ describe("RegisterScreen 오류 행 직접 수정 (#127)", () => {
     fire(() => setNativeValue(modalInputs()[1], "wénhuà"));
     fire(() => modalSave().click());
 
-    expect(statusCells()).toEqual([["중복", "직접수정"], ["정상"]]);
+    expect(statusCells()).toEqual([["중복", "직접수정"], ["경고"]]);
     // 중복 서명이 생겼으니 확인 전까지 제출이 막힌다.
     expect(duplicateBanner()).not.toBeNull();
     expect(submitButton()!.disabled).toBe(true);
@@ -509,7 +509,7 @@ describe("RegisterScreen 오류 행 직접 수정 (#127)", () => {
 
     expect(errorBanner()).toBeNull();
     // 태그는 실제로 고친 행에만 — 짝 행은 손대지 않았지만 중복이 풀려 정상이 된다.
-    expect(statusCells()).toEqual([["정상", "직접수정"], ["정상"]]);
+    expect(statusCells()).toEqual([["경고", "직접수정"], ["경고"]]);
   });
 
   it("generic 프로필에서는 모달 라벨이 표제어/보조 표기/뜻으로 갈린다", async () => {
@@ -549,13 +549,13 @@ describe("RegisterScreen 오류 행 직접 수정 (#127)", () => {
     fire(() => fixButton()!.click());
     fire(() => setNativeValue(modalInputs()[1], "jīngjì"));
     fire(() => modalSave().click());
-    expect(statusCells()).toEqual([["정상", "직접수정"], ["정상"]]);
+    expect(statusCells()).toEqual([["경고", "직접수정"], ["경고"]]);
 
     // 분류 결과가 같아지는 변경(공백 추가)이라도 텍스트가 달라졌으면 오버레이는 버린다.
     fire(() => setNativeValue(textarea(), `${MIXED_BATCH} `));
     fire(() => confirmButton().click());
 
-    expect(statusCells()).toEqual([["오류"], ["정상"]]);
+    expect(statusCells()).toEqual([["오류"], ["경고"]]);
   });
 
   it("탭만 바꾸면 편집 오버레이가 유지된다", async () => {
@@ -572,7 +572,7 @@ describe("RegisterScreen 오류 행 직접 수정 (#127)", () => {
     fire(() => tabOptions().find((el) => el.textContent === "HSK7")!.click());
 
     // 탭 변경은 텍스트 게이트 밖 — 분류만 다시 돌고 편집값·태그는 살아 있다.
-    expect(statusCells()).toEqual([["정상", "직접수정"], ["정상"]]);
+    expect(statusCells()).toEqual([["경고", "직접수정"], ["경고"]]);
   });
 
   it("전 행이 blocked라 막혀 있던 제출이 수정으로 valid가 생기면 활성화된다", async () => {
@@ -615,5 +615,140 @@ describe("RegisterScreen 오류 행 직접 수정 (#127)", () => {
         { hanzi: "社会", pinyin: "shèhuì", meaning: "사회" },
       ],
     });
+  });
+});
+
+// #174: 형식 오류·의미 경고·중복은 별도 상태이며 실제 전송값과 집계가 일치해야 한다.
+describe("RegisterScreen 문장·병음 검토", () => {
+  const sentence = { hanzi: "我今天很忙。", pinyin: "wǒ jīntiān hěn máng.", meaning: "나는 오늘 매우 바쁘다." };
+  const warning = { hanzi: "经济", pinyin: "nǐ hǎo", meaning: "경제" };
+  const invalid = { hanzi: "天气", pinyin: "tian1qi4", meaning: "날씨" };
+  const duplicate = { hanzi: "行", pinyin: "háng", meaning: "줄" };
+  function existing(hanzi: string, tab = "HSK6") {
+    return { ...sentence, tab, hanzi, m1: 0, m2: 0, nextReview: null, interval: null };
+  }
+  async function preview(words: unknown[]) {
+    fetchTabsMock.mockResolvedValue(["HSK6", "HSK7"]);
+    const api = setup();
+    await flush();
+    fire(() => setNativeValue(api.textarea(), JSON.stringify({ version: 1, words })));
+    fire(() => api.confirmButton().click());
+    return api;
+  }
+  function openReview(api: ReturnType<typeof setup>) {
+    fire(() => api.container.querySelector<HTMLButtonElement>(".register-warning-fix-button")!.click());
+  }
+  function acknowledge(api: ReturnType<typeof setup>) {
+    fire(() => api.duplicateBanner()!.querySelector<HTMLButtonElement>("button")!.click());
+  }
+
+  it("네 상태를 배타적으로 집계하고 경고/중복을 보내며 차단만 제외한다", async () => {
+    fetchWordsMock.mockResolvedValue({ ...wordsResponse, words: [existing("　行 ")] });
+    // 전송 중 재클릭으로 같은 배치가 중복 전송되지 않는다.
+    registerWordsMock.mockReturnValue(new Promise(() => {}));
+    const api = await preview([sentence, warning, invalid, duplicate]);
+    expect(api.statusCells()).toEqual([["정상"], ["경고"], ["오류"], ["중복"]]);
+    expect(api.container.querySelector(".register-summary")?.textContent).toContain("정상 1건 · 경고 1건 · 오류 1건 · 중복 1건 · 전송 3건");
+    expect(api.container.querySelector(".register-warning-banner")?.textContent).toContain("병음 검토 2건 (중복 포함)");
+    expect(api.submitButton()!.disabled).toBe(true);
+    acknowledge(api);
+    fire(() => api.submitButton()!.click());
+    fire(() => api.submitButton()!.click());
+    expect(registerWordsMock).toHaveBeenCalledTimes(1);
+    expect(registerWordsMock).toHaveBeenCalledWith({ tab: "HSK6", words: [sentence, warning, duplicate] });
+  });
+
+  it("경고만 있는 배치는 추가 확인 없이 정규화된 원문으로 제출한다", async () => {
+    registerWordsMock.mockResolvedValue({ tab: "HSK6", added: [warning], skipped: [] });
+    const normalized = { hanzi: "我有2本书。", pinyin: "wǒ yǒu liǎng běn shū.", meaning: "나는 책이 두 권 있다." };
+    const api = await preview([{ ...normalized, hanzi: `　${normalized.hanzi} `, pinyin: normalized.pinyin.normalize("NFD") }]);
+    expect(api.statusCells()).toEqual([["경고"]]);
+    expect(api.submitButton()!.disabled).toBe(false);
+    fire(() => api.submitButton()!.click());
+    await flush();
+    expect(registerWordsMock).toHaveBeenCalledWith({ tab: "HSK6", words: [normalized] });
+  });
+
+  it("경고 수정→정상 전환과 취소·직접수정 태그·제출값을 검증한다", async () => {
+    registerWordsMock.mockResolvedValue({ tab: "HSK6", added: [], skipped: [] });
+    const api = await preview([{ ...sentence, pinyin: "nǐ hǎo" }]);
+    openReview(api);
+    fire(() => setNativeValue(api.modalInputs()[1], sentence.pinyin));
+    fire(() => api.modalCancel().click());
+    expect(api.statusCells()).toEqual([["경고"]]);
+    openReview(api);
+    fire(() => setNativeValue(api.modalInputs()[1], sentence.pinyin));
+    fire(() => api.modalSave().click());
+    expect(api.statusCells()).toEqual([["정상", "직접수정"]]);
+    expect(api.container.querySelector(".register-warning-banner")).toBeNull();
+    fire(() => api.submitButton()!.click());
+    await flush();
+    expect(registerWordsMock).toHaveBeenCalledWith({ tab: "HSK6", words: [sentence] });
+  });
+
+  it.each(["\t", "\n"])("경고 수정값에 %j이 남으면 차단하고 다시 고치면 재검토한다", async (control) => {
+    const api = await preview([{ ...sentence, pinyin: "nǐ hǎo" }]);
+    openReview(api);
+    fire(() => setNativeValue(api.modalInputs()[1], sentence.pinyin + control));
+    fire(() => api.modalSave().click());
+    expect(api.statusCells()).toEqual([["오류", "직접수정"]]);
+    expect(api.submitButton()!.disabled).toBe(true);
+    fire(() => api.fixButton()!.click());
+    fire(() => setNativeValue(api.modalInputs()[1], "nǐ hǎo"));
+    fire(() => api.modalSave().click());
+    expect(api.statusCells()).toEqual([["경고"]]); // 원본으로 되돌렸으므로 직접수정 해제
+    expect(api.submitButton()!.disabled).toBe(false);
+  });
+
+  it("경고→중복 전환·탭 변경 시 확인을 다시 요구하고 편집값을 유지한다", async () => {
+    fetchWordsMock.mockResolvedValue({ ...wordsResponse, words: [existing("行"), existing("行", "HSK7")] });
+    const api = await preview([warning]);
+    openReview(api);
+    fire(() => setNativeValue(api.modalInputs()[0], "行"));
+    fire(() => api.modalSave().click());
+    expect(api.statusCells()).toEqual([["중복", "직접수정"]]);
+    expect(api.submitButton()!.disabled).toBe(true);
+    acknowledge(api);
+    expect(api.submitButton()!.disabled).toBe(false);
+    fire(() => api.tabTrigger().click());
+    fire(() => api.tabOptions().find((el) => el.textContent === "HSK7")!.click());
+    expect(api.statusCells()).toEqual([["중복", "직접수정"]]);
+    expect(api.submitButton()!.disabled).toBe(true);
+    expect(api.duplicateBanner()).not.toBeNull();
+  });
+
+  it("배치 내 중복을 경고 수정으로 만들면 양쪽 행을 차단한다", async () => {
+    const api = await preview([warning, sentence]);
+    openReview(api);
+    fire(() => setNativeValue(api.modalInputs()[0], sentence.hanzi));
+    fire(() => api.modalSave().click());
+    expect(api.statusCells()).toEqual([["오류", "직접수정"], ["오류"]]);
+    expect(api.submitButton()!.disabled).toBe(true);
+    expect(registerWordsMock).not.toHaveBeenCalled();
+  });
+
+  it("쉼표 연결 결과가 같은 서로 다른 중복 집합도 재확인한다", async () => {
+    fetchWordsMock.mockResolvedValue({ ...wordsResponse, words: ["你", "我,天", "你,我", "天"].map((h) => existing(h)) });
+    const word = (hanzi: string) => ({ hanzi, pinyin: "nǐ", meaning: "뜻" });
+    const api = await preview([word("你"), word("我,天")]);
+    acknowledge(api);
+    expect(api.submitButton()!.disabled).toBe(false);
+    fire(() => setNativeValue(api.textarea(), JSON.stringify({ version: 1, words: [word("你,我"), word("天")] })));
+    expect(api.submitButton()).toBeNull(); // 재확인 전 미리보기/제출 숨김
+    fire(() => api.confirmButton().click());
+    expect(api.duplicateBanner()).not.toBeNull();
+    expect(api.submitButton()!.disabled).toBe(true);
+  });
+
+  it("경고 편집 후 JSON 재확인은 오버레이를 버린다", async () => {
+    const original = { ...sentence, pinyin: "nǐ hǎo" };
+    const api = await preview([original]);
+    openReview(api);
+    fire(() => setNativeValue(api.modalInputs()[1], sentence.pinyin));
+    fire(() => api.modalSave().click());
+    expect(api.statusCells()).toEqual([["정상", "직접수정"]]);
+    fire(() => setNativeValue(api.textarea(), JSON.stringify({ version: 1, words: [original] }) + " "));
+    fire(() => api.confirmButton().click());
+    expect(api.statusCells()).toEqual([["경고"]]);
   });
 });

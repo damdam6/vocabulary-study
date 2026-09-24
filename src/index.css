@@ -1519,3 +1519,37 @@ button {
   color: var(--accent-light);
   font-weight: 700;
 }
+
+/* #174 병음 검토는 비차단 안내이며 오류·중복과 문구/색을 구분한다. */
+.register-status--warning {
+  color: #805000;
+  background: #fff0c2;
+}
+.register-warning-banner {
+  border: 1px solid #d8ad4a;
+  border-radius: 12px;
+  padding: 14px 16px;
+  background: #fff8e5;
+  color: #674400;
+  overflow-wrap: anywhere;
+}
+.register-warning-banner p { margin: 0 0 10px; }
+.register-warning-fix-button {
+  padding: 8px 12px;
+  border: 1px solid currentColor;
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+.register-warnings { padding-left: 16px; margin: 6px 0 0; font-size: 12px; }
+.register-table td { overflow-wrap: anywhere; }
+.register-modal-input { min-width: 0; }
+
+textarea.register-modal-input {
+  padding: 10px 12px;
+  line-height: 1.5;
+  resize: vertical;
+  overflow-wrap: anywhere;
+}
+.register-modal-actions { flex-shrink: 0; }

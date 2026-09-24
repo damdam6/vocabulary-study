@@ -1,45 +1,52 @@
-import { describe, expect, it } from "vitest";
-import { isPinyinMatch } from "./pinyinValidation";
+import { type Mock, afterEach, describe, expect, it, vi } from "vitest";
+import * as provider from "pinyin-pro";
+import { MAX_PINYIN_TRANSITIONS, reviewPinyin } from "./pinyinValidation";
 
-describe("isPinyinMatch", () => {
-  it("정상 다중 음절 단어는 일치하면 true", () => {
-    expect(isPinyinMatch("经济", "jīngjì")).toBe(true);
+vi.mock("pinyin-pro", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("pinyin-pro")>();
+  return { ...actual, pinyin: vi.fn(actual.pinyin) };
+});
+// pinyin overloads include AllData[]; this module exercises only type: array.
+const lookup = vi.mocked(provider.pinyin) as unknown as Mock<(char: string, options: unknown) => string[]>;
+afterEach(() => { vi.mocked(provider.pinyin).mockReset(); vi.restoreAllMocks(); });
+
+describe("병음 보조 검토", () => {
+  it.each([
+    ["今天", "jīntiān"], ["我今天很忙。", "wǒ jīntiān hěn máng."],
+    ["今天", " JĪN　TIĀN "], ["西安", "xī’ān"], ["今天", "ji\u0304ntiān"],
+  ])("안전한 후보 일치: %s", (hanzi, claim) => expect(reviewPinyin(hanzi, claim)).toBe("match"));
+
+  it("명백한 문자별 후보 불일치는 검토 대상으로 반환한다", () => {
+    expect(reviewPinyin("今天", "nǐ hǎo")).toBe("mismatch");
   });
 
-  it("다음자 — 기본값이 아닌 후보도 통과한다 (行의 기본 단독 발음은 xíng이지만 háng도 유효 후보)", () => {
-    expect(isPinyinMatch("行", "háng")).toBe(true);
+  it.each([
+    ["行", "háng"], ["行", "xíng"], ["经济", "jīngjì"],
+    ["你好", "ní hǎo"], ["你很忙", "nǐ hěn máng"], ["你很忙", "ní hěn máng"], ["一个", "yí ge"], ["不对", "bú duì"],
+    ["我有2本书。", "wǒ yǒu liǎng běn shū."], ["我用AI学习。", "wǒ yòng AI xuéxí."],
+    ["我用ＡＩ学习。", "wǒ yòng AI xuéxí."], ["鿿", "nǐ"], ["", ""],
+  ])("문맥/변조/혼합/미등록 후보를 확인 완료로 보이지 않는다: %s", (hanzi, claim) => {
+    expect(reviewPinyin(hanzi, claim)).toBe("unverified");
   });
 
-  it("다음자 — 기본 후보도 통과한다", () => {
-    expect(isPinyinMatch("行", "xíng")).toBe(true);
+  it("최대 원문 길이에서도 일치/불일치가 종료된다", () => {
+    expect(reviewPinyin("天".repeat(200), "tiān".repeat(200))).toBe("match");
+    expect(reviewPinyin("天".repeat(200), "tiān".repeat(199) + "hǎo")).toBe("mismatch");
+    expect(reviewPinyin("你".repeat(201), "nǐ")).toBe("unverified");
+    expect(reviewPinyin("你", "ā".repeat(1001))).toBe("unverified");
   });
 
-  it("다음자 — 후보에 없는 값이면 false", () => {
-    expect(isPinyinMatch("行", "qwe")).toBe(false);
+  it("후보 조합이 커져도 예산 안에서 중단하고 같은 문자는 한 번만 조회한다", () => {
+    lookup.mockReturnValue(["ā", "āā", "āāā", "āāāā"]);
+    const startsWith = vi.spyOn(String.prototype, "startsWith");
+    expect(reviewPinyin("你".repeat(200), "ā".repeat(800))).toBe("unverified");
+    // 후보 전이를 실제로 예산까지 탐색했고 추가 전이는 수행하지 않았다.
+    expect(startsWith.mock.calls.length).toBe(MAX_PINYIN_TRANSITIONS);
+    expect(lookup).toHaveBeenCalledTimes(1);
   });
 
-  it("음절 사이 공백은 무시하고 비교한다", () => {
-    expect(isPinyinMatch("经济", "jīng jì")).toBe(true);
-  });
-
-  it("대소문자를 무시하고 비교한다", () => {
-    expect(isPinyinMatch("经济", "JīngJì")).toBe(true);
-  });
-
-  it("완전히 다른 병음이면 false", () => {
-    expect(isPinyinMatch("经济", "nǐhǎo")).toBe(false);
-  });
-
-  it("성조 부호 없는 입력은 차단된다 (후보는 항상 성조 부호를 포함)", () => {
-    expect(isPinyinMatch("经济", "jingji")).toBe(false);
-  });
-
-  it("숫자 성조 표기 입력은 차단된다", () => {
-    expect(isPinyinMatch("经济", "jing1ji4")).toBe(false);
-  });
-
-  it("빈 한자나 빈 병음이면 false", () => {
-    expect(isPinyinMatch("", "jīngjì")).toBe(false);
-    expect(isPinyinMatch("经济", "")).toBe(false);
+  it("경성 후보는 성조가 있는 다른 음절과 함께 비교할 수 있다", () => {
+    lookup.mockImplementation((char) => char === "你" ? ["nǐ"] : ["ma"]);
+    expect(reviewPinyin("你吗", "nǐ ma")).toBe("match");
   });
 });

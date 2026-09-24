@@ -43,6 +43,6 @@ export function registerTableHeaders(contentType: ContentType): RegisterTableHea
 
 export function registerPlaceholder(contentType: ContentType): string {
   return contentType === "zh"
-    ? '{"version":1,"words":[{"hanzi":"经济","pinyin":"jīngjì","meaning":"경제"}]}'
+    ? '{"version":1,"words":[{"hanzi":"我今天很忙。","pinyin":"wǒ jīntiān hěn máng.","meaning":"나는 오늘 매우 바쁘다."}]}'
     : '{"version":1,"contentType":"generic","words":[{"term":"take off","note":"구동사","meaning":"이륙하다, (옷을) 벗다"}]}';
 }
