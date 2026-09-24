@@ -10,15 +10,21 @@ describe("normalizeTtsRequest", () => {
   it("A열은 NFC·줄바꿈·trim을 정규화하고 문장부호·숫자·내부 공백을 보존한다", () => {
     expect(normalizeTtsRequest({ text: " \r\n你，好 123\r " })).toEqual({ text: "你，好 123", pinyin: null });
     expect(normalizeTtsRequest({ text: "e\u0301中" }).text).toBe("é中");
+    const sentence = "今天下午三点，我们  一起去图书馆学习。价格是3.5元；增长了５％！AI也能读。";
+    expect(normalizeTtsRequest({ text: `  ${sentence}  ` }).text).toBe(sentence);
   });
 
   it("1~200 코드 포인트와 확장 한자는 허용하고 공백·한자 없음·201자는 거부한다", () => {
     expect(normalizeTtsRequest({ text: "𠀀" })).toEqual({ text: "𠀀", pinyin: null });
     expect(normalizeTtsRequest({ text: "中".repeat(200) }).text).toHaveLength(200);
+    const twoHundredCodePoints = `𠀀${"中".repeat(199)}`;
+    expect(twoHundredCodePoints.length).toBe(201);
+    expect(Array.from(normalizeTtsRequest({ text: twoHundredCodePoints }).text)).toHaveLength(200);
     invalid({ text: "" });
     invalid({ text: " \n\t " });
     invalid({ text: "only latin 123" });
     invalid({ text: "中".repeat(201) });
+    invalid({ text: `${twoHundredCodePoints}中` });
   });
 
   it("탭·LF만 내부 C0로 허용하고 NUL·VT·FF 등은 trim 전에 거부한다", () => {

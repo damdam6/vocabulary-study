@@ -67,6 +67,7 @@ function setup(transport?: TtsTransport, enabled = true) {
 }
 
 const input = { text: "  e\u0301中\r\n文  ", pinyin: " ha\u0301ng\r " };
+const sentence = "今天下午三点，我们  一起去图书馆学习。价格是3.5元，增长了５％！";
 
 describe("PronunciationController", () => {
   it("비활성 capability와 유효하지 않은 입력은 요청·재생 없이 안정 snapshot을 제공한다", () => {
@@ -97,6 +98,28 @@ describe("PronunciationController", () => {
     controller.activate("next", { text: "中", pinyin: "  " });
     controller.replay("next");
     expect(requests[1].input).toEqual({ text: "中" });
+  });
+
+  it("문장부호·ASCII/전각 숫자·내부 공백이 있는 A열 원문과 200 code point 경계를 그대로 전송한다", () => {
+    const { controller, requests } = setup();
+    controller.activate("sentence", { text: `  ${sentence}  `, pinyin: "jīntiān xiàwǔ" });
+    controller.reveal("sentence");
+    expect(requests[0].input).toEqual({ text: sentence, pinyin: "jīntiān xiàwǔ" });
+    expect(requests[0].input.text).not.toBe("今天下午三点我们一起去图书馆学习价格是35元增长了５％");
+
+    controller.stop("advance");
+    const twoHundredCodePoints = `𠀀${"中".repeat(199)}`;
+    expect(twoHundredCodePoints.length).toBe(201);
+    expect(Array.from(twoHundredCodePoints)).toHaveLength(200);
+    controller.activate("boundary", { text: twoHundredCodePoints, pinyin: null });
+    controller.reveal("boundary");
+    expect(requests[1].input.text).toBe(twoHundredCodePoints);
+
+    controller.stop("advance");
+    controller.activate("too-long", { text: `${twoHundredCodePoints}中`, pinyin: null });
+    controller.reveal("too-long");
+    expect(controller.getSnapshot().inputReason).toBe("text_too_long");
+    expect(requests).toHaveLength(2);
   });
 
   it("activate만으로는 요청하지 않고 동일 questionId 재활성은 상태와 자동 기회를 보존한다", async () => {

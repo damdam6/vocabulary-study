@@ -31,7 +31,8 @@ const event = (name: string, payload: Record<string, unknown> = {}, taskId = TAS
 
 describe("createQwenClientMessages", () => {
   it("serializes the four official messages with one task ID", () => {
-    const messages = createQwenClientMessages(TASK_ID, config, { text: "你好，\"世界\"\n下一行" });
+    const sentence = "今天下午三点，我们  一起去图书馆学习。价格是3.5元，增长了５％！";
+    const messages = createQwenClientMessages(TASK_ID, config, { text: sentence });
     expect(JSON.parse(messages.runTask)).toEqual({
       header: { action: "run-task", task_id: TASK_ID, streaming: "duplex" },
       payload: {
@@ -46,7 +47,7 @@ describe("createQwenClientMessages", () => {
     });
     expect(JSON.parse(messages.continueTask)).toEqual({
       header: { action: "continue-task", task_id: TASK_ID, streaming: "duplex" },
-      payload: { input: { text: "你好，\"世界\"\n下一行" } },
+      payload: { input: { text: sentence } },
     });
     expect(JSON.parse(messages.finishTask)).toEqual({
       header: { action: "finish-task", task_id: TASK_ID, streaming: "duplex" }, payload: { input: {} },

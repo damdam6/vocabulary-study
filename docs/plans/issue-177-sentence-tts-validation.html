@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>#177 문장 TTS 원문·길이·전환 검증 — 작업 플랜</title>
+<style>
+  :root { --bg:#f7f7f8; --card:#fff; --ink:#1c1c1e; --muted:#6e6e73; --line:#e3e3e6; --accent:#3b6ef5; --accent-soft:#e8eefe; --ok:#2e8b57; --warn:#b25e09; --code-bg:#f0f0f2; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#161618; --card:#202024; --ink:#ececf0; --muted:#98999f; --line:#333338; --accent:#7a9bff; --accent-soft:#26304a; --ok:#58c088; --warn:#e0a35c; --code-bg:#2a2a2f; } }
+  * { box-sizing:border-box; }
+  body { margin:0; padding:40px 20px 80px; background:var(--bg); color:var(--ink); font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Segoe UI","Noto Sans KR",sans-serif; line-height:1.65; }
+  main { max-width:860px; margin:0 auto; } a { color:var(--accent); text-decoration:none; } a:hover { text-decoration:underline; }
+  code { font-family:"SF Mono",ui-monospace,Menlo,monospace; font-size:.86em; background:var(--code-bg); border-radius:5px; padding:2px 6px; }
+  header { margin-bottom:28px; } .issue-chip { display:inline-block; font-weight:700; color:var(--accent); background:var(--accent-soft); border-radius:999px; padding:3px 14px; font-size:.95rem; margin-bottom:10px; }
+  .type-chip { display:inline-block; font-weight:600; color:var(--muted); border:1px solid var(--line); border-radius:999px; padding:3px 12px; font-size:.8rem; margin-left:8px; vertical-align:2px; }
+  h1 { font-size:1.7rem; margin:0 0 14px; letter-spacing:-.02em; } .meta { display:flex; flex-wrap:wrap; gap:6px 22px; color:var(--muted); font-size:.87rem; } .meta b { color:var(--ink); font-weight:600; }
+  section.card { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:24px 28px; margin-top:18px; } h2 { font-size:1.05rem; margin:0 0 14px; display:flex; align-items:center; gap:8px; } h2 .no { color:var(--accent); font-size:.8rem; font-weight:700; border:1.5px solid var(--accent); border-radius:6px; padding:0 6px; }
+  ul,ol { margin:0; padding-left:22px; } li { margin:6px 0; } .steps { list-style:none; padding:0; counter-reset:step; } .steps li { counter-increment:step; position:relative; padding:10px 0 10px 44px; border-bottom:1px dashed var(--line); } .steps li:last-child { border-bottom:none; } .steps li::before { content:counter(step); position:absolute; left:0; top:10px; width:28px; height:28px; border-radius:8px; background:var(--accent-soft); color:var(--accent); font-weight:700; font-size:.85rem; display:flex; align-items:center; justify-content:center; } .steps li.checked::before { content:"✓"; background:var(--ok); color:#fff; } .steps .files { display:block; margin-top:4px; font-size:.85rem; color:var(--muted); }
+  table { width:100%; border-collapse:collapse; font-size:.92rem; } th,td { text-align:left; padding:8px 12px; border-bottom:1px solid var(--line); vertical-align:top; } th { color:var(--muted); font-weight:600; font-size:.82rem; } .done-list { list-style:none; padding:0; } .done-list li { padding-left:30px; position:relative; } .done-list li::before { content:""; position:absolute; left:2px; top:7px; width:15px; height:15px; border:2px solid var(--ok); border-radius:5px; } .done-list li.checked::before { content:"✓"; color:#fff; background:var(--ok); font-size:11px; line-height:13px; text-align:center; } .scroll-x { overflow-x:auto; } footer { margin-top:30px; color:var(--muted); font-size:.8rem; text-align:center; }
+</style>
+</head>
+<body>
+<main>
+<header>
+  <span class="issue-chip"><a href="https://github.com/damdam6/vocabulary-study/issues/177">#177</a></span><span class="type-chip">기능 개선</span>
+  <h1>[SENT-05] 문장 TTS의 원문 전달·길이 제한·문제 전환 동작을 검증한다</h1>
+  <div class="meta"><span><b>damdam6/vocabulary-study</b></span><span>브랜치 <b><code>feat/177-sentence-tts-validation</code></b> ← <code>main</code></span><span>라벨 <b>enhancement</b></span><span>2026-09-24</span></div>
+</header>
+
+<section class="card"><h2><span class="no">1</span>요약</h2>
+<p>#172 PRD의 SENT-05 범위에 맞춰 문장 원문이 기존 TTS 경로를 통과하는지, 200 코드 포인트 경계에서 기존 장문 학습을 보존하는지, 모드1·모드2의 자동/수동 재생과 문제 전환 수명을 회귀 검증한다. 현재 코드에는 이 계약을 수행하는 controller·Worker·Audio/R2 경로와 단어 중심 테스트가 이미 있으므로, 우선 문장부호·숫자·긴 문장 fixture를 기존 경계에 연결하고 실패·자동재생 차단·늦은 응답이 채점/기록을 막지 않는다는 증거를 추가한다. 제공자 호출·R2 저장·실제 유료 합성·모바일 청취는 mock 통합 검사와 별도 미검증 기록으로 구분한다.</p>
+</section>
+
+<section class="card"><h2><span class="no">2</span>현황 분석</h2>
+<ul>
+  <li>#177은 #176을 직접 선행으로 요구하고, #172는 PRD 허브다. 현재 HEAD <code>ce58262cc6a9076277c9b8af5213156332dddfcc</code>는 #176 병합본이며 #172 본문 §6·§7에 TTS 원문, 200자 가드, 전환 취소, mock/실환경 구분의 계약이 있다.</li>
+  <li>화면의 현재 문제는 <code>src/screens/StudyScreen.tsx:57-74</code>에서 <code>question.word.hanzi</code>와 선택적 <code>pinyin</code>을 TTS input으로 전달하는 것으로 시작한다. <code>src/screens/StudyScreen.tsx:98-147</code>는 판정·다음·종료 시 <code>stop("advance"|"exit")</code>를 먼저 호출하므로 TTS 완료를 학습 기록의 선행 조건으로 만들지 않는다.</li>
+  <li>모드1은 <code>src/screens/Mode1Card.tsx:87-103</code>에서 flip transition 완료 후 <code>reveal()</code>을 한 번 호출하고, 공개 직전 <code>src/screens/Mode1Card.tsx:117-121</code>에서 <code>prepare()</code>를 호출한다. 모드2 오답은 <code>src/screens/Mode2Card.tsx:49-56</code>에서 정답 원문 공개 후 <code>reveal()</code>을 한 번 호출하며, “다음”은 별도 정지 경로다.</li>
+  <li><code>src/hooks/usePronunciation.ts:54-97</code>는 <code>zh</code>와 서버 capability가 활성일 때만 세션 controller를 만들고, <code>src/hooks/usePronunciation.ts:125-150</code>는 현재 questionId/가시성에 맞는 명령만 허용한다. 숨김·pagehide와 unmount에서는 <code>src/hooks/usePronunciation.ts:99-123</code> 및 cleanup이 정지·폐기한다.</li>
+  <li><code>src/lib/speak.ts:118-151</code>의 generation/questionId 검사는 이전 요청·재생 결과가 새 문제에 영향을 주지 않게 한다. <code>src/lib/speak.ts:242-270</code>은 TTS 응답을 현재 문제에만 반영하고, <code>src/lib/speak.ts:290-370</code>은 자동 한 번, 수동 반복, advance/hidden/exit 취소를 관리한다. 동일 입력의 client cache key에는 profile·revision·원문·pinyin이 포함된다(<code>src/lib/speak.ts:130</code>).</li>
+  <li><code>src/lib/speak.ts:390-424</code>는 CRLF/NFC/trim 뒤 <code>Array.from(text).length</code>로 200 코드 포인트를 검사하고, 길이 초과는 요청 없이 <code>text_too_long</code>으로 만든다. <code>src/components/PronunciationButton.tsx:5-8,45-80</code>은 해당 사유를 비활성 버튼과 “발음은 200자까지 지원해요.” 안내로 표시한다. 따라서 긴 기존 항목을 화면에서 숨기거나 학습 실패로 승격하지 않는지 fixture로 고정해야 한다.</li>
+  <li>Worker 경계도 <code>worker/lib/tts/input.ts:29-46,52-73</code>에서 A열 text를 NFC/trim하고 문장부호·숫자·내부 공백을 보존하며 1~200 코드 포인트만 허용한다. <code>worker/routes/tts.ts:19-59</code>는 인증·프로필·설정·입력 검증 뒤 서비스로 진입한다.</li>
+  <li>B열은 provider 발음 힌트가 아니다. <code>worker/lib/tts/pronunciation.ts:3-12</code>는 pinyin을 <code>absent/ignored</code>로 진단하고 provider payload는 text 하나만 만든다. 다만 <code>worker/lib/tts/storage.ts:50-70</code>과 <code>worker/lib/tts/storage.test.ts:53-75</code>의 현행 계약상 pinyin은 R2 key 식별에는 포함되므로, “provider에는 미전달”과 “키는 변경 가능”을 혼동하지 않도록 검증한다.</li>
+  <li>기존 테스트는 <code>src/lib/speak.test.ts:74-100</code>에서 일반 입력 정규화·길이 초과를, <code>src/lib/speak.test.ts:117-214</code>에서 자동/수동/cache를, <code>src/lib/speak.test.ts:216-300</code>에서 stale 응답·hidden·dispose를 검증한다. <code>src/screens/StudyScreen.tts.integration.test.tsx:141-186,188-227,229-326</code>도 단어 <code>经济</code> 중심의 실제 화면 연결을 갖지만 문장부호/숫자/200·201 경계와 명시적 “정규화된 채점 답이 TTS로 가지 않음” fixture는 보강 대상이다.</li>
+</ul>
+</section>
+
+<section class="card"><h2><span class="no">3</span>설계</h2>
+<p>새 문장 타입·시트 열·provider 계약을 만들지 않는다. 기존 <code>word.hanzi → usePronunciation → controller → fetchTtsAudio → /api/tts → R2/provider</code> 경계를 그대로 두고, 각 경계가 원문과 수명을 보존하는지를 테스트로 증명한다.</p>
+<ul>
+  <li>원문 fixture는 <code>今天下午三点，我们一起去图书馆学习。价格是3.5元。</code>, ASCII/전각 문장부호, 숫자·영문 혼합을 사용한다. 채점 정규화 결과(<code>src/lib/studySession.ts</code>의 비교용 값)는 TTS input·AnswerRecord·행 키에 절대 사용하지 않는다는 payload assertion을 둔다.</li>
+  <li>길이 기준은 JavaScript UTF-16 길이가 아니라 현재 계약의 Unicode code point 기준이다. 200자는 요청/재생, 201자는 요청 0회·비활성 안내·학습/판정 진행으로 분리하고, 앞뒤 trim 및 내부 문장부호/숫자 보존을 함께 검사한다.</li>
+  <li>provider mock은 <code>createSynthesisInput</code>와 Qwen message의 text-only 계약을 확인하고, pinyin이 있거나 바뀌어도 provider 입력은 동일 원문이며 진단은 <code>ignored</code>임을 확인한다. R2 key는 기존 pinyin·revision·설정 분리 계약을 유지한다.</li>
+  <li>자동 재생은 모드1 공개 후와 모드2 오답 후 각각 1회, 수동 반복은 추가 합성 없이 cache 재사용으로 고정한다. fetch/provider 실패, <code>NotAllowedError</code>, TTS 비활성은 학습 판정·answer/review-fail 기록과 독립임을 화면 통합으로 검증한다.</li>
+  <li>동일 controller unit과 StudyScreen 통합에서 다음 문제·종료·unmount 전에 AbortSignal/Audio/Object URL을 정리하고, 이후 도착한 응답/이벤트가 새 문제를 재생하지 않는지 확인한다. 실제 모바일 자동재생·음질·과금은 자동 테스트의 합격으로 간주하지 않는다.</li>
+</ul>
+</section>
+
+<section class="card"><h2><span class="no">4</span>작업 단계</h2>
+<ol class="steps">
+  <li class="checked">현재 TTS controller 계약에 문장 원문 fixture와 경계 assertion을 추가했다. 문장부호·숫자·ASCII/전각 기호·공백은 transport body에 유지하고, 채점용 문장부호 제거/공백 제거 결과가 전송되지 않음을 확인했다. 200 code point는 요청하고 201 code point 및 무효 입력은 요청하지 않는다.<span class="files"><code>src/lib/speak.test.ts</code>, 기존 상수 사용</span></li>
+  <li class="checked">자동 1회·수동 반복·cache와 응답 수명 회귀를 문장 사례로 확장했다. <code>prepare → reveal</code>, 오답 <code>reveal</code>, loading 중 중복 클릭, blocked 뒤 재생, 같은 원문 반복, revision 변경, 이전 문제의 늦은 성공/실패/Audio 이벤트를 현재 questionId에 귀속시킨다.<span class="files"><code>src/lib/speak.test.ts</code>, 기존 <code>src/lib/ttsAudio.test.ts</code>, <code>src/lib/ttsBlobCache.test.ts</code> 회귀 포함</span></li>
+  <li class="checked">Worker 입력·provider·R2 계약을 문장 경계로 검증했다. 200/201 code point, NFC/trim, 문장부호·숫자·내부 공백, B열 null/ignored, Qwen text-only message와 기존 key 분리를 확인했다.<span class="files"><code>worker/lib/tts/input.test.ts</code>, <code>worker/lib/tts/pronunciation.test.ts</code>, <code>worker/lib/tts/providers/qwenProtocol.test.ts</code>, <code>worker/lib/tts/storage.test.ts</code>, 기존 route 회귀</span></li>
+  <li class="checked">화면 통합 fixture를 문장으로 확장해 모드1·모드2 시점과 원문 payload를 검증했다. 200자는 합성하고 201자는 요청 없이 안내하면서 화면·판정·기록을 유지하며, 503·off·autoplay denial도 기록을 막지 않는다.<span class="files"><code>src/screens/StudyScreen.tts.integration.test.tsx</code>, 기존 화면·클라이언트 회귀</span></li>
+  <li class="checked">다음 문제·종료·401/unmount 전환의 정리와 장문 안내를 확인했다. 추가 회귀가 모두 통과해 production 수정은 필요하지 않았고, 학습 진행 잠금이나 음성 retry queue도 추가하지 않았다.<span class="files">기존 <code>src/screens/StudyScreen.tsx</code>, <code>src/hooks/usePronunciation.ts</code>, <code>src/lib/speak.ts</code> 계약 유지</span></li>
+  <li class="checked">선택 테스트, 전체 표준 검사, 실환경 한계 기록을 완료했다. mock 성공과 유료 합성·운영 R2·모바일 speaker 청취를 구분했다.<span class="files"><code>docs/plans/issue-177-sentence-tts-validation.html</code>, <code>.sentence-run/state.json</code> (기존 필드 보존)</span></li>
+</ol>
+</section>
+
+<section class="card"><h2><span class="no">5</span>리스크</h2><div class="scroll-x"><table><thead><tr><th>리스크</th><th>영향</th><th>완화책</th></tr></thead><tbody>
+<tr><td>채점용 정규화 텍스트가 TTS/기록 키로 재사용됨</td><td>문장부호·숫자·원래 A열 행을 잃거나 다른 행을 갱신한다.</td><td>화면 TTS body와 answer/review-fail payload를 raw <code>word.hanzi</code>에 대해 byte/문자열 단위로 assertion하고, 정규화 함수의 출력은 판정 비교에만 둔다.</td></tr>
+<tr><td>200자 기준을 UTF-16 length로 구현함</td><td>중국어·확장 문자 경계가 실제 계약과 달라 요청이 누락/초과된다.</td><td>프런트·Worker 모두 <code>Array.from</code> 기준 200/201 fixture와 NFC/trim 사례를 실행한다.</td></tr>
+<tr><td>201자 기존 시트를 등록 입력처럼 차단함</td><td>기존 학습 항목이 숨겨지거나 판정이 멈춘다.</td><td>TTS controller의 inputReason/버튼 안내만 비활성화하고, StudyScreen의 카드·판정·기록·다음 진행은 계속되는 통합 검증을 둔다.</td></tr>
+<tr><td>B열을 Qwen 발음 지시로 해석하거나 R2 key 계약을 바꿈</td><td>지원하지 않는 발음 보정, 기존 캐시 충돌 또는 불필요한 운영 비용이 생긴다.</td><td><code>pronunciation.ts</code>와 protocol test에서 provider text-only를 유지하고, R2 key의 pinyin 분리를 별도로 회귀한다.</td></tr>
+<tr><td>늦은 fetch/Audio 이벤트가 새 문제에서 재생됨</td><td>이전 문장의 음성이 다음 문제에 들리거나 상태 표시가 오염된다.</td><td>generation/questionId, AbortSignal, Audio detach/revoke를 unit·화면 통합 양쪽에서 확인하고 transition 중 빠른 판정/종료를 포함한다.</td></tr>
+<tr><td>mock 통과를 실제 품질·모바일 자동재생·과금 확인으로 오인함</td><td>출시 판단에 근거 없는 확신이 생긴다.</td><td>테스트 결과에 mock 범위와 실제 유료 합성·R2·iOS/Android 청취 미실행을 명시하고, 실기기 증거는 별도 출시 검증으로 남긴다.</td></tr>
+</tbody></table></div></section>
+
+<section class="card"><h2><span class="no">6</span>테스트 계획</h2>
+<ul>
+  <li><strong>controller 단위:</strong> <code>npm test -- src/lib/speak.test.ts src/lib/ttsAudio.test.ts src/lib/ttsBlobCache.test.ts</code>. 문장부호·숫자·긴 문장·200/201 code point, 자동/수동/cache, 실패·blocked·revision·stale·advance/hidden/exit를 검증한다.</li>
+  <li><strong>Worker 계약:</strong> <code>npm test -- worker/lib/tts/input.test.ts worker/lib/tts/pronunciation.test.ts worker/lib/tts/providers/qwenProtocol.test.ts worker/lib/tts/storage.test.ts worker/routes/tts.test.ts</code>. 원문 정규화, provider text-only, <code>ignored/absent</code>, R2 hit/generated/저장·취소·실패를 mock으로 확인한다.</li>
+  <li><strong>화면 통합:</strong> <code>npm test -- src/screens/StudyScreen.tts.integration.test.tsx src/screens/ttsServerClient.integration.test.ts src/components/PronunciationButton.test.tsx src/screens/Mode1Card.test.tsx src/screens/Mode2Card.test.tsx</code>. 모드1 공개 후/모드2 오답 후 자동 1회, 수동 cache 재생, 201자 안내, TTS 오류/off와 동일한 학습 기록을 확인한다.</li>
+  <li><strong>서비스 기존 동작:</strong> 저장 hit는 provider 0회·동일 bytes, 생성은 MP3 fixture·진단 header·조건부 R2 저장, 중단은 socket/put을 정리해야 한다. 제공자·스토리지 운영 설정은 테스트에서 임의 변경하지 않는다.</li>
+  <li><strong>표준 검사:</strong> 구현 후 <code>npm test</code>, <code>npm run build</code>, <code>npm run lint</code>를 실행한다. 실제 Google Sheets, 유료 Qwen 합성, 운영 R2, 모바일 실기기 자동재생/청취는 이 자동 검사에 포함하지 않고 결과에 별도 기재한다.</li>
+</ul></section>
+
+<section class="card"><h2><span class="no">7</span>완료 조건</h2><ul class="done-list">
+  <li class="checked">#176 이후 문장 원문이 문장부호·숫자를 포함한 채 기존 TTS transport에 전달되고, 채점용 정규화 텍스트가 전달되지 않는다.</li>
+  <li class="checked">기존 시트의 200자 초과 항목은 화면·학습·판정을 유지하며 TTS 요청은 0회이고 “발음은 200자까지 지원해요.” 안내를 제공한다. 200자 경계는 Unicode code point 기준이다.</li>
+  <li class="checked">모드1 공개 후와 모드2 오답 후 자동 재생은 문제당 1회이며, 수동 반복과 cache hit는 추가 합성 없이 동작한다. B열은 provider 발음 힌트로 사용되지 않고 기존 R2 key 계약만 유지한다.</li>
+  <li class="checked">다음 문제·종료·완료·숨김·unmount 시 요청과 재생이 취소/정리되고 늦은 응답·이벤트가 새 문제를 재생하지 않는다.</li>
+  <li class="checked">TTS 실패·비활성·자동재생 차단은 채점·answer/review-fail 기록·retry queue·세션 통계를 막지 않으며, 자동 실패는 음성 retry queue를 만들지 않는다.</li>
+  <li class="checked">관련 mock 통합 검사와 전체 test/build/lint 결과가 기록되고, 실제 유료 합성·운영 R2·모바일 청취 여부가 자동 검사 성공과 분리되어 명시된다.</li>
+  <li class="checked">구현과 ready PR 생성은 Sol medium 단계에서 수행하고, 병합은 Grok 독립 리뷰와 오케스트레이터 검증 뒤에만 수행한다.</li>
+</ul></section>
+
+<section class="card"><h2><span class="no">8</span>구현·검증 결과</h2>
+<ul>
+  <li><strong>구현:</strong> production 코드는 변경하지 않고 controller, Worker 입력, Qwen text-only payload, R2 key, StudyScreen 통합 회귀를 문장 fixture와 200/201 code point 경계로 보강했다.</li>
+  <li><strong>선택 테스트:</strong> 13 files, 153 tests 통과.</li>
+  <li><strong>전체 검사:</strong> <code>npm test</code> 57 files, 1080 tests 통과; <code>npm run build</code> 통과; <code>npm run lint</code> 통과.</li>
+  <li><strong>자동 검증 범위:</strong> mock transport/audio/provider/R2를 사용해 원문 전달, 자동·수동 재생, cache, 취소·늦은 결과, 실패·비활성·autoplay denial의 비차단성을 확인했다.</li>
+  <li><strong>미검증:</strong> 실제 유료 Qwen 합성, 운영 R2 쓰기/조회, Google Sheets 쓰기, iOS/Android 실기기 자동재생과 음질 청취는 수행하지 않았다. resource 변경과 배포도 수행하지 않았다.</li>
+</ul></section>
+
+<footer>issue-work · <a href="https://github.com/damdam6/vocabulary-study/issues/177">#177</a> · 2026-09-24 · 구현 및 자동 검증 완료</footer>
+</main>
+</body>
+</html>
