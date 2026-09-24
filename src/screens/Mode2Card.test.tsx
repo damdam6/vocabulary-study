@@ -202,4 +202,30 @@ describe("Mode2Card 정답 음성", () => {
     expect(scroll.querySelector('button[aria-label="발음 듣기"]')).not.toBeNull();
     expect(scroll.contains(container.querySelector(".primary-button"))).toBe(false);
   });
+
+  it("zh 문장부호 차이는 정답이고 generic은 오답이며 오답 원문은 그대로 표시한다", () => {
+    const zh = renderComponent(
+      <Mode2Card
+        question={{ ...question, word: { ...word, hanzi: "你好，世界！" } }}
+        contentType="zh"
+        onJudged={vi.fn()}
+        onProceed={vi.fn()}
+      />,
+    );
+    submit(zh.container, "你好, 世界!");
+    expect(zh.container.querySelector(".mode-card--result")).toBeNull();
+    zh.unmount();
+
+    const generic = renderComponent(
+      <Mode2Card
+        question={{ ...question, word: { ...word, hanzi: "hello!" } }}
+        contentType="generic"
+        onJudged={vi.fn()}
+        onProceed={vi.fn()}
+      />,
+    );
+    unmountCurrent = generic.unmount;
+    submit(generic.container, "  hello?  ");
+    expect(generic.container.querySelector(".mode-my-answer s")?.textContent).toBe("  hello?  ");
+  });
 });

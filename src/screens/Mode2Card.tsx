@@ -23,7 +23,7 @@ interface Mode2CardProps {
 
 function Mode2Card({ question, contentType, onJudged, onProceed, pronunciation }: Mode2CardProps) {
   const [value, setValue] = useState('')
-  // null이 아니면 오답 결과 화면 표시 중 — 값은 트림된 내 답(빈 입력 오답이면 '')
+  // null이 아니면 오답 결과 화면 표시 중 — 값은 사용자가 제출한 원문이다.
   const [wrongAnswer, setWrongAnswer] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const pronunciationRef = useRef<HTMLDivElement>(null)
@@ -55,7 +55,7 @@ function Mode2Card({ question, contentType, onJudged, onProceed, pronunciation }
   const submit = (event: FormEvent) => {
     event.preventDefault()
     if (wrongAnswer !== null) return
-    const { correct, answer } = gradeMode2(value, word.hanzi)
+    const { correct, answer } = gradeMode2(value, word.hanzi, contentType)
     if (correct) {
       onJudged(true)
     } else {
@@ -87,7 +87,7 @@ function Mode2Card({ question, contentType, onJudged, onProceed, pronunciation }
               </div>
             )}
             <span className="mode-card-meaning">{word.meaning}</span>
-            {wrongAnswer !== '' && (
+            {wrongAnswer.trim() !== '' && (
               <span className="mode-my-answer">
                 내 답: <s lang={lang}>{wrongAnswer}</s>
               </span>

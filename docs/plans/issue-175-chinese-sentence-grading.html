@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>#175 중국어 문장 채점에서 문장부호 차이를 허용하고 원문 키를 보존한다 — 작업 플랜</title>
+<style>
+:root{--bg:#f7f7f8;--card:#fff;--ink:#1c1c1e;--muted:#6e6e73;--line:#e3e3e6;--accent:#3b6ef5;--accent-soft:#e8eefe;--ok:#2e8b57;--code-bg:#f0f0f2}
+@media(prefers-color-scheme:dark){:root{--bg:#161618;--card:#202024;--ink:#ececf0;--muted:#98989f;--line:#333338;--accent:#7a9bff;--accent-soft:#26304a;--code-bg:#2a2a2f}}
+*{box-sizing:border-box}body{margin:0;padding:40px 20px 80px;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Segoe UI","Noto Sans KR",sans-serif;line-height:1.65;overflow-wrap:anywhere}main{max-width:860px;margin:0 auto}a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}code{font-family:"SF Mono",ui-monospace,Menlo,monospace;font-size:.86em;background:var(--code-bg);border-radius:5px;padding:2px 6px}header{margin-bottom:28px}.issue-chip{display:inline-block;font-weight:700;color:var(--accent);background:var(--accent-soft);border-radius:999px;padding:3px 14px;font-size:.95rem;margin-bottom:10px}.type-chip{display:inline-block;font-weight:600;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:3px 12px;font-size:.8rem;margin-left:8px;vertical-align:2px}h1{font-size:1.7rem;margin:0 0 14px;letter-spacing:-.02em}.meta{display:flex;flex-wrap:wrap;gap:6px 22px;color:var(--muted);font-size:.87rem}.meta b{color:var(--ink);font-weight:600}section.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:24px 28px;margin-top:18px}h2{font-size:1.05rem;margin:0 0 14px;display:flex;align-items:center;gap:8px}h2 .no{color:var(--accent);font-size:.8rem;font-weight:700;border:1.5px solid var(--accent);border-radius:6px;padding:0 6px}ul,ol{margin:0;padding-left:22px}li{margin:6px 0}.steps{list-style:none;padding:0;counter-reset:step}.steps li{counter-increment:step;position:relative;padding:10px 0 10px 44px;border-bottom:1px dashed var(--line)}.steps li:last-child{border-bottom:none}.steps li::before{content:counter(step);position:absolute;left:0;top:10px;width:28px;height:28px;border-radius:8px;background:var(--accent-soft);color:var(--accent);font-weight:700;font-size:.85rem;display:flex;align-items:center;justify-content:center}.steps .files{display:block;margin-top:4px;font-size:.85rem;color:var(--muted)}table{width:100%;border-collapse:collapse;font-size:.92rem}th,td{text-align:left;padding:8px 12px;border-bottom:1px solid var(--line);vertical-align:top}th{color:var(--muted);font-weight:600;font-size:.82rem}.done-list{list-style:none;padding:0}.done-list li{padding-left:30px;position:relative}.done-list li::before{content:"";position:absolute;left:2px;top:7px;width:15px;height:15px;border:2px solid var(--ok);border-radius:5px}.done-list li.done::before{content:"✓";display:flex;align-items:center;justify-content:center;background:var(--ok);color:#fff;font-size:.72rem;font-weight:700}.scroll-x{overflow-x:auto}footer{margin-top:30px;color:var(--muted);font-size:.8rem;text-align:center}
+</style>
+</head>
+<body>
+<main>
+<header>
+<span class="issue-chip"><a href="https://github.com/damdam6/vocabulary-study/issues/175">#175</a></span><span class="type-chip">기능 개선</span>
+<h1>중국어 문장 채점에서 문장부호 차이를 허용하고 원문 키를 보존한다</h1>
+<div class="meta"><span><b>damdam6/vocabulary-study</b></span><span>브랜치 <b><code>feat/175-chinese-sentence-grading</code></b> ← <code>main</code></span><span>라벨 <b>enhancement</b></span><span>2026-09-24</span></div>
+</header>
+
+<section class="card">
+<h2><span class="no">1</span>요약</h2>
+<p>#172 PRD §4의 중국어 모드2 채점을 현재 공통 정규화에서 콘텐츠 타입별 계약으로 분리한다. <code>zh</code>에서는 NFC·소문자화·공백 제거 뒤 PRD에 고정된 문장부호만 제거하고, 숫자 사이의 마침표·쉼표와 의미를 바꿀 수 있는 기호는 보존한다. <code>generic</code>의 기존 채점은 유지하며, 판정 결과의 사용자 입력과 기록·재시도·시트 행 키는 채점 정규화와 독립된 원문을 사용하도록 회귀를 고정한다.</p>
+</section>
+
+<section class="card">
+<h2><span class="no">2</span>현황 분석</h2>
+<ul>
+<li>상위 <a href="https://github.com/damdam6/vocabulary-study/issues/172">#172</a> 본문은 #175를 SENT-03으로 정의하고 #173 병합 후 시작하도록 하며, #176이 직접 후속임을 명시한다. #172와 #175 모두 댓글은 없었다. 현재 브랜치 HEAD는 병합된 #173/#174 이후 <code>main</code>을 기반으로 한다.</li>
+<li><code>src/lib/studySession.ts:29-37</code>의 <code>normalizeForGrading</code>은 모든 콘텐츠에 NFC·소문자화·<code>\s+</code> 제거를 적용한다. <code>src/lib/studySession.ts:49-55</code>의 <code>gradeMode2(input, hanzi)</code>는 콘텐츠 타입을 받지 않고, 빈 문자열만 막은 뒤 동일 정규화 결과를 비교하며 반환 답을 <code>input.trim()</code>으로 잘라낸다.</li>
+<li><code>src/screens/Mode2Card.tsx:24-35</code>는 이미 프로필의 <code>contentType</code>을 받지만, <code>src/screens/Mode2Card.tsx:55-65</code>에서 <code>gradeMode2(value, word.hanzi)</code>만 호출한다. 따라서 화면 경계에서 타입 정보가 소실되어 <code>zh</code> 전용 부호 규칙을 선택할 수 없다. 오답 공개는 <code>src/screens/Mode2Card.tsx:68-99</code>에서 반환된 답을 그대로 “내 답”에 렌더링한다.</li>
+<li><code>src/screens/StudyScreen.tsx:79-95</code>는 정답 effect에서 <code>word.tab</code>·<code>word.hanzi</code>를 <code>AnswerRecord</code>와 review-fail 요청에 그대로 복사한다. <code>src/lib/api.ts:151-188</code>는 이 필드를 JSON으로 직렬화하고, <code>src/lib/retryQueue.ts:25-27,68-85,102-139</code>는 record를 원래 형태로 저장·FIFO 재전송한다.</li>
+<li>Worker도 채점 결과를 전달받아 정규화하지 않는다. <code>worker/routes/answer.ts:64-97</code>는 요청의 <code>tab</code>·<code>hanzi</code>로 행을 찾고 현재 행의 원문을 응답하며, <code>worker/lib/words.ts:49-95</code>의 행 탐색은 A열 문자열을 정확히 비교한다. review-fail도 <code>worker/routes/review-fail.ts:44-56</code>에서 같은 원문 키로 F열만 갱신한다.</li>
+<li>기존 회귀 기준은 <code>src/lib/studySession.test.ts:44-109</code>에 generic·공백·NFC·빈 입력이 있고, <code>src/lib/api.test.ts:233-297</code>와 <code>src/lib/retryQueue.test.ts:181-227</code>에 API/재시도 payload 검사가 있다. Worker 응답·원문 보존은 <code>worker/routes/answer.test.ts:168-287</code>와 <code>worker/routes/words.test.ts:189-196</code>에서 검증된다.</li>
+</ul>
+</section>
+
+<section class="card">
+<h2><span class="no">3</span>원인 분석</h2>
+<p><strong>직접 원인:</strong> 채점 정규화 함수가 콘텐츠 타입을 인자로 받지 않아 문장용 부호 정책과 기존 generic 정책을 분리할 수 없다. 여기에 결과 표시용 <code>answer</code>를 <code>trim()</code>으로 만들고 있어 입력 원문 보존 계약도 깨진다.</p>
+<ul>
+<li><strong>버그 재현 근거:</strong> 현재 구현은 <code>你好，世界！</code>와 <code>你好, 世界!</code>의 ASCII/전각 부호 차이를 판정하지 못하고, <code>我有2本书。</code>와 <code>我有3本书</code> 같은 숫자 차이는 유지해야 하는 별도 규칙을 표현하지 못한다. <code>src/lib/studySession.test.ts:70-104</code>의 기존 테스트는 generic/공백/NFC만 다루며 PRD의 숫자·기호 경계를 고정하지 않는다.</li>
+<li><strong>원문 손실 근거:</strong> <code>gradeMode2</code>가 반환하는 답은 <code>input.trim()</code>이므로 사용자가 앞뒤 공백을 포함해 입력한 오답 원문이 결과 화면에서 바뀐다. 이 값은 <code>Mode2Card</code>의 <code>wrongAnswer</code>로 바로 전달된다.</li>
+<li><strong>대안 배제:</strong> 모든 Unicode punctuation을 제거하면 PRD가 보존하라고 한 <code>-</code>, <code>—</code>, <code>·</code>, <code>/</code>, <code>%</code>, <code>+</code>, <code>=</code>, <code>．</code>까지 삭제되어 숫자·기호 의미가 바뀐다. NFKC로 전각을 일괄 변환하면 전각 숫자·영문을 반각과 자동 동치로 만드는 범위 밖 동작이 된다. 따라서 고정 제거 목록과 숫자 사이 <code>.</code>/<code>,</code> 보존 조건을 명시적으로 스캔한다.</li>
+<li><strong>설계 경계:</strong> 정규화는 판정 비교에만 사용하고, 반환 답·<code>AnswerRecord</code>·retry record·Worker 행 키에는 적용하지 않는다. <code>zh</code>의 정규화 결과 또는 원문이 비면 오답이며, <code>generic</code>은 현재 NFC·소문자화·공백 제거를 그대로 유지한다.</li>
+</ul>
+</section>
+
+<section class="card">
+<h2><span class="no">4</span>작업 단계</h2>
+<ol class="steps">
+<li><label><input type="checkbox" checked disabled> 콘텐츠 타입별 모드2 정규화 계약을 구현한다.</label><span class="files"><code>src/lib/studySession.ts</code></span><code>gradeMode2</code>에 <code>ContentType</code>을 명시적으로 받고 generic 분기는 기존 동작을 보존한다. zh 분기는 NFC→소문자화→모든 공백 제거 후 PRD §4의 고정 문장부호만 제거하며, ASCII/전각 숫자 사이의 ASCII 마침표·쉼표는 보존한다. <code>-</code>, <code>—</code>, <code>·</code>, <code>/</code>, <code>%</code>, <code>+</code>, <code>=</code>, <code>．</code>는 무조건 삭제하지 않는다. 비교 전 양쪽의 원문과 정규화 결과가 비었는지 확인하고 <code>answer</code>에는 <code>input</code> 원문을 그대로 반환한다.</li>
+<li><label><input type="checkbox" checked disabled> 화면 채점 호출에 프로필 contentType을 연결한다.</label><span class="files"><code>src/screens/Mode2Card.tsx</code>, <code>src/screens/StudyScreen.tsx</code></span><code>Mode2Card</code>의 기존 <code>contentType</code> prop을 <code>gradeMode2(value, word.hanzi, contentType)</code> 호출에 전달한다. <code>StudyScreen</code>은 이미 <code>profile.contentType</code>을 카드에 전달하므로 별도 상태 저장·새 필드·새 퀴즈 모드를 만들지 않는다. 오답 결과는 raw answer를 표시하고 정답/다음 진행과 발음 공개 타이밍은 유지한다.</li>
+<li><label><input type="checkbox" checked disabled> 순수 채점 회귀 테스트를 PRD 예시와 경계표로 확장한다.</label><span class="files"><code>src/lib/studySession.test.ts</code></span>모든 호출에 <code>zh</code>/<code>generic</code> 타입을 명시한다. 문장부호 생략, 전각·반각 부호, 내부/앞뒤 공백, <code>我不喜欢咖啡。</code>의 부정어 누락, 숫자 누락, 어순 변경, <code>3.5</code>/<code>3,500</code>, <code>5%</code>/<code>5</code>, 기호 <code>+ - / = · — ．</code> 보존, <code>。？！</code>만 입력한 빈 정규화 결과를 고정한다. generic에서 <code>hello!</code>와 <code>hello</code>가 여전히 오답인지 확인하고 NFD/NFC 기존 회귀도 유지한다. 별도 assertion으로 raw answer의 앞뒤 공백·문장부호가 보존되는지 확인한다.</li>
+<li><label><input type="checkbox" checked disabled> 컴포넌트와 세션 통합에서 원문 표시·기록 payload를 검증한다.</label><span class="files"><code>src/screens/Mode2Card.test.tsx</code>, <code>src/screens/StudyScreen.test.tsx</code>, <code>src/lib/api.test.ts</code></span>zh 카드가 타입별 채점 결과를 사용하고 오답 결과의 “내 답”이 사용자가 입력한 원문과 일치하는지 확인한다. 문장 탭과 <code>我有2本书。</code>를 사용해 정답 effect가 <code>tab+hanzi</code>를 그대로 <code>/api/answer</code>로 보내며 기존 mode/isReview/timestamp 계약도 유지하는지 검사한다. review-fail payload도 동일한 원문 키를 보존한다.</li>
+<li><label><input type="checkbox" checked disabled> 재시도 큐와 Worker 시트 행 식별의 원문 보존 회귀를 추가한다.</label><span class="files"><code>src/lib/retryQueue.test.ts</code>, <code>worker/routes/answer.test.ts</code>, <code>worker/routes/review-fail.test.ts</code>, <code>worker/lib/words.ts</code></span>문장부호·숫자·공백이 포함된 answer/review-fail record를 enqueue→저장→FIFO 재전송했을 때 JSON body가 변하지 않는지 확인한다. Worker는 정규화된 값이 아니라 요청의 정확한 <code>tab+hanzi</code>로 A열을 찾고 시트 갱신 범위와 응답의 <code>hanzi</code>가 원문을 유지하는지 검증한다. 기존 production 경로가 이미 정확 비교를 사용하므로 <code>worker/lib/words.ts</code>는 변경하지 않고 새 라우트 회귀 테스트로 고정했다.</li>
+<li><label><input type="checkbox" checked disabled> 전체 자동 검증과 완료 산출물을 갱신한다.</label><span class="files"><code>docs/plans/issue-175-chinese-sentence-grading.html</code>, 위 소스·테스트 파일</span>관련 단위/컴포넌트/Worker 테스트 후 <code>npm test</code>, <code>npm run build</code>, <code>npm run lint</code>를 실행했다. 공유 상위 <code>node_modules/.vite-temp</code>의 최초 EPERM은 권한 확장 실행으로 해결했고 실제 테스트 결과는 모두 성공했다. 실제 Sheets/TTS/배포는 수행하지 않았다.</li>
+</ol>
+</section>
+
+<section class="card">
+<h2><span class="no">5</span>리스크</h2>
+<div class="scroll-x"><table><thead><tr><th>리스크</th><th>영향</th><th>완화책</th></tr></thead><tbody>
+<tr><td>Unicode 문장부호를 넓게 제거함</td><td>숫자·부호가 포함된 문장의 의미가 바뀌거나 오답이 정답이 된다.</td><td>PRD의 고정 목록을 상수화하고 숫자 사이 <code>.</code>/<code>,</code> 보존·보존 기호 회귀를 각각 테스트한다.</td></tr>
+<tr><td>zh 규칙이 generic에 전파됨</td><td>기존 영어·한국어 등 generic의 punctuation 채점 계약이 바뀐다.</td><td><code>ContentType</code> 분기를 채점 경계에 명시하고 generic 기존 테스트를 모두 유지한다.</td></tr>
+<tr><td>정규화 결과를 기록 키에 재사용함</td><td>문장부호가 있는 실제 A열 행을 찾지 못하거나 다른 행을 갱신할 수 있다.</td><td>정규화는 boolean 판정 전용으로 제한하고 <code>StudyScreen</code>·API·retry·Worker exact-key payload 테스트를 추가한다.</td></tr>
+<tr><td>빈/부호만 입력을 비어 있지 않은 정답으로 취급함</td><td>문장부호만 입력한 오답이 정답으로 처리된다.</td><td>입력과 정답 양쪽 normalized-empty guard 및 <code>。？！</code> 회귀를 둔다.</td></tr>
+<tr><td>raw answer 변경으로 UI 결과가 예상과 달라짐</td><td>앞뒤 공백이 있는 오답 표시의 접근성·레이아웃이 흔들릴 수 있다.</td><td><code>Mode2Card</code>에서 raw text를 한 번 검증하고 기존 빈 입력 처리·취소선 결과·긴 문자열 표시 테스트를 유지한다.</td></tr>
+<tr><td>테스트 실행 환경이 공유 상위 node_modules를 씀</td><td>구현과 무관한 Vite 캐시 권한 오류로 검증이 막힐 수 있다.</td><td>작업 환경의 쓰기 가능한 캐시/로그 경로를 사용해 재실행하고 해결하지 못한 경우 실제 코드 실패와 환경 제한을 분리 기록한다.</td></tr>
+</tbody></table></div>
+</section>
+
+<section class="card">
+<h2><span class="no">6</span>테스트 계획</h2>
+<ul>
+<li><strong>순수 함수:</strong> <code>src/lib/studySession.test.ts</code>에서 PRD 표의 7개 사례를 포함해 문장부호 생략/전각·반각, 공백, 숫자·부정어·어순 차이를 검증한다. <code>3.5</code>↔<code>35</code>, <code>5%</code>↔<code>5</code>, <code>+/-/=//·—</code>와 전각 <code>％＋＝／．</code> 경계를 포함한다.</li>
+<li><strong>콘텐츠 타입:</strong> zh의 부호 완화와 generic의 기존 strict punctuation 동작을 같은 테스트 묶음에서 비교한다. NFC/NFD, 소문자화, 공백 제거, 빈 문자열·공백만·부호만 입력을 회귀한다.</li>
+<li><strong>원문 표시:</strong> <code>src/screens/Mode2Card.test.tsx</code>에서 오답 입력의 앞뒤 공백·문장부호가 “내 답”에 그대로 남는지, 빈 입력은 기존처럼 숨겨지는지 확인한다. 기존 TTS/초점/긴 결과 테스트는 유지한다.</li>
+<li><strong>기록과 재시도:</strong> <code>src/screens/StudyScreen.test.tsx</code>, <code>src/lib/api.test.ts</code>, <code>src/lib/retryQueue.test.ts</code>에서 <code>tab: "문장"</code>, <code>hanzi: "我有2本书。"</code> 같은 원문이 answer/review-fail 요청·저장·재전송에서 byte-for-byte로 보존되는지 확인한다. 최초 timestamp와 profile 태깅·FIFO/실패 보존도 유지한다.</li>
+<li><strong>시트 갱신:</strong> <code>worker/routes/answer.test.ts</code>와 필요한 <code>worker/routes/review-fail.test.ts</code>에서 exact A열 문장 키가 올바른 행의 D/E/F/G를 갱신하고 응답에 원문을 반환하는지 확인한다. 기존 단어 행·탭 분리·활성 모드 검증을 회귀한다.</li>
+<li><strong>명령:</strong> 구현 후 <code>npm test</code>, <code>npm run build</code>, <code>npm run lint</code>와 관련 파일의 선택 테스트를 실행한다. 계획 단계의 baseline 선택 테스트는 공유 상위 <code>node_modules/.vite-temp</code> 쓰기 권한 <code>EPERM</code>으로 시작하지 못했으므로 이를 코드 실패로 집계하지 않고 구현 세션에서 쓰기 가능한 설정으로 재실행한다.</li>
+<li><strong>범위 제한:</strong> 실제 Google Sheets 쓰기, 유료 TTS 합성, 배포, 모바일 시각 검증은 이 이슈에서 수행하지 않는다. TTS 원문·긴 화면은 각각 #177·#176 범위로 넘기고, 여기서는 채점 경계와 기록 키 계약만 검증한다.</li>
+</ul>
+</section>
+
+<section class="card">
+<h2><span class="no">7</span>완료 조건</h2>
+<ul class="done-list">
+<li class="done">채점 호출이 프로필 <code>contentType</code>을 전달하고 <code>zh</code>에만 PRD §4의 고정 부호 제거 규칙을 적용한다.</li>
+<li class="done">숫자 사이 마침표·쉼표와 <code>%</code>, <code>+</code>, <code>-</code>, <code>/</code>, <code>=</code>, <code>·</code>, 전각 대응 기호를 보존하며 Unicode punctuation 전체 제거를 사용하지 않는다.</li>
+<li class="done">문장부호 생략·전각/반각 차이와 공백은 허용하지만 한자·숫자·부정어·어순 차이는 오답이고, 빈 정규화 결과·부호만 입력도 오답이다.</li>
+<li class="done"><code>generic</code>의 기존 NFC·소문자화·공백 제거 채점을 변경하지 않는다.</li>
+<li class="done">오답 결과의 “내 답”은 사용자 원문을 보존하고, 정답 API·review-fail·재시도 큐·시트 갱신에는 원래 <code>tab+hanzi</code>를 전달한다.</li>
+<li class="done">PRD 채점 예시, 단어/generic/숫자 경계와 회귀 테스트가 추가되고 <code>npm test</code>·<code>npm run build</code>·<code>npm run lint</code> 결과가 기록된다.</li>
+<li class="done">구현과 ready PR 생성을 완료하고, 독립 Grok 리뷰와 병합은 오케스트레이터 단계로 남긴다.</li>
+</ul>
+</section>
+
+<section class="card">
+<h2><span class="no">8</span>구현 검증 결과</h2>
+<ul>
+<li><code>npm test -- src/lib/studySession.test.ts src/screens/Mode2Card.test.tsx src/screens/StudyScreen.test.tsx src/lib/api.test.ts src/lib/retryQueue.test.ts worker/routes/answer.test.ts worker/routes/review-fail.test.ts</code> — 7개 파일, 129개 테스트 통과.</li>
+<li><code>npm test</code> — 57개 파일, 1,068개 테스트 통과.</li>
+<li><code>npm run build</code> — TypeScript 및 Vite 프로덕션 빌드 통과.</li>
+<li><code>npm run lint</code> — oxlint 통과.</li>
+<li>초기 sandbox 실행은 공유 상위 <code>node_modules/.vite-temp</code> 쓰기 권한 EPERM으로 시작 전에 실패했다. 동일 명령을 승인된 권한 확장으로 재실행해 위 실제 결과를 확인했다.</li>
+<li>실제 Google Sheets 쓰기, 유료 TTS 합성, 배포는 범위 제한에 따라 수행하지 않았다.</li>
+</ul>
+</section>
+<footer>issue-work · <a href="https://github.com/damdam6/vocabulary-study/issues/175">#175</a> · 2026-09-24</footer>
+</main>
+</body>
+</html>

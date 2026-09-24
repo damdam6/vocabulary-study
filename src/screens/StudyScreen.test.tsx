@@ -28,6 +28,60 @@ beforeEach(() => mocks.stop.mockReset());
 afterEach(() => {
   unmountCurrent?.();
   unmountCurrent = null;
+  vi.unstubAllGlobals();
+});
+
+describe("StudyScreen 문장 원문 기록", () => {
+  const sentence: WordEntry = {
+    ...word,
+    tab: "문장 원본",
+    hanzi: " 我有2本书。 ",
+    pinyin: "wǒ yǒu liǎng běn shū.",
+    meaning: "나는 책이 두 권 있다.",
+  };
+
+  it("정답은 원래 tab+hanzi와 기존 기록 필드를 /api/answer에 보낸다", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(Response.json(sentence));
+    vi.stubGlobal("fetch", fetchMock);
+    const queue = [{ word: sentence, mode: "m2" as const, isReview: false }];
+    const { container, unmount } = renderComponent(
+      <StudyScreen queue={queue} profile={profile} tts={tts} onExit={vi.fn()} onComplete={vi.fn()} />,
+    );
+    unmountCurrent = unmount;
+    const input = container.querySelector<HTMLInputElement>(".mode-input")!;
+    fire(() => setInput(input, "我有2本书"));
+    fire(() => container.querySelector<HTMLButtonElement>("button[type=submit]")!.click());
+    await flush();
+
+    const [path, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    const body = JSON.parse(init.body as string);
+    expect(path).toBe("/api/answer");
+    expect(body).toMatchObject({
+      tab: "문장 원본",
+      hanzi: " 我有2本书。 ",
+      mode: "m2",
+      isReview: false,
+    });
+    expect(body.timestamp).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/);
+  });
+
+  it("복습 오답도 원래 tab+hanzi를 /api/review-fail에 보낸다", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(Response.json(sentence));
+    vi.stubGlobal("fetch", fetchMock);
+    const queue = [{ word: sentence, mode: "m2" as const, isReview: true }];
+    const { container, unmount } = renderComponent(
+      <StudyScreen queue={queue} profile={profile} tts={tts} onExit={vi.fn()} onComplete={vi.fn()} />,
+    );
+    unmountCurrent = unmount;
+    const input = container.querySelector<HTMLInputElement>(".mode-input")!;
+    fire(() => setInput(input, "我有3本书"));
+    fire(() => container.querySelector<HTMLButtonElement>("button[type=submit]")!.click());
+    await flush();
+
+    const [path, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(path).toBe("/api/review-fail");
+    expect(JSON.parse(init.body as string)).toEqual({ tab: "문장 원본", hanzi: " 我有2本书。 " });
+  });
 });
 
 function setInput(input: HTMLInputElement, value: string) {

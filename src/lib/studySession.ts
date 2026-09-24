@@ -5,7 +5,7 @@
  * 고정한다 — wordState·sessionQueue와 같은 배치.
  */
 
-import type { WordEntry } from "./api.ts";
+import type { ContentType, WordEntry } from "./api.ts";
 import type { SessionQuestion } from "./sessionQueue.ts";
 
 /** 진행 중 큐 항목. 큐는 시작 시 확정되므로 큐 항목은 세션 문제와 같은 형태다(#116). */
@@ -33,24 +33,52 @@ export type RecordEffect =
  * `\s`가 전각 공백(U+3000, 중문 IME)·탭도 포함하므로 IME 공백까지 함께 풀리고,
  * 앞뒤 공백도 같이 사라져 별도 트림은 불필요하다.
  */
-function normalizeForGrading(value: string): string {
+function normalizeGenericForGrading(value: string): string {
   return value.normalize("NFC").toLowerCase().replace(/\s+/g, "");
 }
 
+const ZH_IGNORED_PUNCTUATION = new Set(
+  Array.from("，。！？；：、,.!?;:（）()【】[]《》〈〉“”‘’「」『』\"'…"),
+);
+const ZH_DIGIT = /^[0-9０-９]$/;
+
+/** PRD #172 §4의 고정 목록만 제거한다. ASCII 소수점·숫자 구분 쉼표는 보존한다. */
+function normalizeZhForGrading(value: string): string {
+  const characters = Array.from(normalizeGenericForGrading(value));
+  return characters.filter((character, index) => {
+    if (!ZH_IGNORED_PUNCTUATION.has(character)) return true;
+    if (
+      (character === "." || character === ",")
+      && ZH_DIGIT.test(characters[index - 1] ?? "")
+      && ZH_DIGIT.test(characters[index + 1] ?? "")
+    ) {
+      return true;
+    }
+    return false;
+  }).join("");
+}
+
 /**
- * PRD §5.2 모드 2 채점: 입력과 A열 표제어 양쪽을 동일 정규화(NFC·소문자화·공백
- * 제거)한 뒤 일치해야 정답(#123 느슨 채점, #126 공백 제거) — 병음 입력·부분
- * 일치·이체자는 여전히 오답, 빈 입력·공백만 입력도 오답. 전 콘텐츠 타입 공통이라
- * 영어에서 `icecream`이 `ice cream`의 정답이 되지만, 모드2가 검증하는 것은 공백
- * 표기가 아니라 단어를 아는지이므로 수용한 트레이드오프다(#126). 트림된 원입력을
- * 함께 돌려주는 것은 오답 결과 화면의 "내 답" 표시(§4.3)가 사용자 표기 그대로를
- * 쓰기 때문.
+ * 모드 2 채점: generic은 기존 NFC·소문자화·공백 제거를 유지하고, zh만 PRD #172
+ * §4의 고정 문장부호를 추가로 제거한다. 빈 원문 또는 빈 정규화 결과는 오답이다.
+ * 반환 answer는 비교용 정규화와 분리해 사용자가 제출한 원문을 그대로 보존한다.
  */
-export function gradeMode2(input: string, hanzi: string): { correct: boolean; answer: string } {
-  const answer = input.trim();
+export function gradeMode2(
+  input: string,
+  hanzi: string,
+  contentType: ContentType,
+): { correct: boolean; answer: string } {
+  const normalize = contentType === "zh" ? normalizeZhForGrading : normalizeGenericForGrading;
+  const normalizedInput = normalize(input);
+  const normalizedHanzi = normalize(hanzi);
   return {
-    correct: answer !== "" && normalizeForGrading(input) === normalizeForGrading(hanzi),
-    answer,
+    correct:
+      input !== ""
+      && hanzi !== ""
+      && normalizedInput !== ""
+      && normalizedHanzi !== ""
+      && normalizedInput === normalizedHanzi,
+    answer: input,
   };
 }
 
