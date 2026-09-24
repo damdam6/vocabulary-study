@@ -751,4 +751,47 @@ describe("RegisterScreen 문장·병음 검토", () => {
     fire(() => api.confirmButton().click());
     expect(api.statusCells()).toEqual([["경고"]]);
   });
+
+  it("양끝 개행 오류 행이 있어도 정상 짝 행은 실제로 전송한다", async () => {
+    registerWordsMock.mockResolvedValue({ tab: "HSK6", added: [sentence], skipped: [] });
+    const api = await preview([sentence, { ...sentence, hanzi: sentence.hanzi + "\n" }]);
+    expect(api.statusCells()).toEqual([["정상"], ["오류"]]);
+    expect(api.container.querySelector(".register-summary")?.textContent).toContain("전송 1건");
+    expect(api.submitButton()!.disabled).toBe(false);
+    fire(() => api.submitButton()!.click());
+    await flush();
+    expect(registerWordsMock).toHaveBeenCalledWith({ tab: "HSK6", words: [sentence] });
+  });
+
+  it.each([false, true])("정규화된 검토 행을 그대로 저장해도 직접수정이 붙지 않는다 (중복=%s)", async (isDuplicate) => {
+    const normalized = { hanzi: "经济", pinyin: "jīngjì", meaning: "경제" };
+    if (isDuplicate) fetchWordsMock.mockResolvedValue({ ...wordsResponse, words: [existing("经济")] });
+    registerWordsMock.mockResolvedValue({ tab: "HSK6", added: [], skipped: [] });
+    const api = await preview([{ ...normalized, hanzi: "　 经济  ", pinyin: normalized.pinyin.normalize("NFD") }]);
+    openReview(api);
+    expect(api.modalInputs().map((input) => input.value)).toEqual([normalized.hanzi, normalized.pinyin, normalized.meaning]);
+    fire(() => api.modalSave().click());
+    expect(api.statusCells()).toEqual([[isDuplicate ? "중복" : "경고"]]);
+    if (isDuplicate) acknowledge(api);
+    fire(() => api.submitButton()!.click());
+    await flush();
+    expect(registerWordsMock).toHaveBeenCalledWith({ tab: "HSK6", words: [normalized] });
+  });
+
+  it("기존 직접수정은 무변경 저장으로 사라지지 않고 원래 표시값으로 되돌리면 해제된다", async () => {
+    const api = await preview([{ ...warning, hanzi: " 经济 ", pinyin: warning.pinyin.normalize("NFD") }]);
+    openReview(api);
+    fire(() => setNativeValue(api.modalInputs()[2], "수정한 뜻"));
+    fire(() => api.modalSave().click());
+    expect(api.statusCells()).toEqual([["경고", "직접수정"]]);
+    openReview(api);
+    fire(() => api.modalSave().click());
+    expect(api.statusCells()).toEqual([["경고", "직접수정"]]);
+    openReview(api);
+    expect(api.modalInputs()[2].value).toBe("수정한 뜻");
+    fire(() => setNativeValue(api.modalInputs()[2], warning.meaning));
+    fire(() => api.modalSave().click());
+    expect(api.statusCells()).toEqual([["경고"]]);
+  });
+
 });

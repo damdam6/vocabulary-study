@@ -410,3 +410,25 @@ describe("등록 배치 경계와 의미 검토", () => {
     expect(rows[0].status).toBe("blocked");
   });
 });
+
+
+describe("리뷰 회귀: 형식 오류 행의 중복 집계 격리", () => {
+  const word = { hanzi: "今天", pinyin: "jīntiān", meaning: "오늘" };
+  it.each(["\t", "\n", "\u00a0", "\ufeff"])("양끝 불허 문자 %j은 자기 행만 차단한다", (control) => {
+    for (const hanzi of [control + word.hanzi, word.hanzi + control]) {
+      const rows = classifyRegistrationRows([word, { ...word, hanzi }], EMPTY);
+      expect(rows.map((row) => row.status)).toEqual(["valid", "blocked"]);
+      expect(rows[1].hanzi).toBe(hanzi);
+      expect(rows[1].reasons).toEqual([expect.stringContaining("허용되지 않는 문자")]);
+    }
+  });
+  it.each([{ pinyin: "jin1tian1" }, { meaning: "" }])("같은 한자라도 형식 오류가 있는 행은 정상 행을 막지 않는다: %j", (invalid) => {
+    expect(classifyRegistrationRows([word, { ...word, ...invalid }], EMPTY).map((r) => r.status)).toEqual(["valid", "blocked"]);
+  });
+  it("불허 행을 고쳐 저장 가능해지면 배치 중복이 양쪽에 적용된다", () => {
+    expect(classifyRegistrationRows([word, { ...word, hanzi: "　今天 " }], EMPTY).map((r) => r.status)).toEqual(["blocked", "blocked"]);
+  });
+  it("불허 행과 함께 있어도 정상 행의 선택 탭 중복은 유지된다", () => {
+    expect(classifyRegistrationRows([word, { ...word, hanzi: "今天\n" }], new Set(["今天"])).map((r) => r.status)).toEqual(["duplicate", "blocked"]);
+  });
+});

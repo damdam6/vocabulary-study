@@ -122,7 +122,7 @@ export function parseRegistrationInput(
 
 /**
  * 파싱된 행들을 정상/오류/중복으로 분류한다. 입력 내 중복 카운트(hanziCounts)는
- * 매 호출마다 words 배열 전체 기준으로 다시 집계된다 — 등록 화면이 오류 행을
+ * 매 호출마다 전체 배치에서 다시 집계한다. zh는 형식 검사를 통과한 행만 센다 — 등록 화면이 오류 행을
  * 고쳐 넘길 때(#127) 손대지 않은 짝 행의 중복 오류까지 함께 풀리는 근거다.
  */
 export function classifyRegistrationRows(
@@ -133,24 +133,28 @@ export function classifyRegistrationRows(
   const key = contentType === "zh" ? normalizeRegistrationText : (value: string) => value;
   const existing = new Set(Array.from(existingHanziInTab, key));
   const hanziCounts = new Map<string, number>();
-  for (const { hanzi } of words) {
-    const normalized = key(hanzi);
+  const checked = words.map((raw) => ({
+    raw,
+    validation: contentType === "zh" ? validateZhRegistrationWord(raw) : null,
+  }));
+  // 저장할 수 없는 zh 행의 불허 공백이 trim되어 정상 행과 충돌하지 않게 한다.
+  for (const { raw, validation } of checked) {
+    const normalized = validation ? (validation.ok ? validation.word.hanzi : "") : raw.hanzi;
     if (normalized) hanziCounts.set(normalized, (hanziCounts.get(normalized) ?? 0) + 1);
   }
 
-  return words.map((raw): ValidatedRow => {
+  return checked.map(({ raw, validation }): ValidatedRow => {
     const reasons: string[] = [];
     const noun = headwordNoun(contentType);
     let word = raw;
-    if (contentType === "zh") {
-      const result = validateZhRegistrationWord(raw);
-      if (result.ok) word = result.word;
-      else reasons.push(...result.issues.map(formatIssue));
+    if (validation) {
+      if (validation.ok) word = validation.word;
+      else reasons.push(...validation.issues.map(formatIssue));
     } else {
       if (!word.hanzi) reasons.push(`${noun}가 비어 있습니다`);
       if (!word.meaning) reasons.push("뜻이 비어 있습니다");
     }
-    if ((hanziCounts.get(key(raw.hanzi)) ?? 0) > 1) {
+    if ((!validation || validation.ok) && (hanziCounts.get(word.hanzi) ?? 0) > 1) {
       reasons.push(`입력 내에 중복된 ${noun}입니다`);
     }
     if (reasons.length) return { ...word, status: "blocked", reasons };

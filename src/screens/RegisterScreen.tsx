@@ -46,6 +46,7 @@
 // 같다. 현재값은 이 화면이 이미 부르는 fetchWords의 settings에서 오며, 별도
 // 표시 없이 입력란을 그 값으로 프리필하는 것으로 "현재값 표시"를 겸한다.
 import { useEffect, useMemo, useState } from 'react'
+import { validateZhRegistrationWord } from '../../shared/registration.ts'
 import RegisterErrorModal, { type EditableRow } from './RegisterErrorModal.tsx'
 import RegisterTable from './RegisterTable.tsx'
 import Dropdown from '../components/Dropdown.tsx'
@@ -232,8 +233,9 @@ function RegisterScreen({ contentType, onGoHome }: RegisterScreenProps) {
     setConfirmedText(text)
   }
 
-  // 모달 저장 — 편집값을 원본(파싱 결과)과 비교해 달라진 행만 오버레이에 남긴다.
-  // 되돌린 행의 엔트리를 지우므로 "오버레이 키 = '직접수정' 대상"이 항상 성립한다.
+  // 모달의 표시값과 같으면 현재 오버레이를 그대로 둔다. 정규화만으로 수정 태그를 붙이지 않는다.
+  // 실제 변경은 형식 검사를 통과한 원본 표시값과 비교하여 되돌리기를 판별한다.
+  // 불허 문자가 있는 원본/편집값을 비교 전에 trim·NFC로 덮어쓰지 않는다.
   const handleErrorEditsSave = (edits: Record<number, ParsedWord>) => {
     if (parseResult?.ok) {
       const originals = parseResult.words
@@ -247,12 +249,14 @@ function RegisterScreen({ contentType, onGoHome }: RegisterScreenProps) {
             pinyin: contentType === 'zh' ? edited.pinyin : edited.pinyin.trim(),
             meaning: edited.meaning.trim(),
           }
-          const unchanged =
-            original !== undefined &&
-            preserved.hanzi === original.hanzi &&
-            preserved.pinyin === original.pinyin &&
-            preserved.meaning === original.meaning
-          if (unchanged) delete next[index]
+          const sameValues = (value: ParsedWord | undefined) => value !== undefined &&
+            preserved.hanzi === value.hanzi &&
+            preserved.pinyin === value.pinyin &&
+            preserved.meaning === value.meaning
+          if (sameValues(rows[index])) continue
+          const originalValidation = contentType === 'zh' ? validateZhRegistrationWord(original) : null
+          const baseline = originalValidation?.ok ? originalValidation.word : original
+          if (sameValues(baseline)) delete next[index]
           else next[index] = preserved
         }
         return next
