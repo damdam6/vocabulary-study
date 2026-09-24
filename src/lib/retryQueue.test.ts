@@ -211,6 +211,34 @@ describe("flushRetryQueue", () => {
     expect(storedQueue()).toEqual([]);
   });
 
+  it("문장 원문은 enqueue 저장부터 answer/review-fail FIFO 재전송까지 그대로 유지한다", async () => {
+    activateProfile("zh");
+    const answer: AnswerRecord = {
+      tab: "문장 원본",
+      hanzi: " 我有2本书。 ",
+      mode: "m2",
+      timestamp: "2026-09-24 20:40",
+      isReview: false,
+    };
+    const reviewFail: ReviewFailRecord = { tab: answer.tab, hanzi: answer.hanzi };
+    enqueueAnswer(answer);
+    enqueueReviewFail(reviewFail);
+    expect(storedQueue()).toEqual([
+      { kind: "answer", record: answer, profileId: "zh" },
+      { kind: "review-fail", record: reviewFail, profileId: "zh" },
+    ]);
+    const fetchMock = vi.fn().mockImplementation(() => Promise.resolve(Response.json(UPDATED_WORD)));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await flushRetryQueue();
+
+    expect(fetchMock.mock.calls.map(([, init]) => JSON.parse((init as RequestInit).body as string))).toEqual([
+      answer,
+      reviewFail,
+    ]);
+    expect(storedQueue()).toEqual([]);
+  });
+
   it("answer와 review-fail이 섞인 큐를 적재 순서대로 각자의 엔드포인트로 재전송한다", async () => {
     seedQueue([answerEntry(1), reviewFailEntry(2), answerEntry(3)]);
     const fetchMock = vi.fn().mockImplementation(() => Promise.resolve(Response.json(UPDATED_WORD)));

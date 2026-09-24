@@ -43,68 +43,110 @@ function sessionAt(questions: SessionQuestion<WordEntry>[], pos = 0): StudySessi
 
 describe("gradeMode2 — PRD §5.2 채점 규칙", () => {
   it("정확 일치는 정답", () => {
-    expect(gradeMode2("经济", "经济")).toEqual({ correct: true, answer: "经济" });
+    expect(gradeMode2("经济", "经济", "zh")).toEqual({ correct: true, answer: "经济" });
   });
 
-  it("앞뒤 공백은 트림 후 판정하고 트림된 내 답을 돌려준다", () => {
-    expect(gradeMode2("  经济 ", "经济")).toEqual({ correct: true, answer: "经济" });
+  it("앞뒤 공백은 판정에서 제거하지만 내 답 원문은 보존한다", () => {
+    expect(gradeMode2("  经济。 ", "经济", "zh")).toEqual({ correct: true, answer: "  经济。 " });
   });
 
   it("빈 입력·공백만 입력은 오답", () => {
-    expect(gradeMode2("", "经济")).toEqual({ correct: false, answer: "" });
-    expect(gradeMode2("   ", "经济")).toEqual({ correct: false, answer: "" });
+    expect(gradeMode2("", "经济", "zh")).toEqual({ correct: false, answer: "" });
+    expect(gradeMode2("   ", "经济", "zh")).toEqual({ correct: false, answer: "   " });
   });
 
   it("병음 입력은 오답", () => {
-    expect(gradeMode2("jīngjì", "经济").correct).toBe(false);
+    expect(gradeMode2("jīngjì", "经济", "zh").correct).toBe(false);
   });
 
   it("부분 일치는 오답", () => {
-    expect(gradeMode2("经", "经济").correct).toBe(false);
+    expect(gradeMode2("经", "经济", "zh").correct).toBe(false);
   });
 
   it("이체자(번체) 입력은 오답 — A열 표기와 자소까지 같아야 한다", () => {
-    expect(gradeMode2("經濟", "经济").correct).toBe(false);
+    expect(gradeMode2("經濟", "经济", "zh").correct).toBe(false);
   });
 
   it("대소문자 차이는 정답 — 느슨 채점(#123)", () => {
-    expect(gradeMode2("Apple", "apple").correct).toBe(true);
-    expect(gradeMode2("APPLE", "apple").correct).toBe(true);
+    expect(gradeMode2("Apple", "apple", "generic").correct).toBe(true);
+    expect(gradeMode2("APPLE", "apple", "generic").correct).toBe(true);
   });
 
   it("내부 공백 차이는 정답 — 공백 제거 후 판정(#123·#126)", () => {
-    expect(gradeMode2("ice  cream", "ice cream").correct).toBe(true);
-    expect(gradeMode2("ice cream", "ice  cream").correct).toBe(true);
+    expect(gradeMode2("ice  cream", "ice cream", "generic").correct).toBe(true);
+    expect(gradeMode2("ice cream", "ice  cream", "generic").correct).toBe(true);
   });
 
   it("한자 사이 공백은 정답 — 중국어는 띄어쓰기가 없다(#126)", () => {
-    expect(gradeMode2("你 好", "你好").correct).toBe(true);
-    expect(gradeMode2("不 好 意 思", "不好意思").correct).toBe(true);
+    expect(gradeMode2("你 好", "你好", "zh").correct).toBe(true);
+    expect(gradeMode2("不 好 意 思", "不好意思", "zh").correct).toBe(true);
   });
 
   it("전각 공백(U+3000, 중문 IME)도 제거 후 판정(#126)", () => {
-    expect(gradeMode2("你　好", "你好").correct).toBe(true);
+    expect(gradeMode2("你　好", "你好", "zh").correct).toBe(true);
   });
 
   it("한국어 띄어쓰기 실수는 정답(#126)", () => {
-    expect(gradeMode2("사과 나무", "사과나무").correct).toBe(true);
+    expect(gradeMode2("사과 나무", "사과나무", "generic").correct).toBe(true);
   });
 
   it("표제어 쪽 공백도 같이 제거 — 정규화는 양쪽 대칭(#126)", () => {
-    expect(gradeMode2("你好", "你 好").correct).toBe(true);
-    expect(gradeMode2("icecream", "ice cream").correct).toBe(true);
+    expect(gradeMode2("你好", "你 好", "zh").correct).toBe(true);
+    expect(gradeMode2("icecream", "ice cream", "generic").correct).toBe(true);
   });
 
   it("NFC/NFD 유니코드 표기 차이는 정답 — 느슨 채점(#123)", () => {
     const nfc = "café".normalize("NFC");
     const nfd = "café".normalize("NFD");
     expect(nfd).not.toBe(nfc); // 전제: 두 표기는 코드포인트가 다르다
-    expect(gradeMode2(nfd, nfc).correct).toBe(true);
-    expect(gradeMode2(nfc, nfd).correct).toBe(true);
+    expect(gradeMode2(nfd, nfc, "generic").correct).toBe(true);
+    expect(gradeMode2(nfc, nfd, "generic").correct).toBe(true);
   });
 
-  it("오답의 내 답은 트림된 원입력 그대로 — 정규화 값은 비교 전용(#123)", () => {
-    expect(gradeMode2(" Aple ", "apple")).toEqual({ correct: false, answer: "Aple" });
+  it("오답의 내 답은 공백과 문장부호를 포함한 원입력 그대로다", () => {
+    expect(gradeMode2(" Aple! ", "apple", "generic")).toEqual({ correct: false, answer: " Aple! " });
+  });
+
+  it.each([
+    ["你今天忙吗？", "你今天忙吗", true],
+    ["你好，世界！", "你好, 世界!", true],
+    ["我不喜欢咖啡。", "我喜欢咖啡", false],
+    ["我有2本书。", "我有3本书", false],
+    ["价格是3.5元。", "价格是35元", false],
+    ["增长了5%。", "增长了5", false],
+    ["你好。", "。？！", false],
+  ])("zh PRD 사례: %s / %s", (hanzi, input, correct) => {
+    expect(gradeMode2(input, hanzi, "zh").correct).toBe(correct);
+  });
+
+  it("zh는 고정 문장부호의 전각·반각 차이와 모든 공백을 허용한다", () => {
+    expect(gradeMode2("（你 好）[世界]", "【你好】《世界》", "zh").correct).toBe(true);
+    expect(gradeMode2("他说: '你好'...", "他说：“你好”……", "zh").correct).toBe(true);
+  });
+
+  it.each([
+    ["价格是3.5元。", "价格是3,5元。"],
+    ["价格是3,500元。", "价格是3500元。"],
+    ["增长了5%。", "增长了5％。"],
+    ["A+B=C", "A-B=C"],
+    ["A/B", "A／B"],
+    ["甲·乙", "甲乙"],
+    ["甲—乙", "甲-乙"],
+    ["版本1．2", "版本1.2"],
+    ["Ａ中文", "A中文"],
+  ])("zh 의미 기호와 전각 문자는 보존한다: %s / %s", (hanzi, input) => {
+    expect(gradeMode2(input, hanzi, "zh").correct).toBe(false);
+  });
+
+  it("ASCII 마침표·쉼표는 양쪽이 ASCII/전각 숫자일 때만 보존한다", () => {
+    expect(gradeMode2("价格３.５元", "价格３５元", "zh").correct).toBe(false);
+    expect(gradeMode2("价格3,500元", "价格3500元", "zh").correct).toBe(false);
+    expect(gradeMode2("你好.世界", "你好世界", "zh").correct).toBe(true);
+  });
+
+  it("generic은 문장부호를 제거하지 않고 빈 정답도 허용하지 않는다", () => {
+    expect(gradeMode2("hello", "hello!", "generic").correct).toBe(false);
+    expect(gradeMode2("", "", "generic").correct).toBe(false);
   });
 });
 

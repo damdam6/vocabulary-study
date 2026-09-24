@@ -286,4 +286,26 @@ describe("POST /api/answer — M = {m1, m2} 기존 동작 보존 (인자 추가�
     const fWrite = writes.find((w) => w.cell === "F2");
     expect(fWrite?.value).toMatch(/^\d{4}-\d{2}-\d{2}\|7$/);
   });
+
+  it("문장 원문과 정확히 일치하는 A열 행만 갱신하고 응답 원문도 보존한다", async () => {
+    const sentence = " 我有2本书。 ";
+    const state = baseState(wordRow(0, 1));
+    state.rows[TAB].push([sentence, "wǒ yǒu liǎng běn shū.", "나는 책이 두 권 있다.", "0", "1", ""]);
+    const { writes } = stubSheetsFetch(state);
+    const res = await worker.fetch(
+      answerRequest("pw-both", {
+        tab: TAB,
+        hanzi: sentence,
+        mode: "m2",
+        timestamp: "2026-09-24 20:40",
+        isReview: false,
+      }),
+      env,
+    );
+
+    expect(res.status).toBe(200);
+    expect(((await res.json()) as AnswerBody).hanzi).toBe(sentence);
+    expect(writes).toContainEqual({ tab: TAB, cell: "E3", value: 2 });
+    expect(writes.some((write) => write.cell === "E2")).toBe(false);
+  });
 });

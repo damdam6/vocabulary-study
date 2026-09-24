@@ -260,6 +260,23 @@ describe("postAnswer", () => {
     ).rejects.toThrow("404");
   });
 
+  it("문장 원문의 공백·숫자·문장부호를 JSON body에서 변경하지 않는다", async () => {
+    const sentence = { ...WORD, tab: "문장 원본", hanzi: " 我有2本书。 " };
+    const fetchMock = vi.fn().mockResolvedValue(Response.json(sentence));
+    vi.stubGlobal("fetch", fetchMock);
+    const record = {
+      tab: sentence.tab,
+      hanzi: sentence.hanzi,
+      mode: "m2" as const,
+      timestamp: "2026-09-24 20:40",
+      isReview: false,
+    };
+
+    await postAnswer(record);
+
+    expect(JSON.parse((fetchMock.mock.calls[0][1] as RequestInit).body as string)).toEqual(record);
+  });
+
   it("비정상 응답이면 상태 코드를 실은 ApiError를 던진다 — 재시도 큐가 영구/일시 실패를 구분하는 데 쓴다(#79)", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(null, { status: 404 })));
 
@@ -285,6 +302,18 @@ describe("postReviewFail", () => {
   it("비정상 응답이면 throw한다", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(null, { status: 500 })));
     await expect(postReviewFail("HSK4", "经济")).rejects.toThrow("500");
+  });
+
+  it("문장 원문의 공백·숫자·문장부호를 JSON body에서 변경하지 않는다", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(Response.json(WORD));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await postReviewFail("문장 원본", " 我有2本书。 ");
+
+    expect(JSON.parse((fetchMock.mock.calls[0][1] as RequestInit).body as string)).toEqual({
+      tab: "문장 원본",
+      hanzi: " 我有2本书。 ",
+    });
   });
 
   it("비정상 응답이면 상태 코드를 실은 ApiError를 던진다(#79)", async () => {
