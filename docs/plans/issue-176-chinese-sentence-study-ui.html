@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>#176 긴 중국어 문장 학습 화면 개선 — 작업 플랜</title>
+<style>
+  :root { --bg:#f7f7f8; --card:#fff; --ink:#1c1c1e; --muted:#6e6e73; --line:#e3e3e6; --accent:#3b6ef5; --accent-soft:#e8eefe; --ok:#2e8b57; --code-bg:#f0f0f2; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#161618; --card:#202024; --ink:#ececf0; --muted:#98989f; --line:#333338; --accent:#7a9bff; --accent-soft:#26304a; --ok:#58c088; --code-bg:#2a2a2f; } }
+  * { box-sizing:border-box; }
+  body { margin:0; padding:40px 20px 80px; background:var(--bg); color:var(--ink); font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Segoe UI","Noto Sans KR",sans-serif; line-height:1.65; overflow-wrap:anywhere; }
+  main { max-width:860px; margin:0 auto; }
+  a { color:var(--accent); text-decoration:none; } a:hover { text-decoration:underline; }
+  code { font-family:"SF Mono",ui-monospace,Menlo,monospace; font-size:.86em; background:var(--code-bg); border-radius:5px; padding:2px 6px; }
+  header { margin-bottom:28px; }
+  .issue-chip { display:inline-block; font-weight:700; color:var(--accent); background:var(--accent-soft); border-radius:999px; padding:3px 14px; font-size:.95rem; margin-bottom:10px; }
+  .type-chip { display:inline-block; font-weight:600; color:var(--muted); border:1px solid var(--line); border-radius:999px; padding:3px 12px; font-size:.8rem; margin-left:8px; vertical-align:2px; }
+  h1 { font-size:1.7rem; margin:0 0 14px; letter-spacing:-.02em; }
+  .meta { display:flex; flex-wrap:wrap; gap:6px 22px; color:var(--muted); font-size:.87rem; } .meta b { color:var(--ink); font-weight:600; }
+  section.card { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:24px 28px; margin-top:18px; }
+  h2 { font-size:1.05rem; margin:0 0 14px; letter-spacing:-.01em; display:flex; align-items:center; gap:8px; } h2 .no { color:var(--accent); font-size:.8rem; font-weight:700; border:1.5px solid var(--accent); border-radius:6px; padding:0 6px; }
+  ul,ol { margin:0; padding-left:22px; } li { margin:6px 0; }
+  .steps { list-style:none; padding:0; counter-reset:step; } .steps li { counter-increment:step; position:relative; padding:10px 0 10px 44px; border-bottom:1px dashed var(--line); } .steps li:last-child { border-bottom:none; }
+  .steps li::before { content:counter(step); position:absolute; left:0; top:10px; width:28px; height:28px; border-radius:8px; background:var(--accent-soft); color:var(--accent); font-weight:700; font-size:.85rem; display:flex; align-items:center; justify-content:center; }
+  .steps .files { display:block; margin-top:4px; font-size:.85rem; color:var(--muted); }
+  table { width:100%; border-collapse:collapse; font-size:.92rem; } th,td { text-align:left; padding:8px 12px; border-bottom:1px solid var(--line); vertical-align:top; } th { color:var(--muted); font-weight:600; font-size:.82rem; }
+  .done-list { list-style:none; padding:0; } .done-list li { padding-left:30px; position:relative; } .done-list li::before { content:""; position:absolute; left:2px; top:7px; width:15px; height:15px; border:2px solid var(--ok); border-radius:5px; }
+  .scroll-x { overflow-x:auto; } footer { margin-top:30px; color:var(--muted); font-size:.8rem; text-align:center; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <span class="issue-chip"><a href="https://github.com/damdam6/vocabulary-study/issues/176">#176</a></span><span class="type-chip">기능 개선</span>
+    <h1>긴 중국어 문장을 읽고 입력할 수 있도록 학습 화면을 개선한다</h1>
+    <div class="meta">
+      <span><b>damdam6/vocabulary-study</b></span>
+      <span>브랜치 <b><code>feat/176-chinese-sentence-study-ui</code></b> ← <code>main</code></span>
+      <span>라벨 <b>enhancement</b></span>
+      <span>2026-09-24</span>
+    </div>
+  </header>
+
+  <section class="card">
+    <h2><span class="no">1</span>요약</h2>
+    <p>#175에서 확정한 중국어 문장 채점과 원문 키 보존을 전제로, 학습 카드가 200자 원문·1,000자 병음·긴 뜻·긴 오답을 손실 없이 표시하도록 만든다. 짧은 단어의 기존 강조 크기는 유지하고 긴 콘텐츠는 코드 포인트 길이에 따른 표시 크기, 줄바꿈, 콘텐츠 전용 스크롤로 처리한다. 모드2 중국어 입력은 여러 줄 <code>textarea</code>로 바꾸되 Enter 제출, Shift+Enter 개행, IME 조합 중 제출 방지를 명확히 한다. 데이터 필드·기록 API·채점·TTS lifecycle은 변경하지 않고, #169 Speaker Position의 병음 중심·발음 버튼 위치와 접근성 계약을 보존한다.</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">2</span>현황 분석</h2>
+    <ul>
+      <li><code>src/screens/StudyScreen.tsx:57-74</code>가 세션의 현재 질문과 <code>questionId</code>를 만들고, <code>:170-186</code>에서 모드별 카드를 렌더링한다. 각 카드에는 <code>key={session.pos}</code>가 있어 다음 문제에서 카드 내부 입력 상태는 리마운트로 초기화되지만, 새 카드의 포커스·textarea 높이·스크롤 초기화 동작은 별도 검증되어 있지 않다.</li>
+      <li><code>src/screens/Mode1Card.tsx:52-56</code>는 한자 길이에 따라 84/64/52px만 선택하고, <code>:157-173</code>의 뒷면은 한자·병음·뜻과 #169 발음 버튼을 렌더링한다. <code>src/index.css:521-565</code>는 뒷면 전체를 세로 스크롤할 수 있게 했지만, 뒷면 한자/병음/뜻 크기는 고정이며 <code>.flip-face-back-content</code>(<code>:531-540</code>)가 짧은 콘텐츠를 중앙 정렬하는 구조라 긴 문장에 대한 표시 크기·상단 시작·가용 높이 계약이 없다.</li>
+      <li><code>src/screens/Mode2Card.tsx:24-34</code>는 한 줄 <code>HTMLInputElement</code>의 문자열을 상태로 보관한다. <code>:55-66</code>의 제출은 form submit 하나에 의존하고, <code>:104-128</code>은 입력과 제출 버튼을 렌더링한다. 따라서 줄바꿈 가능한 중국어 문장 입력, Shift+Enter 예외, <code>KeyboardEvent.isComposing</code>/<code>keyCode=229</code> IME 경계가 구현되어 있지 않다.</li>
+      <li>모드2 오답 결과에는 이미 <code>src/screens/Mode2Card.tsx:73-95</code>의 <code>.mode2-result-scroll</code>이 있고 <code>src/screens/Mode2Card.css:1-23</code>이 한자·병음·뜻·내 답을 줄바꿈한다. 제출 버튼은 스크롤 영역 밖(<code>:97-100</code>)에 있어 이 구조를 유지하면 긴 결과를 읽는 동안 “다음”이 가려지지 않는다. 반면 문제 뜻 카드는 별도 콘텐츠 스크롤 래퍼가 없다.</li>
+      <li><code>src/lib/contentLabels.ts:10-29</code>의 zh 문구는 “한자 → 뜻”, “뜻 → 한자”, “이 뜻의 한자를 입력하세요”, “汉字”로 한자/문장 범위를 드러내지 않는다. <code>src/lib/studySession.ts:66-82</code>의 <code>gradeMode2</code>는 #175 계약이므로 이번 계획에서 수정하지 않는다.</li>
+      <li>#169 최신 구현은 <code>src/index.css:381-420</code>의 40px 대칭 grid로 병음 중심을 유지하고, <code>src/components/PronunciationButton.css:94-150</code>의 compact 버튼/44px 터치 영역을 제공한다. <code>Mode1Card</code>와 <code>Mode2Card</code>의 <code>pinyin-speaker</code> 마크업은 이 위치·포커스·replay 계약을 건드리지 않아야 한다.</li>
+      <li>현재 회귀 테스트는 <code>src/screens/Mode1Card.test.tsx:159-186</code>에서 200자 콘텐츠 보존, <code>src/screens/Mode2Card.test.tsx:186-204</code>에서 긴 오답/스크롤 밖 다음 버튼, <code>:206-230</code>에서 #175 문장부호 채점을 확인한다. 그러나 textarea 키보드·IME, 문제 전환 초기화, 1,000자 병음/긴 뜻과 320/375px 레이아웃은 아직 고정하지 않는다.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">3</span>설계</h2>
+    <p>카드와 세션의 기존 계약을 유지하면서 “내용이 길어지면 내용 영역만 스크롤되고 조작 컨트롤은 고정”되는 방향을 선택한다. DOM을 전면 재구성하거나 채점 정규화를 UI에 복사하지 않는다. 길이 판단은 문자열 이터레이터를 사용해 #173/기존 <code>hanziFontSize</code>의 코드 포인트 기준을 계승한다.</p>
+    <ul>
+      <li><strong>모드1 원문 표시:</strong> <code>src/lib/hanziSize.ts</code>의 짧은 1~2자 84px, 3자 64px, 짧은 4자 이상 52px 결과를 보존하고, 문장 길이 구간에만 추가적인 작은 표시 크기를 제공한다. <code>Mode1Card.tsx</code>는 기존 <code>aria-hidden</code>/<code>inert</code>, flip transition gate, <code>prepare/reveal</code>, O/X 판정을 그대로 두고 길이 결과만 class/custom property에 연결한다. <code>index.css</code>는 긴 앞면·뒷면에 <code>overflow-wrap:anywhere</code>, 줄 높이, <code>min-width:0</code>, 콘텐츠 스크롤을 적용하되 짧은 카드의 중앙 정렬과 #169 병음 grid를 유지한다.</li>
+      <li><strong>모드2 질문/결과 레이아웃:</strong> 긴 뜻을 카드 내부의 <code>min-height:0; overflow-y:auto</code> 콘텐츠 영역에서 읽게 하고, 결과 화면의 기존 <code>.mode2-result-scroll</code>과 “다음” 버튼 분리는 유지한다. 원문 한자·병음·뜻·사용자 입력은 절대 잘라내거나 채점 정규화한 값으로 치환하지 않는다. 결과의 병음 행은 반드시 기존 <code>.pinyin-speaker</code> 아래에 두어 스피커 위치와 키보드 탐색을 보존한다.</li>
+      <li><strong>textarea 입력:</strong> <code>Mode2Card.tsx</code>의 <code>inputRef</code>를 textarea ref로 교체하고, 동일한 form submit 경로를 유지한다. Enter는 IME 조합 중이 아니고 Shift가 없을 때만 제출하며, Shift+Enter는 기본 개행을 허용한다. <code>nativeEvent.isComposing</code>과 WebKit/브라우저 호환용 <code>keyCode=229</code>를 함께 확인해 조합 중 Enter가 <code>onJudged</code>를 호출하지 않게 한다. 모바일 명시적 제출 버튼과 <code>aria-label</code>/<code>enterKeyHint</code>는 유지한다.</li>
+      <li><strong>문제 전환 상태:</strong> <code>key={session.pos}</code> 리마운트 계약을 유지하고, 새 textarea가 빈 값·초기 높이·<code>scrollTop=0</code>·입력 포커스로 시작하는지 명시적으로 보장한다. 자동 높이 조정이 추가되면 최대 높이 이후 내부 스크롤을 사용하고, 렌더링 직후 <code>scrollHeight</code>를 기준으로 다시 계산해 긴 입력이 제출 버튼을 밀어내지 않게 한다. #175의 원문 <code>tab+hanzi</code> 기록과 #177의 TTS 입력에는 영향을 주지 않는다.</li>
+      <li><strong>문구:</strong> <code>contentLabels.ts</code>의 zh 모드 칩/힌트/placeholder를 “중국어 → 뜻”, “뜻 → 중국어”, “이 뜻의 중국어 단어·문장을 입력하세요”, “중국어”처럼 범위가 드러나는 표현으로 바꾼다. generic의 “단어” 문구, 시트 헤더(<code>registerTableHeaders</code>)와 데이터 필드명은 변경하지 않는다.</li>
+      <li><strong>접근성·Speaker Position:</strong> flip 전 뒷면의 <code>inert</code>와 공개 후 포커스 이동, 모드2 오답의 발음 버튼 우선 포커스/다음 fallback, 버튼의 30px 시각 크기와 44px hit area를 회귀 테스트로 고정한다. 반응형 CSS는 스피커를 이동시키거나 에러 문구를 가리는 방식으로 문제를 해결하지 않는다.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">4</span>작업 단계</h2>
+    <ol class="steps">
+      <li><label><input type="checkbox" checked disabled> 코드 포인트 길이 구간을 확장하고 모드1 표시 class와 긴 콘텐츠용 공통 CSS를 설계한다.</label><span class="files"><code>src/lib/hanziSize.ts</code>, <code>src/lib/hanziSize.test.ts</code>, <code>src/screens/Mode1Card.tsx</code>, <code>src/index.css</code></span>기존 1/2/3/4자 단어 크기와 generic 고정 크기를 유지한 채 200자 문장이 줄바꿈·세로 스크롤로 끝까지 읽히도록 한다. flip transition, hidden/inert, judge-zone은 변경하지 않는다. <em>구현: 4~8자의 52px을 유지하고 9/21/51 코드 포인트 경계에 40/32/24px을 추가했다.</em></li>
+      <li><label><input type="checkbox" checked disabled> 모드1 앞/뒷면과 모드2 결과의 긴 원문·병음·뜻·오답 레이아웃을 고정한다.</label><span class="files"><code>src/screens/Mode1Card.test.tsx</code>, <code>src/screens/Mode2Card.css</code>, <code>src/screens/Mode2Card.test.tsx</code>, <code>src/index.css</code></span>200자 한자, 1,000자 병음, 긴 뜻/오답 fixture의 DOM 보존, 줄바꿈 가능성, 결과 스크롤 안의 콘텐츠와 스크롤 밖의 다음 버튼을 검증한다. 발음 버튼은 병음 행의 기존 위치와 replay 동작을 유지한다. <em>구현: 모드2 문제 뜻도 전용 내부 스크롤 영역으로 분리했고 speaker grid DOM을 보존했다.</em></li>
+      <li><label><input type="checkbox" checked disabled> 중국어 모드2를 다중 행 textarea와 IME 안전 키보드 제출로 전환한다.</label><span class="files"><code>src/screens/Mode2Card.tsx</code>, <code>src/screens/Mode2Card.test.tsx</code></span>일반 Enter 제출 1회, Shift+Enter 개행/미제출, 조합 중 Enter 미제출, 조합 종료 후 Enter 제출 1회를 검증한다. 버튼 submit과 빈 입력/정답·오답/원문 answer 보존을 기존 계약대로 둔다. <em>구현: zh만 textarea/requestSubmit 경로를 사용하며 generic input은 유지했다.</em></li>
+      <li><label><input type="checkbox" checked disabled> 문제 전환 시 입력 상태·높이·스크롤·포커스를 초기화하고 라벨을 중국어 단어·문장 범위로 갱신한다.</label><span class="files"><code>src/screens/StudyScreen.tsx</code> (필요 시 최소 변경), <code>src/lib/contentLabels.ts</code>, <code>src/lib/contentLabels.test.ts</code>, <code>src/screens/StudyScreen.test.tsx</code></span>현재 <code>session.pos</code> key 리마운트와 즉시 진행/오답 다음 흐름을 유지하면서 새 문제에 이전 답이 남지 않고 입력 포커스가 복구되는지 확인한다. generic 라벨과 #175 gradeMode2/API 원문 키 회귀도 함께 확인한다. <em>구현: StudyScreen 코드는 변경하지 않고 기존 key 리마운트를 값/60px 높이/scrollTop 0/focus 테스트로 고정했다.</em></li>
+      <li><label><input type="checkbox" disabled> 320px·375px·데스크톱 수동 화면 검증과 표준 회귀 검사를 수행하고 계획 체크리스트를 갱신한다.</label><span class="files"><code>src/screens/Mode1Card.test.tsx</code>, <code>src/screens/Mode2Card.test.tsx</code>, <code>src/screens/StudyScreen.test.tsx</code>, 변경된 소스 파일 전체</span>모드1 앞/뒷면, 모드2 입력/오답에서 최대 콘텐츠와 키보드가 있는 상태를 확인한다. 이후 선택 테스트, 전체 <code>npm test</code>, <code>npm run build</code>, <code>npm run lint</code>를 실행하고 실제 TTS/Sheets/배포는 수행하지 않는다. <em>현재: 선택 54개·전체 1,075개 테스트, build, lint 통과. in-app Browser surface가 제공되지 않아 320/375/desktop 실제 렌더링 및 스크린샷은 아직 미검증이다.</em></li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">5</span>리스크</h2>
+    <div class="scroll-x"><table><thead><tr><th>리스크</th><th>영향</th><th>완화책</th></tr></thead><tbody>
+      <tr><td>긴 콘텐츠가 카드의 flex 높이를 차지해 판정·제출·다음 버튼을 밀어냄</td><td>모바일에서 조작 불가 또는 가로/세로 잘림</td><td>내용 영역에 <code>min-height:0</code>과 내부 세로 스크롤을 두고 버튼/판정 영역을 스크롤 밖에 둔다. 320/375px에서 직접 확인한다.</td></tr>
+      <tr><td>길이 기반 작은 글자 규칙이 짧은 단어의 기존 강조를 바꿈</td><td>기존 학습 화면 시각 회귀</td><td>기존 2/3/4자 경계 테스트를 보존하고 긴 구간만 추가한다. generic에는 zh 전용 크기 함수를 적용하지 않는다.</td></tr>
+      <tr><td>IME Enter를 일반 제출로 잘못 인식</td><td>조합 중 문장이 조기 제출되거나 중복 판정</td><td><code>isComposing</code>과 <code>keyCode=229</code>를 테스트하고, form 버튼 제출 경로와 onJudged 1회 보장을 유지한다.</td></tr>
+      <tr><td>textarea 자동 높이 조정이 문제 전환 시 이전 높이/스크롤을 재사용</td><td>새 문제가 큰 입력란에서 시작하거나 답이 가려짐</td><td>질문 key 리마운트와 layout effect 초기화를 함께 검증하고 새 ref의 <code>value</code>, 높이, <code>scrollTop</code>, focus를 검사한다.</td></tr>
+      <tr><td>#169 Speaker Position grid 또는 compact hit area가 긴 병음에서 깨짐</td><td>발음 버튼이 병음 중심을 흐리거나 접근 불가</td><td>기존 <code>.pinyin-speaker</code> DOM/CSS를 재사용하고 긴 병음 줄바꿈·발음 버튼 focus/replay 회귀를 확인한다.</td></tr>
+      <tr><td>UI에서 채점 정규화를 다시 적용해 원문 기록/TTS 텍스트를 훼손</td><td>시트 행 식별·오답 표시·발음 계약 회귀</td><td><code>gradeMode2</code>와 <code>StudyScreen</code> 기록 코드는 수정하지 않고, 기존 #175 원문 키 테스트를 전체 회귀에 포함한다.</td></tr>
+    </tbody></table></div>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">6</span>테스트 계획</h2>
+    <ul>
+      <li><code>npm test -- src/lib/hanziSize.test.ts src/lib/contentLabels.test.ts src/screens/Mode1Card.test.tsx src/screens/Mode2Card.test.tsx src/screens/StudyScreen.test.tsx</code> — 길이 경계, 라벨, 긴 표시, textarea 키보드/IME, 문제 전환, 포커스, 판정·발음 회귀가 통과해야 한다.</li>
+      <li>모드1 테스트에서 200자 원문과 1,000자 병음/뜻을 앞면·flip 뒷면에서 원문 손실 없이 렌더링하고, 뒷면 접근성 공개·O/X focus·unmount timer 정리를 확인한다.</li>
+      <li>모드2 테스트에서 200자 뜻/긴 오답이 결과 콘텐츠 영역에서 줄바꿈되고 “다음”과 제출 버튼이 scroll 영역 밖에 남는지, 발음 버튼이 병음 행에 있는지 확인한다.</li>
+      <li>모드2 textarea에서 Enter는 submit 1회, Shift+Enter는 개행만, <code>isComposing=true</code> 또는 <code>keyCode=229</code> Enter는 submit 0회, 조합 완료 후 Enter는 1회인지 검증한다. 답안 원문은 기존처럼 결과에 보존한다.</li>
+      <li>StudyScreen에서 정답 즉시 다음 문제와 오답 후 “다음” 전환 시 textarea 값·스크롤·높이가 초기화되고 새 입력에 focus되는지 확인한다. <code>src/lib/studySession.test.ts</code>, API/retry/Worker 테스트로 #175의 판정·원문 키가 변하지 않았는지 재검증한다.</li>
+      <li><code>npm test</code>, <code>npm run build</code>, <code>npm run lint</code>를 실행한다. 실제 Google Sheets 쓰기·유료 TTS 합성·배포는 하지 않는다.</li>
+      <li>브라우저 수동 검증에서 320×844, 375×844, 데스크톱 폭을 각각 사용해 모드1 앞/뒷면, 모드2 입력/오답 결과를 확인한다. 긴 한자·병음·뜻·내 답을 끝까지 읽고 판정/제출/다음/발음 버튼에 접근하며, #169의 병음 중심과 compact speaker 위치를 비교 기록한다.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">7</span>완료 조건</h2>
+    <ul class="done-list">
+      <li>짧은 단어의 기존 강조를 유지하면서 200자 중국어 원문과 1,000자 병음·긴 뜻·긴 오답을 줄바꿈/크기 조정/스크롤로 끝까지 읽을 수 있다.</li>
+      <li>중국어 모드2가 textarea를 제공하고 Enter 제출, Shift+Enter 개행, IME 조합 중 Enter 미제출을 테스트로 보장한다.</li>
+      <li>문제 전환 때 입력 값, 자동 높이, 내부 스크롤, 포커스가 새 문제 기준으로 초기화된다.</li>
+      <li>320px·375px 모바일과 데스크톱의 모드1 앞/뒷면·모드2 입력/오답에서 텍스트가 잘리지 않고 판정·제출·다음·발음 버튼이 가려지지 않는다.</li>
+      <li>중국어 모드 칩/힌트/placeholder가 단어·문장 범위를 표현하고, generic 문구·기존 시트 헤더·데이터 필드 계약은 유지된다.</li>
+      <li>#169 Speaker Position의 병음 중심, 발음 버튼 위치·접근성·재생 공개 시점을 유지하고 화면 검증 증거를 남긴다.</li>
+      <li>관련 테스트, 전체 테스트, build, lint가 통과하며 채점/API/TTS 원문 계약의 회귀가 없다. 구현자는 이 계획 HTML의 체크리스트와 검증 결과를 최종 PR에 반영한다.</li>
+    </ul>
+  </section>
+
+  <footer>issue-plan · <a href="https://github.com/damdam6/vocabulary-study/issues/176">#176</a> · 2026-09-24</footer>
+</main>
+</body>
+</html>
