@@ -54,6 +54,7 @@ function Mode1Card({ question, contentType, onJudged, pronunciation }: Mode1Card
   const pronunciationBinding = contentType === 'zh' ? pronunciation : undefined
   // 글자 수 적응 스케일은 zh 전용(이슈 #80) — generic은 고정 클래스로 표시.
   const frontSizeClass = contentType === 'zh' ? `flip-hanzi--${hanziFontSize(word.hanzi)}` : 'flip-hanzi--generic'
+  const backSizeClass = contentType === 'zh' ? `mode-card-hanzi--${hanziFontSize(word.hanzi)}` : ''
 
   const clearFallback = useCallback(() => {
     if (fallbackRef.current !== null) {
@@ -156,7 +157,7 @@ function Mode1Card({ question, contentType, onJudged, pronunciation }: Mode1Card
           </button>
           <div className="flip-face flip-face--back" aria-hidden={!viewReady} inert={!viewReady}>
             <div className="flip-face-back-content">
-              <span lang={lang} className="mode-card-hanzi">{word.hanzi}</span>
+              <span lang={lang} className={`mode-card-hanzi${backSizeClass ? ` ${backSizeClass}` : ''}`}>{word.hanzi}</span>
               <div className={`mode-card-pinyin-area pinyin-speaker${word.pinyin ? '' : ' pinyin-speaker--no-pinyin'}`}>
                 {word.pinyin && <span className="mode-card-pinyin">{word.pinyin}</span>}
                 {viewReady && pronunciationBinding && (

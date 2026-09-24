@@ -10,9 +10,9 @@ import {
 } from "./contentLabels";
 
 describe("modeChipLabel", () => {
-  it("zh는 한자 문구", () => {
-    expect(modeChipLabel("zh", "m1")).toBe("한자 → 뜻");
-    expect(modeChipLabel("zh", "m2")).toBe("뜻 → 한자");
+  it("zh는 단어·문장을 포괄하는 중국어 문구", () => {
+    expect(modeChipLabel("zh", "m1")).toBe("중국어 → 뜻");
+    expect(modeChipLabel("zh", "m2")).toBe("뜻 → 중국어");
   });
 
   it("generic은 중립 문구", () => {
@@ -39,8 +39,8 @@ describe("headwordLang", () => {
 });
 
 describe("mode2Hint", () => {
-  it("zh는 한자 입력 안내", () => {
-    expect(mode2Hint("zh")).toBe("이 뜻의 한자를 입력하세요");
+  it("zh는 중국어 단어·문장 입력 안내", () => {
+    expect(mode2Hint("zh")).toBe("이 뜻의 중국어 단어·문장을 입력하세요");
   });
 
   it("generic은 중립 안내", () => {
@@ -49,8 +49,8 @@ describe("mode2Hint", () => {
 });
 
 describe("mode2Placeholder", () => {
-  it("zh는 汉字", () => {
-    expect(mode2Placeholder("zh")).toBe("汉字");
+  it("zh는 중국어", () => {
+    expect(mode2Placeholder("zh")).toBe("중국어");
   });
 
   it("generic은 미적용(undefined)", () => {

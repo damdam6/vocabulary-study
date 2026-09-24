@@ -11,9 +11,18 @@ describe("hanziFontSize", () => {
     expect(hanziFontSize("图书馆")).toBe(64);
   });
 
-  it("4자 이상은 52px", () => {
+  it("4~8자 짧은 단어·구는 기존 52px", () => {
     expect(hanziFontSize("乱七八糟")).toBe(52);
     expect(hanziFontSize("百闻不如一见")).toBe(52);
+  });
+
+  it("긴 구·문장은 코드 포인트 길이 구간에 따라 축소한다", () => {
+    expect(hanziFontSize("汉".repeat(9))).toBe(40);
+    expect(hanziFontSize("汉".repeat(20))).toBe(40);
+    expect(hanziFontSize("汉".repeat(21))).toBe(32);
+    expect(hanziFontSize("汉".repeat(50))).toBe(32);
+    expect(hanziFontSize("汉".repeat(51))).toBe(24);
+    expect(hanziFontSize("汉".repeat(200))).toBe(24);
   });
 
   it("서로게이트 쌍 확장 한자도 코드포인트로 센다", () => {

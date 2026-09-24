@@ -176,6 +176,19 @@ describe('Mode1Card 접근성 플립', () => {
     expect(vi.getTimerCount()).toBe(0)
   })
 
+  it('zh 200자 원문은 긴 문장 크기 class를 앞·뒷면에 적용하고 1,000자 병음을 보존한다', () => {
+    const hanzi = '长'.repeat(200)
+    const pinyin = 'cháng '.repeat(200).trim()
+    const meaning = '아주 긴 뜻 '.repeat(120).trim()
+    const { container, unmount } = renderCard({ hanzi, pinyin, meaning })
+    expect(container.querySelector('.flip-hanzi--24')?.textContent).toBe(hanzi)
+    expect(container.querySelector('.mode-card-hanzi--24')?.textContent).toBe(hanzi)
+    expect(container.querySelector('.mode-card-pinyin')?.textContent).toBe(pinyin)
+    expect(container.querySelector('.mode-card-meaning')?.textContent).toBe(meaning)
+    expect(container.querySelector('.pinyin-speaker')?.querySelector('.mode-card-pinyin')).not.toBeNull()
+    unmount()
+  })
+
   it('짧은 답도 긴 답과 같은 내부 정렬 래퍼에 배치한다', () => {
     const { container, unmount } = renderCard()
     const back = container.querySelector('.flip-face--back')!
