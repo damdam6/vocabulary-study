@@ -41,14 +41,16 @@ export async function handleWordsRegister(
 
   const words = parseRegisterWords(rawWords, profile.contentType);
   if (!words) {
-    // 400 문구는 contentType별로 정확하게 — zh 문구는 현행 그대로 유지한다(§3.3).
+    // 인증 프로필에 맞는 형식·길이 제한을 안내한다.
     const error =
       profile.contentType === "generic"
         ? "words[]는 hanzi(표제어)/pinyin(보조 표기)/meaning(뜻) 필드가 필요합니다 — " +
           "표제어·뜻은 공백 아닌 문자열, 보조 표기는 문자열(빈칸 허용), 배열 내 표제어 중복 금지이며 " +
           `최대 ${MAX_REGISTER_WORDS}건까지 등록할 수 있습니다`
-        : "words[]는 hanzi/pinyin/meaning(공백 아닌 문자열, 배열 내 한자 중복 금지), " +
-          "한자는 유니코드 U+4E00–U+9FFF, 병음은 성조 부호 필수(숫자 표기 금지)여야 하며 " +
+        : "words[]는 hanzi/pinyin/meaning 필수 문자열과 NFC·trim 기준 배열 내 원문 중복 금지, " +
+          "중국어 원문은 한자(U+4E00–U+9FFF) 포함 1~200 코드 포인트와 허용 문자, " +
+          "병음은 1~1,000 코드 포인트와 성조 부호 필수(숫자 금지), " +
+          "원문·병음의 탭·개행·제어문자는 금지이며 " +
           `최대 ${MAX_REGISTER_WORDS}건까지 등록할 수 있습니다`;
     return Response.json({ error }, { status: 400 });
   }
@@ -73,7 +75,7 @@ export async function handleWordsRegister(
   const existingRows = await getValues(env, profile.sheetId, targetTab, "A2:A");
   const existingHanzi = existingRows.map((row) => row[0]).filter((v): v is string => !!v);
 
-  const { toAdd, skipped } = partitionByExisting(words, existingHanzi);
+  const { toAdd, skipped } = partitionByExisting(words, existingHanzi, profile.contentType);
 
   if (toAdd.length > 0) {
     const nextRow = existingRows.length + 2;

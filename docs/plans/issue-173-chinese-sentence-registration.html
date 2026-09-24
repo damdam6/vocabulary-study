@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>#173 중국어 문장 등록의 공통 입력 계약과 서버 검증 확장 — 작업 플랜</title>
+<style>
+  :root {
+    --bg: #f7f7f8; --card: #ffffff; --ink: #1c1c1e; --muted: #6e6e73;
+    --line: #e3e3e6; --accent: #3b6ef5; --accent-soft: #e8eefe;
+    --ok: #2e8b57; --warn: #b25e09; --code-bg: #f0f0f2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161618; --card: #202024; --ink: #ececf0; --muted: #98989f;
+      --line: #333338; --accent: #7a9bff; --accent-soft: #26304a;
+      --ok: #58c088; --warn: #e0a35c; --code-bg: #2a2a2f;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 40px 20px 80px; background: var(--bg); color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+                 "Segoe UI", "Noto Sans KR", sans-serif;
+    line-height: 1.65; overflow-wrap: anywhere;
+  }
+  main { max-width: 860px; margin: 0 auto; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code {
+    font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 0.86em;
+    background: var(--code-bg); border-radius: 5px; padding: 2px 6px;
+  }
+  header { margin-bottom: 28px; }
+  .issue-chip {
+    display: inline-block; font-weight: 700; color: var(--accent);
+    background: var(--accent-soft); border-radius: 999px;
+    padding: 3px 14px; font-size: 0.95rem; margin-bottom: 10px;
+  }
+  .type-chip {
+    display: inline-block; font-weight: 600; color: var(--muted);
+    border: 1px solid var(--line); border-radius: 999px;
+    padding: 3px 12px; font-size: 0.8rem; margin-left: 8px; vertical-align: 2px;
+  }
+  h1 { font-size: 1.7rem; margin: 0 0 14px; letter-spacing: -0.02em; }
+  .meta {
+    display: flex; flex-wrap: wrap; gap: 6px 22px;
+    color: var(--muted); font-size: 0.87rem;
+  }
+  .meta b { color: var(--ink); font-weight: 600; }
+  section.card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 24px 28px; margin-top: 18px;
+  }
+  h2 {
+    font-size: 1.05rem; margin: 0 0 14px; letter-spacing: -0.01em;
+    display: flex; align-items: center; gap: 8px;
+  }
+  h2 .no {
+    color: var(--accent); font-size: 0.8rem; font-weight: 700;
+    border: 1.5px solid var(--accent); border-radius: 6px; padding: 0 6px;
+  }
+  ul, ol { margin: 0; padding-left: 22px; }
+  li { margin: 6px 0; }
+  .steps { list-style: none; padding: 0; counter-reset: step; }
+  .steps li {
+    counter-increment: step; position: relative; padding: 10px 0 10px 44px;
+    border-bottom: 1px dashed var(--line);
+  }
+  .steps li:last-child { border-bottom: none; }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 10px;
+    width: 28px; height: 28px; border-radius: 8px; background: var(--accent-soft);
+    color: var(--accent); font-weight: 700; font-size: 0.85rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .steps .files { display: block; margin-top: 4px; font-size: 0.85rem; color: var(--muted); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 0.82rem; }
+  .done-list { list-style: none; padding: 0; }
+  .done-list li { padding-left: 30px; position: relative; }
+  .done-list li::before {
+    content: "✓"; position: absolute; left: 2px; top: 7px; width: 15px; height: 15px;
+    border: 2px solid var(--ok); border-radius: 5px;
+  }
+  .scroll-x { overflow-x: auto; }
+  footer { margin-top: 30px; color: var(--muted); font-size: 0.8rem; text-align: center; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <span class="issue-chip"><a href="https://github.com/damdam6/vocabulary-study/issues/173">#173</a></span><span class="type-chip">기능 개선</span>
+    <h1>중국어 문장 등록의 공통 입력 계약과 서버 검증 확장</h1>
+    <div class="meta">
+      <span><b>damdam6/vocabulary-study</b></span>
+      <span>브랜치 <b><code>feat/173-chinese-sentence-registration</code></b> ← <code>main</code></span>
+      <span>라벨 <b>enhancement</b></span>
+      <span>2026-09-24</span>
+    </div>
+  </header>
+
+  <section class="card">
+    <h2><span class="no">1</span>요약</h2>
+    <p>#172 PRD §3에 따라 중국어 단어·문장에 공통으로 적용할 형식 계약을 만들고 서버 등록에 연결한다. 신규 값은 NFC·trim 후 저장하고, 선택 탭 중복 비교에만 정규화를 적용하여 기존 원문 행과 학습 기록 키를 보존한다. 이번 작업은 #173에 한정하며, UI·병음 경고·Python 킷(#174), 채점(#175), 화면(#176), TTS(#177), 최종 통합(#178)은 후속 이슈다. 요청 실행 설정은 codex / gpt-6-astra / high이며 현재 상태는 구현·검증 완료이며 issue-work 절차에 따라 PR로 게시한다.</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">2</span>현황 분석</h2>
+    
+    <ul>
+<li>명세: <a href="https://github.com/damdam6/vocabulary-study/issues/172">#172의 PRD 전문·의존성 그래프</a>와 메인 체크아웃 <code>docs/PRD-chinese-sentence-study.md</code>를 모두 확인했다. #173은 선행 없음, 직접 후속은 #174·#175다. 메인의 미커밋 PRD는 읽기 참고 자료로 사용하며 이 브랜치에 복사하거나 커밋하지 않는다.</li>
+<li><code>worker/lib/register.ts:54</code>는 배열·100건·문자열 타입을 확인한 뒤 모든 필드를 trim한다. zh는 기본 한자 전용 정규식(<code>:23</code>)과 병음 형식(<code>:30</code>)을 적용한다. NFC·길이 제한은 없고, 영문 혼합 및 문장부호를 거부한다. 병음은 v를 포함한 ASCII 전체가 허용되지 않으며 의미 검증은 하지 않는다.</li>
+<li><code>worker/lib/register.ts:79</code>는 trim한 신규 원문의 정확 일치로 배치 중복을 차단한다. <code>:119</code>의 선택 탭 중복은 기존 A열 문자열을 정규화하지 않는다.</li>
+<li><code>worker/routes/register.ts:42</code>는 인증 프로필의 contentType으로 검사한다. <code>:73</code>에서 선택 탭 A열을 읽고 <code>:82</code>에서 신규 항목만 마지막 행 아래 A~C에 쓴다. 오류 문구(<code>:50</code>)는 한자 전용 정책을 설명하고 있어 변경해야 한다.</li>
+<li><code>src/lib/registerValidation.ts:122</code>가 붙여넣기 JSON의 version 1을 검사한다. 실제 POST 요청(<code>src/lib/registerApi.ts:62</code>)은 tab·words이며 version이 없다. 이 요청 계약은 유지한다.</li>
+<li><code>worker/lib/words.ts:29</code>는 시트 원문을 보존하고 <code>:67</code>·<code>:94</code>는 정확한 원문 키로 행을 찾는다. 등록 정규화를 이 경로에 전파하지 않는다.</li>
+<li><code>worker/lib/register.test.ts:65</code>·<code>:77</code>의 기존 거부 기대와 <code>:150</code>의 클라이언트 정규식 소스 비교는 새 서버 계약에 맞게 대체해야 한다. 서버/클라이언트 설정은 분리되어 있고 공용 shared 디렉터리는 아직 없다(<code>tsconfig.worker.json</code>, <code>tsconfig.app.json</code>).</li>
+</ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">3</span>설계</h2>
+    
+    <p><strong>공통 모듈:</strong> <code>shared/registration.ts</code>에 런타임·프로필 구현 의존성이 없는 순수 함수를 둔다. 한자/병음 정규화, 코드 포인트 개수, 고정 허용 문자, 필드별 형식 오류, 등록 중복 키를 내보내 #174가 직접 재사용할 수 있게 한다. 한자-병음 의미 검사는 넣지 않는다.</p>
+<ul>
+<li>A열: NFC 후 양끝 공백을 제거하고 1~200 코드 포인트, U+4E00~U+9FFF 한자 최소 1자. ASCII·전각 영문/숫자, U+0020·U+3000과 PRD의 고정 문장부호만 허용한다. 내부 공백, 대소문자, 문장부호, 전각 형태는 보존한다.</li>
+<li>고정 문장부호: <code>，。！？；：、,.!?;:（）()【】[]《》〈〉“”‘’「」『』&quot;'…—-·／/％%＋+＝=．</code>. Unicode 문장부호 전체 허용이나 NFKC 변환은 쓰지 않는다.</li>
+<li>B열: NFC·trim 후 1~1,000 코드 포인트. ASCII A~Z/a~z 전체(v 포함), ü 및 기존 성조 모음의 대소문자, U+0020·U+3000, 동일 문장부호를 허용한다. 기존 성조 부호 최소 하나를 요구한다. ASCII/전각 숫자와 숫자 성조는 금지한다. 뜻은 기존 문자열·trim 후 비어 있지 않음만 검사한다.</li>
+<li>검사 순서: 원본 A/B의 제어문자(C0/C1, 탭·CR·LF 포함)를 먼저 차단한다. 양끝에서는 U+0020·U+3000만 제거하고 나머지 목록 밖 공백도 오류로 처리해 trim으로 불허 문자가 사라지지 않게 한다. NFC 후 길이를 세며 자동 절단하지 않는다. 이 해석을 fixture로 고정해 #174 Python 동기화 시 동일하게 따른다.</li>
+<li>오류는 빈 값·불허 문자/제어문자·한자 없음·길이 초과·성조 없음 등 필드별로 구분할 수 있게 한다. 서버는 기존 parseRegisterWords의 배열/null 계약과 HTTP 400 형식을 유지하면서 오류 안내에 200/1,000 코드 포인트 제한을 명시한다.</li>
+<li>신규 zh A/B는 정규화된 값을 저장한다. 배치 중복은 정규화된 A열 키로 차단한다. <code>partitionByExisting</code>에 contentType을 전달하여 zh에서만 기존 A열에 NFC·trim 비교 키를 적용한다. 기존 행은 검증·수정하지 않으며 toAdd/skipped에는 신규 등록 원문을 유지한다. <code>你好</code>와 <code>你好。</code>는 다른 항목이다.</li>
+<li>generic은 기존 trim, 필수 필드, 빈 병음 허용, 선택 탭 정확 일치, 배치 중복 정책을 유지한다. 신규 zh 제한은 읽기·기록·재시도·TTS로 전파하지 않는다.</li>
+<li><code>tests/fixtures/chinese-sentence-registration.json</code>은 JS/Python이 함께 읽을 순수 JSON으로 제공한다(58개 등록 사례·3개 중복 분할 사례·기존 장문 사례). id·contentType·입력 words·기대 허용/차단·정규화 결과를 기록하고, 중복/기존 시트 사례는 별도 묶음으로 구분한다. 의미 불일치·변조·혼합은 서버 형식 검증 통과 사례이며 후속 UI 경고 여부와 혼동하지 않는다. 원문 201자 기존 행은 신규 등록 거부·읽기 보존의 서로 다른 기대를 명시한다.</li>
+</ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">4</span>작업 단계</h2>
+    <ol class="steps">
+      
+      <li><label><input type="checkbox" checked disabled> 공통 입력 계약과 계약 단위 테스트를 추가한다.</label><span class="files"><code>shared/registration.ts</code> (신규), <code>shared/registration.test.ts</code> (신규), <code>tsconfig.app.json</code>, <code>tsconfig.worker.json</code> (공용 코드·테스트 타입 검사 포함이 필요한 경우)</span>문자·정규화·길이·성조·필수 필드와 오류 구분을 검증한다. 외부 라이브러리·DOM·Worker 의존성을 두지 않는다.</li>
+<li><label><input type="checkbox" checked disabled> 후속 이슈가 재사용할 JSON fixture를 작성하고 공통 계약 테스트에서 소비한다.</label><span class="files"><code>tests/fixtures/chinese-sentence-registration.json</code> (신규), <code>shared/registration.test.ts</code></span>단어·문장·장문·숫자/영문 혼합·다음자/변조·의미 불일치·경계·중복·기존 장문·generic 기대를 분리한다. 테스트 환경에서는 ?raw 후 JSON.parse 등 기존 TS 구성과 호환되는 읽기 방식을 사용한다.</li>
+<li><label><input type="checkbox" checked disabled> 서버 검증과 중복 비교에 공통 계약을 연결한다.</label><span class="files"><code>worker/lib/register.ts</code>, <code>worker/routes/register.ts</code>, <code>worker/lib/register.test.ts</code></span>zh 검증 교체, contentType별 중복 처리, 400 안내 변경. 100건·기존 응답·프로필 선택·generic·A~C append를 유지한다. 기존 한자 전용 소스 리터럴 비교 테스트는 행동 기반 계약 테스트로 대체한다.</li>
+<li><label><input type="checkbox" checked disabled> 서버 라우트와 원문 보존 회귀를 검증한다.</label><span class="files"><code>worker/routes/register.test.ts</code>, <code>worker/routes/register.generic.test.ts</code>, <code>worker/routes/words.test.ts</code></span>문장 저장, 정규화 중복 스킵, 기존 D~G 학습 값 보존, 선택 탭 격리, 잘못된 배치의 Sheets 쓰기 없음, generic 미변경을 확인한다. 읽기 경로에서 기존 장문 원문이 유지되는 최소 회귀 사례를 추가한다.</li>
+<li><label><input type="checkbox" checked disabled> 전체 검증 결과와 후속 인계 계약을 기록한다.</label><span class="files"><code>docs/plans/issue-173-chinese-sentence-registration.html</code>, 변경 파일 전체</span>npm test/build/lint가 통과하면 issue-work 절차로 논리별 커밋하고 최종 체크리스트를 커밋한다. 모드 마커는 현재 없음 → GitHub 경로이며 green일 때 push·ready PR(Closes #173), 실패가 남으면 미게시한다.</li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">5</span>리스크</h2>
+    <div class="scroll-x">
+    <table>
+      <thead><tr><th>리스크</th><th>영향</th><th>완화책</th></tr></thead>
+      <tbody>
+        
+        <tr><td>trim이 양끝 제어문자를 감춤</td><td>잘못된 입력이 정상화될 수 있음</td><td>원본 검사 선행, 양끝·내부 탭/개행과 목록 밖 공백 fixture</td></tr>
+<tr><td>정규화를 기존 행/기록에 적용</td><td>행 식별 실패·진도 손상</td><td>중복 비교용 복사 키만 사용, 기존 A~G 값과 조회 원문 회귀 검증</td></tr>
+<tr><td>generic에 새 규칙 전파</td><td>기존 자유 텍스트·중복 계약 변경</td><td>명시적 contentType 분기, NFD/NFC 및 양끝 공백 기존 행 비교 회귀</td></tr>
+<tr><td>프런트·Python은 아직 구 계약</td><td>#173 단독으로는 UI 문장 등록 불가</td><td>#174가 공용 모듈/fixture를 소비하도록 인계, 이번 PR의 완료 범위를 서버 계약으로 명시</td></tr>
+<tr><td>분리 TS 프로젝트에서 공용 경로 누락</td><td>타입 검사/빌드 누락</td><td>shared 테스트 포함을 확인하고 npm run build로 검증</td></tr>
+<tr><td>Mock이 빈 시트 행을 제거</td><td>append 위치 테스트가 실제 API와 다를 수 있음</td><td>worker/routes/register.test.ts의 A2:A mock은 내부 빈 행을 보존하도록 필요한 범위에서 수정하고 마지막 행 아래 저장을 검증</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">6</span>테스트 계획</h2>
+    <ul>
+      
+      <li>공통 계약: 허용 문장부호 각각, U+4E00/U+9FFF 경계, 확장 A/이모지/서로게이트/불허 문자 거부, ASCII·전각 혼합, 한자 없는 원문 거부.</li>
+<li>NFC: 분해 성조를 합성하여 저장하고 정규화 후 길이를 센다. 200/201 원문 및 1,000/1,001 병음 경계, 내부/양끝 탭·개행·C0/C1, 비허용 공백을 검증한다. UTF-16 length에 의존하지 않는다.</li>
+<li>병음: 대문자 성조·ü·ASCII 전체와 부호 허용, 숫자/전각 숫자·무성조·빈 병음 차단. 단어·문장·다음자·변조·의미 불일치는 형식만 검사한다.</li>
+<li>배치: 100건 통과/101건 거부, 누락·비문자열·빈 값·빈 배열 거부, 정규화 중복 차단, 문장부호·내부 공백·대소문자 차이는 다른 키.</li>
+<li>라우트: 선택 탭 정규화 중복 스킵과 새 문장 A~C 저장, 기존 A~G 불변, 내부 빈 행 이후 append 위치, invalid 배치에서 Sheets 쓰기 0회, 인증 프로필/탭 격리.</li>
+<li>generic: 빈 병음·자유 텍스트·기존 trim·대소문자·NFD/NFC 구분과 선택 탭 정확 일치 유지. 기존 장문 GET에서 원문 유지. version 1 및 기존 등록 API 계약은 기존 프런트 테스트로 회귀 확인.</li>
+<li>실행: <code>npx vitest run shared/registration.test.ts worker/lib/register.test.ts worker/routes/register.test.ts worker/routes/register.generic.test.ts worker/routes/words.test.ts</code>, 이어 <code>npm test</code>, <code>npm run build</code>, <code>npm run lint</code>. npm ci로 의존성 설치 완료.</li>
+<li>검증 결과(2026-09-24): npm test — 56개 파일, 943개 테스트 통과. npm run lint 및 npm run build 통과. 빌드의 Wrangler 로그 저장 권한 오류는 WRANGLER_LOG_PATH=/private/tmp/issue-173-wrangler.log로 경로를 지정하여 재실행했고 오류 없이 완료했다. 외부 Sheets/TTS는 mock으로 검증한다. 실제 시트 쓰기·유료 합성·배포는 수행하지 않는다. Python 구현 동기화/검증은 #174, 전체 E2E는 #178에서 수행한다.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">7</span>완료 조건</h2>
+    <ul class="done-list">
+      
+      <li>PRD §3의 허용 문자, NFC·trim, 원문 200/병음 1,000 코드 포인트, 필수 필드가 재사용 가능한 공통 계약으로 구현된다.</li><li>한자 포함 숫자/영문과 문장부호를 허용하고 제어문자·숫자 성조·빈 값·길이 초과를 차단한다.</li><li>zh 배치·선택 탭은 NFC·trim 키로 중복 비교하고 기존 원문 행·학습 기록 키를 수정하지 않는다.</li><li>100건, version 1, 와이어 필드, generic, append-only 저장, 기존 긴 항목 조회를 유지한다.</li><li>경계·혼합·단어·문장·generic 공통 JSON fixture와 서버 테스트가 제공되며 npm test/build/lint가 통과한다.</li><li>#174~#178 구현을 포함하지 않고 실제 환경 미검증 및 테스트 결과를 기록한다.</li>
+    </ul>
+  </section>
+
+  <footer>issue-plan · <a href="https://github.com/damdam6/vocabulary-study/issues/173">#173</a> · 2026-09-24 · 작업 단계 5/5 완료</footer>
+</main>
+</body>
+</html>

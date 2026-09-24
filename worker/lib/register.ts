@@ -7,50 +7,14 @@
 
 import type { ContentType } from "./profiles.ts";
 
-export interface RegisterWord {
-  hanzi: string;
-  pinyin: string;
-  meaning: string;
-}
+import { MAX_REGISTER_WORDS, normalizeRegistrationText, validateZhRegistrationWord } from "../../shared/registration.ts";
+import type { RegistrationWord } from "../../shared/registration.ts";
 
-/** 플랜 §6·PRD §7.3: 한 요청의 words 배열은 최대 이 건수까지만 허용한다(#57). */
-export const MAX_REGISTER_WORDS = 100;
+export { MAX_REGISTER_WORDS } from "../../shared/registration.ts";
+export type RegisterWord = RegistrationWord;
 
-/**
- * 한자 유니코드 범위(플랜 §3, 기본 블록만 허용) — src/lib/registerValidation.ts의 HANZI_RE와
- * 동일해야 드리프트가 없다(#57). CJK 확장 A(U+3400–)는 의도적으로 제외.
- */
-export const HANZI_RE = /^[一-鿿]+$/u;
-
-/**
- * 병음 성조 부호 형식(플랜 §3 "성조 부호 필수, 숫자 표기 불가") — docs/registration-kit/schema_check.py의
- * 동명 검사를 라이브러리 없이 이식한다(#57). 한자-병음 의미적 일치는 여기서 보지 않는다 — pinyin-pro는
- * 클라이언트(src/lib/pinyinValidation.ts) 전용으로 유지한다.
- */
-const TONED_VOWELS = "āáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜ";
-// 표준 병음은 'v'를 쓰지 않는다 — ü의 키보드 대체 문자일 뿐이라 스키마가 ü 표기를 요구한다.
-const ALLOWED_PINYIN_CHARS = new Set(`abcdefghijklmnopqrstuwxyzü'’ ${TONED_VOWELS}`);
-const TONE_MARK_RE = new RegExp(`[${TONED_VOWELS}]`, "u");
-
-function hasValidToneFormat(pinyin: string): boolean {
-  const lower = pinyin.toLowerCase();
-  if (/\d/.test(lower)) {
-    return false;
-  }
-  for (const ch of lower) {
-    if (!ALLOWED_PINYIN_CHARS.has(ch)) {
-      return false;
-    }
-  }
-  return TONE_MARK_RE.test(lower);
-}
-
-/** words 배열을 contentType별 스키마로 재검증한다(zh: 플랜 §3 · generic: 등록 일반화 플랜 §3.2).
- * 공통 — 필드 누락·타입 불일치·배열 내 A열 값 중복(정확 일치, §8 Q4)·100건 초과면 null.
- * zh — 세 필드 비공백 + 한자 유니코드 범위 + 병음 성조 형식(기존 동작 불변).
- * generic — hanzi(표제어)·meaning(뜻) 비공백 자유 텍스트, pinyin(보조 표기)은 트림 후 빈 문자열
- * 허용(→ B열 빈칸), 범위·성조 검사 없음. 기본값 "zh"는 프로필 contentType 생략 폴백(profiles.ts)과
- * 같은 방향이라 미전달 호출이 엄격한 쪽으로 떨어진다. */
+/** zh: #172 PRD §3 공통 형식 검사. generic: 기존 trim·필수 필드 계약 유지.
+ * 배열/null 반환과 100건 제한은 기존 API와 같다. 병음 의미 일치는 검사하지 않는다. */
 export function parseRegisterWords(raw: unknown, contentType: ContentType = "zh"): RegisterWord[] | null {
   if (!Array.isArray(raw) || raw.length === 0 || raw.length > MAX_REGISTER_WORDS) {
     return null;
@@ -65,16 +29,14 @@ export function parseRegisterWords(raw: unknown, contentType: ContentType = "zh"
     if (typeof hanzi !== "string" || typeof pinyin !== "string" || typeof meaning !== "string") {
       return null;
     }
-    const word = { hanzi: hanzi.trim(), pinyin: pinyin.trim(), meaning: meaning.trim() };
+    let word: RegisterWord;
     if (contentType === "zh") {
-      if (!word.hanzi || !word.pinyin || !word.meaning) {
-        return null;
-      }
-      if (!HANZI_RE.test(word.hanzi) || !hasValidToneFormat(word.pinyin)) {
-        return null;
-      }
-    } else if (!word.hanzi || !word.meaning) {
-      return null;
+      const result = validateZhRegistrationWord(item);
+      if (!result.ok) return null;
+      word = result.word;
+    } else {
+      word = { hanzi: hanzi.trim(), pinyin: pinyin.trim(), meaning: meaning.trim() };
+      if (!word.hanzi || !word.meaning) return null;
     }
     if (seen.has(word.hanzi)) {
       return null;
@@ -116,12 +78,16 @@ export interface PartitionResult {
 }
 
 /** 탭 내 A열 중복 한자는 스킵한다 — 기존 행은 어떤 경우에도 수정하지 않는다(플랜 §6). */
-export function partitionByExisting(words: RegisterWord[], existingHanzi: string[]): PartitionResult {
-  const existing = new Set(existingHanzi);
+export function partitionByExisting(
+  words: RegisterWord[], existingHanzi: string[], contentType: ContentType = "zh",
+): PartitionResult {
+  // 비교용 복사 키만 정규화한다. generic의 기존 시트 정확 일치 정책은 유지한다.
+  const key = contentType === "zh" ? normalizeRegistrationText : (value: string) => value;
+  const existing = new Set(existingHanzi.map(key));
   const toAdd: RegisterWord[] = [];
   const skipped: string[] = [];
   for (const word of words) {
-    if (existing.has(word.hanzi)) {
+    if (existing.has(key(word.hanzi))) {
       skipped.push(word.hanzi);
     } else {
       toAdd.push(word);

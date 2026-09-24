@@ -1,8 +1,37 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_TAB_HEADERS, HANZI_RE, MAX_REGISTER_WORDS, normalizeTabName, parseRegisterWords, partitionByExisting } from "./register.ts";
-// worker/lib과 src/lib은 별도 tsconfig 프로젝트(tsconfig.worker.json/tsconfig.app.json)라 TS import로
-// 직접 비교할 수 없다 — vite/client가 제공하는 ?raw로 소스를 문자열째 읽어 리터럴 일치를 확인한다.
-import clientRegisterValidationSource from "../../src/lib/registerValidation.ts?raw";
+import { DEFAULT_TAB_HEADERS, MAX_REGISTER_WORDS, normalizeTabName, parseRegisterWords, partitionByExisting } from "./register.ts";
+import fixturesSource from "../../tests/fixtures/chinese-sentence-registration.json?raw";
+import type { RegisterWord } from "./register.ts";
+import type { ContentType } from "./profiles.ts";
+
+const fixtures = JSON.parse(fixturesSource) as {
+  cases: { id: string; contentType: ContentType; words: unknown[]; accepted: boolean; expectedWords?: RegisterWord[] }[];
+  partitions: { id: string; contentType: ContentType; existing: string[]; words: RegisterWord[]; skipped: string[] }[];
+};
+
+describe("공유 등록 fixture", () => {
+  it.each(fixtures.cases)("$id", (c) => {
+    const result = parseRegisterWords(c.words, c.contentType);
+    if (c.accepted) expect(result).toEqual(c.expectedWords);
+    else expect(result).toBeNull();
+  });
+  it.each(fixtures.partitions)("중복 비교 $id", (c) => {
+    const before = structuredClone(c);
+    const result = partitionByExisting(c.words, c.existing, c.contentType);
+    expect(result.skipped).toEqual(c.skipped);
+    expect(result.toAdd).toEqual(c.words.filter((w) => !c.skipped.includes(w.hanzi)));
+    expect(c).toEqual(before);
+  });
+  it("문장부호·내부 공백·대소문자를 제거하지 않는다", () => {
+    const words = ["你好", "你好。", "你 好", "你AI", "你ai"].map((hanzi) => ({ hanzi, pinyin: "nǐ hǎo", meaning: "뜻" }));
+    expect(parseRegisterWords(words)).toEqual(words);
+    expect(partitionByExisting(words, ["你好"])).toEqual({ toAdd: words.slice(1), skipped: ["你好"] });
+  });
+  it("generic 배치에서는 NFC를 적용하지 않는다", () => {
+    const words = ["café", "cafe\u0301"].map((hanzi) => ({ hanzi, pinyin: "", meaning: "카페" }));
+    expect(parseRegisterWords(words, "generic")).toEqual(words);
+  });
+});
 
 describe("parseRegisterWords", () => {
   it("정상 배열은 트림된 형태로 통과한다", () => {
@@ -62,8 +91,8 @@ describe("parseRegisterWords", () => {
     expect(parseRegisterWords([{ hanzi: "㐀", pinyin: "jīngjì", meaning: "경제" }])).toBeNull();
   });
 
-  it("한자에 비한자 문자가 섞이면 null", () => {
-    expect(parseRegisterWords([{ hanzi: "abc经", pinyin: "jīngjì", meaning: "경제" }])).toBeNull();
+  it("한자에 ASCII 영문이 섞이면 허용한다", () => {
+    expect(parseRegisterWords([{ hanzi: "abc经", pinyin: "jīngjì", meaning: "경제" }])).toHaveLength(1);
   });
 
   it("병음이 숫자 성조 표기면 null", () => {
@@ -75,7 +104,7 @@ describe("parseRegisterWords", () => {
   });
 
   it("병음에 허용되지 않는 문자가 섞이면 null", () => {
-    expect(parseRegisterWords([{ hanzi: "经济", pinyin: "jīngjì!", meaning: "경제" }])).toBeNull();
+    expect(parseRegisterWords([{ hanzi: "经济", pinyin: "jīngjì@", meaning: "경제" }])).toBeNull();
   });
 });
 
@@ -144,12 +173,6 @@ describe("DEFAULT_TAB_HEADERS", () => {
   it("contentType별 A~F 6열 헤더를 제공한다(등록 일반화 플랜 §3.3)", () => {
     expect(DEFAULT_TAB_HEADERS.zh).toEqual(["한자", "병음", "뜻", "모드1", "모드2", "복습"]);
     expect(DEFAULT_TAB_HEADERS.generic).toEqual(["표제어", "보조 표기", "뜻", "모드1", "모드2", "복습"]);
-  });
-});
-
-describe("HANZI_RE", () => {
-  it("src/lib/registerValidation.ts의 HANZI_RE와 동일한 정규식 리터럴을 쓴다(#57 드리프트 예방)", () => {
-    expect(clientRegisterValidationSource).toContain(`const HANZI_RE = ${HANZI_RE.toString()};`);
   });
 });
 

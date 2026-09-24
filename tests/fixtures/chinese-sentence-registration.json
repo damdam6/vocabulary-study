@@ -1,0 +1,931 @@
+{
+  "description": "#172 PRD §3 / #173 공유 fixture. words는 서버 운반자 필드, generic 킷 소비 시 hanzi→term, pinyin→note 매핑. accepted는 형식 검증이며 발음 보증이 아니다.",
+  "schemaVersion": 1,
+  "cases": [
+    {
+      "id": "word",
+      "contentType": "zh",
+      "words": [
+        {
+          "hanzi": "你好",
+          "pinyin": "nǐ hǎo",
+          "meaning": "안녕"
+        }
+      ],
+      "accepted": true,
+      "expectedWords": [
+        {
+          "hanzi": "你好",
+          "pinyin": "nǐ hǎo",
+          "meaning": "안녕"
+        }
+      ]
+    },
+    {
+      "id": "sentence",
+      "contentType": "zh",
+      "words": [
+        {
+          "hanzi": "我今天很忙。",
+          "pinyin": "wǒ jīntiān hěn máng.",
+          "meaning": "나는 오늘 매우 바쁘다."
+        }
+      ],
+      "accepted": true,
+      "expectedWords": [
+        {
+          "hanzi": "我今天很忙。",
+          "pinyin": "wǒ jīntiān hěn máng.",
+          "meaning": "나는 오늘 매우 바쁘다."
+        }
+      ]
+    },
+    {
+      "id": "long-no-punctuation",
+      "contentType": "zh",
+      "words": [
+        {
+          "hanzi": "我今天很忙我今天很忙我今天很忙我今天很忙我今天很忙我今天很忙我今天很忙我今天很忙我今天很忙我今天很忙我今天很忙我今天很忙我今天很忙我今天很忙我今天很忙我今天很忙我今天很忙我今天很忙我今天很忙我今天很忙",
+          "pinyin": "wǒ jīntiān hěn máng wǒ jīntiān hěn máng wǒ jīntiān hěn máng wǒ jīntiān hěn máng wǒ jīntiān hěn máng wǒ jīntiān hěn máng wǒ jīntiān hěn máng wǒ jīntiān hěn máng wǒ jīntiān hěn máng wǒ jīntiān hěn máng wǒ jīntiān hěn máng wǒ jīntiān hěn máng wǒ jīntiān hěn máng wǒ jīntiān hěn máng wǒ jīntiān hěn máng wǒ jīntiān hěn máng wǒ jīntiān hěn máng wǒ jīntiān hěn máng wǒ jīntiān hěn máng wǒ jīntiān hěn máng ",
+          "meaning": "안녕"
+        }
+      ],
+      "accepted": true,
+      "expectedWords": [
+        {
+          "hanzi": "我今天很忙我今天很忙我今天很忙我今天很忙我今天很忙我今天很忙我今天很忙我今天很忙我今天很忙我今天很忙我今天很忙我今天很忙我今天很忙我今天很忙我今天很忙我今天很忙我今天很忙我今天很忙我今天很忙我今天很忙",
+          "pinyin": "wǒ jīntiān hěn máng wǒ jīntiān hěn máng wǒ jīntiān hěn máng wǒ jīntiān hěn máng wǒ jīntiān hěn máng wǒ jīntiān hěn máng wǒ jīntiān hěn máng wǒ jīntiān hěn máng wǒ jīntiān hěn máng wǒ jīntiān hěn máng wǒ jīntiān hěn máng wǒ jīntiān hěn máng wǒ jīntiān hěn máng wǒ jīntiān hěn máng wǒ jīntiān hěn máng wǒ jīntiān hěn máng wǒ jīntiān hěn máng wǒ jīntiān hěn máng wǒ jīntiān hěn máng wǒ jīntiān hěn máng",
+          "meaning": "안녕"
+        }
+      ]
+    },
+    {
+      "id": "number-mixed",
+      "contentType": "zh",
+      "words": [
+        {
+          "hanzi": "我有2本书。",
+          "pinyin": "wǒ yǒu liǎng běn shū.",
+          "meaning": "안녕"
+        }
+      ],
+      "accepted": true,
+      "expectedWords": [
+        {
+          "hanzi": "我有2本书。",
+          "pinyin": "wǒ yǒu liǎng běn shū.",
+          "meaning": "안녕"
+        }
+      ]
+    },
+    {
+      "id": "ascii-mixed",
+      "contentType": "zh",
+      "words": [
+        {
+          "hanzi": "我用AI和TV学习中文。",
+          "pinyin": "wǒ yòng AI hé TV xuéxí zhōngwén.",
+          "meaning": "안녕"
+        }
+      ],
+      "accepted": true,
+      "expectedWords": [
+        {
+          "hanzi": "我用AI和TV学习中文。",
+          "pinyin": "wǒ yòng AI hé TV xuéxí zhōngwén.",
+          "meaning": "안녕"
+        }
+      ]
+    },
+    {
+      "id": "fullwidth-mixed",
+      "contentType": "zh",
+      "words": [
+        {
+          "hanzi": "我用ＡＩ买２本书。",
+          "pinyin": "wǒ yòng AI mǎi liǎng běn shū.",
+          "meaning": "안녕"
+        }
+      ],
+      "accepted": true,
+      "expectedWords": [
+        {
+          "hanzi": "我用ＡＩ买２本书。",
+          "pinyin": "wǒ yòng AI mǎi liǎng běn shū.",
+          "meaning": "안녕"
+        }
+      ]
+    },
+    {
+      "id": "polyphonic",
+      "contentType": "zh",
+      "words": [
+        {
+          "hanzi": "银行",
+          "pinyin": "yín háng",
+          "meaning": "안녕"
+        }
+      ],
+      "accepted": true,
+      "expectedWords": [
+        {
+          "hanzi": "银行",
+          "pinyin": "yín háng",
+          "meaning": "안녕"
+        }
+      ],
+      "note": "서버는 형식만 확인하며 발음 정확성을 보장하지 않는다."
+    },
+    {
+      "id": "sandhi",
+      "contentType": "zh",
+      "words": [
+        {
+          "hanzi": "你好",
+          "pinyin": "ní hǎo",
+          "meaning": "안녕"
+        }
+      ],
+      "accepted": true,
+      "expectedWords": [
+        {
+          "hanzi": "你好",
+          "pinyin": "ní hǎo",
+          "meaning": "안녕"
+        }
+      ],
+      "note": "형식은 통과; 후속 UI 의미 검사는 비차단 경고 가능."
+    },
+    {
+      "id": "semantic-mismatch",
+      "contentType": "zh",
+      "words": [
+        {
+          "hanzi": "你好",
+          "pinyin": "jīng jì",
+          "meaning": "안녕"
+        }
+      ],
+      "accepted": true,
+      "expectedWords": [
+        {
+          "hanzi": "你好",
+          "pinyin": "jīng jì",
+          "meaning": "안녕"
+        }
+      ],
+      "note": "서버 형식 통과, 후속 UI 경고 대상."
+    },
+    {
+      "id": "neutral-with-tone",
+      "contentType": "zh",
+      "words": [
+        {
+          "hanzi": "妈妈",
+          "pinyin": "mā ma",
+          "meaning": "안녕"
+        }
+      ],
+      "accepted": true,
+      "expectedWords": [
+        {
+          "hanzi": "妈妈",
+          "pinyin": "mā ma",
+          "meaning": "안녕"
+        }
+      ]
+    },
+    {
+      "id": "uppercase",
+      "contentType": "zh",
+      "words": [
+        {
+          "hanzi": "女儿",
+          "pinyin": "NǙ ÉR",
+          "meaning": "안녕"
+        }
+      ],
+      "accepted": true,
+      "expectedWords": [
+        {
+          "hanzi": "女儿",
+          "pinyin": "NǙ ÉR",
+          "meaning": "안녕"
+        }
+      ]
+    },
+    {
+      "id": "nfd-pinyin-trim",
+      "contentType": "zh",
+      "words": [
+        {
+          "hanzi": "　你好  ",
+          "pinyin": " nǐ hǎo　",
+          "meaning": " 안녕 "
+        }
+      ],
+      "accepted": true,
+      "expectedWords": [
+        {
+          "hanzi": "你好",
+          "pinyin": "nǐ hǎo",
+          "meaning": "안녕"
+        }
+      ]
+    },
+    {
+      "id": "internal-spaces",
+      "contentType": "zh",
+      "words": [
+        {
+          "hanzi": "你 好　世界。",
+          "pinyin": "nǐ hǎo　shì jiè.",
+          "meaning": "안녕"
+        }
+      ],
+      "accepted": true,
+      "expectedWords": [
+        {
+          "hanzi": "你 好　世界。",
+          "pinyin": "nǐ hǎo　shì jiè.",
+          "meaning": "안녕"
+        }
+      ]
+    },
+    {
+      "id": "hanzi-200",
+      "contentType": "zh",
+      "words": [
+        {
+          "hanzi": "你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你",
+          "pinyin": "nǐ hǎo",
+          "meaning": "안녕"
+        }
+      ],
+      "accepted": true,
+      "expectedWords": [
+        {
+          "hanzi": "你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你",
+          "pinyin": "nǐ hǎo",
+          "meaning": "안녕"
+        }
+      ]
+    },
+    {
+      "id": "hanzi-201",
+      "contentType": "zh",
+      "words": [
+        {
+          "hanzi": "你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你",
+          "pinyin": "nǐ hǎo",
+          "meaning": "안녕"
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "id": "pinyin-1000",
+      "contentType": "zh",
+      "words": [
+        {
+          "hanzi": "你好",
+          "pinyin": "āaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "meaning": "안녕"
+        }
+      ],
+      "accepted": true,
+      "expectedWords": [
+        {
+          "hanzi": "你好",
+          "pinyin": "āaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "meaning": "안녕"
+        }
+      ]
+    },
+    {
+      "id": "pinyin-1001",
+      "contentType": "zh",
+      "words": [
+        {
+          "hanzi": "你好",
+          "pinyin": "āaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "meaning": "안녕"
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "id": "nfd-pinyin-1000",
+      "contentType": "zh",
+      "words": [
+        {
+          "hanzi": "你好",
+          "pinyin": "āāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāā",
+          "meaning": "안녕"
+        }
+      ],
+      "accepted": true,
+      "expectedWords": [
+        {
+          "hanzi": "你好",
+          "pinyin": "āāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāāā",
+          "meaning": "안녕"
+        }
+      ]
+    },
+    {
+      "id": "no-hanzi-english",
+      "contentType": "zh",
+      "words": [
+        {
+          "hanzi": "Hello!",
+          "pinyin": "nǐ hǎo",
+          "meaning": "안녕"
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "id": "no-hanzi-digits",
+      "contentType": "zh",
+      "words": [
+        {
+          "hanzi": "123",
+          "pinyin": "nǐ hǎo",
+          "meaning": "안녕"
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "id": "punctuation-only",
+      "contentType": "zh",
+      "words": [
+        {
+          "hanzi": "？！",
+          "pinyin": "nǐ hǎo",
+          "meaning": "안녕"
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "id": "extension-a",
+      "contentType": "zh",
+      "words": [
+        {
+          "hanzi": "㐀",
+          "pinyin": "nǐ hǎo",
+          "meaning": "안녕"
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "id": "extension-b",
+      "contentType": "zh",
+      "words": [
+        {
+          "hanzi": "𠀀",
+          "pinyin": "nǐ hǎo",
+          "meaning": "안녕"
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "id": "emoji",
+      "contentType": "zh",
+      "words": [
+        {
+          "hanzi": "你😀",
+          "pinyin": "nǐ hǎo",
+          "meaning": "안녕"
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "id": "unlisted-punctuation",
+      "contentType": "zh",
+      "words": [
+        {
+          "hanzi": "你@",
+          "pinyin": "nǐ hǎo",
+          "meaning": "안녕"
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "id": "empty-hanzi",
+      "contentType": "zh",
+      "words": [
+        {
+          "hanzi": "　 ",
+          "pinyin": "nǐ hǎo",
+          "meaning": "안녕"
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "id": "numeric-tones",
+      "contentType": "zh",
+      "words": [
+        {
+          "hanzi": "你好",
+          "pinyin": "ni3 hao3",
+          "meaning": "안녕"
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "id": "fullwidth-digits",
+      "contentType": "zh",
+      "words": [
+        {
+          "hanzi": "你好",
+          "pinyin": "nǐ３ hǎo",
+          "meaning": "안녕"
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "id": "no-tone",
+      "contentType": "zh",
+      "words": [
+        {
+          "hanzi": "你好",
+          "pinyin": "ni hao",
+          "meaning": "안녕"
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "id": "neutral-only",
+      "contentType": "zh",
+      "words": [
+        {
+          "hanzi": "你好",
+          "pinyin": "de",
+          "meaning": "안녕"
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "id": "empty-pinyin",
+      "contentType": "zh",
+      "words": [
+        {
+          "hanzi": "你好",
+          "pinyin": " ",
+          "meaning": "안녕"
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "id": "unlisted-pinyin",
+      "contentType": "zh",
+      "words": [
+        {
+          "hanzi": "你好",
+          "pinyin": "nǐ@",
+          "meaning": "안녕"
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "id": "fullwidth-pinyin",
+      "contentType": "zh",
+      "words": [
+        {
+          "hanzi": "你好",
+          "pinyin": "ｎǐ",
+          "meaning": "안녕"
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "id": "empty-meaning",
+      "contentType": "zh",
+      "words": [
+        {
+          "hanzi": "你好",
+          "pinyin": "nǐ hǎo",
+          "meaning": "　 "
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "id": "hanzi-tab-edge",
+      "contentType": "zh",
+      "words": [
+        {
+          "hanzi": "\t你好",
+          "pinyin": "nǐ hǎo",
+          "meaning": "안녕"
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "id": "pinyin-tab-edge",
+      "contentType": "zh",
+      "words": [
+        {
+          "hanzi": "你好",
+          "pinyin": "\tnǐ hǎo",
+          "meaning": "안녕"
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "id": "hanzi-newline-edge",
+      "contentType": "zh",
+      "words": [
+        {
+          "hanzi": "\n你好",
+          "pinyin": "nǐ hǎo",
+          "meaning": "안녕"
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "id": "pinyin-newline-edge",
+      "contentType": "zh",
+      "words": [
+        {
+          "hanzi": "你好",
+          "pinyin": "\nnǐ hǎo",
+          "meaning": "안녕"
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "id": "hanzi-carriage-return-edge",
+      "contentType": "zh",
+      "words": [
+        {
+          "hanzi": "\r你好",
+          "pinyin": "nǐ hǎo",
+          "meaning": "안녕"
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "id": "pinyin-carriage-return-edge",
+      "contentType": "zh",
+      "words": [
+        {
+          "hanzi": "你好",
+          "pinyin": "\rnǐ hǎo",
+          "meaning": "안녕"
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "id": "hanzi-nul-edge",
+      "contentType": "zh",
+      "words": [
+        {
+          "hanzi": "\u0000你好",
+          "pinyin": "nǐ hǎo",
+          "meaning": "안녕"
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "id": "pinyin-nul-edge",
+      "contentType": "zh",
+      "words": [
+        {
+          "hanzi": "你好",
+          "pinyin": "\u0000nǐ hǎo",
+          "meaning": "안녕"
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "id": "hanzi-c1-edge",
+      "contentType": "zh",
+      "words": [
+        {
+          "hanzi": "你好",
+          "pinyin": "nǐ hǎo",
+          "meaning": "안녕"
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "id": "pinyin-c1-edge",
+      "contentType": "zh",
+      "words": [
+        {
+          "hanzi": "你好",
+          "pinyin": "nǐ hǎo",
+          "meaning": "안녕"
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "id": "hanzi-nbsp-edge",
+      "contentType": "zh",
+      "words": [
+        {
+          "hanzi": " 你好",
+          "pinyin": "nǐ hǎo",
+          "meaning": "안녕"
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "id": "pinyin-nbsp-edge",
+      "contentType": "zh",
+      "words": [
+        {
+          "hanzi": "你好",
+          "pinyin": " nǐ hǎo",
+          "meaning": "안녕"
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "id": "hanzi-zwsp-edge",
+      "contentType": "zh",
+      "words": [
+        {
+          "hanzi": "​你好",
+          "pinyin": "nǐ hǎo",
+          "meaning": "안녕"
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "id": "pinyin-zwsp-edge",
+      "contentType": "zh",
+      "words": [
+        {
+          "hanzi": "你好",
+          "pinyin": "​nǐ hǎo",
+          "meaning": "안녕"
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "id": "generic-free-text",
+      "contentType": "generic",
+      "words": [
+        {
+          "hanzi": " take off! ",
+          "pinyin": "",
+          "meaning": " 이륙하다 "
+        }
+      ],
+      "accepted": true,
+      "expectedWords": [
+        {
+          "hanzi": "take off!",
+          "pinyin": "",
+          "meaning": "이륙하다"
+        }
+      ]
+    },
+    {
+      "id": "generic-long",
+      "contentType": "generic",
+      "words": [
+        {
+          "hanzi": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "pinyin": "notenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenote",
+          "meaning": "안녕"
+        }
+      ],
+      "accepted": true,
+      "expectedWords": [
+        {
+          "hanzi": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "pinyin": "notenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenotenote",
+          "meaning": "안녕"
+        }
+      ]
+    },
+    {
+      "id": "generic-nfd",
+      "contentType": "generic",
+      "words": [
+        {
+          "hanzi": "café",
+          "pinyin": "",
+          "meaning": "안녕"
+        }
+      ],
+      "accepted": true,
+      "expectedWords": [
+        {
+          "hanzi": "café",
+          "pinyin": "",
+          "meaning": "안녕"
+        }
+      ]
+    },
+    {
+      "id": "generic-missing-meaning",
+      "contentType": "generic",
+      "words": [
+        {
+          "hanzi": "test",
+          "pinyin": "",
+          "meaning": ""
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "id": "normalized-batch-duplicate",
+      "contentType": "zh",
+      "words": [
+        {
+          "hanzi": "你好",
+          "pinyin": "nǐ hǎo",
+          "meaning": "안녕"
+        },
+        {
+          "hanzi": "　你好 ",
+          "pinyin": "ní hǎo",
+          "meaning": "안녕"
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "id": "punctuation-distinct",
+      "contentType": "zh",
+      "words": [
+        {
+          "hanzi": "你好",
+          "pinyin": "nǐ hǎo",
+          "meaning": "안녕"
+        },
+        {
+          "hanzi": "你好。",
+          "pinyin": "nǐ hǎo.",
+          "meaning": "안녕"
+        }
+      ],
+      "accepted": true,
+      "expectedWords": [
+        {
+          "hanzi": "你好",
+          "pinyin": "nǐ hǎo",
+          "meaning": "안녕"
+        },
+        {
+          "hanzi": "你好。",
+          "pinyin": "nǐ hǎo.",
+          "meaning": "안녕"
+        }
+      ]
+    },
+    {
+      "id": "missing-field",
+      "contentType": "zh",
+      "words": [
+        {
+          "hanzi": "你好",
+          "pinyin": "nǐ hǎo"
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "id": "wrong-field-type",
+      "contentType": "zh",
+      "words": [
+        {
+          "hanzi": "你好",
+          "pinyin": "nǐ hǎo",
+          "meaning": 3
+        }
+      ],
+      "accepted": false
+    },
+    {
+      "id": "nfc-hanzi",
+      "contentType": "zh",
+      "words": [
+        {
+          "hanzi": "豈",
+          "pinyin": "qǐ",
+          "meaning": "어찌"
+        }
+      ],
+      "accepted": true,
+      "expectedWords": [
+        {
+          "hanzi": "豈",
+          "pinyin": "qǐ",
+          "meaning": "어찌"
+        }
+      ]
+    },
+    {
+      "id": "nfc-batch-duplicate",
+      "contentType": "zh",
+      "words": [
+        {
+          "hanzi": "豈",
+          "pinyin": "qǐ",
+          "meaning": "어찌"
+        },
+        {
+          "hanzi": "豈",
+          "pinyin": "qǐ",
+          "meaning": "어찌"
+        }
+      ],
+      "accepted": false
+    }
+  ],
+  "partitions": [
+    {
+      "id": "existing-trim",
+      "contentType": "zh",
+      "existing": [
+        "　你好 "
+      ],
+      "words": [
+        {
+          "hanzi": "你好",
+          "pinyin": "nǐ hǎo",
+          "meaning": "안녕"
+        }
+      ],
+      "skipped": [
+        "你好"
+      ]
+    },
+    {
+      "id": "existing-nfc",
+      "contentType": "zh",
+      "existing": [
+        "豈"
+      ],
+      "words": [
+        {
+          "hanzi": "豈",
+          "pinyin": "qǐ",
+          "meaning": "어찌"
+        }
+      ],
+      "skipped": [
+        "豈"
+      ]
+    },
+    {
+      "id": "generic-exact",
+      "contentType": "generic",
+      "existing": [
+        " café ",
+        "café"
+      ],
+      "words": [
+        {
+          "hanzi": "café",
+          "pinyin": "",
+          "meaning": "카페"
+        }
+      ],
+      "skipped": []
+    }
+  ],
+  "existingRows": [
+    {
+      "id": "legacy-long-original",
+      "hanzi": "　你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你你 ",
+      "pinyin": "nǐ hao",
+      "meaning": "기존 장문"
+    }
+  ]
+}
