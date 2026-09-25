@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>#185 문서의 모드2 채점·입력·등록 규칙이 중국어 문장 구현과 어긋난다 — 작업 플랜</title>
+<style>
+  :root {
+    --bg: #f7f7f8; --card: #ffffff; --ink: #1c1c1e; --muted: #6e6e73;
+    --line: #e3e3e6; --accent: #3b6ef5; --accent-soft: #e8eefe;
+    --ok: #2e8b57; --warn: #b25e09; --code-bg: #f0f0f2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161618; --card: #202024; --ink: #ececf0; --muted: #98989f;
+      --line: #333338; --accent: #7a9bff; --accent-soft: #26304a;
+      --ok: #58c088; --warn: #e0a35c; --code-bg: #2a2a2f;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 40px 20px 80px; background: var(--bg); color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+                 "Segoe UI", "Noto Sans KR", sans-serif;
+    line-height: 1.65;
+  }
+  main { max-width: 860px; margin: 0 auto; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code {
+    font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 0.86em;
+    background: var(--code-bg); border-radius: 5px; padding: 2px 6px;
+  }
+  header { margin-bottom: 28px; }
+  .issue-chip {
+    display: inline-block; font-weight: 700; color: var(--accent);
+    background: var(--accent-soft); border-radius: 999px;
+    padding: 3px 14px; font-size: 0.95rem; margin-bottom: 10px;
+  }
+  .type-chip {
+    display: inline-block; font-weight: 600; color: var(--muted);
+    border: 1px solid var(--line); border-radius: 999px;
+    padding: 3px 12px; font-size: 0.8rem; margin-left: 8px; vertical-align: 2px;
+  }
+  h1 { font-size: 1.7rem; margin: 0 0 14px; letter-spacing: -0.02em; }
+  .meta {
+    display: flex; flex-wrap: wrap; gap: 6px 22px;
+    color: var(--muted); font-size: 0.87rem;
+  }
+  .meta b { color: var(--ink); font-weight: 600; }
+  section.card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 24px 28px; margin-top: 18px;
+  }
+  h2 {
+    font-size: 1.05rem; margin: 0 0 14px; letter-spacing: -0.01em;
+    display: flex; align-items: center; gap: 8px;
+  }
+  h2 .no {
+    color: var(--accent); font-size: 0.8rem; font-weight: 700;
+    border: 1.5px solid var(--accent); border-radius: 6px; padding: 0 6px;
+  }
+  ul, ol { margin: 0; padding-left: 22px; }
+  li { margin: 6px 0; }
+  .steps { list-style: none; padding: 0; counter-reset: step; }
+  .steps li {
+    counter-increment: step; position: relative; padding: 10px 0 10px 44px;
+    border-bottom: 1px dashed var(--line);
+  }
+  .steps li:last-child { border-bottom: none; }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 10px;
+    width: 28px; height: 28px; border-radius: 8px; background: var(--accent-soft);
+    color: var(--accent); font-weight: 700; font-size: 0.85rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .steps .files { display: block; margin-top: 4px; font-size: 0.85rem; color: var(--muted); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 0.82rem; }
+  .done-list { list-style: none; padding: 0; }
+  .done-list li { padding-left: 30px; position: relative; }
+  .done-list li::before {
+    content: ""; position: absolute; left: 2px; top: 7px; width: 15px; height: 15px;
+    border: 2px solid var(--ok); border-radius: 5px;
+  }
+  .scroll-x { overflow-x: auto; }
+  footer { margin-top: 30px; color: var(--muted); font-size: 0.8rem; text-align: center; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <span class="issue-chip"><a href="https://github.com/damdam6/vocabulary-study/issues/185">#185</a></span><span class="type-chip">문서 정리</span>
+    <h1>문서의 모드2 채점·입력·등록 규칙이 중국어 문장 구현과 어긋난다 (#178 리뷰 r1 미반영분)</h1>
+    <div class="meta">
+      <span><b>damdam6/vocabulary-study</b></span>
+      <span>브랜치 <b><code>docs/185-align-docs-with-sentence-impl</code></b> ← <code>main</code></span>
+      <span>라벨 <b>documentation</b></span>
+      <span>2026-09-25</span>
+    </div>
+  </header>
+
+  <section class="card">
+    <h2><span class="no">1</span>요약</h2>
+    <p>#178(PR #184)이 독립 리뷰 r1의 <code>changes_requested</code>를 반영하지 않고 머지되어, 4개 문서가 #173~#177 구현 이전의 구규칙을 현재 계약처럼 적고 있다. 코드는 이미 맞다 — 모드2 채점은 <code>contentType</code>으로 분기하고(<code>zh</code>만 문장부호 제거), 긴 문장 글자 크기는 6단 스케일이며, 등록 병음 불일치는 차단이 아닌 경고다. 이번 작업은 <b>문서만</b> 5개 파일에서 정정한다 — 제품 코드는 건드리지 않는다.</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">2</span>현황 분석</h2>
+    <p>이슈가 지목한 6곳 모두 현재 main 문서에 그대로 남아 있음을 확인했다(라인 번호까지 일치):</p>
+    <ul>
+      <li><b>모드2 채점 분기 누락</b> — <code>docs/PRD-general.md:104</code> "모드 2 채점은 콘텐츠 타입과 무관하게 공통 적용", <code>:31</code> "학습 모델·시트 계약에는 영향이 없고", <code>:68</code> "학습 모델에는 무관", <code>:79</code> "zh에서는 v1과 동일하게 한자/병음/뜻". 실제로는 <code>src/lib/studySession.ts:66-71</code>의 <code>gradeMode2</code>가 <code>contentType === "zh"</code>일 때만 <code>normalizeZhForGrading</code>(문장 PRD §4 고정 문장부호 제거)을 적용하고 <code>generic</code>은 <code>normalizeGenericForGrading</code>(NFC·소문자화·공백 제거만)을 쓴다. <code>docs/PRD.md:138</code>(§5.2 3번)은 이미 이 분기를 정확히 서술하고 있어 참조처로 쓸 수 있다.</li>
+      <li><code>docs/design-prd.md:110</code> "콘텐츠 타입 무관 공통(PRD-general §4.2)", <code>:131</code> "학습·채점 로직…엔 영향 없음 — 렌더링만 분기한다" — 같은 오류가 디자인 PRD에도 복제돼 있다.</li>
+      <li><b>placeholder 불일치</b> — <code>docs/design-prd.md:139</code> 표는 zh placeholder를 <code>"汉字"</code>로 적지만, 실제 구현 <code>src/lib/contentLabels.ts:29-31</code>(<code>mode2Placeholder</code>)은 zh에 <code>"중국어"</code>를 반환한다. 본문 <code>:108</code>도 이미 "placeholder '중국어'"로 맞게 적혀 있어, 표만 어긋난 상태다.</li>
+      <li><b>글자 크기 표 불일치</b> — <code>design-prd.md:43</code>·<code>:136</code>은 "4자 이상 52px"로 3단만 적지만, <code>src/lib/hanziSize.ts:8-18</code>(<code>hanziFontSize</code>)는 6단이다: ≤2자 84 / 3자 64 / 4–8자 52 / 9–20자 40 / 21–50자 32 / 51자 이상 24. <code>hanziSize.test.ts</code>가 200자 24px을 고정해 이 스케일이 계약임을 뒷받침한다.</li>
+      <li><b>등록 문서의 구규칙</b> — <code>docs/plans/word-registration-system.md:70</code> "정상 / 오류(차단) / 중복"에 경고가 빠져 있다(<code>:67-68</code>과도 모순). <code>:58</code>은 <code>schema_check.py</code>를 "한자 유니코드 범위" 검증기로만 설명한다. 실제로는 <code>src/lib/registerValidation.ts:17</code>의 <code>RowStatus</code>가 <code>"valid" | "warning" | "blocked" | "duplicate"</code> 4종이고, <code>:163-170</code>이 병음 의미 불일치·자동 확인 불가를 <code>"warning"</code>으로 분류해 제출을 막지 않는다. 이 문서 자체에 <b>이미 2026-09-24 개정 헤더</b>(<code>:8</code>)가 붙어 "입력 문자·병음 경고 정책은 PRD-chinese-sentence-study.md §3이 대체한다"고 선언했는데, 본문(§5)은 아직 안 고쳐진 상태 — 개정 노트와 본문이 서로 불일치한다.</li>
+      <li><code>docs/plans/registration-generalization.md:52-53</code> §3.2 표가 zh A열을 "한자 기본 블록(U+4E00–9FFF)", B열을 "병음 필수 + 성조 부호 형식 + pinyin-pro 일치(클라만)"로 적어, 마치 pinyin-pro 불일치가 여전히 차단인 것처럼 읽힌다. 실측 결과 이 표는 이 플랜이 쓰인 2026-07-27 당시의 규칙이며, 이후 §3(등록과 데이터 계약)에서 문장·경고 정책이 개정됐다.</li>
+      <li><code>docs/PRD.md:139</code> — 모드2 결과 화면 문구가 "정답 한자·병음·뜻". 같은 절 위쪽(§4.2 A열)은 이미 "표제어(원문)" 같은 중립 용어를 쓰는데 이 줄만 zh 전용 "한자"가 남아 있다.</li>
+    </ul>
+    <p>참조로 쓸 정정된 원본 두 곳도 확인했다: <code>docs/PRD.md:138</code>(§5.2 3번, contentType 분기가 이미 정확), <code>docs/PRD-chinese-sentence-study.md</code> §3(등록·병음 경고, <code>:20-47</code>)·§4(중국어 모드2 채점, <code>:49-70</code>).</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">3</span>설계</h2>
+    <p>모든 수정은 "코드가 이미 맞는 사실을 문서에 반영"하는 <b>순수 정정</b>이다 — 새 결정이나 트레이드오프가 없으므로 대안 비교는 없다. 원칙 두 가지만 지킨다:</p>
+    <ul>
+      <li><b>인용 최소화</b>: 이슈가 요구한 문장·표 칸만 고치고, 각 문서의 다른 부분(예: registration-generalization.md 플랜 전체)은 재작성하지 않는다 — 완료 조건이 명시적으로 "플랜 전체 재작성 금지"를 못박았다.</li>
+      <li><b>정정 출처 명시</b>: 새로 적는 규칙은 현재 계약을 정의하는 문서(<code>PRD.md</code> §5.2, <code>PRD-chinese-sentence-study.md</code> §3·§4)를 참조하도록 적어, 다음에 또 규칙이 바뀌어도 문서 하나만 고치면 되게 한다.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">4</span>작업 단계</h2>
+    <ol class="steps">
+      <li>완료 — PRD-general.md §4.2(<code>:104</code>)를 "모드 2 채점은 contentType으로 갈린다 — 공통 정규화(NFC·소문자화·공백 전면 제거)는 전 콘텐츠 공통이되, zh만 문장 PRD §4의 고정 문장부호를 추가로 제거한다"로 정정하고 <code>PRD.md §5.2</code>·<code>PRD-chinese-sentence-study.md §4</code>를 참조시킨다. 기존 #123/#126 개정 이력 문구는 유지.
+        <span class="files"><code>docs/PRD-general.md</code></span>
+      </li>
+      <li>완료 — PRD-general.md <code>:31</code>·<code>:68</code>의 "학습 모델에는 영향 없음/무관" 표현을 "모드 2 채점은 contentType으로 갈린다(§4.2)"로 정정. <code>:79</code>의 "zh에서는 v1과 동일하게 한자/병음/뜻"을 "zh에서는 A열이 한자를 포함한 단어·구·문장 원문(PRD-chinese-sentence-study §2)"으로 정정.
+        <span class="files"><code>docs/PRD-general.md</code></span>
+      </li>
+      <li>완료 — design-prd.md <code>:110</code>의 "콘텐츠 타입 무관 공통(PRD-general §4.2)"을 "채점 규칙은 PRD.md §5.2·PRD-general §4.2를 따른다(contentType 분기)"로, <code>:131</code>의 "학습·채점 로직…엔 영향 없음 — 렌더링만 분기"를 "채점 분기는 PRD.md §5.2·PRD-general §4.2 참조 — 이 표는 렌더링 분기만 다룬다"로 정정해 렌더링 분기와 채점 분기를 한 문장으로 묶지 않는다.
+        <span class="files"><code>docs/design-prd.md</code></span>
+      </li>
+      <li>완료 — design-prd.md <code>:139</code> 표의 zh placeholder를 <code>"汉字"</code>에서 <code>"중국어"</code>로 정정(<code>contentLabels.ts:29-31</code>과 일치, 본문 <code>:108</code>과도 이미 일치). <code>:43</code>·<code>:136</code>의 "4자 이상 52px"을 "4–8자 52 / 9–20자 40 / 21–50자 32 / 51자 이상 24"로 확장하되 2자 이하 84 / 3자 64 짧은 단어 계약 문구는 그대로 유지.
+        <span class="files"><code>docs/design-prd.md</code></span>
+      </li>
+      <li>완료 — word-registration-system.md <code>:70</code> 검증 결과 테이블 설명에 "경고(제출 가능)" 행을 추가해 정상/경고/오류(차단)/중복 4종으로 정정. <code>:58</code>의 <code>schema_check.py</code> 설명을 "형식·길이·허용 문자 검증이며 발음 정확성은 보장하지 않는다"로 정정(PRD-chinese-sentence-study §3.2 서버/킷 원칙과 동일 문구).
+        <span class="files"><code>docs/plans/word-registration-system.md</code></span>
+      </li>
+      <li>완료 — registration-generalization.md §3.2(<code>:50-53</code>) 표의 zh 칸 위에 "2026-07-27 당시 규칙 — 이후 문자·병음 경고 정책은 PRD-chinese-sentence-study.md §3이 대체한다"는 한 줄을 추가한다. 표 값 자체나 플랜의 다른 절은 손대지 않는다(완료 조건의 "재작성 금지" 준수).
+        <span class="files"><code>docs/plans/registration-generalization.md</code></span>
+      </li>
+      <li>완료 — PRD.md <code>:139</code> "정답 한자·병음·뜻"을 "정답 원문(단어·구·문장)·병음·뜻"으로 정정.
+        <span class="files"><code>docs/PRD.md</code></span>
+      </li>
+      <li>완료 — grep 검증 실행: 이슈 본문에 인용된 6개 구문("콘텐츠 타입과 무관하게 공통 적용", "학습 모델에는 무관", "汉字", "4자 이상 52px", "정상 / 오류(차단) / 중복", "정답 한자·병음·뜻")이 5개 대상 문서(PRD.md·PRD-general.md·design-prd.md·word-registration-system.md·registration-generalization.md)에서 모두 사라졌음을 확인. 문서 히스토리(<code>docs/plans/issue-*.html</code> 과거 계획서)와 목업 참조 파일(<code>docs/design/prototype.dc.html</code>)에는 원문 그대로 남아 있으며, 이는 완료 조건이 말하는 "main 문서"(이슈가 지목한 5개 파일)가 아니므로 정정 대상이 아니다.
+        <span class="files"><code>docs/</code></span>
+      </li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">5</span>리스크</h2>
+    <div class="scroll-x">
+    <table>
+      <thead><tr><th>리스크</th><th>영향</th><th>완화책</th></tr></thead>
+      <tbody>
+        <tr><td>registration-generalization.md §3.2 표를 과하게 고쳐 플랜 전체를 재작성하게 됨</td><td>완료 조건 위반, 리뷰 반려 가능성</td><td>표 값은 유지하고 zh 칸 위에 한 줄 각주만 추가 — 이슈가 명시한 범위로 제한</td></tr>
+        <tr><td>문서 수정 중 실제로는 코드와 다른 서술을 "현재 계약"으로 잘못 베낌</td><td>새로운 문서-코드 불일치 재발</td><td>각 수정 전 대응 소스 파일(studySession.ts, hanziSize.ts, contentLabels.ts, registerValidation.ts)을 재확인 완료 — 4단계 진행</td></tr>
+        <tr><td>제품 코드를 실수로 건드림</td><td>완료 조건("문서만 수정") 위반</td><td>커밋 범위를 docs/ 디렉터리로 한정, 커밋 전 git status로 확인</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">6</span>테스트 계획</h2>
+    <ul>
+      <li>문서 전용 변경이므로 제품 테스트 스위트 실행은 불필요 — 대신 <code>git diff</code>로 5개 문서 파일만 변경됐는지 확인.</li>
+      <li><code>grep -rn "콘텐츠 타입과 무관하게 공통 적용\|학습 모델에는 무관\|汉字\|4자 이상 52px\|정상 / 오류(차단) / 중복\|정답 한자·병음·뜻" docs/</code>가 빈 결과를 반환하는지 확인 — 구규칙 인용문이 main 문서에 남아 있지 않음을 증명.</li>
+      <li>수정된 문서 6곳을 육안으로 재검토해 <code>PRD.md</code> §5.2·<code>PRD-chinese-sentence-study.md</code>와 모순이 없는지 확인.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">7</span>완료 조건</h2>
+    <ul class="done-list">
+      <li>PRD-general.md §4.2에 #175 개정 반영: 공통 규칙(NFC·소문자·공백 제거) + zh만 문장 PRD §4 고정 문장부호 추가 제거</li>
+      <li>PRD-general.md :31, :68: 모드2 채점은 contentType으로 갈린다고 정정. :79 zh A열 의미를 원문(단어·구·문장)으로</li>
+      <li>design-prd.md :110, :131: 채점 규칙은 PRD.md §5.2/문장 PRD §4를 참조, 렌더링 분기와 채점 분기를 한 문장으로 묶지 않기</li>
+      <li>design-prd.md :139 zh placeholder를 "중국어"로. :43, :136에 9/21/51자 경계의 40/32/24px 추가(84/64/52 짧은 단어 계약은 유지)</li>
+      <li>word-registration-system.md :70에 경고(제출 가능) 추가. :58은 형식·길이·허용 문자 검증이며 발음 정확성은 보장하지 않는다고 정정</li>
+      <li>registration-generalization.md §3.2 zh 칸에 2026-07-27 당시 규칙임을 표시하고, 문자·병음 경고는 PRD-chinese-sentence-study.md §3이 대체한다고 한 줄 추가(플랜 전체 재작성 금지)</li>
+      <li>PRD.md :139 → "정답 원문(단어·구·문장)·병음·뜻"</li>
+      <li>문서만 수정, 제품 코드 변경 없음. 수정 후 위 인용 문구가 main 문서에 남아 있지 않은지 grep으로 확인</li>
+    </ul>
+  </section>
+
+  <footer>issue-plan · <a href="https://github.com/damdam6/vocabulary-study/issues/185">#185</a> · 2026-09-25</footer>
+</main>
+</body>
+</html>
