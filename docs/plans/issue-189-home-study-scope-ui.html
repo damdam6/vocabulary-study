@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>#189 [TAB-02] 홈 학습 범위 선택 UI — 전체 / 탭 n개 다중 선택 칩 — 작업 플랜</title>
+<style>
+  :root {
+    --bg: #f7f7f8; --card: #ffffff; --ink: #1c1c1e; --muted: #6e6e73;
+    --line: #e3e3e6; --accent: #3b6ef5; --accent-soft: #e8eefe;
+    --ok: #2e8b57; --warn: #b25e09; --code-bg: #f0f0f2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161618; --card: #202024; --ink: #ececf0; --muted: #98989f;
+      --line: #333338; --accent: #7a9bff; --accent-soft: #26304a;
+      --ok: #58c088; --warn: #e0a35c; --code-bg: #2a2a2f;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 40px 20px 80px; background: var(--bg); color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+                 "Segoe UI", "Noto Sans KR", sans-serif;
+    line-height: 1.65;
+  }
+  main { max-width: 860px; margin: 0 auto; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code {
+    font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 0.86em;
+    background: var(--code-bg); border-radius: 5px; padding: 2px 6px;
+  }
+  header { margin-bottom: 28px; }
+  .issue-chip {
+    display: inline-block; font-weight: 700; color: var(--accent);
+    background: var(--accent-soft); border-radius: 999px;
+    padding: 3px 14px; font-size: 0.95rem; margin-bottom: 10px;
+  }
+  .type-chip {
+    display: inline-block; font-weight: 600; color: var(--muted);
+    border: 1px solid var(--line); border-radius: 999px;
+    padding: 3px 12px; font-size: 0.8rem; margin-left: 8px; vertical-align: 2px;
+  }
+  h1 { font-size: 1.7rem; margin: 0 0 14px; letter-spacing: -0.02em; }
+  .meta {
+    display: flex; flex-wrap: wrap; gap: 6px 22px;
+    color: var(--muted); font-size: 0.87rem;
+  }
+  .meta b { color: var(--ink); font-weight: 600; }
+  section.card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 24px 28px; margin-top: 18px;
+  }
+  h2 {
+    font-size: 1.05rem; margin: 0 0 14px; letter-spacing: -0.01em;
+    display: flex; align-items: center; gap: 8px;
+  }
+  h2 .no {
+    color: var(--accent); font-size: 0.8rem; font-weight: 700;
+    border: 1.5px solid var(--accent); border-radius: 6px; padding: 0 6px;
+  }
+  ul, ol { margin: 0; padding-left: 22px; }
+  li { margin: 6px 0; }
+  .steps { list-style: none; padding: 0; counter-reset: step; }
+  .steps li {
+    counter-increment: step; position: relative; padding: 10px 0 10px 44px;
+    border-bottom: 1px dashed var(--line);
+  }
+  .steps li:last-child { border-bottom: none; }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 10px;
+    width: 28px; height: 28px; border-radius: 8px; background: var(--accent-soft);
+    color: var(--accent); font-weight: 700; font-size: 0.85rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .steps .files { display: block; margin-top: 4px; font-size: 0.85rem; color: var(--muted); }
+  .steps li.done::before { content: "✓"; background: var(--ok); color: #fff; }
+  .steps .note { display: block; margin-top: 4px; font-size: 0.85rem; color: var(--warn); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 0.82rem; }
+  .done-list { list-style: none; padding: 0; }
+  .done-list li { padding-left: 30px; position: relative; }
+  .done-list li::before {
+    content: ""; position: absolute; left: 2px; top: 7px; width: 15px; height: 15px;
+    border: 2px solid var(--ok); border-radius: 5px;
+  }
+  .scroll-x { overflow-x: auto; }
+  footer { margin-top: 30px; color: var(--muted); font-size: 0.8rem; text-align: center; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <span class="issue-chip"><a href="https://github.com/damdam6/vocabulary-study/issues/189">#189</a></span><span class="type-chip">기능 개선</span>
+    <h1>[TAB-02] 홈 학습 범위 선택 UI — 전체 / 탭 n개 다중 선택 칩</h1>
+    <div class="meta">
+      <span><b>damdam6/vocabulary-study</b></span>
+      <span>브랜치 <b><code>feat/189-home-study-scope-ui</code></b> ← <code>main</code></span>
+      <span>라벨 <b>enhancement</b></span>
+      <span>2026-09-25</span>
+    </div>
+  </header>
+
+  <section class="card">
+    <h2><span class="no">1</span>요약</h2>
+    <p>#188에서 만든 학습 범위 모델(<code>src/lib/studyScope.ts</code>)을 홈 화면에 연결한다. 스페이서 아래에 세그먼트 <code>전체 | 탭 선택</code>과 다중 선택 탭 칩 목록을 두고, 현황 카드·세션 수·시작 큐를 모두 <em>하나의 거른 단어 배열</em>에서 계산해 #128 불변식(표시 수 = 큐 길이)을 지킨다. 선택은 프로필별로 저장·복원되며 학습·완료 화면, 기록 API, 재시도 큐, TTS는 건드리지 않는다.</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">2</span>현황 분석</h2>
+    <ul>
+      <li>홈은 마운트마다 <code>fetchWords</code>를 호출하고(<code>src/screens/HomeScreen.tsx:44-68</code>), 응답 시점에 <code>computeHomeStats(fetched, getSeoulToday(), modes, sessionLimit)</code>를 한 번 계산해 <code>stats</code> 상태로 굳힌다(<code>HomeScreen.tsx:56</code>). 범위가 바뀌어도 다시 계산할 길이 없다.</li>
+      <li>시작 버튼은 전체 <code>words</code>로 <code>buildSessionQueue</code>를 호출한다(<code>HomeScreen.tsx:91-95</code>). 카드·세션 수와 큐는 "같은 단어 배열 + 같은 산식"이라는 전제로만 일치한다(<code>HomeScreen.tsx:3</code>, <code>src/lib/homeStats.ts:17-20</code>).</li>
+      <li>렌더 순서는 헤더 → 현황 카드 → <code>.home-spacer</code> → 미전송 인디케이터 → <code>.session-count</code> → <code>.start-button</code>(<code>HomeScreen.tsx:129-161</code>). PRD §4.1은 선택 UI를 스페이서 아래·인디케이터 위에 두라고 한다.</li>
+      <li>#188이 제공하는 것: <code>deriveTabs</code>(시트 순서 탭 목록), <code>filterWordsByScope</code>(공유 필터), <code>saveStudyScope</code>(0개 선택은 저장 안 함, <code>all</code> 저장 시 마지막 탭 선택 보존), <code>restoreStudyScope</code>(누락 탭 정리·전부 사라지면 전체), <code>getLastTabSelection</code>(<code>src/lib/studyScope.ts:28-152</code>).</li>
+      <li>"문제 수가 가장 많은 탭 1개(동률이면 앞선 탭)" 초기 선택을 고르는 함수는 아직 없다.</li>
+      <li><code>Dropdown</code>(<code>src/components/Dropdown.tsx</code>)은 단일 선택 리스트박스라 쓰지 않는다. 레포에 <code>radiogroup</code>·<code>aria-pressed</code> 패턴은 아직 없다. 포커스 링 기준은 <code>.dropdown-trigger:focus-visible { outline: 2px solid var(--accent); outline-offset: -1px }</code>(<code>src/index.css:1253-1256</code>)이다.</li>
+      <li>프로필 전환(<code>clearPassword</code>, <code>src/lib/api.ts:20-23</code>)은 비밀번호와 프로필 캐시만 지우므로 <code>vocab-study:study-scope</code>는 남는다. 재로그인 후 복원이 그대로 된다.</li>
+      <li>레이아웃: <code>.app-column</code>은 <code>min-height: 100dvh</code>이고 <code>.home-screen</code>은 세로 flex에 스페이서로 시작 버튼을 바닥에 붙인다(<code>src/index.css:72-90, 861-901</code>). 칩 목록 높이를 제한하지 않으면 탭이 많을 때 시작 버튼이 첫 화면 밖으로 밀린다.</li>
+      <li>DOM 테스트는 <code>react-dom/client</code>과 <code>act</code>를 쓰는 자체 헬퍼로 한다(<code>src/test-utils.tsx</code>). <code>HomeScreen.test.tsx</code>는 <code>fetchWords</code>를 목으로 바꿔 쓴다.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">3</span>설계</h2>
+    <p><b>상태와 파생값 (HomeScreen)</b></p>
+    <ul>
+      <li><code>stats</code> 상태를 없애고 파생값으로 바꾼다. 상태로 두는 것은 <code>words</code>·<code>profile</code>·<code>sessionLimit</code>·<code>today</code>(조회 시점의 <code>getSeoulToday()</code>, 기존 의미 유지)·<code>scope: StudyScope</code>다.</li>
+      <li><code>tabs = useMemo(deriveTabs(words))</code>. <code>pickerVisible = status === "ready" &amp;&amp; tabs.length &gt; 1</code>. 선택 UI를 숨기면 유효 범위는 항상 <code>{kind:"all"}</code>이다(탭 1개 프로필은 전체로 동작). 이때 저장값은 덮어쓰지 않는다. 나중에 탭이 늘면 원래 선택이 돌아와야 하기 때문이다.</li>
+      <li><code>scopedWords = useMemo(filterWordsByScope(words, effectiveScope))</code> 하나를 <code>computeHomeStats</code>와 <code>handleStart</code>의 <code>buildSessionQueue</code>가 함께 쓴다. 필터 호출은 한 곳에만 두고, 이것으로 #128 불변식을 지킨다.</li>
+      <li>칩별 n: 탭마다 <code>computeHomeStats(filterWordsByScope(words, {kind:"tabs", tabs:[tab]}), …).sessionCount</code>로 구한다. 같은 필터와 같은 산식이라 "그 탭만 골랐을 때의 세션 수"와 정의상 같다.</li>
+    </ul>
+    <p><b>복원·저장·초기 선택</b></p>
+    <ul>
+      <li>조회에 성공하면 <code>restoreStudyScope(fetchedProfile.id, deriveTabs(fetched))</code>로 범위를 복원한다. 매 홈 진입마다 새 응답으로 다시 검증하며, 누락 탭 정리와 저장값 갱신은 #188 함수가 맡는다.</li>
+      <li>변경할 때마다(세그먼트 전환, 칩 토글, 모두 선택/해제) 이벤트 핸들러에서 <code>saveStudyScope(profile.id, next)</code>를 호출한다. 0개 선택은 모듈이 저장하지 않는다.</li>
+      <li><code>탭 선택</code>으로 바꿀 때는 <code>getLastTabSelection(profile.id, tabs)</code> 값을 쓰고, 비어 있으면 새 순수 함수 <code>pickDefaultTabSelection(tabCounts)</code>(최대 n 탭 1개, 동률이면 시트 순서상 앞)를 쓴다. 이 경로 하나로 "전체→탭 선택 시 이전 칩 복원"과 "첫 전환 시 기본 탭"을 모두 처리한다.</li>
+      <li>선택 배열은 항상 <code>tabs</code>(시트 순서)로 다시 정렬해 보관한다. 세션 수 줄의 첫 이름을 시트 순서로 정하기 위해서다.</li>
+    </ul>
+    <p><b>UI 컴포넌트 <code>StudyScopePicker</code> (새 파일, 완전 제어형)</b></p>
+    <ul>
+      <li>props: <code>kind</code>, <code>tabs: {name, count}[]</code>, <code>selected: string[]</code>, <code>onKindChange</code>, <code>onSelectedChange</code>.</li>
+      <li>세그먼트: <code>role="radiogroup"</code>(라벨 <code>학습 범위</code>) 안에 <code>role="radio"</code> 버튼 2개를 두고 <code>aria-checked</code>와 roving <code>tabIndex</code>를 쓴다. ←/→/↑/↓ 키로 포커스를 옮기면서 바로 선택하는 WAI-ARIA 라디오 패턴이다.</li>
+      <li><code>탭 선택</code>일 때만 칩 영역을 렌더한다. 위에 저강조 텍스트 버튼 <code>모두 선택</code>/<code>선택 해제</code>(하나라도 꺼져 있으면 모두 선택)를 두고, 아래에 <code>role="group"</code> <code>aria-label="학습할 탭"</code> 안의 <code>&lt;button aria-pressed&gt;</code> 칩을 둔다. 네이티브 버튼이라 Tab 이동과 Space/Enter 토글이 기본으로 된다.</li>
+      <li>칩 내용: 체크 표시(선택 시, <code>aria-hidden</code>) + 말줄임되는 이름 + <code>· n</code>. 선택된 칩은 <code>accent</code> 테두리, 옅은 accent 배경, <code>--text</code>, 체크 표시로, 꺼진 칩은 <code>bg-panel</code>과 <code>text-muted</code>로 표시한다. n=0이면 <code>is-empty</code>로 흐리게 하되 누를 수 있다.</li>
+    </ul>
+    <p><b>표시 규칙</b></p>
+    <ul>
+      <li>세션 수 줄: 전체이면 현행 문구, 탭 1개이면 <code>HSK6 · 오늘 세션 · n문제</code>, 2개 이상이면 <code>HSK6 외 k개 탭 · 오늘 세션 · n문제</code>로 표시한다. 탭 이름 부분만 말줄임한다(320px에서 긴 이름이 줄을 넘치지 않도록).</li>
+      <li>0개 선택이면 세션 수 줄을 숨기고, 시작 버튼을 비활성화하고 라벨을 <code>탭을 선택하세요</code>로 바꾼다. 카드는 거른 결과대로 0이 된다.</li>
+      <li>범위 안에 할 것이 없으면 기존 <code>오늘 할 것 없음</code>을 쓴다.</li>
+    </ul>
+    <p><b>레이아웃·스타일</b> — 칩 목록은 <code>flex-wrap</code>에 3줄 높이 <code>max-height</code>와 <code>overflow-y: auto</code>를 준다. 칩은 <code>max-width: 100%</code>이고 이름 <code>span</code>은 말줄임한다. 포커스 링은 <code>.dropdown-trigger</code>와 같게 둔다(offset −1px라 스크롤 컨테이너에 잘리지 않는다). 토큰은 design-prd §1만 쓰고, 옅은 accent 배경만 <code>--accent</code> 기반 rgba 파생값으로 쓴다(<code>--accent-hover</code> 선례).</p>
+    <p><b>기각한 안</b></p>
+    <ul>
+      <li><code>stats</code>를 상태로 두고 범위를 바꿀 때마다 setStats: 필터를 여러 곳에서 호출하게 돼 #128 불변식이 흐려진다.</li>
+      <li>범위 저장을 <code>useEffect([scope])</code>로 처리: 복원 직후에도 한 번 더 저장해 불필요하게 쓰고, 탭 1개 프로필에서 숨겨진 범위를 덮어쓸 위험이 있다. 그래서 이벤트 핸들러에서만 저장한다.</li>
+      <li>칩 대신 체크박스 목록이나 <code>Dropdown</code> 확장: PRD §4.1이 칩과 새 컴포넌트를 지정했다.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">4</span>작업 단계</h2>
+    <ol class="steps">
+      <li class="done">초기 선택 순수 함수 <code>pickDefaultTabSelection(tabCounts)</code>를 추가하고 단위 테스트를 쓴다(최대 n, 동률이면 앞선 탭, 모두 0이면 첫 탭, 빈 입력이면 빈 배열).
+        <span class="files"><code>src/lib/studyScope.ts</code>, <code>src/lib/studyScope.test.ts</code> · <code>9b66a54</code></span>
+      </li>
+      <li class="done"><code>StudyScopePicker</code> 컴포넌트: 세그먼트(radiogroup, 방향키), 모두 선택/선택 해제 토글, <code>aria-pressed</code> 칩 그룹(체크 표시, 말줄임, 0이면 흐리게).
+        <span class="files"><code>src/components/StudyScopePicker.tsx</code> · <code>7d6b540</code></span>
+        <span class="note">구현 메모: 선택 표시를 체크만 두지 않고 빈 원 ↔ 채운 원+체크로 바꿨다. 두 상태의 폭이 같아 칩을 토글해도 줄바꿈이 흔들리지 않는다. 이름과 <code>· n</code>은 <code>.study-scope-chip-label</code>로 묶어 간격 없이 붙였다(화면 확인 후 <code>cb786f3</code>).</span>
+      </li>
+      <li class="done">HomeScreen 배선: <code>stats</code> 상태를 파생값으로 바꾸고, <code>today</code>·<code>scope</code> 상태를 추가한다. 조회 시 범위를 복원하고, 하나의 <code>scopedWords</code>를 카드·세션 수·큐가 공유하게 하며, 핸들러에서 저장한다. 선택 UI는 스페이서 아래에 둔다(ready·탭 2개 이상일 때만).
+        <span class="files"><code>src/screens/HomeScreen.tsx</code> · <code>7d6b540</code></span>
+      </li>
+      <li class="done">세션 수 줄에 범위 접두어를 붙이고(탭 이름 말줄임), 0개 선택이면 줄을 숨기고 버튼 라벨을 <code>탭을 선택하세요</code>로 바꾼다.
+        <span class="files"><code>src/screens/HomeScreen.tsx</code> · <code>7d6b540</code></span>
+      </li>
+      <li class="done">스타일: 세그먼트, 칩(선택·비선택·empty·focus-visible), 토글 텍스트 버튼, 칩 목록 3줄 max-height 스크롤, 세션 수 줄 말줄임.
+        <span class="files"><code>src/index.css</code> · <code>7d6b540</code>, <code>cb786f3</code></span>
+        <span class="note">구현 메모: 체크된 세그먼트와 선택 칩은 불투명 accent 대신 옅은 accent(<code>rgba(47,99,230,.2)</code>) 배경을 쓴다. 불투명 accent 위에서는 accent 포커스 링이 보이지 않기 때문이다. 선택 칩은 테두리도 accent라 포커스 링 색만 <code>--accent-hover</code>로 한 톤 밝혔다(모양·두께·offset은 <code>.dropdown-trigger</code>와 같다).</span>
+      </li>
+      <li class="done">컴포넌트 테스트: 첫 진입 전체 회귀, 탭 1개·n개 선택 시 큐 소속과 세션 수 = 큐 길이(합이 아닌 합집합), 미선택 탭 복습 대기 제외, 0개 선택, 모두 선택/해제, 전체↔탭 선택 복원, 새로고침(재마운트)·다른 프로필 격리 복원, 누락 탭 정리·전부 누락 시 전체, 탭 1개·로딩·에러일 때 숨김, 방향키 세그먼트, 세션 수 줄 문구.
+        <span class="files"><code>src/screens/HomeScreen.test.tsx</code> · <code>bbf11e6</code>, <code>6e657ea</code></span>
+        <span class="note">변형 검증: 시작 큐를 거르지 않은 <code>words</code>로 되돌리면 3개 테스트가 실패한다. 합집합 테스트는 미선택 탭 단어를 복습 대기로 둬서, 범위가 새면 복습 몫(최소 1문제) 때문에 반드시 걸리게 했다.</span>
+      </li>
+      <li class="done">검증: <code>npm test</code>·<code>npm run build</code>·<code>npm run lint</code>를 돌리고, 목 응답을 넣은 임시 하네스(커밋하지 않음)로 320px·375px에서 탭 12개와 긴 이름을 넣어 가로 넘침, 칩 스크롤, 시작 버튼 위치, 키보드 조작을 직접 확인한다.
+        <span class="files"><code>(검증 전용, 커밋 제외)</code></span>
+        <span class="note">결과: <code>npm test</code> 59파일 1128개 통과, <code>npm run build</code>·<code>npm run lint</code> 통과. 하네스(목 fetch, 탭 12개, 60자 안팎 한글·공백 없는 영문 이름, 미전송 인디케이터 포함)를 cmux 브라우저 뷰포트 에뮬레이션으로 열었다. 320×568과 375×667 모두 <code>scrollWidth</code>가 뷰포트 폭과 같고(가로 넘침 없음), 칩 목록은 118px에서 스크롤되며, 시작 버튼 하단은 540/568, 639/667이다. 긴 이름은 칩과 세션 수 줄에서 말줄임된다. 첫 확인에서 이름·개수 이중 간격과 320×568 세로 5px 넘침을 발견해 <code>cb786f3</code>에서 고쳤다. 키보드: 세그먼트 방향키 전환은 브라우저에서 확인했다. 칩의 Tab/Space/Enter는 네이티브 <code>&lt;button&gt;</code> 기본 동작이다(자동화의 합성 키 이벤트로는 기본 동작을 재현할 수 없음). 모든 칩과 토글의 <code>tabIndex</code>가 0임을 확인했다.</span>
+      </li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">5</span>리스크</h2>
+    <div class="scroll-x">
+    <table>
+      <thead><tr><th>리스크</th><th>영향</th><th>완화책</th></tr></thead>
+      <tbody>
+        <tr><td>카드·세션 수와 큐가 서로 다른 단어 집합을 씀</td><td>#128 회귀. 표시 n과 실제 큐 길이가 어긋나거나 빈 큐로 시작</td><td><code>scopedWords</code> 한 값을 두 경로가 공유한다. 테스트에서 세션 수 표시와 큐 길이를 같은지 비교한다.</td></tr>
+        <tr><td>첫 진입 회귀</td><td>기존 사용자 수치가 달라짐</td><td>저장값이 없으면 전체이고 필터 결과가 전체 복사본이다. 전체 범위의 수치와 큐 길이를 기존 산식과 비교하는 테스트를 둔다.</td></tr>
+        <tr><td>탭 1개 프로필에서 숨겨진 저장 범위가 적용됨</td><td>UI 없이 결과가 좁아질 수 있음</td><td>선택 UI를 숨기면 유효 범위를 강제로 전체로 둔다(탭 1개면 결과도 같다).</td></tr>
+        <tr><td>탭이 많거나 이름이 길 때 모바일 레이아웃이 깨짐</td><td>가로 스크롤이 생기거나 시작 버튼이 화면 밖으로 나감</td><td>칩 max-height 스크롤, 이름 말줄임, 세션 수 줄 말줄임을 적용하고 320·375px에서 직접 확인한다.</td></tr>
+        <tr><td>선택된 칩의 accent 테두리와 포커스 링이 겹침</td><td>키보드 포커스가 잘 안 보임</td><td>링 두께 2px가 테두리 1px보다 두껍다. 선택 칩 배경도 옅은 accent라 대비는 확보된다. 사양대로 <code>.dropdown-trigger</code>와 같게 둔다.</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">6</span>테스트 계획</h2>
+    <ul>
+      <li><code>studyScope.test.ts</code>: <code>pickDefaultTabSelection</code>의 최대값, 동률 시 시트 순서, 전부 0, 빈 입력.</li>
+      <li><code>HomeScreen.test.tsx</code> 회귀: 저장값이 없으면 <code>전체</code>가 체크되고, 세션 수 문구가 현행 <code>오늘 세션 · n문제</code>이며, 큐 길이가 전체 단어 기준 산식과 같다. 기존 테스트 5+1개는 수정 없이 통과한다.</li>
+      <li>탭 선택 첫 전환이면 최대 n 탭 1개가 선택된다(동률이면 앞선 탭). 탭 1개와 n개일 때 시작 큐의 모든 문제의 <code>word.tab</code>이 선택 탭에 속하고, 세션 수 표시 n이 큐 길이와 같다. 칩 n의 합(예: 4+4=8)과 합집합 상한(5)이 다른 데이터로 검증한다.</li>
+      <li>미선택 탭에 복습 대기가 있어도 <code>복습 대기</code> 카드·세션 수·큐에 없다.</li>
+      <li>칩을 모두 끄면 버튼이 비활성화되고 라벨이 <code>탭을 선택하세요</code>가 되며, 세션 수 줄이 없고 카드가 0이다. <code>모두 선택</code>과 <code>선택 해제</code>의 라벨 전환과 동작도 본다.</li>
+      <li>전체로 갔다가 다시 탭 선택으로 오면 이전 칩 선택이 돌아온다. 재마운트(새로고침)하면 같은 범위와 칩이 복원된다. 프로필 A/B 목 응답을 번갈아 쓰면 각자의 범위가 복원되고 섞이지 않는다.</li>
+      <li>저장된 탭 일부가 응답에 없으면 남은 탭만 선택되고 저장값이 갱신된다. 전부 없으면 전체가 되고 오류 문구는 없다.</li>
+      <li>탭 1개 프로필, 로딩 중, 에러일 때 <code>.study-scope</code>가 없다.</li>
+      <li>세그먼트에서 ArrowRight/ArrowLeft 키로 선택과 포커스가 이동하고, 칩의 <code>aria-pressed</code>가 토글된다. 세션 수 줄 문구 3종(전체, 1개, 2개 이상)을 확인한다.</li>
+      <li>최종: <code>npm test</code>, <code>npm run build</code>, <code>npm run lint</code>를 모두 통과한다. 320·375px 수동 확인(칩 12개, 긴 이름).</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">7</span>완료 조건</h2>
+    <ul class="done-list">
+      <li>첫 진입은 <code>전체</code>이며, 수치와 큐가 변경 전과 같다(회귀 없음).</li>
+      <li>탭 1개·n개 선택 시 큐의 모든 문제가 선택 탭에 속하고, 세션 수 표시와 큐 길이가 항상 같다(칩별 n의 합이 아니라 합집합 기준).</li>
+      <li>선택하지 않은 탭의 복습 대기가 카드·세션 수·큐에 잡히지 않는다.</li>
+      <li>0개 선택, <code>모두 선택</code>/<code>선택 해제</code>, 새로고침·프로필 재로그인 후 복원, 누락 탭 정리를 <code>HomeScreen.test.tsx</code>로 검증한다.</li>
+      <li>320px·375px 폭에서 탭 10개 이상·긴 이름일 때 가로 넘침이 없고 시작 버튼이 화면 안에 남는다. 키보드만으로 조작할 수 있다.</li>
+      <li>학습·완료 화면, 기록 API, 재시도 큐, TTS 코드는 변경하지 않는다.</li>
+      <li><code>npm test</code>, <code>npm run build</code>, <code>npm run lint</code> 통과.</li>
+    </ul>
+  </section>
+
+  <footer>issue-plan · <a href="https://github.com/damdam6/vocabulary-study/issues/189">#189</a> · 2026-09-25</footer>
+</main>
+</body>
+</html>

@@ -4,6 +4,7 @@ import {
   deriveTabs,
   filterWordsByScope,
   getLastTabSelection,
+  pickDefaultTabSelection,
   restoreStudyScope,
   saveStudyScope,
   type StudyScope,
@@ -200,5 +201,40 @@ describe("getLastTabSelection", () => {
     saveStudyScope("p1", { kind: "tabs", tabs: ["삭제된탭"] });
     saveStudyScope("p1", { kind: "all" });
     expect(getLastTabSelection("p1", ["HSK6"])).toEqual([]);
+  });
+});
+
+describe("pickDefaultTabSelection", () => {
+  it("세션 문제 수가 가장 많은 탭 1개를 고른다", () => {
+    expect(
+      pickDefaultTabSelection([
+        { tab: "HSK6", count: 3 },
+        { tab: "HSK5", count: 12 },
+        { tab: "교재5과", count: 7 },
+      ]),
+    ).toEqual(["HSK5"]);
+  });
+
+  it("동률이면 시트 순서상 앞선 탭을 고른다", () => {
+    expect(
+      pickDefaultTabSelection([
+        { tab: "HSK6", count: 2 },
+        { tab: "HSK5", count: 9 },
+        { tab: "교재5과", count: 9 },
+      ]),
+    ).toEqual(["HSK5"]);
+  });
+
+  it("모든 탭이 0이면 첫 탭을 고른다", () => {
+    expect(
+      pickDefaultTabSelection([
+        { tab: "HSK6", count: 0 },
+        { tab: "HSK5", count: 0 },
+      ]),
+    ).toEqual(["HSK6"]);
+  });
+
+  it("빈 입력이면 빈 배열이다", () => {
+    expect(pickDefaultTabSelection([])).toEqual([]);
   });
 });

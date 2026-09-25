@@ -150,3 +150,19 @@ export function restoreStudyScope(profileId: string, availableTabs: readonly str
 export function getLastTabSelection(profileId: string, availableTabs: readonly string[]): string[] {
   return readAndPruneStoredScope(profileId, availableTabs).prunedTabs;
 }
+
+/**
+ * `탭 선택`으로 처음 바꿀 때 마지막 탭 선택이 없으면 쓰는 기본 선택(§4.1, #189): 세션
+ * 문제 수가 가장 많은 탭 1개, 동률이면 시트 순서상 앞선 탭이다. `tabCounts`는 시트
+ * 순서여야 한다 — 엄격히 큰 값만 교체하므로 동률에서 앞선 탭이 남는다. 모든 탭이 0이면
+ * 첫 탭, 빈 입력이면 빈 배열이다.
+ */
+export function pickDefaultTabSelection(tabCounts: readonly { tab: string; count: number }[]): string[] {
+  let best: { tab: string; count: number } | undefined;
+  for (const entry of tabCounts) {
+    if (best === undefined || entry.count > best.count) {
+      best = entry;
+    }
+  }
+  return best === undefined ? [] : [best.tab];
+}

@@ -1004,6 +1004,8 @@ button {
 }
 
 .session-count {
+  display: flex;
+  justify-content: center;
   margin: 0 0 10px;
   text-align: center;
   color: var(--text-muted);
@@ -1029,6 +1031,162 @@ button {
   background: var(--bg-disabled);
   color: var(--text-faint);
   cursor: default;
+}
+
+/* 세션 수 줄의 범위 표기(#189) — 탭 이름만 말줄임하고 "외 n개 탭 · 오늘 세션 · n문제"는 끝까지 남긴다 */
+.session-count-scope-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.session-count-rest {
+  flex: none;
+  white-space: pre;
+}
+
+/* 홈 학습 범위 선택 (#189, PRD-tab-scoped-study §4.1) — 스페이서 아래 · 미전송 인디케이터 위.
+   선택 상태는 옅은 accent 배경이라, 포커스 링(.dropdown-trigger와 같은 2px accent)이 그 위에서도 보인다. */
+.study-scope {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 12px 0 12px;
+}
+
+.study-scope-segment {
+  display: flex;
+  padding: 3px;
+  border-radius: 12px;
+  border: 1px solid var(--border-card);
+  background: var(--bg-panel);
+}
+
+.study-scope-segment-option {
+  flex: 1;
+  height: 36px;
+  border: none;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.study-scope-segment-option[aria-checked='true'] {
+  background: rgba(47, 99, 230, 0.2); /* --accent 파생 — 선택 칩 배경과 같은 값 */
+  color: var(--text);
+}
+
+.study-scope-segment-option:focus-visible,
+.study-scope-toggle-all:focus-visible,
+.study-scope-chip:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+}
+
+.study-scope-toolbar {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.study-scope-toggle-all {
+  border: none;
+  border-radius: 6px;
+  padding: 2px 6px;
+  background: none;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+.study-scope-toggle-all:hover {
+  color: var(--text);
+}
+
+/* 칩은 시트 순서로 줄바꿈 배치. 3줄(34px × 3 + 간격 8px × 2)을 넘으면 세로 스크롤해
+   시작 버튼이 화면 밖으로 밀리지 않게 한다. */
+.study-scope-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  max-height: 118px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.study-scope-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  height: 34px;
+  padding: 0 12px 0 9px;
+  border-radius: 999px;
+  border: 1px solid var(--border-card);
+  background: var(--bg-panel);
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.study-scope-chip.is-selected {
+  border-color: var(--accent);
+  background: rgba(47, 99, 230, 0.2);
+  color: var(--text);
+}
+
+/* 선택 칩은 테두리가 이미 accent라, 포커스 링을 한 톤 밝혀 테두리와 구분한다 */
+.study-scope-chip.is-selected:focus-visible {
+  outline-color: var(--accent-hover);
+}
+
+/* 이 탭만으로는 오늘 할 것이 0문제 — 흐리게 표시하되 선택은 막지 않는다 */
+.study-scope-chip.is-empty {
+  color: var(--text-faint);
+}
+
+.study-scope-chip.is-selected.is-empty {
+  color: var(--text-muted);
+}
+
+.study-scope-chip-mark {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.study-scope-chip.is-selected .study-scope-chip-mark circle {
+  fill: var(--accent);
+  stroke: var(--accent);
+}
+
+.study-scope-chip.is-selected .study-scope-chip-mark path {
+  stroke: var(--text);
+  stroke-width: 2;
+}
+
+/* 이름·개수는 간격 없이 붙이고(개수 앞 공백이 구분), 칩이 줄보다 넓으면 이름만 말줄임한다 */
+.study-scope-chip-label {
+  display: flex;
+  min-width: 0;
+}
+
+.study-scope-chip-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.study-scope-chip-count {
+  flex: none;
+  white-space: pre;
+  font-variant-numeric: tabular-nums;
 }
 
 /* 홈 상단 유틸 바 (#105, design-prd §3) — 좌→우로 수정(노트+연필) · 사람(프로필 전환).
