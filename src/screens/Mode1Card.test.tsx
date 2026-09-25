@@ -86,6 +86,7 @@ describe('Mode1Card 접근성 플립', () => {
     expect(front.hasAttribute('inert')).toBe(false)
     expect(back.getAttribute('aria-hidden')).toBe('true')
     expect(back.hasAttribute('inert')).toBe(true)
+    expect(container.querySelector('.mode-footnote')?.textContent).toBe('“탭해서 뜻 보기” 버튼을 누르면 뜻이 보입니다')
     unmount()
   })
 

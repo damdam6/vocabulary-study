@@ -23,5 +23,8 @@
     "noFallthroughCasesInSwitch": true
   },
   "include": ["src", "shared"],
-  "exclude": ["src/screens/ttsServerClient.integration.test.ts"]
+  "exclude": [
+    "src/screens/ttsServerClient.integration.test.ts",
+    "src/screens/sentence-study.integration.test.tsx"
+  ]
 }

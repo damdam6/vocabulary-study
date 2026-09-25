@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>#178 중국어 문장 통합 검증·제품 문서 정합성 — 작업 플랜</title>
+<style>
+  :root { --bg:#f7f7f8; --card:#fff; --ink:#1c1c1e; --muted:#6e6e73; --line:#e3e3e6; --accent:#3b6ef5; --soft:#e8eefe; --ok:#2e8b57; --warn:#b25e09; --code:#f0f0f2; }
+  @media (prefers-color-scheme:dark) { :root { --bg:#161618; --card:#202024; --ink:#ececf0; --muted:#98989f; --line:#333338; --accent:#7a9bff; --soft:#26304a; --ok:#58c088; --warn:#e0a35c; --code:#2a2a2f; } }
+  * { box-sizing:border-box; }
+  body { margin:0; padding:40px 20px 80px; background:var(--bg); color:var(--ink); font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Segoe UI","Noto Sans KR",sans-serif; line-height:1.65; }
+  main { max-width:900px; margin:0 auto; }
+  a { color:var(--accent); text-decoration:none; } a:hover { text-decoration:underline; }
+  code { font-family:"SF Mono",ui-monospace,Menlo,monospace; font-size:.86em; background:var(--code); border-radius:5px; padding:2px 6px; }
+  header { margin-bottom:28px; } .chip { display:inline-block; font-weight:700; color:var(--accent); background:var(--soft); border-radius:999px; padding:3px 14px; margin-bottom:10px; } .type { display:inline-block; margin-left:8px; color:var(--muted); border:1px solid var(--line); border-radius:999px; padding:3px 12px; font-size:.8rem; }
+  h1 { font-size:1.7rem; margin:0 0 14px; letter-spacing:-.02em; } h2 { font-size:1.05rem; margin:0 0 14px; display:flex; align-items:center; gap:8px; } h2 .no { color:var(--accent); font-size:.8rem; border:1.5px solid var(--accent); border-radius:6px; padding:0 6px; }
+  .meta { display:flex; flex-wrap:wrap; gap:6px 22px; color:var(--muted); font-size:.87rem; } .meta b { color:var(--ink); }
+  section.card { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:24px 28px; margin-top:18px; }
+  ul,ol { margin:0; padding-left:22px; } li { margin:6px 0; } .steps { list-style:none; padding:0; counter-reset:step; } .steps li { counter-increment:step; position:relative; padding:10px 0 10px 44px; border-bottom:1px dashed var(--line); } .steps li:last-child { border-bottom:0; } .steps li::before { content:counter(step); position:absolute; left:0; top:10px; width:28px; height:28px; border-radius:8px; background:var(--soft); color:var(--accent); font-weight:700; font-size:.85rem; display:flex; align-items:center; justify-content:center; } .steps li.checked::before { content:"✓"; background:var(--ok); color:#fff; } .files { display:block; margin-top:4px; font-size:.85rem; color:var(--muted); }
+  table { width:100%; border-collapse:collapse; font-size:.92rem; } th,td { text-align:left; padding:8px 12px; border-bottom:1px solid var(--line); vertical-align:top; } th { color:var(--muted); font-weight:600; font-size:.82rem; } .scroll { overflow-x:auto; }
+  .done { list-style:none; padding:0; } .done li { padding-left:30px; position:relative; } .done li::before { content:""; position:absolute; left:2px; top:7px; width:15px; height:15px; border:2px solid var(--ok); border-radius:5px; }
+  footer { margin-top:30px; color:var(--muted); font-size:.8rem; text-align:center; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <span class="chip"><a href="https://github.com/damdam6/vocabulary-study/issues/178">#178</a></span><span class="type">기능 개선·통합 검증·문서</span>
+    <h1>중국어 문장 등록부터 학습 기록까지 통합 검증하고 제품 문서를 정리한다</h1>
+    <div class="meta">
+      <span><b>damdam6/vocabulary-study</b></span>
+      <span>브랜치 <b><code>feat/178-sentence-integration-docs</code></b> ← <code>main</code></span>
+      <span>라벨 <b>enhancement</b></span>
+      <span>2026-09-24</span>
+    </div>
+  </header>
+
+  <section class="card"><h2><span class="no">1</span>요약</h2>
+    <p>#174와 #177이 병합된 현재 HEAD에는 중국어 문장 등록 형식·등록 경고·문장 채점·긴 화면·TTS 원문 전달이 각각 구현·검증되어 있다. 그러나 추출 킷 JSON이 등록 화면을 거쳐 Worker가 mock Sheets에 저장한 동일한 A열 원문이 <code>GET /api/words</code>, 모드1/2 세션, 정답·복습 기록까지 이어지는 대표 종단 증거는 흩어져 있다. 이번 작업은 기존 계약을 재구현하거나 시트 열을 추가하지 않고, 공유 fixture를 이용한 mock 통합 회귀와 제품 문서 정합성을 완성한다. 생산 코드보다 통합 테스트·문서·시리즈 추적 산출물이 중심이며, 실제 Sheets·유료 Qwen·모바일 실기기는 미검증으로 분리한다.</p>
+  </section>
+
+  <section class="card"><h2><span class="no">2</span>현황 분석</h2>
+    <ul>
+      <li>공유 fixture는 <code>tests/fixtures/chinese-sentence-registration.json:1</code>에서 단어·문장부호 문장·문장부호 없는 장문·숫자/영문 혼합·다음자/변조 병음·200/201자·병음 1000/1001·불허 문자·중복·기존 장문·generic을 한 파일에 정의한다. Python 킷은 <code>docs/registration-kit/schema_check.py:46</code>에서 같은 계약을 미러링하고, 클라이언트는 <code>src/lib/registerValidation.ts:91</code>의 JSON 파싱과 <code>:128</code>의 행 분류, Worker는 <code>worker/lib/register.ts:18</code>의 재검증을 각각 수행한다.</li>
+      <li>등록 화면은 형식 오류·중복·병음 검토 경고를 구분한다(<code>src/lib/registerValidation.ts:146</code>). 전송 경계는 <code>src/lib/registerApi.ts:75</code>의 <code>POST /api/words/register</code>이며 blocked만 제외하고 warning/duplicate는 Worker에 전달한다. Worker는 <code>worker/routes/register.ts:42</code>에서 프로필별 재검증, <code>:73</code>에서 A열 중복 재탐색, <code>:80</code>에서 A:C append-only 저장을 한다.</li>
+      <li>저장된 값은 <code>worker/routes/words.ts:28</code>에서 탭별 <code>A2:F</code>를 읽고 <code>worker/lib/words.ts:29</code>가 원문·병음·뜻·진도 객체로 보존한다. 등록 제한을 기존 시트 조회에 재적용하지 않는 회귀는 <code>worker/routes/words.test.ts:189</code>에 이미 있다.</li>
+      <li>학습 화면은 <code>src/screens/StudyScreen.tsx:66</code>의 현재 질문과 <code>:73</code>의 원문 <code>question.word.hanzi</code>를 TTS에 사용하며, <code>:79</code>의 answer effect와 <code>:93</code>의 review-fail effect가 원래 <code>tab + hanzi</code>를 전송한다. 모드2는 <code>src/screens/Mode2Card.tsx:69</code>에서 <code>gradeMode2(value, word.hanzi, contentType)</code>를 호출하고, 정답 원문은 <code>:114</code> 결과에 보존한다.</li>
+      <li>Worker 기록은 <code>worker/routes/answer.ts:64</code>에서 매번 탭+A열 원문으로 행을 재탐색하고, <code>:74</code>에서 카운트·F열·G열 타임스탬프를 묶어 쓴다. 복습 오답은 <code>worker/routes/review-fail.ts:44</code>에서 같은 키로 찾아 F열만 갱신한다. 따라서 채점 정규화 결과가 기록 키로 흘러가면 다른 행 갱신 또는 0건이 될 수 있다.</li>
+      <li>#177의 기존 TTS 통합은 원문 transport와 200/201 경계, 자동/수동 재생, 실패/off/자동재생 차단을 확인한다(<code>src/screens/StudyScreen.tts.integration.test.tsx:153</code>). 독립 리뷰가 확인한 것처럼 취소·늦은 응답 테스트는 짧은 표제어 fixture 기반 기존 controller 테스트(<code>src/lib/speak.test.ts:238</code>)다. 문장 fixture까지 확장했다고 서술하지 않고, 텍스트 내용과 무관한 기존 경계 회귀를 그대로 재사용한다.</li>
+    </ul>
+  </section>
+
+  <section class="card"><h2><span class="no">3</span>설계</h2>
+    <ul>
+      <li><strong>대표 원문:</strong> <code>我今天很忙。</code>와 <code>我有2本书。</code>를 등록→조회→학습에 사용한다. mode2 입력은 문장부호를 생략해 정답 처리하되, UI 요청·Worker 행 탐색·answer/review-fail payload·TTS text에는 저장된 A열 원문을 그대로 사용한다.</li>
+      <li><strong>검증 경계:</strong> 통합 테스트는 실제 Google Sheets를 호출하지 않고 기존 route 테스트의 메모리 상태 double과 <code>fetch</code> 가로채기를 재사용한다. 등록 PUT 결과로 A:C 원문을 저장하고, 별도 GET 응답을 학습 큐로 공급한 뒤, answer/review-fail mock write에서 정확한 행과 기록 열을 검증한다.</li>
+      <li><strong>경고 정책:</strong> semantic mismatch·다음자·변조 병음은 format PASS/비차단 warning으로 남기고 제출 가능함을 검증한다. 불허 문자·길이 초과·빈 값·배치/탭 중복은 차단 또는 skip으로 구분한다. 서버와 Python 킷은 발음 정확성을 보장한다고 표현하지 않는다.</li>
+      <li><strong>generic 경계:</strong> generic 등록/채점은 문장 문장부호 완화나 zh 병음 정책을 받지 않는다. 최소 한 개의 generic fixture를 client/Worker/학습 회귀에 남겨 contentType 분기가 거꾸로 새지 않는지 확인한다.</li>
+      <li><strong>문서 원본:</strong> 새 중국어 문장 PRD와 SENT-01~06 시리즈 문서는 현재 main에만 있는 미추적 파일이므로 이 worktree에 복사해 최종 PR에 포함한다. 상세 계약은 <code>docs/PRD-chinese-sentence-study.md</code>에 두고, 기존 PRD·디자인·등록·채점·TTS 문서는 중복 규칙을 새 문서로 연결하거나 구 규칙을 개정한다.</li>
+    </ul>
+  </section>
+
+  <section class="card"><h2><span class="no">4</span>작업 단계</h2>
+    <ol class="steps">
+      <li class="checked">main의 미커밋 문서를 읽기 전용으로 대조한 뒤 중국어 문장 PRD, 작업 분해표, SENT-01~06 문서를 이 worktree에 복사했다. #173~#177의 main 병합 상태와 #178 리뷰 전 상태를 구분했고 <code>pnpm-lock.yaml</code>과 main 원본은 건드리지 않았다.<span class="files"><code>docs/PRD-chinese-sentence-study.md</code>, <code>docs/plans/chinese-sentence-study-tasks.md</code>, <code>docs/plans/chinese-sentence-study-issues/SENT-01.md</code>~<code>SENT-06.md</code></span></li>
+      <li class="checked">기존 공유 fixture를 통합 시나리오의 유일한 등록 입력으로 사용했다. 200/201, 병음 1000/1001, 불허 문자·중복·generic 경계는 기존 JS/Worker/Python suite를 함께 실행해 parity를 확인했다.<span class="files"><code>tests/fixtures/chinese-sentence-registration.json</code>, <code>shared/registration.test.ts</code>, <code>src/lib/registerValidation.test.ts</code>, <code>docs/registration-kit/test_schema_check.py</code></span></li>
+      <li class="checked">문장 JSON을 client warning/blocked 분류와 제출 payload에 연결했다. semantic mismatch 경고는 제출되고 emoji 차단 행은 Worker에 전달되지 않으며 기존 등록 화면 직접 수정·중복·generic 회귀도 focused suite로 확인했다.<span class="files"><code>src/screens/RegisterScreen.test.tsx</code>, <code>src/lib/registerValidation.test.ts</code>, <code>src/lib/registerApi.test.ts</code></span></li>
+      <li class="checked">실제 Worker <code>register</code>/<code>words</code> 라우트와 메모리 Sheets를 사용해 A:C append, 동일 A열 조회, 기존 장문 D:G 불변, sheetId/contentType 격리를 검증했다.<span class="files"><code>src/screens/sentence-study.integration.test.tsx</code>, <code>worker/routes/register.ts</code>, <code>worker/routes/words.ts</code></span></li>
+      <li class="checked">같은 조회 결과를 <code>StudyScreen</code>에 주입해 모드1 O, 문장부호 생략 모드2 정답, 숫자 누락 학습 오답, 부정어가 달라진 복습 오답을 실제 answer/review-fail 라우트와 원래 A열 행 갱신까지 연결했다.<span class="files"><code>src/screens/sentence-study.integration.test.tsx</code>, <code>worker/routes/answer.ts</code>, <code>worker/routes/review-fail.ts</code></span></li>
+      <li class="checked">answer/review-fail 5xx가 원문 payload를 retry queue에 보존하는지 확인했다. TTS focused 회귀를 실행했으며 #177 취소·늦은 결과는 새 문장 fixture가 아니라 기존 짧은 fixture 기반 <code>speak.test.ts</code> 증거임을 문서에 바로잡았다.<span class="files"><code>src/screens/sentence-study.integration.test.tsx</code>, <code>src/screens/StudyScreen.tts.integration.test.tsx</code>, <code>src/lib/speak.test.ts</code></span></li>
+      <li class="checked">제품·디자인·TTS·아키텍처·등록 문서의 한자-only, 병음 의미 불일치 차단, 문장 별도 범위, 카드 전체 탭 문구를 현재 계약과 실제 공개 버튼 동작으로 갱신했다.<span class="files"><code>docs/PRD.md</code>, <code>docs/PRD-general.md</code>, <code>docs/design-prd.md</code>, <code>docs/PRD-chinese-tts-audio.md</code>, <code>docs/architecture/chinese-tts-audio.md</code>, <code>docs/plans/chinese-tts-audio-tasks.md</code>, <code>docs/plans/word-registration-system.md</code>, <code>docs/plans/issue-177-sentence-tts-validation.html</code></span></li>
+      <li class="checked">focused/full npm, build/lint, Python 검사를 실행하고 브라우저 실행 제약과 기존 증거 재사용 범위를 아래에 분리 기록했다. production 설정·운영 TTS·Sheets 데이터·<code>pnpm-lock.yaml</code>은 변경하지 않았다.<span class="files"><code>docs/plans/issue-178-sentence-integration-docs.html</code>, <code>.sentence-run/state.json</code></span></li>
+    </ol>
+  </section>
+
+  <section class="card"><h2><span class="no">5</span>리스크</h2><div class="scroll"><table><thead><tr><th>리스크</th><th>영향</th><th>완화책</th></tr></thead><tbody>
+    <tr><td>정규화된 답안을 저장·TTS·기록 키로 재사용</td><td>문장부호 원문이 사라지거나 다른 A열 행을 갱신한다.</td><td>등록 A:C, GET words, TTS <code>text</code>, answer/review-fail <code>hanzi</code>를 각각 원문 문자열로 단언하고 grade 비교 결과와 분리한다.</td></tr>
+    <tr><td>mock이 등록→조회→학습의 서로 다른 fixture를 사용</td><td>각 테스트는 통과하지만 실제 원문 연결이 끊긴다.</td><td>한 registration JSON row를 memory Sheets state에 저장하고 같은 응답을 WordEntry로 변환해 StudyScreen에 주입한다.</td></tr>
+    <tr><td>warning·duplicate·blocked 집계가 실제 전송 대상과 어긋남</td><td>경고를 불필요하게 차단하거나 차단 행을 서버로 보낸다.</td><td>RegisterScreen payload와 Worker write 호출을 함께 단언하고 직접 수정 후 재분류를 포함한다.</td></tr>
+    <tr><td>기존 문서가 새 PRD와 충돌하거나 과거 계획이 잘못된 테스트를 주장</td><td>후속 구현·리뷰가 잘못된 완료 근거를 읽는다.</td><td>문서별 stale 문구를 grep하고 canonical PRD 링크로 단일화한다. #177 취소 검증은 기존 짧은 테스트 재사용으로 정확히 기술하며 #176의 공개 버튼 문구와 일치시킨다.</td></tr>
+    <tr><td>실제 환경 성공으로 mock 결과를 과대 해석</td><td>운영 Sheets/TTS/모바일 품질이 검증된 것으로 오인한다.</td><td>mock 성공, headless viewport/IME 에뮬레이션, 실제 Sheets·유료 Qwen·R2·물리 모바일 청취를 결과에서 별도 분류한다.</td></tr>
+  </tbody></table></div></section>
+
+  <section class="card"><h2><span class="no">6</span>테스트 계획</h2>
+    <ul>
+      <li><strong>공통 계약·킷:</strong> <code>npm test -- shared/registration.test.ts src/lib/registerValidation.test.ts worker/lib/register.test.ts worker/routes/register.test.ts</code>와 <code>python3 -m unittest docs/registration-kit/test_schema_check.py</code>. fixture accepted/rejected parity, NFC/trim, 200/201·1000/1001, 허용/불허 문자, 중복·generic을 확인한다.</li>
+      <li><strong>등록 화면/클라이언트:</strong> <code>npm test -- src/screens/RegisterScreen.test.tsx src/lib/registerApi.test.ts</code>. warning 제출, blocked 제외, duplicate 확인, 직접 수정 재평가, 원문 payload와 상태 개수 일치를 확인한다.</li>
+      <li><strong>Worker/Sheets:</strong> <code>npm test -- worker/routes/register.test.ts worker/routes/words.test.ts worker/routes/answer.test.ts worker/routes/review-fail.test.ts</code>. memory Sheets에서 A:C 등록→A2:F 조회→행 재탐색→D/E/F/G 기록, 기존 장문·탭/프로필 격리·generic 회귀를 확인한다.</li>
+      <li><strong>학습 종단:</strong> <code>npm test -- src/screens/StudyScreen.test.tsx src/lib/studySession.test.ts src/lib/retryQueue.test.ts</code> 및 신규 문장 통합 suite. 문장부호 생략 정답 1회, 한자/숫자 누락 오답, 학습 중 무기록, 복습 오답 F열 후퇴, answer retry 원문을 확인한다.</li>
+      <li><strong>TTS 연결:</strong> <code>npm test -- src/screens/StudyScreen.tts.integration.test.tsx src/lib/speak.test.ts worker/lib/tts/input.test.ts worker/lib/tts/pronunciation.test.ts</code>. 원문 text, 200/201, 자동/수동/cache, 실패/off/autoplay와 기존 짧은 fixture 기반 cancellation/late-result를 확인한다. 문장 fixture cancellation 확장으로 보고하지 않는다.</li>
+      <li><strong>표준·화면:</strong> <code>npm test</code>, <code>npm run build</code>, <code>npm run lint</code>와 Python 킷 검사를 실행한다. 브라우저는 320px·375px·desktop에서 모드1 공개 버튼, 모드2 textarea/IME, 긴 원문·뜻·오답·발음/다음 버튼을 확인하고 실제 기기/IME와 구분해 기록한다.</li>
+    </ul>
+  </section>
+
+  <section class="card"><h2><span class="no">7</span>구현·검증 결과</h2>
+    <ul>
+      <li><strong>통합:</strong> 신규 <code>sentence-study.integration.test.tsx</code> 3건이 공유 fixture → client 분류 → 실제 Worker 등록/조회 → 메모리 Sheets → StudyScreen → 실제 answer/review-fail → 원문 행 D:G 갱신과 retry queue를 한 상태로 검증한다.</li>
+      <li><strong>focused:</strong> 18개 파일, 597개 테스트 통과. 문구 보강 후 Mode1Card+통합 2개 파일, 18개 테스트도 재통과했다.</li>
+      <li><strong>전체:</strong> <code>npm test</code> 58개 파일·1,083개 통과, <code>npm run lint</code> 통과, <code>npm run build</code> 통과. build 중 Wrangler가 샌드박스 밖 로그 파일 쓰기에 EPERM 경고를 냈지만 Worker/client 산출물 생성과 명령 종료 코드는 성공이었다.</li>
+      <li><strong>Python:</strong> kit 디렉터리에서 <code>python3 -m unittest test_schema_check.py</code> 7개 통과. 계획의 루트 기준 명령은 모듈 탐색 경로 때문에 import 실패하므로 실제 kit 실행 위치로 보정했다.</li>
+      <li><strong>화면:</strong> #176의 standalone Chromium 증거(<code>.git/sentence-automation/completed/176/browser-verification.json</code>)에서 320×844, 375×844, 1280×900, 320×520, 긴 콘텐츠, 버튼 접근, 합성 이벤트를 재사용했다. 이번 변경의 footer 문구는 jsdom 컴포넌트 테스트로 정확히 고정했다.</li>
+      <li><strong>브라우저 제약:</strong> 이번 샌드박스의 in-app browser 목록은 비어 있었고, 로컬 서버 bind와 standalone Chromium Mach rendezvous가 EPERM으로 차단되어 새 화면 캡처는 만들지 못했다. 이는 UI 실패가 아니다. viewport·composition은 기존에도 에뮬레이션이며 물리 모바일·가상 키보드·하드웨어 IME 검증이 아니다.</li>
+      <li><strong>미실행:</strong> 실제 Google Sheets 쓰기, 유료 Qwen 합성·청취, 실제 R2, 배포, 물리 모바일 검증은 수행하지 않았다.</li>
+    </ul>
+  </section>
+
+  <section class="card"><h2><span class="no">8</span>완료 조건</h2>
+    <ul class="done">
+      <li class="checked">fixture JSON이 client warning/blocked 분류, Worker 등록 재검증·A:C 저장, GET Sheets 조회, StudyScreen 질문까지 같은 문장 원문으로 연결된다.</li>
+      <li class="checked">모드1 정답과 문장부호 생략 모드2 정답은 정확한 <code>tab + A열 원문</code>에 각각 1회 기록되고, 숫자·부정어 누락 오답과 학습/복습 retry 정책이 기존 규칙을 유지한다.</li>
+      <li class="checked">200/201자·병음 1000/1001·불허 문자·중복·변조 warning·기존 장문·generic 경계가 JS/Worker/Python 및 통합 테스트 묶음에 포함된다.</li>
+      <li class="checked">기존 TTS 원문·길이·취소·늦은 결과·실패 비차단 회귀를 정확한 fixture 범위로 기록하며 문장 cancellation 확장을 주장하지 않는다.</li>
+      <li class="checked">PRD·등록·채점·디자인·TTS 문서가 문장 자체 학습 항목, zh 문장부호 채점, 원문 키 보존, 명시적 공개 버튼, provider text-only 계약으로 서로 일치하고 canonical PRD와 SENT-01~06 문서를 포함한다.</li>
+      <li class="checked">전체 npm/Python 검사와 브라우저 증거·제약이 기록되고, 실제 Google Sheets 쓰기·유료 TTS/R2·물리 모바일 청취·배포 미실행이 명시된다.</li>
+      <li class="checked">Sol medium 구현이 명시적 파일 커밋과 ready PR을 만들고, state 근거와 <code>implementation-done</code> 콜백으로 독립 Grok 리뷰에 인계한다.</li>
+    </ul>
+  </section>
+
+  <footer>issue-plan · <a href="https://github.com/damdam6/vocabulary-study/issues/178">#178</a> · 2026-09-24 · HEAD <code>9c86fd463c2bdf57135c1e90b010bcd2829bf15b</code></footer>
+</main>
+</body>
+</html>
