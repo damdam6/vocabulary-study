@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>#188 [TAB-01] 학습 범위 모델 — 탭 목록 도출·다중 탭 필터·프로필별 선택 저장 — 작업 플랜</title>
+<style>
+  :root {
+    --bg: #f7f7f8; --card: #ffffff; --ink: #1c1c1e; --muted: #6e6e73;
+    --line: #e3e3e6; --accent: #3b6ef5; --accent-soft: #e8eefe;
+    --ok: #2e8b57; --warn: #b25e09; --code-bg: #f0f0f2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161618; --card: #202024; --ink: #ececf0; --muted: #98989f;
+      --line: #333338; --accent: #7a9bff; --accent-soft: #26304a;
+      --ok: #58c088; --warn: #e0a35c; --code-bg: #2a2a2f;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 40px 20px 80px; background: var(--bg); color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+                 "Segoe UI", "Noto Sans KR", sans-serif;
+    line-height: 1.65;
+  }
+  main { max-width: 860px; margin: 0 auto; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code {
+    font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 0.86em;
+    background: var(--code-bg); border-radius: 5px; padding: 2px 6px;
+  }
+  header { margin-bottom: 28px; }
+  .issue-chip {
+    display: inline-block; font-weight: 700; color: var(--accent);
+    background: var(--accent-soft); border-radius: 999px;
+    padding: 3px 14px; font-size: 0.95rem; margin-bottom: 10px;
+  }
+  .type-chip {
+    display: inline-block; font-weight: 600; color: var(--muted);
+    border: 1px solid var(--line); border-radius: 999px;
+    padding: 3px 12px; font-size: 0.8rem; margin-left: 8px; vertical-align: 2px;
+  }
+  h1 { font-size: 1.7rem; margin: 0 0 14px; letter-spacing: -0.02em; }
+  .meta {
+    display: flex; flex-wrap: wrap; gap: 6px 22px;
+    color: var(--muted); font-size: 0.87rem;
+  }
+  .meta b { color: var(--ink); font-weight: 600; }
+  section.card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 24px 28px; margin-top: 18px;
+  }
+  h2 {
+    font-size: 1.05rem; margin: 0 0 14px; letter-spacing: -0.01em;
+    display: flex; align-items: center; gap: 8px;
+  }
+  h2 .no {
+    color: var(--accent); font-size: 0.8rem; font-weight: 700;
+    border: 1.5px solid var(--accent); border-radius: 6px; padding: 0 6px;
+  }
+  ul, ol { margin: 0; padding-left: 22px; }
+  li { margin: 6px 0; }
+  .steps { list-style: none; padding: 0; counter-reset: step; }
+  .steps li {
+    counter-increment: step; position: relative; padding: 10px 0 10px 44px;
+    border-bottom: 1px dashed var(--line);
+  }
+  .steps li:last-child { border-bottom: none; }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 10px;
+    width: 28px; height: 28px; border-radius: 8px; background: var(--accent-soft);
+    color: var(--accent); font-weight: 700; font-size: 0.85rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .steps .files { display: block; margin-top: 4px; font-size: 0.85rem; color: var(--muted); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 0.82rem; }
+  .done-list { list-style: none; padding: 0; }
+  .done-list li { padding-left: 30px; position: relative; }
+  .done-list li::before {
+    content: ""; position: absolute; left: 2px; top: 7px; width: 15px; height: 15px;
+    border: 2px solid var(--ok); border-radius: 5px;
+  }
+  .scroll-x { overflow-x: auto; }
+  footer { margin-top: 30px; color: var(--muted); font-size: 0.8rem; text-align: center; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <span class="issue-chip"><a href="https://github.com/damdam6/vocabulary-study/issues/188">#188</a></span><span class="type-chip">기능 개선</span>
+    <h1>[TAB-01] 학습 범위 모델 — 탭 목록 도출·다중 탭 필터·프로필별 선택 저장</h1>
+    <div class="meta">
+      <span><b>damdam6/vocabulary-study</b></span>
+      <span>브랜치 <b><code>feat/188-study-scope-model</code></b> ← <code>main</code></span>
+      <span>라벨 <b>enhancement</b></span>
+      <span>2026-09-25</span>
+    </div>
+  </header>
+
+  <section class="card">
+    <h2><span class="no">1</span>요약</h2>
+    <p>학습 범위를 <b>전체</b> 또는 <b>고른 탭 n개</b>로 제한하기 위한 순수 로직 모듈 <code>src/lib/studyScope.ts</code>를 추가한다. #187 PRD §3·§4.3 계약대로 <code>StudyScope</code> 타입, 탭 목록 도출, 다중 탭 필터, 프로필별 저장·복원·누락 탭 정리 함수를 구현하고 단위 테스트로 검증한다. UI(#189)는 이 이슈 범위 밖이며, <code>computeHomeStats</code>·<code>buildSessionQueue</code>의 시그니처와 산식은 그대로 둔다.</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">2</span>현황 분석</h2>
+    <ul>
+      <li><code>src/screens/HomeScreen.tsx:48</code> 홈 진입마다 <code>fetchWords</code>로 전체 단어를 조회하고, <code>computeHomeStats</code>(<code>HomeScreen.tsx:56</code>)와 <code>handleStart</code>의 <code>buildSessionQueue</code>(<code>HomeScreen.tsx:94</code>) 모두 그 전체 <code>words</code> 배열을 필터 없이 그대로 소비한다.</li>
+      <li><code>src/lib/api.ts:140</code> <code>WordEntry</code>가 <code>tab</code> 필드를 이미 담고 있고, <code>/api/words</code>는 시트 탭 순서대로 이어 붙여 반환한다(PRD-tab-scoped-study.md §3) — <code>GET /api/tabs</code> 없이도 <code>words[].tab</code> 등장 순서만으로 탭 목록을 만들 수 있다.</li>
+      <li><code>src/lib/sessionQueue.ts:86</code> <code>buildSessionQueue&lt;T extends WordProgress&gt;</code>는 제네릭이라 <code>tab</code>을 포함한 <code>WordEntry</code>를 그대로 받을 수 있다. <code>src/lib/homeStats.ts:25</code> <code>computeHomeStats</code>는 <code>WordProgress[]</code>를 받는데 <code>WordEntry</code>가 구조적으로 이를 만족하므로, 필터링을 호출 이전 단계에서 끝내면 두 함수 모두 손댈 필요가 없다.</li>
+      <li>localStorage 키 규약은 <code>vocab-study:*</code> 접두(<code>api.ts:9,25</code>)를 따른다. 프로필별 분리 전례로 <code>src/lib/retryQueue.ts:14</code>가 있지만, 거긴 평면 배열에 <code>profileId</code>를 태그하는 로그 구조다 — 이 이슈는 프로필당 "가장 최근 선택" 하나만 필요해 다른 저장 형태가 맞다(§3 설계 참고).</li>
+      <li>범위 개념 자체가 아직 코드에 없다 — 이 플랜이 처음 도입하는 순수 로직이며 회귀 기준선은 "기존 <code>sessionQueue</code>·<code>homeStats</code> 테스트가 무변경 통과"다.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">3</span>설계</h2>
+    <ul>
+      <li><code>StudyScope</code> 타입은 이슈 본문·PRD §3 그대로: <code>{ kind: "all" } | { kind: "tabs"; tabs: string[] }</code>.</li>
+      <li><code>deriveTabs(words)</code>: <code>Set</code>으로 <code>word.tab</code> 처음 등장 순서를 유지하며 중복 제거. 서버가 이미 시트 탭 순서로 이어 붙여 보내므로 별도 정렬이 필요 없다.</li>
+      <li><code>filterWordsByScope&lt;T extends { tab: string }&gt;(words, scope)</code>: <code>kind === "all"</code>이면 복사본을 그대로 반환, <code>"tabs"</code>면 <code>Set</code> 멤버십으로 필터(트림·대소문자 무시 없이 정확히 일치). <code>tabs</code>가 빈 배열이면 결과도 빈 배열이다. <code>computeHomeStats</code>·<code>buildSessionQueue</code>는 이 필터의 출력을 그대로 받으므로 시그니처를 바꾸지 않고도 #128 "같은 산식" 불변식을 지킨다 — 필터 함수 하나를 홈·큐 양쪽이 호출 전 단계에서 공유하는 방식.</li>
+      <li>저장 형식: PRD §4.3 "세그먼트를 전체로 바꿔도 탭 선택은 따로 보존한다"를 만족하려면 <code>kind</code>만 저장해서는 안 된다. <code>vocab-study:study-scope</code> 키에 <code>{ [profileId]: { kind, tabs } }</code> 맵으로 저장하되, <code>tabs</code> 필드는 <code>kind</code>와 무관하게 "마지막 탭 선택"을 항상 담는다 — <code>kind === "all"</code>로 저장해도 이전 <code>tabs</code> 값은 지우지 않고 보존한다. <code>saveStudyScope</code>는 <code>kind === "tabs"</code>이고 <code>tabs.length === 0</code>이면 저장을 건너뛴다(§4.3 "선택 0개 상태는 저장하지 않는다").</li>
+      <li>복원: <code>restoreStudyScope(profileId, availableTabs)</code>가 저장값을 읽어 <code>availableTabs</code>에 없는 탭을 조용히 걸러내고, 걸러낸 뒤 <code>tabs</code>가 비면 <code>kind</code>를 <code>"all"</code>로 되돌린다(§4.3 "남은 탭이 없으면 전체로 되돌린다"). 정리 결과가 원래 저장값과 다르면(탭이 실제로 빠졌거나 kind가 바뀌었으면) 저장값도 갱신해 쓴다 — 변화가 없으면 불필요한 쓰기를 생략한다. 최상위 JSON이 손상됐거나 특정 프로필 엔트리의 타입이 어긋나면(예: <code>kind</code>가 열거값이 아니거나 <code>tabs</code>가 배열이 아님) 그 프로필만 <code>{ kind: "all" }</code>로 취급하고 다른 프로필의 엔트리는 건드리지 않는다(프로필 간 격리).</li>
+      <li>기각한 대안 — 평면 배열 + <code>profileId</code> 태그(<code>retryQueue.ts</code> 전례): 이 이슈는 프로필당 append 로그가 아니라 최신 값 하나만 필요해 로그 구조가 불필요한 복잡성을 더한다. 프로필을 키로 하는 맵이 더 단순하고 조회·갱신이 O(1)이다.</li>
+      <li>기각한 대안 — <code>kind</code>별로 <code>tabs</code> 저장 위치를 분리(예: <code>"all"</code>일 때 키 자체를 지움): PRD가 저장 형식은 "구현에서 정하되 동작은 지켜야" 한다고 명시한다. <code>kind</code>와 무관하게 항상 <code>tabs</code>를 갖는 단일 레코드가 분기 없이 더 간단하고, "전체로 바꿨다 돌아왔을 때 탭 선택 보존" 요구를 자연스럽게 만족한다.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">4</span>작업 단계</h2>
+    <ol class="steps">
+      <li>✅ StudyScope 타입, 탭 목록 도출(<code>deriveTabs</code>), 다중 탭 필터(<code>filterWordsByScope</code>), 프로필별 저장(<code>saveStudyScope</code>)·복원 및 누락 탭 정리(<code>restoreStudyScope</code>), 저장 키 상수(<code>STUDY_SCOPE_STORAGE_KEY</code>)를 새 모듈로 작성한다. §3 설계를 그대로 구현한다. — 완료, 설계대로 구현.
+        <span class="files"><code>src/lib/studyScope.ts</code></span>
+      </li>
+      <li>✅ 단위 테스트를 작성한다: 탭 도출(순서·중복 제거·빈 입력), 필터(0개/1개/n개/전체, "전체"와 "모든 탭 선택"의 결과 차이), 저장·복원(손상된 JSON·타입이 어긋난 엔트리, 프로필 간 격리, 전체↔탭 선택 전환 시 탭 선택 보존, 선택 0개는 저장 안 함, 일부/전부 누락 탭 정리 후 재저장 확인). <code>retryQueue.test.ts</code>의 localStorage 스텁 패턴을 재사용한다. — 완료, 20개 테스트 모두 통과.
+        <span class="files"><code>src/lib/studyScope.test.ts</code>, 참고: <code>src/lib/retryQueue.test.ts</code></span>
+      </li>
+      <li>✅ <code>npm test</code>·<code>npm run build</code>·<code>npm run lint</code>를 실행하고, 기존 <code>sessionQueue.test.ts</code>·<code>homeStats.test.ts</code>가 무변경으로 통과하는지 확인한다. — 완료: 전체 1103개 테스트 통과(기존 스위트 무변경), 빌드·린트 통과.
+        <span class="files"><code>package.json</code></span>
+      </li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">5</span>리스크</h2>
+    <div class="scroll-x">
+    <table>
+      <thead><tr><th>리스크</th><th>영향</th><th>완화책</th></tr></thead>
+      <tbody>
+        <tr><td>프로필당 맵 저장 형식이 기존 <code>vocab-study:*</code> 키와 다른 패턴(맵 vs 태그 배열)</td><td>신규 키라 마이그레이션 대상은 없지만, 다음 저장 형식 설계 시 일관성 질문이 남을 수 있음</td><td>신규 키(<code>vocab-study:study-scope</code>)라 충돌·마이그레이션 불필요. 키 상수를 export해 UI(#189)가 재사용하도록 함</td></tr>
+        <tr><td><code>tab</code>을 포함한 제네릭 T를 다루다 <code>computeHomeStats</code>/<code>buildSessionQueue</code> 시그니처에 손을 대게 될 위험</td><td>#128 불변식(홈 수치·큐 길이 일치) 회귀</td><td>필터링을 두 함수 호출 이전 단계로 완전히 분리하고 시그니처는 건드리지 않음. 기존 테스트 무변경 통과로 확인</td></tr>
+        <tr><td><code>restoreStudyScope</code>의 저장값 갱신(쓰기 부수효과)이 예상 밖 시점에 localStorage를 변경</td><td>테스트가 이 부수효과를 놓치면 회귀를 잡기 어려움</td><td>테스트에서 복원 호출 전/후 저장값을 직접 비교하고, 변화가 없을 때 쓰기를 생략하는지도 확인</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">6</span>테스트 계획</h2>
+    <ul>
+      <li><code>npm test</code> — 신규 <code>studyScope.test.ts</code> 전부 통과, 기존 <code>sessionQueue.test.ts</code>·<code>homeStats.test.ts</code> 무변경 통과</li>
+      <li><code>npm run build</code> — <code>tsc -b</code> 타입 오류 없음(제네릭 <code>filterWordsByScope</code>의 출력이 <code>buildSessionQueue</code>·<code>computeHomeStats</code> 입력과 구조적으로 호환되는지 타입 레벨에서 확인)</li>
+      <li><code>npm run lint</code> — oxlint 통과</li>
+      <li>수동 확인: <code>deriveTabs</code>가 시트 탭 등장 순서를 그대로 유지하는지, "전체"와 "모든 탭을 고른 탭 선택"이 서로 다른 상태로 남는지(§3) 테스트 케이스로 명시적으로 검증</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">7</span>완료 조건</h2>
+    <ul class="done-list">
+      <li>범위 타입·탭 목록 도출·다중 탭 필터·저장/복원/누락 탭 정리 함수가 있다</li>
+      <li>단위 테스트: 탭 순서·중복 제거·빈 입력, 필터 0개/1개/n개/전체, 전체와 모든 탭 선택의 차이, 손상 저장값, 일부·전부 누락 탭, 프로필 간 격리, 전체로 바꿨다 돌아왔을 때의 탭 선택 보존</li>
+      <li>기존 <code>sessionQueue</code>·<code>homeStats</code> 테스트가 수정 없이 통과한다</li>
+      <li><code>npm test</code>, <code>npm run build</code>, <code>npm run lint</code> 통과</li>
+    </ul>
+  </section>
+
+  <footer>issue-plan · <a href="https://github.com/damdam6/vocabulary-study/issues/188">#188</a> · 2026-09-25</footer>
+</main>
+</body>
+</html>
