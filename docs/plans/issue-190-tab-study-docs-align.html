@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>#190 [TAB-03] 탭 선택 학습 반영 — PRD·design-prd 문서 정합 — 작업 플랜</title>
+<style>
+  :root {
+    --bg: #f7f7f8; --card: #ffffff; --ink: #1c1c1e; --muted: #6e6e73;
+    --line: #e3e3e6; --accent: #3b6ef5; --accent-soft: #e8eefe;
+    --ok: #2e8b57; --warn: #b25e09; --code-bg: #f0f0f2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161618; --card: #202024; --ink: #ececf0; --muted: #98989f;
+      --line: #333338; --accent: #7a9bff; --accent-soft: #26304a;
+      --ok: #58c088; --warn: #e0a35c; --code-bg: #2a2a2f;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 40px 20px 80px; background: var(--bg); color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+                 "Segoe UI", "Noto Sans KR", sans-serif;
+    line-height: 1.65;
+  }
+  main { max-width: 860px; margin: 0 auto; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code {
+    font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 0.86em;
+    background: var(--code-bg); border-radius: 5px; padding: 2px 6px;
+  }
+  header { margin-bottom: 28px; }
+  .issue-chip {
+    display: inline-block; font-weight: 700; color: var(--accent);
+    background: var(--accent-soft); border-radius: 999px;
+    padding: 3px 14px; font-size: 0.95rem; margin-bottom: 10px;
+  }
+  .type-chip {
+    display: inline-block; font-weight: 600; color: var(--muted);
+    border: 1px solid var(--line); border-radius: 999px;
+    padding: 3px 12px; font-size: 0.8rem; margin-left: 8px; vertical-align: 2px;
+  }
+  h1 { font-size: 1.7rem; margin: 0 0 14px; letter-spacing: -0.02em; }
+  .meta {
+    display: flex; flex-wrap: wrap; gap: 6px 22px;
+    color: var(--muted); font-size: 0.87rem;
+  }
+  .meta b { color: var(--ink); font-weight: 600; }
+  section.card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 24px 28px; margin-top: 18px;
+  }
+  h2 {
+    font-size: 1.05rem; margin: 0 0 14px; letter-spacing: -0.01em;
+    display: flex; align-items: center; gap: 8px;
+  }
+  h2 .no {
+    color: var(--accent); font-size: 0.8rem; font-weight: 700;
+    border: 1.5px solid var(--accent); border-radius: 6px; padding: 0 6px;
+  }
+  ul, ol { margin: 0; padding-left: 22px; }
+  li { margin: 6px 0; }
+  .steps { list-style: none; padding: 0; counter-reset: step; }
+  .steps li {
+    counter-increment: step; position: relative; padding: 10px 0 10px 44px;
+    border-bottom: 1px dashed var(--line);
+  }
+  .steps li:last-child { border-bottom: none; }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 10px;
+    width: 28px; height: 28px; border-radius: 8px; background: var(--accent-soft);
+    color: var(--accent); font-weight: 700; font-size: 0.85rem;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .steps .files { display: block; margin-top: 4px; font-size: 0.85rem; color: var(--muted); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 0.82rem; }
+  .done-list { list-style: none; padding: 0; }
+  .done-list li { padding-left: 30px; position: relative; }
+  .done-list li::before {
+    content: ""; position: absolute; left: 2px; top: 7px; width: 15px; height: 15px;
+    border: 2px solid var(--ok); border-radius: 5px;
+  }
+  .scroll-x { overflow-x: auto; }
+  footer { margin-top: 30px; color: var(--muted); font-size: 0.8rem; text-align: center; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <span class="issue-chip"><a href="https://github.com/damdam6/vocabulary-study/issues/190">#190</a></span><span class="type-chip">문서</span>
+    <h1>[TAB-03] 탭 선택 학습 반영 — PRD·design-prd 문서 정합</h1>
+    <div class="meta">
+      <span><b>damdam6/vocabulary-study</b></span>
+      <span>브랜치 <b><code>docs/190-tab-study-docs-align</code></b> ← <code>main</code></span>
+      <span>라벨 <b>documentation</b></span>
+      <span>2026-09-25</span>
+    </div>
+  </header>
+
+  <section class="card">
+    <h2><span class="no">1</span>요약</h2>
+    <p>#188·#189로 탭 선택 학습(전체 또는 탭 n개 범위로 큐 구성)이 구현됐지만, 기능 PRD와 디자인 PRD는 여전히 "항상 전 탭 통합"을 서술하고 있었다. 이 작업은 코드 변경 없이 세 문서 — <code>docs/PRD.md</code>, <code>docs/design-prd.md</code>, <code>docs/PRD-tab-scoped-study.md</code> — 를 실제 구현과 일치시킨다. PRD.md §4.1·§6.1을 선택 범위 기준으로 개정하고 §11 v2 후보 항목을 삭제했으며, design-prd §3에 범위 선택 UI의 위치·스타일(색 토큰·크기·간격·최대 높이·말줄임)과 세션 수 줄 문구·0개 선택 라벨을 #189 구현에서 실제 쓰인 값 그대로 확정해 적었다. PRD-tab-scoped-study.md 상태도 "구현 완료"로 갱신했다.</p>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">2</span>현황 분석</h2>
+    <p><b>구현 쪽(이미 병합됨, #188·#189)</b></p>
+    <ul>
+      <li><code>src/lib/studyScope.ts</code>: <code>StudyScope</code> 타입(<code>{kind:"all"}|{kind:"tabs",tabs:string[]}</code>), <code>deriveTabs</code>(시트 탭 순서 중복 제거), <code>filterWordsByScope</code>, localStorage 프로필별 저장·복원(<code>vocab-study:study-scope</code>), 누락 탭 정리 로직.</li>
+      <li><code>src/screens/HomeScreen.tsx:8,42,61,120-178,231-262</code>: 범위 선택 UI를 스페이서와 미전송 인디케이터 사이에 조건부 렌더(<code>tabs.length &gt; 1</code>), 범위별 세션 수 줄 문구(<code>describeScope</code>, 42-53행), 0개 선택 시 시작 버튼 라벨 "탭을 선택하세요".</li>
+      <li><code>src/components/StudyScopePicker.tsx</code>: 세그먼트 <code>role="radiogroup"</code> + 칩 목록 <code>role="group"</code>, 다중 선택 토글, 모두 선택/해제.</li>
+      <li><code>src/index.css:1049-1198</code>: 위 컴포넌트의 실제 스타일 값(세그먼트·칩·포커스 링·최대 높이 118px·말줄임) — design-prd §3에 없던 값들이라 이 이슈로 옮겨 적어야 하는 원본.</li>
+    </ul>
+    <p><b>문서 쪽(정합 필요했던 지점, grep으로 확인)</b></p>
+    <ul>
+      <li><code>docs/PRD.md:68</code> §4.1 "앱은 모든 탭을 통합해서 하나의 학습 큐로 다룬다" — 구현과 어긋남.</li>
+      <li><code>docs/PRD.md:162</code> §6.1 "세션 시작 시 전체 탭을 통합해" — 동일.</li>
+      <li><code>docs/PRD.md:363</code> §11 v2 후보 "탭 선택 학습 (현재는 항상 전체 통합)" — 이미 구현됐으므로 후보 목록에서 삭제 대상.</li>
+      <li><code>docs/PRD.md:387</code> §12 인터뷰 확정 사항 요약 "학습은 항상 전체 탭 통합" — grep으로 추가 발견, 이슈 본문에는 없었지만 같은 모순이라 동일 원칙으로 처리.</li>
+      <li><code>docs/design-prd.md</code> §3에는 범위 선택 UI 자체가 없었다 — PRD-tab-scoped-study.md §4.1이 이미 동작·접근성 계약을 완비했고 "구체 값은 design-prd §3 개정에서 확정한다"고 명시적으로 위임해 뒀다.</li>
+      <li><code>docs/PRD-tab-scoped-study.md:3</code> 상태 줄이 "요구사항 확정"에 머물러 있었다.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">3</span>설계</h2>
+    <ul>
+      <li><b>PRD.md는 최소 개정 + 위임</b>: §4.1·§6.1 본문을 선택 범위 기준으로 고치되, 세부 동작(초기 선택, 저장, 접근성 등)은 재서술하지 않고 <code>docs/PRD-tab-scoped-study.md</code> 참조로 위임했다. 기존 개정 이력 관행(문서 최상단 blockquote + 문장 끝 <em>(날짜 개정 — 사유, #이슈)</em>)을 그대로 따랐다.</li>
+      <li><b>design-prd.md §3은 스타일 값만 확정</b>: PRD-tab-scoped-study.md §4.1이 이미 "무엇을 어떻게 상호작용하는지"를 완비했으므로, design-prd에는 그 문서가 위임한 "구체 값"(색·px·radius·문구)만 추가했다. 동작 사양을 중복 서술하면 두 문서가 어긋날 여지가 생긴다.</li>
+      <li><b>값은 전부 구현 코드에서 그대로 옮김</b>: <code>src/index.css</code>·<code>StudyScopePicker.tsx</code>·<code>HomeScreen.tsx</code>를 읽고 실제 렌더 문구·색 토큰·치수를 추출했다 — 임의로 재확정하지 않았다.</li>
+      <li><b>기각한 대안 — design-prd §3에 컴포넌트 단위 상세 스펙(JSX 구조 등)까지 옮겨적기</b>: 기존 design-prd 문서는 항상 "값"만 확정하고 구조/상호작용은 기능 PRD류 문서에 맡기는 관행(§4.1~4.6의 zh/generic 분기 표 등)이라, 그 결을 깨지 않았다.</li>
+      <li><b>기각한 대안 — §11 v2 후보 삭제 시 취소선 처리(다른 폐기 항목처럼 ~~텍스트~~ 유지)</b>: §11은 "구현하지 않음" 목록이고 이미 구현된 항목은 그 정의상 목록에 있을 이유가 없다. §12 결정표처럼 정정 이력 자체가 의미 있는 곳과 달리, 단순 삭제가 맞다(문서 최상단 개정 note에 삭제 사실을 남겨 이력은 보존).</li>
+      <li><b>바로잡은 것 — 문서 내 교차 참조 모호성</b>: 초안에서 design-prd.md에 "§4.2 규칙과 동일 조건"처럼 문서명 없이 쓴 두 곳이 있었는데, design-prd.md 자신도 §4.1·§4.2를 학습 화면(모드1 프레임/UI)에 쓰고 있어 모호했다. 완료 조건 "문서 링크·섹션 번호가 유효하다"에 걸리는 문제라 <code>PRD-tab-scoped-study.md §4.2</code>로 명시했다.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">4</span>작업 단계</h2>
+    <ol class="steps">
+      <li>PRD.md 최상단에 2026-09-25 개정 blockquote 추가 — §4.1·§6.1 개정과 §11 삭제 사실을 한 곳에 요약, <code>docs/PRD-tab-scoped-study.md</code>로 링크.
+        <span class="files"><code>docs/PRD.md</code></span>
+      </li>
+      <li>§4.1 "모든 탭을 통합" 문장을 "고른 학습 범위(전체 또는 탭 n개)"로 교체하고 개정 주석 부기.
+        <span class="files"><code>docs/PRD.md</code></span>
+      </li>
+      <li>§6.1 "전체 탭을 통합해" 문장을 "선택한 학습 범위"로 교체 + 상한이 선택 범위 전체에 적용된다는 문장 추가.
+        <span class="files"><code>docs/PRD.md</code></span>
+      </li>
+      <li>§11 v2 후보에서 "탭 선택 학습 (현재는 항상 전체 통합)" 항목 삭제.
+        <span class="files"><code>docs/PRD.md</code></span>
+      </li>
+      <li>§12 인터뷰 확정 사항 요약의 "학습은 항상 전체 탭 통합" 문구를 선택 범위 기준으로 갱신(이슈 본문엔 없었지만 grep으로 발견한 동일 모순).
+        <span class="files"><code>docs/PRD.md</code></span>
+      </li>
+      <li>design-prd §3 홈 구성 순서 줄에 "범위 선택 UI(조건부, 탭 2개 이상)"를 스페이서와 미전송 인디케이터 사이에 삽입.
+        <span class="files"><code>docs/design-prd.md</code></span>
+      </li>
+      <li>design-prd §3에 "범위 선택 UI" 절 신설 — 세그먼트/모두 선택 버튼/칩 목록/포커스 링의 색·치수·간격·최대 높이(118px)·말줄임 규칙과, 세션 수 줄 문구 3종(전체/탭 1개/탭 2개+)·0개 선택 라벨을 <code>src/index.css</code>·<code>HomeScreen.tsx</code>에서 그대로 옮겨 확정.
+        <span class="files"><code>docs/design-prd.md</code></span>
+      </li>
+      <li>design-prd §9 결정 로그에 "범위 선택 UI 형태" 행(세그먼트+칩, Dropdown 기각 이유) 추가, §10 이슈 매핑에 #188·#189·#190 행 추가.
+        <span class="files"><code>docs/design-prd.md</code></span>
+      </li>
+      <li>PRD-tab-scoped-study.md 상태 줄을 "요구사항 확정"에서 "구현 완료(#188·#189 병합, 문서 정합 #190)"로 갱신.
+        <span class="files"><code>docs/PRD-tab-scoped-study.md</code></span>
+      </li>
+      <li>세 문서 전체를 다시 grep해 "전체 탭 통합"류 잔존 문구가 없는지, 새로 추가한 섹션 참조(§4.1·§4.2·§3 등)가 어느 문서를 가리키는지 모호하지 않은지 확인.
+        <span class="files"><code>docs/PRD.md</code>, <code>docs/design-prd.md</code>, <code>docs/PRD-tab-scoped-study.md</code></span>
+      </li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">5</span>리스크</h2>
+    <div class="scroll-x">
+    <table>
+      <thead><tr><th>리스크</th><th>영향</th><th>완화책</th></tr></thead>
+      <tbody>
+        <tr><td>코드 변경 없음이라 프로덕션 동작에는 영향 없음</td><td>없음</td><td>해당 사항 없음</td></tr>
+        <tr><td>design-prd에 옮겨 적은 px·색 값이 실제 구현과 나중에 어긋남(구현이 먼저 바뀌고 문서가 안 따라감)</td><td>문서 신뢰도 저하</td><td>값을 <code>src/index.css</code>에서 그대로 복사했고, 다음에 스타일을 바꾸는 이슈가 design-prd §3을 함께 개정하는 관행(이 저장소 기존 패턴)을 따르면 됨 — 이번 작업 범위 밖</td></tr>
+        <tr><td>문서 간 교차 참조가 섹션 번호 변경에 취약(향후 §4.x 삽입 시 어긋날 수 있음)</td><td>낮음 — 문서 전용, 빌드 실패 없음</td><td>이번에 추가한 참조는 모두 대상 문서명을 명시(<code>PRD-tab-scoped-study.md §4.2</code> 형태)해 같은 문서 내 번호와 혼동되지 않게 했음</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">6</span>테스트 계획</h2>
+    <ul>
+      <li>문서 3종 전체를 재읽어 "전체 탭 통합"·"항상 전체" 류 잔존 문구가 없는지 최종 확인(수행 완료 — grep 결과 의도된 인용문 1건만 남음, PRD-tab-scoped-study.md 자신의 도입부에서 "PRD.md §11의 v2 후보를 편입한다"는 역사적 서술이라 정상).</li>
+      <li>새로 추가한 모든 섹션 참조가 실제로 존재하는 섹션을 가리키는지 확인(수행 완료).</li>
+      <li>코드 변경이 없으므로 <code>npm test</code>·<code>npm run build</code>·<code>npm run lint</code>는 회귀 검증 목적으로만 가볍게 실행 — 실패 시 이 브랜치가 아닌 사전 상태 문제이므로 원인 구분.</li>
+      <li>모바일 폭 UI 확인은 이번 이슈 범위 밖(코드 변경 없음, #189에서 이미 검증됨).</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2><span class="no">7</span>완료 조건</h2>
+    <ul class="done-list">
+      <li>PRD.md·design-prd.md·PRD-tab-scoped-study.md가 #188·#189 구현과 일치하고 서로 충돌하지 않는다.</li>
+      <li>문서 링크·섹션 번호가 유효하다(교차 문서 참조는 문서명을 명시해 모호성 제거).</li>
+    </ul>
+  </section>
+
+  <footer>issue-plan · <a href="https://github.com/damdam6/vocabulary-study/issues/190">#190</a> · 2026-09-25</footer>
+</main>
+</body>
+</html>
