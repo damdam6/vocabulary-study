@@ -1,8 +1,8 @@
 # 중국어 TTS 운영·출시 런북
 
-> 문서화 기준: 2026-09-17 · 대상: `feat/ch-sound`의 중국어 TTS 구현
+> 최초 문서화 기준: 2026-09-17 · 상태 대조: 2026-09-26 · 대상: 중국어 TTS 구현
 >
-> 이 문서는 비밀값을 요구하거나 실제 배포를 수행하지 않는다. 현재 baseline은 `TTS_ENABLED=false`이며, 아래의 미완료 표시는 출시 완료가 아니다.
+> 이 문서는 비밀값을 요구하거나 실제 배포를 수행하지 않는다. 2026-09-17 baseline은 `TTS_ENABLED=false`였고, 2026-09-24부터 소스는 `true`다. 소스 활성화는 배포·실환경 검증 완료의 증거가 아니며, 아래의 미완료 표시는 유지한다.
 
 ## 1. 사실 기록과 범위
 
@@ -15,11 +15,11 @@
 
 ## 2. 출시 전 baseline
 
-다음 상태를 읽기 전용으로 확인하고 기록한다.
+다음 표는 **2026-09-17의 과거 관찰 기록**이다. 현재 소스와 이후 배포·검증의 확인 상태는 §3을 따른다.
 
-| 확인 항목 | 현재 기록 | 출시 판정 |
+| 확인 항목 | 2026-09-17 기록 | 당시 출시 판정 |
 |---|---|---|
-| `TTS_ENABLED` | `false` 유지 | 미완료 |
+| `TTS_ENABLED` | 당시 소스 `false` | 미완료 |
 | 운영 bucket | `vocabulary-study-tts-audio`, private/Standard | 설정 관찰 완료, 객체 접근 미검증 |
 | 개발·테스트 bucket | `audio-uploads`, private/Standard | 설정 관찰 완료, 객체 접근 미검증 |
 | `DASHSCOPE_API_KEY` 발급 | 소유자 발급 사실만 확인 | 주입·접근과 별도 |
@@ -29,6 +29,22 @@
 키 원문·토큰·R2 객체 바이트·secret 값은 읽거나 로그/문서에 복사하지 않는다. `TTS_ENABLED`를 바꾸거나 bucket, lifecycle, secret을 이 문서 작업에서 변경하지 않는다.
 
 ## 3. Secret 수명과 배포 상태를 분리한다
+
+### 2026-09-26 상태 대조
+
+| 구분 | 확인 상태 | 근거 / 남은 확인 |
+|---|---|---|
+| 현재 소스 설정 | `TTS_ENABLED="true"` | [`wrangler.jsonc`](../../wrangler.jsonc), [`worker-configuration.d.ts`](../../worker-configuration.d.ts)의 true 리터럴 |
+| 소스 활성화 이력 | 2026-09-24 13:17:49 +0900 | 커밋 [`f896daa54838a42ec9318b230f8ff9016e752777`](https://github.com/damdam6/vocabulary-study/commit/f896daa54838a42ec9318b230f8ff9016e752777), `feat: 운영 중국어 TTS 활성화` |
+| 배포된 version / deployment 식별자 | 미확인 | 이번 대조는 로컬 소스와 Git 이력만 확인함 |
+| 배포된 Worker의 flag / binding / 설정 tuple | 미확인 | 소스 true와 실제 배포 설정을 동일시하지 않음 |
+| 환경별 secret 주입 / 실제 접근 | 현재 상태 미확인 | 9월 17일 관찰은 [환경 기록](chinese-tts-audio-environment.md)에 보존. 생성 타입의 secret 이름은 주입·접근 성공 증거가 아님 |
+| 실제 endpoint / model / R2 객체 검증 | 미확인 | 이후 실환경 성공 증거를 이 문서에서 확보하지 못함 |
+| 청취 / 모바일 / p95 / 계량 / 롤백 검증 | 미확인 | §9 출시 gate 유지 |
+
+소스 활성화 커밋의 제목·날짜만으로 배포 성공이나 출시 승인·검증 완료를 판정하지 않는다. 확인된 배포 식별자·환경·검증 시각·결과가 확보되면 해당 행과 출시 gate를 함께 갱신한다.
+
+### 운영 확인 절차
 
 운영 담당은 다음 네 상태를 각각 확인한다.
 
@@ -41,7 +57,7 @@
 
 ## 4. 기능 활성화 후의 안전한 확인 순서
 
-활성화는 별도 승인된 출시 작업에서만 한다.
+소스는 이미 활성화돼 있다(§3). 실제 배포 설정 확인과 추가 활성화·변경은 별도 승인된 출시 작업에서 수행한다.
 
 1. 검증 환경에서 `TTS_ENABLED`와 전체 설정 tuple을 확인한다. 기본 tuple은 provider `qwen`, model `qwen-audio-3.0-tts-flash`, voice `longanfengyue`, rate `1.0`, revision `tts-v1`, region `intl`, output `mp3`, adapter `qwen-ws-v1`, pronunciation policy `pinyin-none-v1`, audio settings `[24000,128,50,1,0,["zh"],false,null]`이다.
 2. 인증된 `zh` 프로필의 200 코드 포인트 이하 표제어로 `/api/words` capability를 확인한다. `generic` 프로필, 미인증 요청, 기능 off에서는 capability/버튼/R2/provider 요청이 없어야 한다. AC-01/14의 직접 route 검증은 [`worker/routes/tts.test.ts`](../../worker/routes/tts.test.ts)의 parameterized validation 증거다.
@@ -88,7 +104,7 @@ Qwen `task-finished` payload에 정수 `usage.characters`가 있을 때만 provi
 
 ## 9. 출시 gate
 
-아래 항목은 그래프/자동 테스트 완료와 별도의 출시 확인이다.
+아래 항목은 그래프/자동 테스트 완료 및 소스 true와 별도의 출시 확인이다. 2026-09-26 문서 대조에서는 후속 완료 증거를 확보하지 못했으므로 체크하지 않는다.
 
 - [ ] 운영·개발/테스트 secret 주입 및 deployed secret 이름
 - [ ] 국제 endpoint와 실제 model 접근
@@ -98,4 +114,4 @@ Qwen `task-finished` payload에 정수 `usage.characters`가 있을 때만 provi
 - [ ] 준비된 음성·신규 합성 p95와 실제 로그 계량
 - [ ] 승인된 활성화와 rollback rehearsal
 
-이 gate가 남아 있어도 문서 PR의 완료는 제품/운영 계약과 미검증 경계를 정확히 기록하는 것으로 한정한다. 현재 `TTS_ENABLED=false`이며 이 문서 작성 중에는 cloud command, key 입력, 배포, 유료 합성, R2 list/get/put/delete를 실행하지 않았다.
+이 gate가 남아 있어도 문서 PR의 완료는 제품/운영 계약과 미검증 경계를 정확히 기록하는 것으로 한정한다. 현재 소스는 `TTS_ENABLED=true`이고 배포 상태는 미확인이다. 2026-09-26 문서 정합성 작업 중에는 cloud command, key 입력, 배포, 유료 합성, R2 list/get/put/delete를 실행하지 않았다.

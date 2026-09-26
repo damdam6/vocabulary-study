@@ -1,8 +1,8 @@
 # 중국어 표제어 음성 재생 아키텍처
 
-> 작성일: 2026-09-14 · 개정일: 2026-09-15 · 브랜치: `feat/ch-sound` · 분석 기준 커밋: `10dc04c`.
+> 작성일: 2026-09-14 · 개정일: 2026-09-26 · 브랜치: `feat/ch-sound` · 분석 기준 커밋: `10dc04c`.
 >
-> 상태: **병합된 구현 계약 및 출시 전 운영 기준**. 기능 구현과 #150 자동 회귀는 `feat/ch-sound`에 병합됐다. 유료 합성·청취 테스트·실제 배포 활성화는 수행하지 않았다. 2026-09-15 소유자가 QwenCloud / `qwen-audio-3.0-tts-flash`를 확정했고 API 키 발급 사실만 확인했다. 음색·속도는 구현 기본값이며 실제 secret 주입·연결은 미검증이다.
+> 상태: **병합된 구현 계약 및 출시 전 운영 기준**. 기능 구현과 #150 자동 회귀는 `feat/ch-sound`에 병합됐다. 2026-09-24 커밋 `f896daa54838a42ec9318b230f8ff9016e752777` 이후 현재 소스는 `TTS_ENABLED=true`다. 2026-09-26 문서 대조 기준 배포된 version/설정과 실제 합성·청취의 후속 검증 결과는 미확인이다([운영 런북 §3](../plans/chinese-tts-audio-operations.md#3-secret-수명과-배포-상태를-분리한다)). 2026-09-15 소유자가 QwenCloud / `qwen-audio-3.0-tts-flash`를 확정했고 API 키 발급 사실만 확인했다. 음색·속도는 구현 기본값이며 실제 secret 주입·연결은 미검증이다.
 >
 > 2026-09-14 개정: 소유자의 저장 방식 채택을 반영해 **첫 요청 시 생성 + 비공개 R2 지속 저장**으로 변경했다. 원안의 Cache API 단독 보관안을 대체하며, 등록 직후 선생성은 후속 단계로 둔다.
 >
@@ -402,7 +402,7 @@ TTS API의 정상 응답도 기존 `apiFetch` 성공 콜백을 호출하므로 �
 
 | 설정 | 위치 | 초기 제안 / 의미 |
 |---|---|---|
-| `TTS_ENABLED` | Worker var | 기본 `false`, 준비 완료 후 `true` |
+| `TTS_ENABLED` | Worker var | 2026-09-17 baseline `false` → 2026-09-24 소스 `true`. 배포 설정·검증 완료는 별도 확인 |
 | `TTS_PROVIDER` | Worker var | `qwen`. 이번 구현은 선택한 Qwen adapter만 지원 |
 | `TTS_MODEL` | Worker var | 확정 `qwen-audio-3.0-tts-flash`, 다른 모델 값은 미설정 오류 |
 | `TTS_VOICE` | Worker var | 기본 `longanfengyue`, 출시 전 청취 검증 |
@@ -471,6 +471,8 @@ Vitest node 테스트와 기존 jsdom 헬퍼를 사용한다. R2Bucket의 get/�
 구현 후 프로젝트 명령은 `npm test`, `npm run lint`, `npm run build`다. 현재 문서만 작성하는 단계에서는 앱 테스트를 실행해 기능 검증으로 제시하지 않는다. 브라우저 QA는 iOS Safari·Android Chrome·desktop에서 실제 오디오·차단·다음 문제 전환·200자 표시까지 검증하며 버전과 결과를 기록한다.
 
 ## 12. 적용 순서와 롤백
+
+아래 1~4는 초기 출시 절차이며 실행 완료 이력이 아니다. 현재 소스 true는 §9와 운영 런북 §3을 따른다. 이 절차의 false baseline을 현재 설정이나 즉시 롤백 지시로 읽지 않는다. 실제 배포·검증 완료 여부는 별도 증거로 확인한다.
 
 1. 확정 모델 `qwen-audio-3.0-tts-flash`와 기본 음색·속도를 적용한다. 키 발급 완료와 별개로 환경별 `DASHSCOPE_API_KEY` 주입, 국제 endpoint·모델 접근·계량/무료 조건을 확인하고 출시 전 실제 WebSocket 완료·청취를 검증한다.
 2. 코드와 UI를 완성하고 기본 `TTS_ENABLED=false`로 기존 기능 회귀를 확인한다.
