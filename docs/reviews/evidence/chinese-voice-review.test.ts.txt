@@ -1,0 +1,71 @@
+import { expect, it, vi } from 'vitest';
+import { createPronunciationController } from '../../../src/lib/speak.ts';
+import { createTtsBlobCache } from '../../../src/lib/ttsBlobCache.ts';
+import { createR2TtsAudioService } from '../../../worker/lib/tts/service.ts';
+import { resolveTtsConfig } from '../../../worker/lib/tts/config.ts';
+
+// 리뷰용 현상 재현: 기대 제품 동작이 아니라 현재 결함을 단언한다.
+it('R1: 공개 전에 hidden을 거치면 reveal 및 반복 수동 클릭 후에도 play가 0회다', async () => {
+  const play = vi.fn().mockResolvedValue({ status: 'started' });
+  const transport = vi.fn().mockResolvedValue({
+    audio: new Blob(['audio']), source: 'GENERATED', storage: 'SAVED',
+    pronunciation: 'absent', revision: 'tts-v1',
+  });
+  const controller = createPronunciationController({
+    profileId: 'review', capability: { enabled: true, revision: 'tts-v1', maxTextLength: 200 },
+    transport, cache: createTtsBlobCache(),
+    audio: { play, stop() {}, dispose() {}, subscribe: () => () => {} },
+  });
+  controller.activate('q1', { text: '你好', pinyin: null });
+  controller.stop('hidden');
+  // usePronunciation의 visible 분기는 controller에 resume을 전달하지 않는다.
+  controller.prepare('q1');
+  controller.reveal('q1');
+  controller.replay('q1');
+  await Promise.resolve();
+  await Promise.resolve();
+  controller.replay('q1');
+  expect(transport).toHaveBeenCalledTimes(1);
+  expect(controller.getSnapshot().status).toBe('ready');
+  expect(play).toHaveBeenCalledTimes(0);
+  controller.dispose();
+});
+
+it('R2: R2 본문 읽기 deadline 뒤에도 reader가 잠겨 있고 cancel되지 않는다', async () => {
+  const cancel = vi.fn();
+  let bodyController!: ReadableStreamDefaultController<Uint8Array>;
+  let readStarted!: () => void;
+  const reading = new Promise<void>((resolve) => { readStarted = resolve; });
+  const body = new ReadableStream<Uint8Array>({
+    start(controller) { bodyController = controller; },
+    pull() { readStarted(); return new Promise<void>(() => {}); },
+    cancel,
+  });
+  const bucket = {
+    get: vi.fn().mockResolvedValue({ size: 417, httpMetadata: { contentType: 'audio/mpeg' }, body }),
+    put: vi.fn(),
+  };
+  const resolved = resolveTtsConfig({ TTS_ENABLED: 'true', DASHSCOPE_API_KEY: 'test-only', TTS_AUDIO: bucket });
+  if (resolved.status !== 'ready') throw new Error('test config');
+  let deadline!: () => void;
+  const synthesize = vi.fn();
+  const service = createR2TtsAudioService(bucket, {
+    provider: { pronunciationMode: 'none', synthesize },
+    clock: { now: () => 0, setTimeout(callback) { deadline = callback; return callback; }, clearTimeout() {} },
+  });
+  const pending = service({
+    profile: { id: 'review', sheetId: 'test-sheet' }, input: { text: '你好', pinyin: null },
+    config: resolved.config, signal: new AbortController().signal,
+  });
+  const assertion = expect(pending).rejects.toMatchObject({ code: 'tts_storage_unavailable' });
+  await reading;
+  // 키 해시 계산이 끝나고 storage reader가 획득될 때까지 기다린다.
+  await vi.waitFor(() => expect(body.locked).toBe(true));
+  deadline();
+  await assertion;
+  expect(cancel).not.toHaveBeenCalled();
+  expect(body.locked).toBe(true);
+  expect(synthesize).not.toHaveBeenCalled();
+  bodyController.close(); // 재현 후 테스트 자원 정리
+  await Promise.resolve();
+});

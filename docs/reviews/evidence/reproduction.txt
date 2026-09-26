@@ -1,0 +1,12 @@
+
+> vocabulary-study@0.0.0 test
+> vitest run --configLoader runner docs/reviews/evidence/chinese-voice-review.test.ts
+
+
+ RUN  v4.1.10 /Users/damdam6/Documents/pj-workspace/pj-worktrees/vocabulary-study/chinese-voice-review/board/vocabulary-study
+
+
+ Test Files  1 passed (1)
+      Tests  2 passed (2)
+   Start at  11:11:24
+   Duration  187ms (transform 45ms, setup 0ms, import 60ms, tests 58ms, environment 0ms)
