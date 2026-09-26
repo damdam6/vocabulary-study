@@ -4,6 +4,7 @@ import { createMp3Fixture } from "./fixtures/mp3.ts";
 import { normalizeTtsInput } from "./input.ts";
 import { createR2TtsAudioService, createTtsAudioService, TtsServiceError } from "./service.ts";
 import { createQwenTtsProvider, type QwenWebSocket } from "./providers/qwen.ts";
+import type { TtsAudioStorageObject } from "./storage.ts";
 import {
   TTS_ADAPTER_VERSION,
   TTS_AUDIO_SETTINGS,
@@ -91,6 +92,102 @@ class SocketDouble implements QwenWebSocket {
 afterEach(() => vi.useRealTimers());
 
 describe("createTtsAudioService", () => {
+  it.each(["deadline", "abort"])("observes a read rejected while starting at the %s boundary", async (cause) => {
+    let now = 0;
+    const controller = new AbortController();
+    const reason = new Error("request cancelled");
+    const upstream = provider();
+    let readSignal: AbortSignal | undefined;
+    const storage = {
+      get: vi.fn((_key: string, signal?: AbortSignal) => {
+        readSignal = signal;
+        if (cause === "abort") controller.abort(reason);
+        else now = 2000;
+        return Promise.reject(new Error("late read failure"));
+      }),
+      putIfAbsent: vi.fn(),
+    };
+    const timing = controlledClock();
+    const result = createTtsAudioService({ storage, provider: upstream, clock: { ...timing.clock, now: () => now } })(request(controller.signal));
+    if (cause === "abort") await expect(result).rejects.toBe(reason);
+    else await expect(result).rejects.toMatchObject({ code: "tts_storage_unavailable" });
+    expect(readSignal?.aborted).toBe(true);
+    expect(upstream.synthesize).not.toHaveBeenCalled();
+  });
+
+  it.each(["deadline", "abort"])("cleans a pending R2 reader on %s without synthesizing", async (cause) => {
+    const cancel = vi.fn(() => new Promise<void>(() => {}));
+    const body = new ReadableStream<Uint8Array>({ cancel });
+    const bucket = { get: vi.fn().mockResolvedValue({ size: 417, httpMetadata: { contentType: "audio/mpeg" }, body }), put: vi.fn() };
+    const timing = controlledClock();
+    const upstream = provider();
+    const controller = new AbortController();
+    const reason = new Error("request cancelled");
+    const result = createR2TtsAudioService(bucket, { provider: upstream, clock: timing.clock })(request(controller.signal));
+    const assertion = cause === "abort" ? expect(result).rejects.toBe(reason) : expect(result).rejects.toMatchObject({ code: "tts_storage_unavailable" });
+    await vi.waitFor(() => expect(body.locked).toBe(true));
+    if (cause === "abort") controller.abort(reason);
+    else timing.fire();
+    await assertion;
+    expect(cancel).toHaveBeenCalledTimes(1);
+    expect(body.locked).toBe(false);
+    expect(upstream.synthesize).not.toHaveBeenCalled();
+    expect(bucket.put).not.toHaveBeenCalled();
+  });
+
+  it.each(["deadline", "abort"])("cancels an R2 object arriving after %s and consumes cancel rejection", async (cause) => {
+    const late = deferred<TtsAudioStorageObject>();
+    const cancel = vi.fn().mockRejectedValue(new Error("cancel failed"));
+    const body = new ReadableStream<Uint8Array>({ cancel });
+    const bucket = { get: vi.fn().mockReturnValue(late.promise), put: vi.fn() };
+    const timing = controlledClock();
+    const controller = new AbortController();
+    const reason = new Error("request cancelled");
+    const upstream = provider();
+    const result = createR2TtsAudioService(bucket, { provider: upstream, clock: timing.clock })(request(controller.signal));
+    const assertion = cause === "abort" ? expect(result).rejects.toBe(reason) : expect(result).rejects.toMatchObject({ code: "tts_storage_unavailable" });
+    await vi.waitFor(() => expect(bucket.get).toHaveBeenCalledTimes(1));
+    if (cause === "abort") controller.abort(reason);
+    else timing.fire();
+    await assertion;
+    late.resolve({ size: 417, httpMetadata: { contentType: "audio/mpeg" }, body });
+    await vi.waitFor(() => expect(cancel).toHaveBeenCalledTimes(1));
+    expect(body.locked).toBe(false);
+    expect(upstream.synthesize).not.toHaveBeenCalled();
+  });
+
+  it("cleans conflict re-reads within the remaining write budget and preserves put observation", async () => {
+    let now = 0;
+    const timing = controlledClock();
+    const setTimeout = vi.fn(timing.clock.setTimeout);
+    const cancel = vi.fn().mockRejectedValue(new Error("cancel failed"));
+    const body = new ReadableStream<Uint8Array>({ cancel });
+    const put = deferred<null>();
+    const bucket = {
+      get: vi.fn().mockResolvedValueOnce(null).mockResolvedValueOnce({ size: 417, httpMetadata: { contentType: "audio/mpeg" }, body }),
+      put: vi.fn().mockReturnValue(put.promise),
+    };
+    const audio = createMp3Fixture();
+    const observed = vi.fn();
+    const background: Promise<unknown>[] = [];
+    const result = createR2TtsAudioService(bucket, {
+      provider: provider(audio), clock: { ...timing.clock, now: () => now, setTimeout },
+      observeStorage: observed, registerBackgroundTask: (promise) => background.push(promise),
+    })(request());
+    await vi.waitFor(() => expect(bucket.put).toHaveBeenCalledTimes(1));
+    now = 1500;
+    put.resolve(null);
+    await vi.waitFor(() => expect(body.locked).toBe(true));
+    expect(setTimeout).toHaveBeenLastCalledWith(expect.any(Function), 500);
+    now = 2000;
+    timing.fire();
+    await expect(result).resolves.toMatchObject({ audio, source: "GENERATED", storage: "UNCONFIRMED" });
+    expect(cancel).toHaveBeenCalledTimes(1);
+    expect(body.locked).toBe(false);
+    await Promise.all(background);
+    expect(observed).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ outcome: "conflict" }));
+  });
+
   it("returns a valid R2 hit without contacting the provider or writing", async () => {
     const audio = createMp3Fixture();
     const storage = { get: vi.fn().mockResolvedValue({ bytes: audio, contentType: "audio/mpeg" }), putIfAbsent: vi.fn() };

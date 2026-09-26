@@ -87,6 +87,51 @@ describe("R2 오디오 키", () => {
 });
 
 describe("R2 조회", () => {
+  it.each(["pending", "reject"])("preserves overflow errors and releases the lock when cancel is %s", async (mode) => {
+    const cancel = vi.fn(() => mode === "pending" ? new Promise<void>(() => {}) : Promise.reject(new Error("cancel failed")));
+    const body = new ReadableStream<Uint8Array>({
+      start(controller) { controller.enqueue(new Uint8Array(MAX_TTS_AUDIO_BYTES + 1)); }, cancel,
+    });
+    const bucket = { get: vi.fn().mockResolvedValue(object(new Uint8Array([1]), { body })), put: vi.fn() };
+    await expect(createTtsAudioStorage(bucket, () => true).get("key")).rejects.toBeInstanceOf(TtsStoredAudioError);
+    expect(cancel).toHaveBeenCalledTimes(1);
+    expect(body.locked).toBe(false);
+  });
+
+  it.each(["pending", "reject"])("abort releases the pending reader even when cancel is %s", async (mode) => {
+    const cancel = vi.fn(() => mode === "pending" ? new Promise<void>(() => {}) : Promise.reject(new Error("cancel failed")));
+    const body = new ReadableStream<Uint8Array>({ cancel });
+    const bucket = { get: vi.fn().mockResolvedValue(object(new Uint8Array([1]), { body })), put: vi.fn() };
+    const controller = new AbortController();
+    const reason = new Error("request cancelled");
+    const result = createTtsAudioStorage(bucket, () => true).get("key", controller.signal);
+    const assertion = expect(result).rejects.toBe(reason);
+    await vi.waitFor(() => expect(body.locked).toBe(true));
+    controller.abort(reason);
+    await assertion;
+    expect(cancel).toHaveBeenCalledExactlyOnceWith(reason);
+    expect(body.locked).toBe(false);
+  });
+
+  it.each(["mime", "size"])("cancels rejected %s metadata without waiting for cancellation", async (field) => {
+    const cancel = vi.fn(() => new Promise<void>(() => {}));
+    const body = new ReadableStream<Uint8Array>({ cancel });
+    const invalid = object(new Uint8Array([1]), { body, ...(field === "mime" ? { httpMetadata: {} } : { size: MAX_TTS_AUDIO_BYTES + 1 }) });
+    const bucket = { get: vi.fn().mockResolvedValue(invalid), put: vi.fn() };
+    await expect(createTtsAudioStorage(bucket, () => true).get("key")).rejects.toBeInstanceOf(TtsStoredAudioError);
+    expect(cancel).toHaveBeenCalledTimes(1);
+    expect(body.locked).toBe(false);
+  });
+
+  it("does not start an already aborted get", async () => {
+    const bucket = { get: vi.fn(), put: vi.fn() };
+    const controller = new AbortController();
+    const reason = new Error("already aborted");
+    controller.abort(reason);
+    await expect(createTtsAudioStorage(bucket, () => true).get("key", controller.signal)).rejects.toBe(reason);
+    expect(bucket.get).not.toHaveBeenCalled();
+  });
+
   it("null만 miss로 반환하고 정상 MP3는 완전한 바이트로 반환한다", async () => {
     const bucket: TtsAudioStorageBucket = { get: vi.fn().mockResolvedValue(null), put: vi.fn() };
     const storage = createTtsAudioStorage(bucket, () => true);
