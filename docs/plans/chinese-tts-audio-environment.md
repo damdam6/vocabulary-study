@@ -1,8 +1,14 @@
 # 중국어 TTS 환경 준비 기록
 
-> 최종 확인일: 2026-09-17 · 대상 Worker: `vocabulary-study` · Cloudflare 계정: `Dambi626626@gmail.com's Account` · 운영 기능 플래그: `TTS_ENABLED="false"`
+> 실환경 관찰일: 2026-09-17 · 대상 Worker: `vocabulary-study` · Cloudflare 계정: `Dambi626626@gmail.com's Account` · 당시 소스 기능 플래그: `TTS_ENABLED="false"`
 
 이 문서는 TTS 환경 연결의 비밀이 아닌 상태만 기록한다. API 키 값, Cloudflare 인증 토큰, R2 객체 내용은 기록하거나 확인하지 않는다. 타입 생성과 로컬 테스트는 실제 버킷 존재·권한·시크릿 접근을 증명하지 않는다.
+
+## 2026-09-26 소스 상태 갱신
+
+2026-09-24 커밋 `f896daa54838a42ec9318b230f8ff9016e752777`에서 `wrangler.jsonc`와 생성 타입의 `TTS_ENABLED`가 true로 변경됐다. 현재 소스는 `TTS_ENABLED="true"`다. 배포된 version/설정, 현재 secret 주입·접근과 실제 모델·R2·청취 검증 상태는 미확인이다. 근거와 상태별 구분은 [운영 런북 §3](chinese-tts-audio-operations.md#3-secret-수명과-배포-상태를-분리한다)을 따른다.
+
+아래는 **2026-09-17 당시의 환경 관찰과 후속 확인 계획**을 보존한 기록이다. 현재 상태를 재조회한 결과가 아니며 당시 secret 미주입을 현재도 미주입이라는 뜻으로 해석하지 않는다.
 
 ## 고정 Worker 설정
 
@@ -41,7 +47,7 @@
 2. 개발/테스트에서 사용할 실제 secret 주입 방식을 확정하고 주입 상태를 확인한다.
 3. 배포된 Worker의 최종 `TTS_AUDIO` binding과 실제 접근 확인 상태. 객체 접근 자체는 별도 승인된 출시 검증에서 수행한다.
 
-단일 `TTS_AUDIO` 항목에 운영 `bucket_name`과 검증 `preview_bucket_name`을 연결했다. `TTS_ENABLED`는 출시 확인 전 계속 `false`로 둔다.
+단일 `TTS_AUDIO` 항목에 운영 `bucket_name`과 검증 `preview_bucket_name`을 연결했다. 당시에는 출시 확인 전 `TTS_ENABLED=false`를 유지하는 계획이었다. 이후 소스 활성화는 위 갱신 기록을 따르며, 이 과거 계획을 현재 설정이나 false 롤백 지시로 해석하지 않는다.
 
 ## 검증 경계와 후속 작업
 
