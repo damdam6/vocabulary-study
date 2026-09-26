@@ -86,9 +86,9 @@ function Mode1Card({ question, contentType, onJudged, pronunciation }: Mode1Card
   useEffect(() => {
     if (!viewReady) return
 
-    if (!revealDeliveredRef.current) {
+    if (!revealDeliveredRef.current && pronunciationBinding) {
       revealDeliveredRef.current = true
-      pronunciationBinding?.reveal()
+      pronunciationBinding.reveal()
     }
 
     if (shouldMoveFocusRef.current && document.activeElement === revealButtonRef.current) {
