@@ -267,6 +267,26 @@ describe("PronunciationController", () => {
     expect(requests).toHaveLength(1);
   });
 
+  it("R1: 공개 전 hidden 이후 공개는 자동 재생 없이 수동 재생과 Blob 재사용을 허용한다", async () => {
+    const { controller, requests, audio } = setup();
+    controller.activate("q", { text: "中", pinyin: null });
+    controller.stop("hidden");
+    controller.prepare("q");
+    controller.reveal("q");
+    expect(requests).toHaveLength(0);
+    expect(audio.blobs).toHaveLength(0);
+    controller.replay("q");
+    const ready = response();
+    requests[0].pending.resolve(ready);
+    await Promise.resolve();
+    expect(audio.blobs).toEqual([ready.audio]);
+    controller.reveal("q");
+    expect(audio.blobs).toHaveLength(1);
+    controller.replay("q");
+    expect(audio.blobs).toEqual([ready.audio, ready.audio]);
+    expect(requests).toHaveLength(1);
+  });
+
   it("hidden은 자동 재개를 막고 manual replay만 복귀시키며 advance는 옛 명령을 무시한다", async () => {
     const { controller, requests, audio } = setup();
     controller.activate("q", { text: "中", pinyin: null });
