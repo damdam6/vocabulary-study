@@ -1052,7 +1052,7 @@ button {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  margin: 12px 0 12px;
+  margin: 20px 0 12px;
 }
 
 .study-scope-segment {
