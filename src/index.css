@@ -1792,21 +1792,9 @@ textarea.register-modal-input {
 .register-modal-actions { flex-shrink: 0; }
 
 /* 홈 자동 재생 설정: native checkbox keeps keyboard and focus behavior. */
-/* Compact audio switch; the native input retains keyboard and screen-reader support. */
+/* Home session summary and audio button. */
 .session-options-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
 .session-options-row:empty { display: none; }
 .session-options-row .session-count { flex: 1; min-width: 0; flex-wrap: wrap; }
 .session-options-row .session-count-rest { white-space: normal; }
-.audio-preference { margin-left: auto; flex: 0 0 auto; display: flex; flex-direction: column; align-items: flex-end; }
-.audio-preference-row { position: relative; display: inline-flex; align-items: center; gap: 10px; min-height: 44px; cursor: pointer; }
-.audio-preference-icon { width: 22px; height: 22px; color: var(--text-muted); }
-.audio-preference-row:has(input:checked) .audio-preference-icon { color: var(--accent); }
-.audio-preference-row input { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-.audio-preference-track { position: relative; width: 42px; height: 24px; border-radius: 999px; background: #b7bfce; transition: background 160ms ease; }
-.audio-preference-track::after { content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px #0002; transition: transform 160ms ease; }
-.audio-preference-row input:checked + .audio-preference-track { background: var(--accent); }
-.audio-preference-row input:checked + .audio-preference-track::after { transform: translateX(18px); }
-.audio-preference-row input:focus-visible + .audio-preference-track { outline: 2px solid var(--accent); outline-offset: 4px; }
-@media (prefers-reduced-motion: reduce) {
-  .audio-preference-track, .audio-preference-track::after { transition: none; }
-}
+.home-audio-button[aria-pressed="true"] { color: var(--accent); }

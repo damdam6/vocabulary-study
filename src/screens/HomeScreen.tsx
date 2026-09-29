@@ -194,7 +194,16 @@ function HomeScreen({ onStart, onNavigateRegister, onSwitchProfile }: HomeScreen
           <h1 className="home-title">오늘의 학습</h1>
           {profile && <p className="home-profile-name">{profile.name}</p>}
         </div>
-        <HomeUtilBar onNavigateRegister={onNavigateRegister} onSwitchProfile={onSwitchProfile} />
+        <HomeUtilBar
+          onNavigateRegister={onNavigateRegister}
+          onSwitchProfile={onSwitchProfile}
+          audioAutoplay={audioAutoplay}
+          onToggleAudio={status === "ready" && profile?.contentType === "zh" && tts.enabled ? () => {
+            const enabled = !audioAutoplay;
+            setAudioAutoplay(enabled);
+            setAudioSaveFailed(!saveAudioAutoplay(profile.id, enabled));
+          } : undefined}
+        />
       </div>
 
       {status === "loading" && (
@@ -242,6 +251,8 @@ function HomeScreen({ onStart, onNavigateRegister, onSwitchProfile }: HomeScreen
         />
       )}
 
+      {audioSaveFailed && <p role="status">설정을 저장하지 못했어요. 이번 학습에만 적용돼요.</p>}
+
       <div className="home-spacer" />
 
       {retryQueueLength > 0 && (
@@ -268,33 +279,7 @@ function HomeScreen({ onStart, onNavigateRegister, onSwitchProfile }: HomeScreen
         </p>
       )}
 
-      {status === "ready" && profile?.contentType === "zh" && tts.enabled && (
-        <div className="audio-preference">
-          <label className="audio-preference-row">
-            <svg className="audio-preference-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
-              <path d="M4.5 9.5v5h3l4 3.5V6l-4 3.5z" />
-              {audioAutoplay ? (
-                <><path d="M15 9a4 4 0 0 1 0 6" /><path d="M17.5 6.5a7.5 7.5 0 0 1 0 11" /></>
-              ) : (
-                <path d="m16 9 5 6m0-6-5 6" />
-              )}
-            </svg>
-            <input
-              type="checkbox"
-              role="switch"
-              aria-label="발음 자동 재생"
-              checked={audioAutoplay}
-              onChange={(event) => {
-                const enabled = event.target.checked;
-                setAudioAutoplay(enabled);
-                setAudioSaveFailed(!saveAudioAutoplay(profile.id, enabled));
-              }}
-            />
-            <span className="audio-preference-track" aria-hidden="true" />
-          </label>
-          {audioSaveFailed && <p role="status">설정을 저장하지 못했어요. 이번 학습에만 적용돼요.</p>}
-        </div>
-      )}
+
       </div>
 
       {status !== "error" && (

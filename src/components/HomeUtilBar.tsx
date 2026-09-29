@@ -7,6 +7,8 @@
 interface HomeUtilBarProps {
   onNavigateRegister: () => void
   onSwitchProfile: () => void
+  audioAutoplay?: boolean
+  onToggleAudio?: () => void
 }
 
 // 아이콘은 인라인 SVG 자체 제작 — 아이콘 라이브러리 도입 없음(플랜 §8 결정).
@@ -54,12 +56,25 @@ function PersonIcon() {
   )
 }
 
-function HomeUtilBar({ onNavigateRegister, onSwitchProfile }: HomeUtilBarProps) {
+function HomeUtilBar({ onNavigateRegister, onSwitchProfile, audioAutoplay, onToggleAudio }: HomeUtilBarProps) {
   return (
     <div className="home-util-bar">
       <button type="button" className="home-util-button" aria-label="수정" onClick={onNavigateRegister}>
         <EditIcon />
       </button>
+
+      {onToggleAudio && (
+        <button type="button" className="home-util-button home-audio-button" aria-label="발음 자동 재생" aria-pressed={audioAutoplay} onClick={onToggleAudio}>
+          <svg className="home-util-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
+            <path d="M4.5 9.5v5h3l4 3.5V6l-4 3.5z" />
+            {audioAutoplay ? (
+              <><path d="M15 9a4 4 0 0 1 0 6" /><path d="M17.5 6.5a7.5 7.5 0 0 1 0 11" /></>
+            ) : (
+              <path d="m3 3 18 18" />
+            )}
+          </svg>
+        </button>
+      )}
 
       {/* 프로필 전환 (#78) — v1엔 로그아웃이 없어 다른 프로필로 갈아탈 유일한 경로.
           확인 단계 없이 즉시 전환한다(플랜 Q5). */}

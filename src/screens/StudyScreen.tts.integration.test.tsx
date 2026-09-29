@@ -571,8 +571,8 @@ describe("자동 재생 OFF", () => {
   it("홈 OFF 선택이 App을 거쳐 세션에 전달된다", async () => {
     const rendered = renderComponent(<App />);
     unmountCurrent = rendered.unmount;
-    await vi.waitFor(() => expect(rendered.container.querySelector('[role="switch"]')).not.toBeNull());
-    fire(() => rendered.container.querySelector<HTMLInputElement>('[role="switch"]')!.click());
+    await vi.waitFor(() => expect(rendered.container.querySelector('[aria-label="발음 자동 재생"]')).not.toBeNull());
+    fire(() => rendered.container.querySelector<HTMLButtonElement>('[aria-label="발음 자동 재생"]')!.click());
     fire(() => rendered.container.querySelector<HTMLButtonElement>(".start-button")!.click());
     fire(() => rendered.container.querySelector<HTMLButtonElement>(".flip-reveal-button")!.click());
     fire(() => transitionEnd(rendered.container.querySelector(".flip-card")!));

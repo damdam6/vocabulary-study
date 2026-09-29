@@ -466,13 +466,13 @@ describe("자동 재생 설정", () => {
     fetchWordsMock.mockResolvedValue({ ...wordsResponse, tts: { enabled: true, revision: "r1", maxTextLength: 200 } });
     const first = setup();
     await flush();
-    const toggle = first.container.querySelector<HTMLInputElement>('[role="switch"]')!;
-    expect(toggle.checked).toBe(true);
+    const toggle = first.container.querySelector<HTMLButtonElement>('[aria-label="발음 자동 재생"]')!;
+    expect(toggle.getAttribute("aria-pressed")).toBe("true");
     fire(() => toggle.click());
-    expect(toggle.checked).toBe(false);
+    expect(toggle.getAttribute("aria-pressed")).toBe("false");
     unmountCurrent?.();
     const second = setup();
     await flush();
-    expect(second.container.querySelector<HTMLInputElement>('[role="switch"]')!.checked).toBe(false);
+    expect(second.container.querySelector<HTMLButtonElement>('[aria-label="발음 자동 재생"]')!.getAttribute("aria-pressed")).toBe("false");
   });
 });
