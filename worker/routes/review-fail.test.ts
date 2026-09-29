@@ -27,6 +27,7 @@ describe("POST /api/review-fail — 문장 원문 행 식별", () => {
     const writes: { range: string; values: string[][] }[] = [];
     vi.stubGlobal("fetch", vi.fn(async (input: string | URL, init?: RequestInit) => {
       const url = input.toString();
+      if (url.includes("?fields=")) return Response.json({ sheets: [{ properties: { title: TAB, sheetId: 0 } }] });
       if ((init?.method ?? "GET") === "GET") {
         return Response.json({ values: [
           ["我有2本书", "wrong", "wrong", "3", "3", "2026-09-20|7"],

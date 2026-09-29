@@ -72,7 +72,7 @@ function stubSheetsFetch(sheets: Record<string, SheetState>): {
       }
 
       if (method === "GET" && url.includes("?fields=")) {
-        return Response.json({ sheets: sheet.titles.map((title) => ({ properties: { title } })) });
+        return Response.json({ sheets: sheet.titles.map((title, sheetId) => ({ properties: { title, sheetId } })) });
       }
 
       if (url.includes(":batchUpdate") && !url.includes("/values:batchUpdate")) {

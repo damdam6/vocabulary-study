@@ -1,3 +1,4 @@
+import { isStudyModes } from "../../shared/studyModes.ts";
 /**
  * `GET /api/words` 클라이언트 — 홈 화면 현황 집계(#13)·세션 큐 구성(#14)·학습
  * 화면 출제(#15)가 공유하는 단어 목록 조회. 응답 형태는 worker/routes/words.ts 참고.
@@ -69,6 +70,9 @@ export async function fetchWords(signal?: AbortSignal): Promise<WordsResponse> {
   }
   // 서버 응답에는 fetchedAt도 실려 있지만(worker/routes/words.ts), 쓰는 곳이 없어 골라내지 않고 버린다.
   const data = (await response.json()) as RawWordsResponse;
+  if (data.words.some((word) => word.studyModes !== undefined && !isStudyModes(word.studyModes))) {
+    throw new Error("탭별 출제 유형이 올바르지 않습니다. 다시 불러와 주세요.");
+  }
   return {
     profile: data.profile,
     words: data.words,

@@ -460,10 +460,10 @@ describe("StudyScreen 중국어 음성 실제 연결 (#150)", () => {
       rendered.unmount();
     }
     expect(outcomes.map(({ records }) => ({ records }))).toEqual([
-      { records: [{ tab: "HSK4", hanzi: "经济", mode: "m1", isReview: false, timestamp: expect.any(String) }] },
-      { records: [{ tab: "HSK4", hanzi: "经济", mode: "m1", isReview: false, timestamp: expect.any(String) }] },
-      { records: [{ tab: "HSK4", hanzi: "经济", mode: "m1", isReview: false, timestamp: expect.any(String) }] },
-      { records: [{ tab: "HSK4", hanzi: "经济", mode: "m1", isReview: false, timestamp: expect.any(String) }] },
+      { records: [{ tab: "HSK4", hanzi: "经济", mode: "m1", isReview: false, studyModes: ["m1", "m2"], timestamp: expect.any(String) }] },
+      { records: [{ tab: "HSK4", hanzi: "经济", mode: "m1", isReview: false, studyModes: ["m1", "m2"], timestamp: expect.any(String) }] },
+      { records: [{ tab: "HSK4", hanzi: "经济", mode: "m1", isReview: false, studyModes: ["m1", "m2"], timestamp: expect.any(String) }] },
+      { records: [{ tab: "HSK4", hanzi: "经济", mode: "m1", isReview: false, studyModes: ["m1", "m2"], timestamp: expect.any(String) }] },
     ]);
     expect(outcomes.map(({ ttsCalls }) => ttsCalls)).toEqual([1, 1, 0, 1]);
   });
@@ -529,9 +529,9 @@ describe("StudyScreen 중국어 음성 실제 연결 (#150)", () => {
       rendered.unmount();
     }
     const expectedQueue = [
-      { kind: "review-fail", profileId: "zh", record: { tab: "HSK4", hanzi: "三" } },
-      { kind: "answer", profileId: "zh", record: { tab: "HSK4", hanzi: "一", mode: "m1", isReview: false, timestamp: "2026-09-17 09:00" } },
-      { kind: "answer", profileId: "zh", record: { tab: "HSK4", hanzi: "四", mode: "m2", isReview: false, timestamp: "2026-09-17 09:00" } },
+      { kind: "review-fail", profileId: "zh", record: { tab: "HSK4", hanzi: "三", studyModes: ["m1", "m2"] } },
+      { kind: "answer", profileId: "zh", record: { tab: "HSK4", hanzi: "一", mode: "m1", isReview: false, studyModes: ["m1", "m2"], timestamp: "2026-09-17 09:00" } },
+      { kind: "answer", profileId: "zh", record: { tab: "HSK4", hanzi: "四", mode: "m2", isReview: false, studyModes: ["m1", "m2"], timestamp: "2026-09-17 09:00" } },
     ];
     expect(outcomes).toEqual([
       { tts: 2, queue: expectedQueue },

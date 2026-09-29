@@ -1,3 +1,4 @@
+import "./TabModesScreen.css";
 // design-prd §3 홈 화면. 세션 큐 구성은 홈 책임(기능 PRD §6.1) — 시작 클릭 시
 // 이미 조회해 둔 단어로 큐를 만들어 onStart(queue)로 올린다(#15 셸 계약).
 // 현황 집계(sessionCount)와 큐가 같은 조회 결과를 쓰므로 수치가 어긋나지 않는다.
@@ -34,6 +35,7 @@ interface HomeScreenProps {
   /** 큐는 시트 문제 수 설정 상한까지 잘라서 올린다 — 세션 문제 수는 이 큐로 확정된다(#116). */
   onStart: (queue: SessionQuestion<WordEntry>[], context: StudySessionContext) => void
   onNavigateRegister: () => void
+  onNavigateTabModes?: () => void
   onSwitchProfile: () => void
 }
 
@@ -53,7 +55,7 @@ function describeScope(scope: StudyScope, tabs: readonly string[]): { name: stri
   return { name: ordered[0], rest: ordered.length > 1 ? ` 외 ${ordered.length - 1}개 탭` : "" };
 }
 
-function HomeScreen({ onStart, onNavigateRegister, onSwitchProfile }: HomeScreenProps) {
+function HomeScreen({ onStart, onNavigateRegister, onSwitchProfile, onNavigateTabModes }: HomeScreenProps) {
   const [status, setStatus] = useState<Status>("loading");
   const [words, setWords] = useState<WordEntry[]>([]);
   // 현황 집계의 기준일은 조회 시점으로 고정한다 — 범위를 바꿀 때마다 다시 계산해도 같은 날짜를 쓴다.
@@ -225,6 +227,8 @@ function HomeScreen({ onStart, onNavigateRegister, onSwitchProfile }: HomeScreen
           </div>
         </div>
       )}
+
+      {onNavigateTabModes && <button type="button" className="tab-modes-link" onClick={onNavigateTabModes}>탭별 출제 유형 설정</button>}
 
       <div className="home-spacer" />
 
