@@ -222,3 +222,13 @@ B열이 없으면 진단 상태는 `absent`, 있으면 `ignored / provider_hint_
 ## 10. 기존 문서 반영 계획
 
 이 문서화 단계에서 [PRD.md](PRD.md) §3·§7.3·§9.2·§10·§11, [PRD-general.md](PRD-general.md) §5.2·§7·§8, [design-prd.md](design-prd.md) §4.2·§4.3에 구현 계약을 연결했다. [아키텍처](architecture/chinese-tts-audio.md)와 [운영 런북](plans/chinese-tts-audio-operations.md)은 수명·진단·출시 순서를 소유하고, [#149 환경 기록](plans/chinese-tts-audio-environment.md)과 [#150 자동 검증](plans/chinese-tts-audio-verification.md)은 선행 증거와 한계를 보존한다. #150의 55 files/696 tests 및 4 files/32 tests·lint·build는 선행 동일 HEAD의 증거이며 이 문서 변경의 새 실행 결과가 아니다.
+
+
+## 홈 자동 재생 설정 (#192)
+
+홈의 `발음 자동 재생` 토글은 중국어 TTS가 사용 가능한 경우 표시한다. 기본값은 ON이다.
+OFF에서는 모드1 공개 및 모드2 오답 공개 시 자동 준비 요청과 재생을 모두 생략한다.
+정답 공개 후 스피커 버튼의 수동 재생은 유지하며, 모드2 정답 시 음성 요청이 없는 기존 정책도 유지한다.
+선택은 브라우저의 localStorage에 프로필별로 저장하며 기기 간 동기화하지 않는다.
+저장 실패 시 안내하고 현재 학습에는 선택값을 적용한다. 학습 시작 시 설정을 고정하므로 다른 창에서의 변경은 진행 중인 세션을 바꾸지 않는다.
+이 설정은 서버 TTS capability 및 탭별 출제 유형과 별개다.

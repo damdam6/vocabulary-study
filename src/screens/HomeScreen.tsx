@@ -4,6 +4,7 @@
 // 학습 범위(#189)도 이 성질을 지킨다 — 범위로 거른 배열(scopedWords) 하나를 현황 카드·
 // 세션 수·큐가 함께 쓴다.
 import { useEffect, useMemo, useState } from "react";
+import { readAudioAutoplay, saveAudioAutoplay } from "../lib/audioPreferences.ts";
 import HomeUtilBar from "../components/HomeUtilBar.tsx";
 import StudyScopePicker, { type StudyScopeKind } from "../components/StudyScopePicker.tsx";
 import { getStoredProfile, saveProfile, type PublicProfile, type WordEntry } from "../lib/api.ts";
@@ -28,6 +29,7 @@ import type { TtsCapability } from "../lib/ttsTypes.ts";
 export interface StudySessionContext {
   profile: PublicProfile
   tts: TtsCapability
+  audioAutoplay: boolean
 }
 
 interface HomeScreenProps {
@@ -65,6 +67,8 @@ function HomeScreen({ onStart, onNavigateRegister, onSwitchProfile }: HomeScreen
   const [retryQueueLength, setRetryQueueLength] = useState(0);
   // 시트별 세션 문제 수(세션 설정 플랜 §3.2) — words 응답 동봉값, 미동봉 시 fetchWords가 SESSION_CAP으로 폴백.
   const [sessionLimit, setSessionLimit] = useState(SESSION_CAP);
+  const [audioAutoplay, setAudioAutoplay] = useState(true);
+  const [audioSaveFailed, setAudioSaveFailed] = useState(false);
   const [tts, setTts] = useState<TtsCapability>({ enabled: false });
 
   // App.tsx가 홈 화면을 조건부로만 렌더링하므로, 홈을 벗어났다 돌아올 때마다
@@ -78,6 +82,8 @@ function HomeScreen({ onStart, onNavigateRegister, onSwitchProfile }: HomeScreen
         if (cancelled) return;
         setWords(fetched);
         setProfile(fetchedProfile);
+        setAudioAutoplay(readAudioAutoplay(fetchedProfile.id));
+        setAudioSaveFailed(false);
         saveProfile(fetchedProfile);
         setSessionLimit(settings.sessionLimit);
         setTts(fetchedTts);
@@ -171,7 +177,7 @@ function HomeScreen({ onStart, onNavigateRegister, onSwitchProfile }: HomeScreen
   const handleStart = () => {
     // canStart(sessionCount>0)와 같은 단어 집합(scopedWords)·같은 산식(같은 sessionLimit)이므로 빈 큐가 나올 수 없다
     if (profile === null) return;
-    onStart(buildSessionQueue(scopedWords, getSeoulToday(), profile.modes, undefined, sessionLimit), { profile, tts });
+    onStart(buildSessionQueue(scopedWords, getSeoulToday(), profile.modes, undefined, sessionLimit), { profile, tts, audioAutoplay });
   };
 
   const startLabel =
@@ -227,6 +233,27 @@ function HomeScreen({ onStart, onNavigateRegister, onSwitchProfile }: HomeScreen
       )}
 
       <div className="home-spacer" />
+
+      {status === "ready" && profile?.contentType === "zh" && tts.enabled && (
+        <div className="audio-preference">
+          <label className="audio-preference-row">
+            <span>발음 자동 재생</span>
+            <input
+              type="checkbox"
+              role="switch"
+              checked={audioAutoplay}
+              onChange={(event) => {
+                const enabled = event.target.checked;
+                setAudioAutoplay(enabled);
+                setAudioSaveFailed(!saveAudioAutoplay(profile.id, enabled));
+              }}
+            />
+            <span aria-hidden="true">{audioAutoplay ? "ON" : "OFF"}</span>
+          </label>
+          <p className="audio-preference-hint">꺼도 스피커 버튼을 눌러 들을 수 있어요.</p>
+          {audioSaveFailed && <p role="status">설정을 저장하지 못했어요. 이번 학습에만 적용돼요.</p>}
+        </div>
+      )}
 
       {scopePickerVisible && (
         <StudyScopePicker

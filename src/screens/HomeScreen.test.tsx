@@ -140,6 +140,7 @@ describe("세션 시작 — 시트 문제 수 설정이 큐에 반영된다 (#11
     expect(onStart.mock.calls[0]).toHaveLength(2);
     expect(onStart.mock.calls[0][0]).toHaveLength(35);
     expect(onStart.mock.calls[0][1]).toEqual({
+      audioAutoplay: true,
       profile,
       tts: { enabled: true, revision: "session-r1", maxTextLength: 200 },
     });
@@ -456,5 +457,22 @@ describe("학습 범위 선택 (#189, PRD-tab-scoped-study §4)", () => {
     expect(home.radio("전체").getAttribute("aria-checked")).toBe("true");
     expect(document.activeElement).toBe(home.radio("전체"));
     expect(home.chipTexts()).toEqual([]);
+  });
+});
+
+
+describe("자동 재생 설정", () => {
+  it("토글을 저장하고 다시 홈에 진입하면 OFF를 복원한다", async () => {
+    fetchWordsMock.mockResolvedValue({ ...wordsResponse, tts: { enabled: true, revision: "r1", maxTextLength: 200 } });
+    const first = setup();
+    await flush();
+    const toggle = first.container.querySelector<HTMLInputElement>('[role="switch"]')!;
+    expect(toggle.checked).toBe(true);
+    fire(() => toggle.click());
+    expect(toggle.checked).toBe(false);
+    unmountCurrent?.();
+    const second = setup();
+    await flush();
+    expect(second.container.querySelector<HTMLInputElement>('[role="switch"]')!.checked).toBe(false);
   });
 });

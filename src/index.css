@@ -1790,3 +1790,11 @@ textarea.register-modal-input {
   overflow-wrap: anywhere;
 }
 .register-modal-actions { flex-shrink: 0; }
+
+/* 홈 자동 재생 설정: native checkbox keeps keyboard and focus behavior. */
+.audio-preference { margin: 16px 0; }
+.audio-preference-row { display: flex; align-items: center; gap: 12px; min-height: 44px; cursor: pointer; }
+.audio-preference-row > span:first-child { flex: 1; }
+.audio-preference-row input { width: 22px; height: 22px; accent-color: var(--accent); }
+.audio-preference-row > span:last-child { min-width: 32px; color: var(--text-muted); font-size: 13px; }
+.audio-preference-hint { margin: 4px 0 0; color: var(--text-muted); font-size: 13px; }

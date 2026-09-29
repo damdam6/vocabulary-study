@@ -15,6 +15,7 @@ import {
 export interface CreatePronunciationControllerOptions {
   profileId: string;
   capability: TtsCapability;
+  autoPlay?: boolean;
   transport: TtsTransport;
   audio: TtsAudioOutput;
   cache: TtsBlobCache;
@@ -52,7 +53,7 @@ const MANUAL_BLOCKED_MESSAGE = "발음이 준비됐어요. 다시 눌러 주세�
  * Blob·revision·snapshot을 변경할 수 없다.
  */
 export function createPronunciationController(options: CreatePronunciationControllerOptions): PronunciationController {
-  const { profileId, capability, transport, audio, cache } = options;
+  const { profileId, capability, transport, audio, cache, autoPlay = true } = options;
   let enabled = capability.enabled;
   let effectiveRevision = capability.enabled ? capability.revision : "";
   let disposed = false;
@@ -301,7 +302,7 @@ export function createPronunciationController(options: CreatePronunciationContro
     },
 
     prepare(expectedQuestionId) {
-      if (disposed || expectedQuestionId !== questionId || !enabled || !input || hiddenStopped || prepareAttempted) return;
+      if (!autoPlay || disposed || expectedQuestionId !== questionId || !enabled || !input || hiddenStopped || prepareAttempted) return;
       prepareAttempted = true;
       if (loadCachedBlob()) {
         update({ status: "ready", message: null });
@@ -321,7 +322,7 @@ export function createPronunciationController(options: CreatePronunciationContro
         if (blob || loadCachedBlob()) startPlay("manual");
         return;
       }
-      if (autoConsumed) return;
+      if (!autoPlay || autoConsumed) return;
       autoConsumed = true;
       if (blob || loadCachedBlob()) {
         startPlay("auto");

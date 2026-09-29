@@ -37,6 +37,7 @@ interface StudyScreenProps {
   profile: PublicProfile
   /** Home의 words 응답에서 고정한 capability — 세션 도중 재조회하지 않는다. */
   tts: TtsCapability
+  audioAutoplay?: boolean
   onExit: () => void
   onComplete: (result: SessionResult) => void
 }
@@ -54,7 +55,7 @@ function createStudySessionId(): string {
   return generated ?? `study-${++sessionSequence}`
 }
 
-function StudyScreen({ queue, profile, tts, onExit, onComplete }: StudyScreenProps) {
+function StudyScreen({ queue, profile, tts, audioAutoplay = true, onExit, onComplete }: StudyScreenProps) {
   const [session, setSession] = useState<StudySessionState>(() => startSession(queue))
   const [feedback, setFeedback] = useState<Feedback | null>(null)
   const [sessionId] = useState(createStudySessionId)
@@ -69,6 +70,7 @@ function StudyScreen({ queue, profile, tts, onExit, onComplete }: StudyScreenPro
     profileId: profile.id,
     contentType: profile.contentType,
     capability: tts,
+    autoPlay: audioAutoplay,
     questionId,
     input: question === null ? null : { text: question.word.hanzi, pinyin: question.word.pinyin || null },
   })
