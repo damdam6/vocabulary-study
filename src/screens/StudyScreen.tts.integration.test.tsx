@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { StrictMode } from "react";
+import { act, StrictMode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "../App.tsx";
 import StudyScreen from "./StudyScreen.tsx";
@@ -307,6 +307,65 @@ describe("StudyScreen 중국어 음성 실제 연결 (#150)", () => {
     expect(JSON.parse(String(fetchMock.mock.calls[0][1].body))).toEqual({ text: "经济" });
     await vi.waitFor(() => expect(audio.calls).toContain("play"));
   });
+
+  it.each(["m1-front", "m1-flipping", "m1-hidden-complete", "m2-input"] as const)(
+    "R1: %s에서 숨김·복귀 뒤 자동 재개 없이 수동 재생한다 (StrictMode)",
+    async (scenario) => {
+      vi.useFakeTimers();
+      const mode = scenario === "m2-input" ? "m2" : "m1";
+      const rendered = renderComponent(
+        <StrictMode><StudyScreen queue={[question(mode)]} profile={profile} tts={enabled} onExit={vi.fn()} onComplete={vi.fn()} /></StrictMode>,
+      );
+      unmountCurrent = rendered.unmount;
+      const flipping = scenario === "m1-flipping" || scenario === "m1-hidden-complete";
+      const oldResponse = deferred<Response>();
+      if (flipping) {
+        pendingTts = oldResponse.promise;
+        fire(() => rendered.container.querySelector<HTMLButtonElement>(".flip-reveal-button")!.click());
+        expect(ttsRequestCount()).toBe(1);
+      }
+      Object.defineProperty(document, "visibilityState", { configurable: true, value: "hidden" });
+      fire(() => document.dispatchEvent(new Event("visibilitychange")));
+      if (flipping) {
+        const request = fetchMock.mock.calls.find(([path]) => path === "/api/tts")![1] as RequestInit;
+        expect(request.signal?.aborted).toBe(true);
+        oldResponse.resolve(ttsResponse());
+        pendingTts = null;
+      }
+      if (scenario === "m1-hidden-complete") {
+        fire(() => transitionEnd(rendered.container.querySelector(".flip-card")!));
+      }
+      await flush();
+      expect(audio.calls.filter((call) => call === "play")).toHaveLength(0);
+      expect(rendered.container.querySelector('[aria-label="발음 듣기"]')).toBeNull();
+      const beforeVisible = ttsRequestCount();
+      Object.defineProperty(document, "visibilityState", { configurable: true, value: "visible" });
+      fire(() => document.dispatchEvent(new Event("visibilitychange")));
+      await flush();
+      expect(ttsRequestCount()).toBe(beforeVisible);
+      expect(audio.calls.filter((call) => call === "play")).toHaveLength(0);
+      if (mode === "m2") {
+        fire(() => rendered.container.querySelector<HTMLButtonElement>('button[type="submit"]')!.click());
+      } else {
+        if (!flipping) fire(() => rendered.container.querySelector<HTMLButtonElement>(".flip-reveal-button")!.click());
+        if (scenario !== "m1-hidden-complete") {
+          expect(rendered.container.querySelector('[aria-label="발음 듣기"]')).toBeNull();
+          fire(() => transitionEnd(rendered.container.querySelector(".flip-card")!));
+        }
+      }
+      await act(async () => { await vi.advanceTimersByTimeAsync(0); });
+      expect(ttsRequestCount()).toBe(beforeVisible);
+      expect(audio.calls.filter((call) => call === "play")).toHaveLength(0);
+      fire(() => rendered.container.querySelector<HTMLButtonElement>('[aria-label="발음 듣기"]')!.click());
+      await flush();
+      expect(audio.calls.filter((call) => call === "play")).toHaveLength(1);
+      expect(ttsRequestCount()).toBe(beforeVisible + 1);
+      fire(() => rendered.container.querySelector<HTMLButtonElement>('[aria-label="발음 듣기"]')!.click());
+      await flush();
+      expect(audio.calls.filter((call) => call === "play")).toHaveLength(2);
+      expect(ttsRequestCount()).toBe(beforeVisible + 1);
+    },
+  );
 
   it("C3: hidden은 실제 Audio URL을 정리하고 visible 복귀는 자동 요청·재생 없이 수동 replay만 허용한다", async () => {
     const rendered = renderComponent(<StudyScreen queue={[question("m1")]} profile={profile} tts={enabled} onExit={vi.fn()} onComplete={vi.fn()} />);

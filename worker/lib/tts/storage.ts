@@ -88,8 +88,14 @@ export function createTtsAudioMetadata(
 
 export function createTtsAudioStorage(bucket: TtsAudioStorageBucket, validateAudio: ValidateAudio) {
   return {
-    async get(key: string): Promise<StoredAudio | null> {
+    async get(key: string, signal?: AbortSignal): Promise<StoredAudio | null> {
+      signal?.throwIfAborted();
       const object = await bucket.get(key);
+      // R2 get 자체에는 signal 옵션이 없으므로 늦게 도착한 본문도 정리한다.
+      if (signal?.aborted) {
+        if (object !== null) cancelAudio(object.body, signal.reason);
+        throw signal.reason;
+      }
       if (object === null) return null;
 
       if (
@@ -98,10 +104,13 @@ export function createTtsAudioStorage(bucket: TtsAudioStorageBucket, validateAud
         object.size < 1 ||
         object.size > MAX_TTS_AUDIO_BYTES
       ) {
-        throw new TtsStoredAudioError();
+        const error = new TtsStoredAudioError();
+        cancelAudio(object.body, error);
+        throw error;
       }
 
-      const bytes = await readBoundedAudio(object.body);
+      const bytes = await readBoundedAudio(object.body, signal);
+      signal?.throwIfAborted();
       if (bytes.byteLength !== object.size || !validateAudio(bytes, AUDIO_CONTENT_TYPE)) {
         throw new TtsStoredAudioError();
       }
@@ -140,26 +149,38 @@ function createCustomMetadata({ config, characterCount }: TtsAudioMetadataInput)
   };
 }
 
-async function readBoundedAudio(body: ReadableStream<Uint8Array>): Promise<Uint8Array> {
+/** cancel의 지연/실패가 foreground 오류나 deadline을 바꾸지 않게 한다. */
+function cancelAudio(source: ReadableStream<Uint8Array> | ReadableStreamDefaultReader<Uint8Array>, reason: unknown): void {
+  void source.cancel(reason).catch(() => { /* 정리 실패보다 원래 오류가 우선한다. */ });
+}
+
+async function readBoundedAudio(body: ReadableStream<Uint8Array>, signal?: AbortSignal): Promise<Uint8Array> {
   const reader = body.getReader();
   const chunks: Uint8Array[] = [];
   let length = 0;
+  let cancelled = false;
+  const cancel = (reason: unknown) => {
+    if (cancelled) return;
+    cancelled = true;
+    cancelAudio(reader, reason);
+  };
+  const onAbort = () => cancel(signal?.reason);
+  signal?.addEventListener("abort", onAbort, { once: true });
   try {
     while (true) {
+      signal?.throwIfAborted();
       const { done, value } = await reader.read();
+      signal?.throwIfAborted();
       if (done) break;
       if (length + value.byteLength > MAX_TTS_AUDIO_BYTES) throw new TtsStoredAudioError();
       chunks.push(value);
       length += value.byteLength;
     }
   } catch (error) {
-    try {
-      await reader.cancel();
-    } catch {
-      // 원래 읽기/검증 오류보다 stream 정리 오류가 우선하지 않는다.
-    }
+    cancel(error);
     throw error;
   } finally {
+    signal?.removeEventListener("abort", onAbort);
     reader.releaseLock();
   }
 

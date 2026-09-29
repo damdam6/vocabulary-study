@@ -105,7 +105,7 @@ export function createTtsAudioService(options: CreateTtsAudioServiceOptions) {
     const readDeadline = clock.now() + TTS_STORAGE_TIMEOUT_MS;
     let stored;
     try {
-      stored = await awaitBeforeDeadline(options.storage.get(key), readDeadline, request.signal, clock);
+      stored = await readBeforeDeadline(options.storage, key, readDeadline, request.signal, clock);
     } catch {
       rethrowAbort(request.signal);
       throw new TtsServiceError("tts_storage_unavailable");
@@ -178,7 +178,7 @@ export function createTtsAudioService(options: CreateTtsAudioServiceOptions) {
 
       // conflict 재조회는 writeDeadline의 남은 시간만 사용한다.
       if (clock.now() >= writeDeadline) return generatedResponse(synthesized, request.config, pronunciationDecision, "UNCONFIRMED");
-      const winner = await awaitBeforeDeadline(options.storage.get(key), writeDeadline, request.signal, clock);
+      const winner = await readBeforeDeadline(options.storage, key, writeDeadline, request.signal, clock);
       throwIfAborted(request.signal);
       if (winner !== null) return storedResponse(winner.bytes, request.config, pronunciationDecision, synthesized.billedCharacters);
     } catch {
@@ -233,6 +233,27 @@ function generatedResponse(
   };
 }
 
+async function readBeforeDeadline(
+  storage: TtsAudioStorage,
+  key: string,
+  deadline: number,
+  signal: AbortSignal,
+  clock: TtsServiceClock,
+): Promise<Awaited<ReturnType<TtsAudioStorage["get"]>>> {
+  throwIfAborted(signal);
+  if (clock.now() >= deadline) throw new DeadlineExceeded();
+  const controller = new AbortController();
+  const onAbort = () => controller.abort(signal.reason);
+  signal.addEventListener("abort", onAbort, { once: true });
+  try {
+    return await awaitBeforeDeadline(storage.get(key, controller.signal), deadline, signal, clock, () => {
+      controller.abort(new DeadlineExceeded());
+    });
+  } finally {
+    signal.removeEventListener("abort", onAbort);
+  }
+}
+
 function awaitBeforeDeadline<T>(
   promise: Promise<T>,
   deadline: number,
@@ -240,9 +261,13 @@ function awaitBeforeDeadline<T>(
   clock: TtsServiceClock,
   onDeadline?: () => void,
 ): Promise<T> {
-  if (signal.aborted) return Promise.reject(signal.reason);
+  if (signal.aborted) {
+    void promise.catch(() => undefined);
+    return Promise.reject(signal.reason);
+  }
   const remaining = deadline - clock.now();
   if (remaining <= 0) {
+    void promise.catch(() => undefined);
     onDeadline?.();
     return Promise.reject(new DeadlineExceeded());
   }
