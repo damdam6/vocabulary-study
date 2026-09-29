@@ -59,10 +59,6 @@ function PersonIcon() {
 function HomeUtilBar({ onNavigateRegister, onSwitchProfile, audioAutoplay, onToggleAudio }: HomeUtilBarProps) {
   return (
     <div className="home-util-bar">
-      <button type="button" className="home-util-button" aria-label="수정" onClick={onNavigateRegister}>
-        <EditIcon />
-      </button>
-
       {onToggleAudio && (
         <button type="button" className="home-util-button home-audio-button" aria-label="발음 자동 재생" aria-pressed={audioAutoplay} onClick={onToggleAudio}>
           <svg className="home-util-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
@@ -75,6 +71,10 @@ function HomeUtilBar({ onNavigateRegister, onSwitchProfile, audioAutoplay, onTog
           </svg>
         </button>
       )}
+
+      <button type="button" className="home-util-button" aria-label="수정" onClick={onNavigateRegister}>
+        <EditIcon />
+      </button>
 
       {/* 프로필 전환 (#78) — v1엔 로그아웃이 없어 다른 프로필로 갈아탈 유일한 경로.
           확인 단계 없이 즉시 전환한다(플랜 Q5). */}
