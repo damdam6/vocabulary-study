@@ -1005,9 +1005,9 @@ button {
 
 .session-count {
   display: flex;
-  justify-content: center;
-  margin: 0 0 10px;
-  text-align: center;
+  justify-content: flex-start;
+  margin: 0;
+  text-align: left;
   color: var(--text-muted);
   font-size: 0.9rem;
   font-variant-numeric: tabular-nums;
@@ -1793,7 +1793,11 @@ textarea.register-modal-input {
 
 /* 홈 자동 재생 설정: native checkbox keeps keyboard and focus behavior. */
 /* Compact audio switch; the native input retains keyboard and screen-reader support. */
-.audio-preference { margin: 12px 0; display: flex; flex-direction: column; align-items: flex-end; }
+.session-options-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+.session-options-row:empty { display: none; }
+.session-options-row .session-count { flex: 1; min-width: 0; flex-wrap: wrap; }
+.session-options-row .session-count-rest { white-space: normal; }
+.audio-preference { margin-left: auto; flex: 0 0 auto; display: flex; flex-direction: column; align-items: flex-end; }
 .audio-preference-row { position: relative; display: inline-flex; align-items: center; gap: 10px; min-height: 44px; cursor: pointer; }
 .audio-preference-icon { width: 22px; height: 22px; color: var(--text-muted); }
 .audio-preference-row:has(input:checked) .audio-preference-icon { color: var(--accent); }

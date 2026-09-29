@@ -234,6 +234,40 @@ function HomeScreen({ onStart, onNavigateRegister, onSwitchProfile }: HomeScreen
 
       <div className="home-spacer" />
 
+      {scopePickerVisible && (
+        <StudyScopePicker
+          kind={scope.kind}
+          tabs={tabCounts}
+          selected={scope.kind === "tabs" ? scope.tabs : []}
+          onKindChange={handleKindChange}
+          onSelectedChange={handleSelectedChange}
+        />
+      )}
+
+      {retryQueueLength > 0 && (
+        <p className="retry-indicator">
+          <span className="retry-indicator-dot" />
+          미전송 기록 {retryQueueLength}건 · 연결되면 자동 저장
+        </p>
+      )}
+
+      <div className="session-options-row">
+      {/* 선택 0개면 세션 수 줄을 숨긴다 — 시작 버튼의 "탭을 선택하세요"가 대신 안내한다(§4.2). */}
+      {status === "ready" && stats && !noTabSelected && (
+        <p className="session-count">
+          {scopeLabel ? (
+            <>
+              <span className="session-count-scope-name">{scopeLabel.name}</span>
+              <span className="session-count-rest">
+                {scopeLabel.rest} · 오늘 세션 · {stats.sessionCount}문제
+              </span>
+            </>
+          ) : (
+            <>오늘 세션 · {stats.sessionCount}문제</>
+          )}
+        </p>
+      )}
+
       {status === "ready" && profile?.contentType === "zh" && tts.enabled && (
         <div className="audio-preference">
           <label className="audio-preference-row">
@@ -261,39 +295,7 @@ function HomeScreen({ onStart, onNavigateRegister, onSwitchProfile }: HomeScreen
           {audioSaveFailed && <p role="status">설정을 저장하지 못했어요. 이번 학습에만 적용돼요.</p>}
         </div>
       )}
-
-      {scopePickerVisible && (
-        <StudyScopePicker
-          kind={scope.kind}
-          tabs={tabCounts}
-          selected={scope.kind === "tabs" ? scope.tabs : []}
-          onKindChange={handleKindChange}
-          onSelectedChange={handleSelectedChange}
-        />
-      )}
-
-      {retryQueueLength > 0 && (
-        <p className="retry-indicator">
-          <span className="retry-indicator-dot" />
-          미전송 기록 {retryQueueLength}건 · 연결되면 자동 저장
-        </p>
-      )}
-
-      {/* 선택 0개면 세션 수 줄을 숨긴다 — 시작 버튼의 "탭을 선택하세요"가 대신 안내한다(§4.2). */}
-      {status === "ready" && stats && !noTabSelected && (
-        <p className="session-count">
-          {scopeLabel ? (
-            <>
-              <span className="session-count-scope-name">{scopeLabel.name}</span>
-              <span className="session-count-rest">
-                {scopeLabel.rest} · 오늘 세션 · {stats.sessionCount}문제
-              </span>
-            </>
-          ) : (
-            <>오늘 세션 · {stats.sessionCount}문제</>
-          )}
-        </p>
-      )}
+      </div>
 
       {status !== "error" && (
         <button type="button" className="start-button" disabled={!canStart} onClick={handleStart}>
