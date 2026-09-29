@@ -237,10 +237,18 @@ function HomeScreen({ onStart, onNavigateRegister, onSwitchProfile }: HomeScreen
       {status === "ready" && profile?.contentType === "zh" && tts.enabled && (
         <div className="audio-preference">
           <label className="audio-preference-row">
-            <span>발음 자동 재생</span>
+            <svg className="audio-preference-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
+              <path d="M4.5 9.5v5h3l4 3.5V6l-4 3.5z" />
+              {audioAutoplay ? (
+                <><path d="M15 9a4 4 0 0 1 0 6" /><path d="M17.5 6.5a7.5 7.5 0 0 1 0 11" /></>
+              ) : (
+                <path d="m16 9 5 6m0-6-5 6" />
+              )}
+            </svg>
             <input
               type="checkbox"
               role="switch"
+              aria-label="발음 자동 재생"
               checked={audioAutoplay}
               onChange={(event) => {
                 const enabled = event.target.checked;
@@ -248,9 +256,8 @@ function HomeScreen({ onStart, onNavigateRegister, onSwitchProfile }: HomeScreen
                 setAudioSaveFailed(!saveAudioAutoplay(profile.id, enabled));
               }}
             />
-            <span aria-hidden="true">{audioAutoplay ? "ON" : "OFF"}</span>
+            <span className="audio-preference-track" aria-hidden="true" />
           </label>
-          <p className="audio-preference-hint">꺼도 스피커 버튼을 눌러 들을 수 있어요.</p>
           {audioSaveFailed && <p role="status">설정을 저장하지 못했어요. 이번 학습에만 적용돼요.</p>}
         </div>
       )}
