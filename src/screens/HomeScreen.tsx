@@ -232,8 +232,6 @@ function HomeScreen({ onStart, onNavigateRegister, onSwitchProfile }: HomeScreen
         </div>
       )}
 
-      <div className="home-spacer" />
-
       {scopePickerVisible && (
         <StudyScopePicker
           kind={scope.kind}
@@ -243,6 +241,8 @@ function HomeScreen({ onStart, onNavigateRegister, onSwitchProfile }: HomeScreen
           onSelectedChange={handleSelectedChange}
         />
       )}
+
+      <div className="home-spacer" />
 
       {retryQueueLength > 0 && (
         <p className="retry-indicator">

@@ -1046,7 +1046,7 @@ button {
   white-space: pre;
 }
 
-/* 홈 학습 범위 선택 (#189, PRD-tab-scoped-study §4.1) — 스페이서 아래 · 미전송 인디케이터 위.
+/* 홈 학습 범위 선택 (#189, PRD-tab-scoped-study §4.1) — 현황 카드 아래 · 스페이서 위.
    선택 상태는 옅은 accent 배경이라, 포커스 링(.dropdown-trigger와 같은 2px accent)이 그 위에서도 보인다. */
 .study-scope {
   display: flex;
