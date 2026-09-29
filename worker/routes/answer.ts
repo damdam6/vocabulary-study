@@ -1,3 +1,5 @@
+import { isStudyModes, type StudyMode } from "../../shared/studyModes.ts";
+import { resolveRecordModes } from "../lib/tabModes.ts";
 /**
  * POST /api/answer — 정답 1건 기록: 카운트 증가·졸업 판정·간격 갱신·G열 타임스탬프 append를
  * 한 요청 안에서 수행한다 (PRD 5.1, 5.3, 7.3, #8). 응답은 GET /api/words와 같은 단어 객체 형태.
@@ -15,6 +17,7 @@ import {
 import type { Profile } from "../lib/profiles.ts";
 
 interface AnswerRequest {
+  studyModes?: StudyMode[];
   tab: string;
   hanzi: string;
   mode: AnswerMode;
@@ -26,13 +29,14 @@ function parseAnswerRequest(body: unknown): AnswerRequest | null {
   if (typeof body !== "object" || body === null) {
     return null;
   }
-  const { tab, hanzi, mode, timestamp, isReview } = body as Record<string, unknown>;
+  const { tab, hanzi, mode, timestamp, isReview, studyModes } = body as Record<string, unknown>;
   if (typeof tab !== "string" || !tab) return null;
   if (typeof hanzi !== "string" || !hanzi) return null;
   if (mode !== "m1" && mode !== "m2") return null;
   if (typeof timestamp !== "string" || !timestamp) return null;
   if (typeof isReview !== "boolean") return null;
-  return { tab, hanzi, mode, timestamp, isReview };
+  if (studyModes !== undefined && !isStudyModes(studyModes)) return null;
+  return { tab, hanzi, mode, timestamp, isReview, studyModes: studyModes as StudyMode[] | undefined };
 }
 
 export async function handleAnswerPost(
@@ -55,10 +59,12 @@ export async function handleAnswerPost(
     );
   }
 
-  // 비활성 모드 열은 어떤 경로로도 쓰지 않는다는 불변식의 서버 측 강제 (PRD-general §4.1·§5.2).
-  // 시트 조회 이전에 걸러 정상 클라이언트가 만들지 않는 요청에 대한 방어선을 최소 비용으로 세운다.
-  if (!profile.modes.includes(answer.mode)) {
-    return Response.json({ error: "이 프로필에서 비활성화된 모드입니다" }, { status: 400 });
+  // 설정 변경/재전송에도 출제 당시 모드로 판정한다. 스냅샷 없는 구클라이언트는 현재 설정 사용.
+  // 인증된 프로필의 실제 학습 탭만 허용하고 해당 세션의 비활성 모드는 기록하지 않는다.
+  const modes = await resolveRecordModes(env, profile, answer.tab, answer.studyModes);
+  if (modes === null) return Response.json({ error: "tab not found" }, { status: 404 });
+  if (!modes.includes(answer.mode)) {
+    return Response.json({ error: "이 학습에서 비활성화된 모드입니다" }, { status: 400 });
   }
 
   // 행 번호는 캐시하지 않고 매 요청마다 탭 이름 + A열 한자로 재탐색한다 (PRD 4.2).
@@ -69,7 +75,7 @@ export async function handleAnswerPost(
 
   const [row = []] = await getValues(env, profile.sheetId, answer.tab, `${rowNumber}:${rowNumber}`);
   const current = parseWordRow(answer.tab, row);
-  const update = computeAnswerUpdate(current, answer.mode, answer.isReview, new Date(), profile.modes);
+  const update = computeAnswerUpdate(current, answer.mode, answer.isReview && modes.every((mode) => current[mode] >= 3), new Date(), modes);
 
   // 카운트·F열·타임스탬프는 정답 1건의 한 단위이므로 한 요청으로 묶어 쓴다.
   // 부분 실패로 카운트만 반영된 채 남으면 재시도 큐(PRD 10) 재전송 시 이중 증가한다.

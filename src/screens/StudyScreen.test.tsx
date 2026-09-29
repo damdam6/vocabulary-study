@@ -80,7 +80,7 @@ describe("StudyScreen 문장 원문 기록", () => {
 
     const [path, init] = fetchMock.mock.calls[0] as [string, RequestInit];
     expect(path).toBe("/api/review-fail");
-    expect(JSON.parse(init.body as string)).toEqual({ tab: "문장 원본", hanzi: " 我有2本书。 " });
+    expect(JSON.parse(init.body as string)).toEqual({ tab: "문장 원본", hanzi: " 我有2本书。 ", studyModes: ["m1", "m2"] });
   });
 });
 

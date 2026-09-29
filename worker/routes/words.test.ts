@@ -51,7 +51,7 @@ function stubSheets(options: {
       const url = input.toString();
       urls.push(url);
       if (url.includes("?fields=")) {
-        return Response.json({ sheets: titles.map((title) => ({ properties: { title } })) });
+        return Response.json({ sheets: titles.map((title, sheetId) => ({ properties: { title, sheetId } })) });
       }
       const decoded = decodeURIComponent(url.split("/values/")[1].split("?")[0]);
       const tab = decoded.slice(1, decoded.indexOf("!") - 1);
@@ -102,7 +102,7 @@ describe("GET /api/words — settings 동봉", () => {
       vi.fn(async (input: string | URL) => {
         const url = input.toString();
         if (url.includes("?fields=")) {
-          return Response.json({ sheets: [{ properties: { title: "HSK6급" } }] });
+          return Response.json({ sheets: [{ properties: { title: "HSK6급", sheetId: 0 } }] });
         }
         const decoded = decodeURIComponent(url.split("/values/")[1].split("?")[0]);
         if (decoded.includes(SETTINGS_TAB)) {
@@ -193,5 +193,5 @@ it("신규 등록 제한을 기존 장문 조회에 적용하지 않고 원문 �
   stubSheets({ titles: ["문장"], settingsRows: [], rows: { 문장: [[original.hanzi, original.pinyin, original.meaning, "3", "4", "2026-10-01|7"]] } });
   const { res, body } = await getWords();
   expect(res.status).toBe(200);
-  expect(body.words).toEqual([{ ...original, tab: "문장", m1: 3, m2: 4, nextReview: "2026-10-01", interval: 7 }]);
+  expect(body.words).toEqual([{ ...original, studyModes: ["m1", "m2"], tab: "문장", m1: 3, m2: 4, nextReview: "2026-10-01", interval: 7 }]);
 });

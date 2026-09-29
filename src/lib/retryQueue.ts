@@ -120,7 +120,7 @@ export async function flushRetryQueue(): Promise<void> {
         if (entry.kind === "answer") {
           await postAnswer(entry.record);
         } else {
-          await postReviewFail(entry.record.tab, entry.record.hanzi);
+          await postReviewFail(entry.record.tab, entry.record.hanzi, entry.record.studyModes);
         }
       } catch (err) {
         if (!(err instanceof ApiError) || err.status < 400 || err.status >= 500) {

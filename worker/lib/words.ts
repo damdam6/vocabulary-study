@@ -1,3 +1,4 @@
+import type { StudyMode } from "../../shared/studyModes.ts";
 /**
  * 시트 행(A2:F) ↔ 단어 객체 변환. PRD 4.2(컬럼 계약)·7.3(GET /api/words 응답)을 따른다.
  * POST /api/answer(#8)·POST /api/review-fail(#9)도 "GET과 같은 형태"로 응답해야 하므로
@@ -15,6 +16,7 @@ export async function getWordTabTitles(env: Env, sheetId: string): Promise<strin
 }
 
 export interface WordEntry {
+  studyModes?: StudyMode[];
   tab: string;
   hanzi: string;
   pinyin: string;

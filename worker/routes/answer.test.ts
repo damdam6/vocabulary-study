@@ -68,6 +68,7 @@ function stubSheetsFetch(state: SheetsState): { writes: CellWrite[]; fetchMock: 
     const url = input.toString();
     const method = init?.method ?? "GET";
 
+    if (url.includes("?fields=")) return Response.json({ sheets: Object.keys(state.rows).map((title, sheetId) => ({ properties: { title, sheetId } })) });
     if (method === "GET") {
       const { tab, range } = parseUrlTabRange(url);
       const rows = state.rows[tab] ?? [];
@@ -130,7 +131,7 @@ afterEach(() => {
 });
 
 describe("POST /api/answer — 비활성 모드 400 (PRD-general §5.2)", () => {
-  it("M={m1} 프로필에 mode:'m2' 요청 → 400, 시트 호출 0회(읽기·쓰기 전부 생략)", async () => {
+  it("M={m1} 프로필에 mode:'m2' 요청 → 400, 설정 확인 후 쓰기 없음", async () => {
     const { writes, fetchMock } = stubSheetsFetch(baseState(wordRow(2, 0)));
     const res = await worker.fetch(
       answerRequest("pw-m1only", {
@@ -144,10 +145,10 @@ describe("POST /api/answer — 비활성 모드 400 (PRD-general §5.2)", () => 
     );
     expect(res.status).toBe(400);
     expect(writes).toEqual([]);
-    expect(fetchMock).not.toHaveBeenCalled();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
-  it("M={m2} 프로필에 mode:'m1' 요청 → 400, 시트 호출 0회", async () => {
+  it("M={m2} 프로필에 mode:'m1' 요청 → 400, 설정 확인 후 쓰기 없음", async () => {
     const { writes, fetchMock } = stubSheetsFetch(baseState(wordRow(0, 2)));
     const res = await worker.fetch(
       answerRequest("pw-m2only", {
@@ -161,7 +162,7 @@ describe("POST /api/answer — 비활성 모드 400 (PRD-general §5.2)", () => 
     );
     expect(res.status).toBe(400);
     expect(writes).toEqual([]);
-    expect(fetchMock).not.toHaveBeenCalled();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });
 

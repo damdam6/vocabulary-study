@@ -152,7 +152,7 @@ export function applyWordUpdate(state: StudySessionState, word: WordEntry): Stud
     ...state,
     queue: state.queue.map((question) =>
       question.word.tab === word.tab && question.word.hanzi === word.hanzi
-        ? { ...question, word }
+        ? { ...question, word: { ...word, ...(question.word.studyModes ? { studyModes: question.word.studyModes } : {}) } }
         : question,
     ),
   };

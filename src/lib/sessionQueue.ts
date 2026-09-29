@@ -1,3 +1,4 @@
+import { effectiveModes } from "../../shared/studyModes.ts";
 /**
  * PRD §6.1: 학습 세션 큐 구성. §7.3에 따라 큐 구성은 클라이언트 책임이므로
  * 여기(src/lib)에 둔다. 상태 분류는 wordState의 getWordState를 재사용하고,
@@ -108,7 +109,7 @@ export function buildSessionQueue<T extends WordProgress>(
   const reviewQuestions: SessionQuestion<T>[] = reviewDue
     .toSorted((a, b) => compareNextReview(a.nextReview, b.nextReview))
     .slice(0, slots.review)
-    .map((word) => ({ word, mode: randomMode(modes, rng), isReview: true }));
+    .map((word) => ({ word, mode: randomMode(effectiveModes(word, modes), rng), isReview: true }));
 
   // 정렬 전에 섞는다 — toSorted가 stable이라 동점 구간은 이 셔플 순서가 그대로 남아
   // 타이브레이커가 시트 순서 대신 무작위가 된다(#131). 비교 함수에서 난수를 돌려주는
@@ -120,7 +121,7 @@ export function buildSessionQueue<T extends WordProgress>(
   const learningQuestions: SessionQuestion<T>[] = learning
     .toSorted((a, b) => a.m1 + a.m2 - (b.m1 + b.m2))
     .slice(0, slots.learning)
-    .map((word) => ({ word, mode: learningMode(word, modes, rng), isReview: false }));
+    .map((word) => ({ word, mode: learningMode(word, effectiveModes(word, modes), rng), isReview: false }));
 
   // 컷이 끝난 뒤라 이 셔플은 출제 순서만 바꾼다 — 선정에 관여하는 위쪽 셔플과 목적이 다르다.
   const queue = [...reviewQuestions, ...learningQuestions];

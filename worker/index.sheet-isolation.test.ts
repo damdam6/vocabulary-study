@@ -64,7 +64,7 @@ function stubSheetsFetch(): { urls: string[] } {
         return new Response("sheet not found", { status: 404 });
       }
       if (url.includes("?fields=")) {
-        return Response.json({ sheets: sheet.titles.map((title) => ({ properties: { title } })) });
+        return Response.json({ sheets: sheet.titles.map((title, sheetId) => ({ properties: { title, sheetId } })) });
       }
       const valuesPath = url.split("/values/")[1];
       if (!valuesPath) {
@@ -102,6 +102,7 @@ describe("프로필별 시트 격리 — GET /api/words", () => {
     // words 항목 형태 불변(§7.3 계약) — _메모 탭은 학습 대상에서 제외된다.
     expect(zh.words).toEqual([
       {
+        studyModes: ["m1", "m2"],
         tab: "HSK6급",
         hanzi: "经济",
         pinyin: "jīngjì",
@@ -117,6 +118,7 @@ describe("프로필별 시트 격리 — GET /api/words", () => {
     const en = (await resEn.json()) as { words: unknown[] };
     expect(en.words).toEqual([
       {
+        studyModes: ["m1"],
         tab: "표현",
         hanzi: "look up",
         pinyin: "",
