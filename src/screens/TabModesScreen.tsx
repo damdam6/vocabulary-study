@@ -47,30 +47,30 @@ export default function TabModesScreen({ onGoHome }: { onGoHome: () => void }) {
     } finally { setStatus('ready'); }
   };
 
-  return <section className="tab-modes-screen" aria-labelledby="tab-modes-title">
-    <header className="tab-modes-header">
-      <button type="button" className="tab-modes-back" onClick={onGoHome} disabled={status === 'saving'}>홈으로</button>
-      <h1 id="tab-modes-title">탭별 출제 유형</h1>
+  return <section className="register-screen tab-modes-screen" aria-labelledby="tab-modes-title">
+    <header className="register-header">
+      <button type="button" className="register-back" onClick={onGoHome} disabled={status === 'saving'}>홈으로</button>
+      <h1 id="tab-modes-title" className="register-title">탭별 출제 유형</h1>
     </header>
-    <p className="tab-modes-description">각 탭에서 학습할 유형을 선택하세요. 기존 정답 횟수와 학습 기록은 유지됩니다.</p>
-    {status === 'loading' && <p role="status">설정을 불러오는 중…</p>}
-    {message && <p role="alert" className="tab-modes-error">{message}</p>}
-    {status === 'error' && <button type="button" onClick={() => setRetry((value) => value + 1)}>다시 불러오기</button>}
+    <p className="register-hint tab-modes-description">탭마다 출제할 유형을 하나 이상 선택하세요.<br />변경한 설정은 다음 학습부터 적용되며, 학습 기록은 유지됩니다.</p>
+    {status === 'loading' && <p role="status" className="register-hint">설정을 불러오는 중…</p>}
+    {message && <p role="alert" className="register-error">{message}</p>}
+    {status === 'error' && <button type="button" className="register-confirm-button" onClick={() => setRetry((value) => value + 1)}>다시 불러오기</button>}
     {(status === 'ready' || status === 'saving') && <>
-      {tabs.length === 0 && <p>학습 탭이 없습니다. 홈에서 단어를 등록해 주세요.</p>}
+      {tabs.length === 0 && <p className="register-hint">학습 탭이 없습니다. 홈에서 단어를 등록해 주세요.</p>}
       {tabs.map((tab) => <fieldset key={tab.id} disabled={status === 'saving'} className="tab-modes-tab">
-        <legend>{tab.name}</legend>
-        {!tab.explicit && <p className="tab-modes-default">프로필 기본 유형 사용 중</p>}
+        <legend className="register-field-label">{tab.name}</legend>
         <div className="tab-modes-options">
           {(['m1', 'm2'] as const).map((mode) => <label key={mode}>
             <input type="checkbox" checked={tab.modes.includes(mode)} onChange={() => toggle(tab.id, mode)} />
             {mode === 'm1' ? '뜻 보기' : '쓰기'}
           </label>)}
         </div>
-        {tab.modes.length === 0 && <p className="tab-modes-error" role="alert">유형을 하나 이상 선택하세요.</p>}
+        {!tab.explicit && <p className="register-hint">프로필 기본 유형 사용 중</p>}
+        {tab.modes.length === 0 && <p className="register-error" role="alert">유형을 하나 이상 선택하세요.</p>}
       </fieldset>)}
-      {saved && <p role="status">저장했습니다. 다음 학습부터 적용됩니다.</p>}
-      {tabs.length > 0 && <button type="button" className="start-button" disabled={invalid || status === 'saving'} onClick={() => void save()}>
+      {saved && <p role="status" className="register-limit-success">저장했습니다. 다음 학습부터 적용됩니다.</p>}
+      {tabs.length > 0 && <button type="button" className="register-confirm-button tab-modes-save" disabled={invalid || status === 'saving'} onClick={() => void save()}>
         {status === 'saving' ? '저장 중…' : '설정 저장'}
       </button>}
     </>}
