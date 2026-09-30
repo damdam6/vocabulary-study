@@ -26,6 +26,7 @@ interface ActiveStudySession {
   queue: SessionQuestion<WordEntry>[]
   profile: StudySessionContext['profile']
   tts: TtsCapability
+  audioAutoplay: boolean
 }
 
 function App() {
@@ -82,6 +83,7 @@ function App() {
             queue={activeStudy.queue}
             profile={activeStudy.profile}
             tts={activeStudy.tts}
+            audioAutoplay={activeStudy.audioAutoplay}
             onExit={() => setScreen('home')}
             onComplete={completeSession}
           />

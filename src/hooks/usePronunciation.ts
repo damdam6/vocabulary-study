@@ -17,6 +17,7 @@ export interface UsePronunciationOptions {
   profileId: string;
   contentType: ContentType;
   capability: TtsCapability;
+  autoPlay?: boolean;
   questionId: string | null;
   input: PronunciationInput | null;
 }
@@ -43,6 +44,7 @@ export function usePronunciation({
   profileId,
   contentType,
   capability,
+  autoPlay = true,
   questionId,
   input,
 }: UsePronunciationOptions): UsePronunciationResult {
@@ -68,6 +70,7 @@ export function usePronunciation({
     const next = createPronunciationController({
       profileId,
       capability,
+      autoPlay,
       transport: fetchTtsAudio,
       audio: createTtsAudioOutput(),
       cache: createTtsBlobCache(),
@@ -88,7 +91,7 @@ export function usePronunciation({
     };
   // capability is represented by its immutable server values, not object identity.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [profileId, supported, revision, maxTextLength]);
+  }, [profileId, supported, revision, maxTextLength, autoPlay]);
 
   useLayoutEffect(() => {
     if (controller === null || questionId === null || inputText === null) return;

@@ -1006,7 +1006,7 @@ button {
 .session-count {
   display: flex;
   justify-content: center;
-  margin: 0 0 10px;
+  margin: 0;
   text-align: center;
   color: var(--text-muted);
   font-size: 0.9rem;
@@ -1046,13 +1046,13 @@ button {
   white-space: pre;
 }
 
-/* 홈 학습 범위 선택 (#189, PRD-tab-scoped-study §4.1) — 스페이서 아래 · 미전송 인디케이터 위.
+/* 홈 학습 범위 선택 (#189, PRD-tab-scoped-study §4.1) — 현황 카드 아래 · 스페이서 위.
    선택 상태는 옅은 accent 배경이라, 포커스 링(.dropdown-trigger와 같은 2px accent)이 그 위에서도 보인다. */
 .study-scope {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  margin: 12px 0 12px;
+  margin: 20px 0 12px;
 }
 
 .study-scope-segment {
@@ -1081,6 +1081,7 @@ button {
 
 .study-scope-segment-option:focus-visible,
 .study-scope-toggle-all:focus-visible,
+.study-scope-settings:focus-visible,
 .study-scope-chip:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: -1px;
@@ -1088,7 +1089,9 @@ button {
 
 .study-scope-toolbar {
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
 }
 
 .study-scope-toggle-all {
@@ -1098,6 +1101,10 @@ button {
   background: none;
   color: var(--text-muted);
   font-size: 0.8rem;
+}
+
+.study-scope-toggle-all {
+  margin-left: auto;
 }
 
 .study-scope-toggle-all:hover {
@@ -1790,3 +1797,42 @@ textarea.register-modal-input {
   overflow-wrap: anywhere;
 }
 .register-modal-actions { flex-shrink: 0; }
+
+/* 홈 자동 재생 설정: native checkbox keeps keyboard and focus behavior. */
+/* Home session summary and audio button. */
+.session-options-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+.session-options-row:empty { display: none; }
+.session-options-row .session-count { flex: 1; min-width: 0; flex-wrap: wrap; }
+.session-options-row .session-count-rest { white-space: normal; }
+.home-audio-button:hover,
+.home-audio-button:active { color: var(--text-muted); }
+
+.home-edit-menu { position: relative; }
+.home-edit-menu-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 20;
+  width: max-content;
+  max-width: calc(100vw - 40px);
+  padding: 6px;
+  border: 1px solid var(--border-card);
+  border-radius: 12px;
+  background: var(--bg-panel);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 24%);
+}
+.home-edit-menu-panel button {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  font-size: 0.85rem;
+  text-align: left;
+}
+.home-edit-menu-panel button:hover,
+.home-edit-menu-panel button:focus-visible { background: var(--bg-disabled); }
+.home-edit-menu-panel button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
