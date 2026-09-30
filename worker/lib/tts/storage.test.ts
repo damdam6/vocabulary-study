@@ -53,7 +53,7 @@ function metadata() {
 describe("R2 오디오 키", () => {
   it("고정 튜플을 SHA-256으로 경로화하고 운영 무관 필드를 제외한다", async () => {
     const key = await buildAudioObjectKey(profile, input, config);
-    expect(key).toBe("audio/v1/d5d19c62e52983e370d66afbe085aef2dff6cbeda3d62103e49f65d2d34bf499/tts-v1/cb695b6ce3fea6b73831b3b6e97db0c12978c733505d09509f94b497e40492d4.mp3");
+    expect(key).toBe("audio/v1/d5d19c62e52983e370d66afbe085aef2dff6cbeda3d62103e49f65d2d34bf499/tts-v1/45edba5552287fa83ab12e86a45f57531ce159916eb5492899102256b1320e95.mp3");
     expect(key).not.toContain(profile.id);
     expect(key).not.toContain(profile.sheetId);
     expect(await buildAudioObjectKey({ ...profile }, { ...input }, { ...config })).toBe(key);

@@ -39,7 +39,7 @@ describe("createQwenClientMessages", () => {
         task_group: "audio", task: "tts", function: "SpeechSynthesizer", model: TTS_MODEL,
         parameters: {
           text_type: "PlainText", voice: TTS_VOICE, format: "mp3", sample_rate: 24000,
-          bit_rate: 128, volume: 50, rate: 1, pitch: 1, seed: 0,
+          bit_rate: 128, volume: 100, rate: 1, pitch: 1, seed: 0,
           language_hints: ["zh"], enable_ssml: false,
         },
         input: {},
