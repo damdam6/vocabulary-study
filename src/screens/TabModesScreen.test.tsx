@@ -33,7 +33,7 @@ describe('tab mode settings UI', () => {
     const checkboxes = container.querySelectorAll<HTMLInputElement>('input[type=checkbox]');
     expect([...checkboxes].map((input) => input.checked)).toEqual([true, true, true, false]);
     fire(() => checkboxes[2].click());
-    const save = container.querySelector<HTMLButtonElement>('.start-button')!;
+    const save = container.querySelector<HTMLButtonElement>('.tab-modes-save')!;
     expect(save.disabled).toBe(true);
     expect(container.querySelector('[role=alert]')?.textContent).toContain('하나 이상');
     fire(() => checkboxes[3].click());
@@ -46,7 +46,7 @@ describe('tab mode settings UI', () => {
     saveFails = true;
     const container = setup(); await flush();
     fire(() => container.querySelectorAll<HTMLInputElement>('input')[1].click());
-    fire(() => container.querySelector<HTMLButtonElement>('.start-button')!.click()); await flush();
+    fire(() => container.querySelector<HTMLButtonElement>('.tab-modes-save')!.click()); await flush();
     expect(container.querySelector('[role=alert]')?.textContent).toBe('저장 실패');
     expect(container.textContent).not.toContain('저장했습니다');
     expect(container.querySelectorAll<HTMLInputElement>('input')[1].checked).toBe(false);
@@ -59,6 +59,6 @@ describe('tab mode settings UI', () => {
     fire(() => [...container.querySelectorAll('button')].find((button) => button.textContent === '다시 불러오기')!.click());
     await flush();
     expect(container.textContent).toContain('학습 탭이 없습니다');
-    expect(container.querySelector('.start-button')).toBeNull();
+    expect(container.querySelector('.tab-modes-save')).toBeNull();
   });
 });
