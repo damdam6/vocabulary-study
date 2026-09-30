@@ -1,7 +1,7 @@
 .tab-modes-screen { padding: 24px 20px; display: flex; flex-direction: column; gap: 16px; }
 .tab-modes-header { display: flex; flex-direction: column; align-items: flex-start; gap: 16px; }
 .tab-modes-header h1 { margin: 0; font-size: 24px; }
-.tab-modes-back, .tab-modes-link { background: transparent; color: inherit; border: 1px solid #c4c8d0; border-radius: 10px; padding: 10px 14px; cursor: pointer; min-height: 44px; }
+.tab-modes-back { background: transparent; color: inherit; border: 1px solid #c4c8d0; border-radius: 10px; padding: 10px 14px; cursor: pointer; min-height: 44px; }
 .tab-modes-description, .tab-modes-default { color: #596273; line-height: 1.6; margin: 0; }
 .tab-modes-tab { min-width: 0; margin: 0; padding: 16px; border: 1px solid #c4c8d0; border-radius: 12px; }
 .tab-modes-tab legend { font-weight: 600; overflow-wrap: anywhere; max-width: 100%; padding: 0 4px; }
@@ -10,4 +10,3 @@
 .tab-modes-options label { display: flex; align-items: center; gap: 8px; min-height: 44px; cursor: pointer; }
 .tab-modes-options input { width: 20px; height: 20px; accent-color: #385fd7; }
 .tab-modes-error { color: #b42318; }
-.tab-modes-link { margin: 12px 0; }

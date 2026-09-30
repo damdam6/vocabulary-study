@@ -2,11 +2,14 @@
 // 헤더 우측 라운드 사각 아이콘 버튼으로 승격한다. 근거 플랜:
 // docs/plans/session-limit-and-home-utils.md §3.4 · §5 작업 D.
 //
-// 수정 버튼은 팝오버 메뉴 없이 등록 화면으로 즉시 이동한다 — 문제수 필드가 등록
-// 화면 상단에 항상 보이므로(#111) 별도 진입 경로가 필요 없어졌다(#112, 메뉴 제거).
+import { useEffect, useId, useRef, useState } from "react"
+
 interface HomeUtilBarProps {
   onNavigateRegister: () => void
+  onNavigateTabModes?: () => void
   onSwitchProfile: () => void
+  audioAutoplay?: boolean
+  onToggleAudio?: () => void
 }
 
 // 아이콘은 인라인 SVG 자체 제작 — 아이콘 라이브러리 도입 없음(플랜 §8 결정).
@@ -54,12 +57,61 @@ function PersonIcon() {
   )
 }
 
-function HomeUtilBar({ onNavigateRegister, onSwitchProfile }: HomeUtilBarProps) {
+function HomeUtilBar({ onNavigateRegister, onSwitchProfile, onNavigateTabModes, audioAutoplay, onToggleAudio }: HomeUtilBarProps) {
+  const [open, setOpen] = useState(false)
+  const menuId = useId()
+  const menuRef = useRef<HTMLDivElement>(null)
+  const triggerRef = useRef<HTMLButtonElement>(null)
+  useEffect(() => {
+    if (!open) return
+    menuRef.current?.querySelector<HTMLButtonElement>('[role="menuitem"]')?.focus()
+    const dismiss = (event: PointerEvent) => {
+      if (event.target instanceof Node && !menuRef.current?.contains(event.target)) setOpen(false)
+    }
+    document.addEventListener('pointerdown', dismiss)
+    return () => document.removeEventListener('pointerdown', dismiss)
+  }, [open])
+
   return (
     <div className="home-util-bar">
-      <button type="button" className="home-util-button" aria-label="수정" onClick={onNavigateRegister}>
-        <EditIcon />
-      </button>
+      {onToggleAudio && (
+        <button type="button" className="home-util-button home-audio-button" aria-label="발음 자동 재생" aria-pressed={audioAutoplay} onClick={onToggleAudio}>
+          <svg className="home-util-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
+            <path d="M4.5 9.5v5h3l4 3.5V6l-4 3.5z" />
+            {audioAutoplay ? (
+              <><path d="M15 9a4 4 0 0 1 0 6" /><path d="M17.5 6.5a7.5 7.5 0 0 1 0 11" /></>
+            ) : (
+              <path d="m3 3 18 18" />
+            )}
+          </svg>
+        </button>
+      )}
+
+      <div className="home-edit-menu" ref={menuRef} onBlur={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget)) setOpen(false)
+      }} onKeyDown={(event) => {
+        if (event.key === 'Escape') {
+          event.preventDefault()
+          setOpen(false)
+          triggerRef.current?.focus()
+        } else if (['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) {
+          event.preventDefault()
+          if (!open) { setOpen(true); return }
+          const items = Array.from(menuRef.current?.querySelectorAll<HTMLButtonElement>('[role="menuitem"]') ?? [])
+          const index = items.indexOf(document.activeElement as HTMLButtonElement)
+          const next = event.key === 'Home' ? 0 : event.key === 'End' ? items.length - 1
+            : (index + (event.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length
+          items[next]?.focus()
+        }
+      }}>
+        <button ref={triggerRef} type="button" className="home-util-button" aria-label="수정" aria-haspopup="menu" aria-expanded={open} aria-controls={open ? menuId : undefined} onClick={() => setOpen(!open)}>
+          <EditIcon />
+        </button>
+        {open && <div id={menuId} className="home-edit-menu-panel" role="menu" aria-label="등록 및 문제 유형 설정">
+          <button type="button" role="menuitem" onClick={() => { setOpen(false); onNavigateRegister() }}>어휘/문장 등록</button>
+          {onNavigateTabModes && <button type="button" role="menuitem" onClick={() => { setOpen(false); onNavigateTabModes() }}>탭별 문제 유형 설정</button>}
+        </div>}
+      </div>
 
       {/* 프로필 전환 (#78) — v1엔 로그아웃이 없어 다른 프로필로 갈아탈 유일한 경로.
           확인 단계 없이 즉시 전환한다(플랜 Q5). */}

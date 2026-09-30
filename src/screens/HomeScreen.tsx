@@ -1,10 +1,10 @@
-import "./TabModesScreen.css";
 // design-prd §3 홈 화면. 세션 큐 구성은 홈 책임(기능 PRD §6.1) — 시작 클릭 시
 // 이미 조회해 둔 단어로 큐를 만들어 onStart(queue)로 올린다(#15 셸 계약).
 // 현황 집계(sessionCount)와 큐가 같은 조회 결과를 쓰므로 수치가 어긋나지 않는다.
 // 학습 범위(#189)도 이 성질을 지킨다 — 범위로 거른 배열(scopedWords) 하나를 현황 카드·
 // 세션 수·큐가 함께 쓴다.
 import { useEffect, useMemo, useState } from "react";
+import { readAudioAutoplay, saveAudioAutoplay } from "../lib/audioPreferences.ts";
 import HomeUtilBar from "../components/HomeUtilBar.tsx";
 import StudyScopePicker, { type StudyScopeKind } from "../components/StudyScopePicker.tsx";
 import { getStoredProfile, saveProfile, type PublicProfile, type WordEntry } from "../lib/api.ts";
@@ -29,6 +29,7 @@ import type { TtsCapability } from "../lib/ttsTypes.ts";
 export interface StudySessionContext {
   profile: PublicProfile
   tts: TtsCapability
+  audioAutoplay: boolean
 }
 
 interface HomeScreenProps {
@@ -67,6 +68,8 @@ function HomeScreen({ onStart, onNavigateRegister, onSwitchProfile, onNavigateTa
   const [retryQueueLength, setRetryQueueLength] = useState(0);
   // 시트별 세션 문제 수(세션 설정 플랜 §3.2) — words 응답 동봉값, 미동봉 시 fetchWords가 SESSION_CAP으로 폴백.
   const [sessionLimit, setSessionLimit] = useState(SESSION_CAP);
+  const [audioAutoplay, setAudioAutoplay] = useState(true);
+  const [audioSaveFailed, setAudioSaveFailed] = useState(false);
   const [tts, setTts] = useState<TtsCapability>({ enabled: false });
 
   // App.tsx가 홈 화면을 조건부로만 렌더링하므로, 홈을 벗어났다 돌아올 때마다
@@ -80,6 +83,8 @@ function HomeScreen({ onStart, onNavigateRegister, onSwitchProfile, onNavigateTa
         if (cancelled) return;
         setWords(fetched);
         setProfile(fetchedProfile);
+        setAudioAutoplay(readAudioAutoplay(fetchedProfile.id));
+        setAudioSaveFailed(false);
         saveProfile(fetchedProfile);
         setSessionLimit(settings.sessionLimit);
         setTts(fetchedTts);
@@ -173,7 +178,7 @@ function HomeScreen({ onStart, onNavigateRegister, onSwitchProfile, onNavigateTa
   const handleStart = () => {
     // canStart(sessionCount>0)와 같은 단어 집합(scopedWords)·같은 산식(같은 sessionLimit)이므로 빈 큐가 나올 수 없다
     if (profile === null) return;
-    onStart(buildSessionQueue(scopedWords, getSeoulToday(), profile.modes, undefined, sessionLimit), { profile, tts });
+    onStart(buildSessionQueue(scopedWords, getSeoulToday(), profile.modes, undefined, sessionLimit), { profile, tts, audioAutoplay });
   };
 
   const startLabel =
@@ -190,7 +195,17 @@ function HomeScreen({ onStart, onNavigateRegister, onSwitchProfile, onNavigateTa
           <h1 className="home-title">오늘의 학습</h1>
           {profile && <p className="home-profile-name">{profile.name}</p>}
         </div>
-        <HomeUtilBar onNavigateRegister={onNavigateRegister} onSwitchProfile={onSwitchProfile} />
+        <HomeUtilBar
+          onNavigateTabModes={onNavigateTabModes}
+          onNavigateRegister={onNavigateRegister}
+          onSwitchProfile={onSwitchProfile}
+          audioAutoplay={audioAutoplay}
+          onToggleAudio={status === "ready" && profile?.contentType === "zh" && tts.enabled ? () => {
+            const enabled = !audioAutoplay;
+            setAudioAutoplay(enabled);
+            setAudioSaveFailed(!saveAudioAutoplay(profile.id, enabled));
+          } : undefined}
+        />
       </div>
 
       {status === "loading" && (
@@ -228,9 +243,6 @@ function HomeScreen({ onStart, onNavigateRegister, onSwitchProfile, onNavigateTa
         </div>
       )}
 
-      {onNavigateTabModes && <button type="button" className="tab-modes-link" onClick={onNavigateTabModes}>탭별 출제 유형 설정</button>}
-
-      <div className="home-spacer" />
 
       {scopePickerVisible && (
         <StudyScopePicker
@@ -242,6 +254,10 @@ function HomeScreen({ onStart, onNavigateRegister, onSwitchProfile, onNavigateTa
         />
       )}
 
+      {audioSaveFailed && <p role="status">설정을 저장하지 못했어요. 이번 학습에만 적용돼요.</p>}
+
+      <div className="home-spacer" />
+
       {retryQueueLength > 0 && (
         <p className="retry-indicator">
           <span className="retry-indicator-dot" />
@@ -249,6 +265,7 @@ function HomeScreen({ onStart, onNavigateRegister, onSwitchProfile, onNavigateTa
         </p>
       )}
 
+      <div className="session-options-row">
       {/* 선택 0개면 세션 수 줄을 숨긴다 — 시작 버튼의 "탭을 선택하세요"가 대신 안내한다(§4.2). */}
       {status === "ready" && stats && !noTabSelected && (
         <p className="session-count">
@@ -264,6 +281,9 @@ function HomeScreen({ onStart, onNavigateRegister, onSwitchProfile, onNavigateTa
           )}
         </p>
       )}
+
+
+      </div>
 
       {status !== "error" && (
         <button type="button" className="start-button" disabled={!canStart} onClick={handleStart}>

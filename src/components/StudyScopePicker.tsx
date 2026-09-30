@@ -72,7 +72,7 @@ function StudyScopePicker({ kind, tabs, selected, onKindChange, onSelectedChange
   }
 
   const toggleAll = () => {
-    onSelectedChange(allSelected ? [] : tabs.map((entry) => entry.tab))
+    onSelectedChange(kind === 'tabs' && allSelected ? [] : tabs.map((entry) => entry.tab))
   }
 
   return (
@@ -100,13 +100,14 @@ function StudyScopePicker({ kind, tabs, selected, onKindChange, onSelectedChange
         })}
       </div>
 
+      {kind === 'tabs' && <div className="study-scope-toolbar">
+        <button type="button" className="study-scope-toggle-all" onClick={toggleAll}>
+          {allSelected ? '선택 해제' : '모두 선택'}
+        </button>
+      </div>}
+
       {kind === 'tabs' && (
         <>
-          <div className="study-scope-toolbar">
-            <button type="button" className="study-scope-toggle-all" onClick={toggleAll}>
-              {allSelected ? '선택 해제' : '모두 선택'}
-            </button>
-          </div>
           <div className="study-scope-chips" role="group" aria-label="학습할 탭">
             {tabs.map(({ tab, count }) => {
               const pressed = selectedSet.has(tab)

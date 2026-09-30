@@ -31,7 +31,7 @@ export const DEFAULT_TTS_REVISION = "tts-v1" as const;
 export type TtsAudioSettings = readonly [
   sampleRate: 24000,
   bitRate: 128,
-  volume: 50,
+  volume: 70,
   pitch: 1,
   seed: 0,
   languageHints: readonly ["zh"],
@@ -40,7 +40,7 @@ export type TtsAudioSettings = readonly [
 ];
 
 export const TTS_AUDIO_SETTINGS: TtsAudioSettings = Object.freeze([
-  24000, 128, 50, 1, 0, Object.freeze(["zh"]), false, null,
+  24000, 128, 70, 1, 0, Object.freeze(["zh"]), false, null,
 ]) as unknown as TtsAudioSettings;
 
 export type TtsErrorCode =

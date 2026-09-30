@@ -541,3 +541,44 @@ describe("StudyScreen 중국어 음성 실제 연결 (#150)", () => {
     expect(outcomes.flatMap((outcome) => outcome.queue).every((entry) => (entry as { kind: string }).kind !== "tts")).toBe(true);
   });
 });
+
+
+describe("자동 재생 OFF", () => {
+  for (const mode of ["m1", "m2"] as const) {
+    for (const item of [word, sentenceWord]) {
+      it(`${mode} ${item.hanzi}: 공개는 요청하지 않고 수동 클릭만 재생한다`, async () => {
+        const rendered = renderComponent(
+          <StudyScreen queue={[{ word: item, mode, isReview: false }]} profile={profile} tts={enabled} audioAutoplay={false} onExit={vi.fn()} onComplete={vi.fn()} />,
+        );
+        unmountCurrent = rendered.unmount;
+        if (mode === "m1") {
+          fire(() => rendered.container.querySelector<HTMLButtonElement>(".flip-reveal-button")!.click());
+          fire(() => transitionEnd(rendered.container.querySelector(".flip-card")!));
+        } else {
+          fire(() => setInput(rendered.container.querySelector<HTMLTextAreaElement>(".mode-input")!, "오답"));
+          fire(() => rendered.container.querySelector<HTMLButtonElement>('button[type="submit"]')!.click());
+        }
+        await flush();
+        expect(ttsRequestCount()).toBe(0);
+        expect(audio.calls).not.toContain("play");
+        fire(() => rendered.container.querySelector<HTMLButtonElement>('[aria-label="발음 듣기"]')!.click());
+        await vi.waitFor(() => expect(audio.calls.filter(call => call === "play")).toHaveLength(1));
+        expect(ttsRequestCount()).toBe(1);
+      });
+    }
+  }
+
+  it("홈 OFF 선택이 App을 거쳐 세션에 전달된다", async () => {
+    const rendered = renderComponent(<App />);
+    unmountCurrent = rendered.unmount;
+    await vi.waitFor(() => expect(rendered.container.querySelector('[aria-label="발음 자동 재생"]')).not.toBeNull());
+    fire(() => rendered.container.querySelector<HTMLButtonElement>('[aria-label="발음 자동 재생"]')!.click());
+    fire(() => rendered.container.querySelector<HTMLButtonElement>(".start-button")!.click());
+    fire(() => rendered.container.querySelector<HTMLButtonElement>(".flip-reveal-button")!.click());
+    fire(() => transitionEnd(rendered.container.querySelector(".flip-card")!));
+    await flush();
+    expect(ttsRequestCount()).toBe(0);
+    fire(() => rendered.container.querySelector<HTMLButtonElement>('[aria-label="발음 듣기"]')!.click());
+    await vi.waitFor(() => expect(ttsRequestCount()).toBe(1));
+  });
+});

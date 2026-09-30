@@ -81,12 +81,14 @@ describe("HomeScreen 진입 액션 배치", () => {
     expect(container.textContent).not.toContain("단어 등록 ›");
   });
 
-  it("수정 버튼을 누르면 메뉴 없이 등록 화면 이동 prop까지 즉시 이어진다 (#112)", async () => {
-    const { editButton, onNavigateRegister } = setup();
+  it("수정 메뉴에서 등록을 선택하면 등록 화면으로 이동한다", async () => {
+    const { container, editButton, onNavigateRegister } = setup();
     await flush();
 
     fire(() => editButton.click());
 
+    expect(onNavigateRegister).not.toHaveBeenCalled();
+    fire(() => container.querySelector<HTMLButtonElement>('[role="menuitem"]')!.click());
     expect(onNavigateRegister).toHaveBeenCalledTimes(1);
   });
 
@@ -140,6 +142,7 @@ describe("세션 시작 — 시트 문제 수 설정이 큐에 반영된다 (#11
     expect(onStart.mock.calls[0]).toHaveLength(2);
     expect(onStart.mock.calls[0][0]).toHaveLength(35);
     expect(onStart.mock.calls[0][1]).toEqual({
+      audioAutoplay: true,
       profile,
       tts: { enabled: true, revision: "session-r1", maxTextLength: 200 },
     });
@@ -456,5 +459,22 @@ describe("학습 범위 선택 (#189, PRD-tab-scoped-study §4)", () => {
     expect(home.radio("전체").getAttribute("aria-checked")).toBe("true");
     expect(document.activeElement).toBe(home.radio("전체"));
     expect(home.chipTexts()).toEqual([]);
+  });
+});
+
+
+describe("자동 재생 설정", () => {
+  it("토글을 저장하고 다시 홈에 진입하면 OFF를 복원한다", async () => {
+    fetchWordsMock.mockResolvedValue({ ...wordsResponse, tts: { enabled: true, revision: "r1", maxTextLength: 200 } });
+    const first = setup();
+    await flush();
+    const toggle = first.container.querySelector<HTMLButtonElement>('[aria-label="발음 자동 재생"]')!;
+    expect(toggle.getAttribute("aria-pressed")).toBe("true");
+    fire(() => toggle.click());
+    expect(toggle.getAttribute("aria-pressed")).toBe("false");
+    unmountCurrent?.();
+    const second = setup();
+    await flush();
+    expect(second.container.querySelector<HTMLButtonElement>('[aria-label="발음 자동 재생"]')!.getAttribute("aria-pressed")).toBe("false");
   });
 });
