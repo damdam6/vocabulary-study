@@ -87,13 +87,14 @@ function StudyScreen({ queue, profile, tts, audioAutoplay = true, onExit, onComp
         mode,
         timestamp: formatSeoulDateTime(new Date()),
         isReview,
+        studyModes: word.studyModes ?? profile.modes,
       }
       postAnswer(record)
         .then((updated) => setSession((state) => applyWordUpdate(state, updated)))
         .catch(() => enqueueAnswer(record))
     } else if (effect.kind === 'review-fail') {
       const { word } = effect.question
-      postReviewFail(word.tab, word.hanzi).catch(() => enqueueReviewFail({ tab: word.tab, hanzi: word.hanzi }))
+      postReviewFail(word.tab, word.hanzi, word.studyModes ?? profile.modes).catch(() => enqueueReviewFail({ tab: word.tab, hanzi: word.hanzi, studyModes: word.studyModes ?? profile.modes }))
     }
   }
 

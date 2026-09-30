@@ -17,9 +17,10 @@ import type { TtsCapability } from './lib/ttsTypes.ts'
 
 // pinyin-pro(gzip 약 145KB) 의존성이 등록 화면에만 있어(#49) 학습 플로우 번들에서
 // 제외되도록 지연 로딩한다 — 등록 화면은 홈의 저강조 링크로만 진입하는 비핵심 경로.
+const TabModesScreen = lazy(() => import('./screens/TabModesScreen.tsx'))
 const RegisterScreen = lazy(() => import('./screens/RegisterScreen.tsx'))
 
-type Screen = 'login' | 'home' | 'study' | 'done' | 'register'
+type Screen = 'login' | 'home' | 'study' | 'done' | 'register' | 'tab-modes'
 
 interface ActiveStudySession {
   queue: SessionQuestion<WordEntry>[]
@@ -74,6 +75,7 @@ function App() {
             onStart={startSession}
             onNavigateRegister={() => setScreen('register')}
             onSwitchProfile={switchProfile}
+            onNavigateTabModes={() => setScreen('tab-modes')}
           />
         )}
         {screen === 'study' && activeStudy !== null && (
@@ -92,6 +94,11 @@ function App() {
             wrong={sessionResult.wrong}
             onGoHome={() => setScreen('home')}
           />
+        )}
+        {screen === 'tab-modes' && (
+          <Suspense fallback={<p>설정을 불러오는 중…</p>}>
+            <TabModesScreen onGoHome={() => setScreen('home')} />
+          </Suspense>
         )}
         {screen === 'register' && (
           <Suspense fallback={<div className="register-screen"><p className="register-hint">불러오는 중…</p></div>}>

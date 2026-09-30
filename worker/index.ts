@@ -1,3 +1,4 @@
+import { handleTabModes } from "./routes/tab-modes.ts";
 import { handleAnswerPost } from "./routes/answer.ts";
 import { handleGetWords } from "./routes/words.ts";
 import { handleReviewFail } from "./routes/review-fail.ts";
@@ -113,6 +114,14 @@ export default {
         } catch (err) {
           console.error("[POST /api/words/register]", err);
           return Response.json({ error: "failed to register words" }, { status: 500 });
+        }
+      }
+
+      if (url.pathname === "/api/tab-modes" && (request.method === "GET" || request.method === "POST")) {
+        try { return await handleTabModes(request, env, profile); }
+        catch (err) {
+          console.error("[tab-modes]", err);
+          return Response.json({ error: "탭별 설정을 불러오거나 저장하지 못했습니다." }, { status: 500 });
         }
       }
 

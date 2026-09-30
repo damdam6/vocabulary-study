@@ -126,7 +126,7 @@ describe("문장 등록 → 조회 → 학습 기록 통합", () => {
     await answerMode2({ ...word, m1: 3, m2: 3, nextReview: "2026-10-01", interval: 7 }, "我没有2本书", true);
     await vi.waitFor(() => expect(calls("/api/review-fail")).toHaveLength(1));
     expect(calls("/api/review-fail")).toHaveLength(1);
-    expect(calls("/api/review-fail")[0].body).toEqual({ tab: "문장", hanzi: "我有2本书。" });
+    expect(calls("/api/review-fail")[0].body).toEqual({ tab: "문장", hanzi: "我有2本书。", studyModes: ["m1", "m2"] });
     expect(stored[5]).toMatch(/^\d{4}-\d{2}-\d{2}\|3$/);
   });
 
@@ -149,7 +149,7 @@ describe("문장 등록 → 조회 → 학습 기록 통합", () => {
     });
     expect(queue).toHaveLength(2);
     expect(queue[0]).toMatchObject({ kind: "answer", profileId: "zh", record: { tab: "문장", hanzi: "我今天很忙。", mode: "m2" } });
-    expect(queue[1]).toEqual({ kind: "review-fail", profileId: "zh", record: { tab: "문장", hanzi: "我今天很忙。" } });
+    expect(queue[1]).toEqual({ kind: "review-fail", profileId: "zh", record: { tab: "문장", hanzi: "我今天很忙。", studyModes: ["m1", "m2"] } });
   });
 
   it("generic은 실제 별도 sheetId에 등록·조회되고 zh 문장부호 완화를 받지 않는다", async () => {
@@ -257,7 +257,7 @@ async function sheetsFetch(url: string, init?: RequestInit): Promise<Response> {
   const state = sheets[sheetId];
   if (!state) return new Response("sheet not found", { status: 404 });
   if (method === "GET" && url.includes("?fields=")) {
-    return Response.json({ sheets: state.titles.map((title) => ({ properties: { title } })) });
+    return Response.json({ sheets: state.titles.map((title, sheetId) => ({ properties: { title, sheetId } })) });
   }
   if (method === "POST" && url.includes("/values:batchUpdate")) {
     const body = JSON.parse(String(init?.body)) as { data: { range: string; values: (string | number)[][] }[] };

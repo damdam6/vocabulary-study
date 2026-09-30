@@ -14,6 +14,7 @@ export interface StudyScopeTab {
 
 interface StudyScopePickerProps {
   kind: StudyScopeKind
+  onNavigateTabModes?: () => void
   /** 시트 탭 순서. 칩도 이 순서로 배치하고, onSelectedChange도 이 순서로 올린다. */
   tabs: readonly StudyScopeTab[]
   selected: readonly string[]
@@ -37,7 +38,7 @@ function ChipMark({ pressed }: { pressed: boolean }) {
   )
 }
 
-function StudyScopePicker({ kind, tabs, selected, onKindChange, onSelectedChange }: StudyScopePickerProps) {
+function StudyScopePicker({ kind, tabs, selected, onKindChange, onSelectedChange, onNavigateTabModes }: StudyScopePickerProps) {
   const radioRefs = useRef<(HTMLButtonElement | null)[]>([])
   const selectedSet = new Set(selected)
   const allSelected = tabs.every(({ tab }) => selectedSet.has(tab))
@@ -72,7 +73,7 @@ function StudyScopePicker({ kind, tabs, selected, onKindChange, onSelectedChange
   }
 
   const toggleAll = () => {
-    onSelectedChange(allSelected ? [] : tabs.map((entry) => entry.tab))
+    onSelectedChange(kind === 'tabs' && allSelected ? [] : tabs.map((entry) => entry.tab))
   }
 
   return (
@@ -100,13 +101,17 @@ function StudyScopePicker({ kind, tabs, selected, onKindChange, onSelectedChange
         })}
       </div>
 
+      <div className="study-scope-toolbar">
+        {onNavigateTabModes && (
+          <button type="button" className="study-scope-settings" onClick={onNavigateTabModes}>탭별 유형 설정</button>
+        )}
+        {kind === 'tabs' && <button type="button" className="study-scope-toggle-all" onClick={toggleAll}>
+          {allSelected ? '선택 해제' : '모두 선택'}
+        </button>}
+      </div>
+
       {kind === 'tabs' && (
         <>
-          <div className="study-scope-toolbar">
-            <button type="button" className="study-scope-toggle-all" onClick={toggleAll}>
-              {allSelected ? '선택 해제' : '모두 선택'}
-            </button>
-          </div>
           <div className="study-scope-chips" role="group" aria-label="학습할 탭">
             {tabs.map(({ tab, count }) => {
               const pressed = selectedSet.has(tab)

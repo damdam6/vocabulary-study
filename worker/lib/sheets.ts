@@ -56,6 +56,18 @@ export async function getSheetTitles(env: Env, sheetId: string): Promise<string[
     .filter((title): title is string => !!title);
 }
 
+/** Stable tab IDs survive renames; deleted/recreated tabs receive a new ID. */
+export async function getSheetMetadata(env: Env, sheetId: string): Promise<{ id: number; name: string }[]> {
+  const res = await sheetsFetch(env, sheetId, "GET", "?fields=sheets.properties(sheetId,title)");
+  const body = await res.json() as { sheets?: { properties: { sheetId: number; title: string } }[] };
+  return (body.sheets ?? []).map(({ properties }) => {
+    if (!Number.isInteger(properties.sheetId) || properties.sheetId < 0 || typeof properties.title !== "string") {
+      throw new Error("Invalid sheet metadata");
+    }
+    return { id: properties.sheetId, name: properties.title };
+  });
+}
+
 // Sheets API batchUpdate request 형태 — 이 코드베이스가 실제로 보내는 두 종류만 다룬다.
 // https://developers.google.com/workspace/sheets/api/reference/rest/v4/spreadsheets/batchUpdate
 export interface AddSheetRequest {

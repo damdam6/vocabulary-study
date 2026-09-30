@@ -72,7 +72,7 @@ export function computeAnswerUpdate(
   }
 
   const justGraduated = !wasGraduated && graduated(m1, m2, modes);
-  if (justGraduated) {
+  if (justGraduated && current.nextReview === null) {
     return { m1, m2, nextReview: addSeoulDays(now, 1), interval: 1, nextReviewChanged: true };
   }
 

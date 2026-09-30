@@ -1081,6 +1081,7 @@ button {
 
 .study-scope-segment-option:focus-visible,
 .study-scope-toggle-all:focus-visible,
+.study-scope-settings:focus-visible,
 .study-scope-chip:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: -1px;
@@ -1088,9 +1089,12 @@ button {
 
 .study-scope-toolbar {
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
 }
 
+.study-scope-settings,
 .study-scope-toggle-all {
   border: none;
   border-radius: 6px;
@@ -1100,6 +1104,16 @@ button {
   font-size: 0.8rem;
 }
 
+.study-scope-settings {
+  padding-left: 0;
+  text-align: left;
+}
+
+.study-scope-toggle-all {
+  margin-left: auto;
+}
+
+.study-scope-settings:hover,
 .study-scope-toggle-all:hover {
   color: var(--text);
 }

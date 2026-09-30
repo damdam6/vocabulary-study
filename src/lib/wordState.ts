@@ -1,3 +1,4 @@
+import { effectiveModes, type StudyMode } from "../../shared/studyModes.ts";
 /**
  * PRD §5.1 / PRD-general §4.1: 단어 상태(학습 중/복습 대기/복습 예약) 판정 — 활성
  * 모드 집합 M 기준. §7.3에 따라 상태 판정은 클라이언트 책임이므로 여기(src/lib)에
@@ -26,6 +27,7 @@ export type Mode = "m1" | "m2";
 
 /** getWordState가 필요로 하는 최소 필드. GET /api/words의 WordEntry와 구조적으로 호환된다. */
 export interface WordProgress {
+  studyModes?: readonly StudyMode[];
   m1: number;
   m2: number;
   nextReview: string | null;
@@ -37,11 +39,10 @@ export interface WordProgress {
  * 한 번에 분류하므로, 단어마다 today를 다시 계산하지 않는다.
  */
 export function getWordState(word: WordProgress, today: string, modes: readonly Mode[]): WordState {
-  if (modes.some((mode) => word[mode] < 3)) {
+  if (effectiveModes(word, modes).some((mode) => word[mode] < 3)) {
     return "learning";
   }
-  // 졸업(M의 모든 모드 ≥ 3)했는데 nextReview가 없는 경우는 PRD에 정의되지 않은 데이터
-  // 이상 상태다(정상 흐름에서는 졸업 시 F열이 항상 채워진다). 알 수 없는 미래로
+  // 모드 축소로 졸업(M의 모든 모드 ≥ 3)했는데 nextReview가 없는 경우도 있다. 알 수 없는 미래로
   // 영원히 숨기기보다 복습 대기로 취급해 눈에 띄게 한다 — 모드 축소로 새로 졸업 취급된
   // 단어도 이 경로를 그대로 타 자가치유된다(PRD-general §4.3).
   //
