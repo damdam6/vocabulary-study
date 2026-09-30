@@ -1,4 +1,3 @@
-import "./TabModesScreen.css";
 // design-prd §3 홈 화면. 세션 큐 구성은 홈 책임(기능 PRD §6.1) — 시작 클릭 시
 // 이미 조회해 둔 단어로 큐를 만들어 onStart(queue)로 올린다(#15 셸 계약).
 // 현황 집계(sessionCount)와 큐가 같은 조회 결과를 쓰므로 수치가 어긋나지 않는다.
@@ -197,6 +196,7 @@ function HomeScreen({ onStart, onNavigateRegister, onSwitchProfile, onNavigateTa
           {profile && <p className="home-profile-name">{profile.name}</p>}
         </div>
         <HomeUtilBar
+          onNavigateTabModes={onNavigateTabModes}
           onNavigateRegister={onNavigateRegister}
           onSwitchProfile={onSwitchProfile}
           audioAutoplay={audioAutoplay}
@@ -251,14 +251,7 @@ function HomeScreen({ onStart, onNavigateRegister, onSwitchProfile, onNavigateTa
           selected={scope.kind === "tabs" ? scope.tabs : []}
           onKindChange={handleKindChange}
           onSelectedChange={handleSelectedChange}
-          onNavigateTabModes={onNavigateTabModes}
         />
-      )}
-
-      {!scopePickerVisible && onNavigateTabModes && (
-        <div className="study-scope-toolbar">
-          <button type="button" className="study-scope-settings" onClick={onNavigateTabModes}>탭별 유형 설정</button>
-        </div>
       )}
 
       {audioSaveFailed && <p role="status">설정을 저장하지 못했어요. 이번 학습에만 적용돼요.</p>}

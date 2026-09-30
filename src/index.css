@@ -1094,7 +1094,6 @@ button {
   gap: 12px;
 }
 
-.study-scope-settings,
 .study-scope-toggle-all {
   border: none;
   border-radius: 6px;
@@ -1104,16 +1103,10 @@ button {
   font-size: 0.8rem;
 }
 
-.study-scope-settings {
-  padding-left: 0;
-  text-align: left;
-}
-
 .study-scope-toggle-all {
   margin-left: auto;
 }
 
-.study-scope-settings:hover,
 .study-scope-toggle-all:hover {
   color: var(--text);
 }
@@ -1811,4 +1804,35 @@ textarea.register-modal-input {
 .session-options-row:empty { display: none; }
 .session-options-row .session-count { flex: 1; min-width: 0; flex-wrap: wrap; }
 .session-options-row .session-count-rest { white-space: normal; }
-.home-audio-button[aria-pressed="true"] { color: var(--accent); }
+.home-audio-button:hover,
+.home-audio-button:active { color: var(--text-muted); }
+
+.home-edit-menu { position: relative; }
+.home-edit-menu-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 20;
+  width: max-content;
+  max-width: calc(100vw - 40px);
+  padding: 6px;
+  border: 1px solid var(--border-card);
+  border-radius: 12px;
+  background: var(--bg-panel);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 24%);
+}
+.home-edit-menu-panel button {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  font-size: 0.85rem;
+  text-align: left;
+}
+.home-edit-menu-panel button:hover,
+.home-edit-menu-panel button:focus-visible { background: var(--bg-disabled); }
+.home-edit-menu-panel button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }

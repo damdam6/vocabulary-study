@@ -81,12 +81,14 @@ describe("HomeScreen 진입 액션 배치", () => {
     expect(container.textContent).not.toContain("단어 등록 ›");
   });
 
-  it("수정 버튼을 누르면 메뉴 없이 등록 화면 이동 prop까지 즉시 이어진다 (#112)", async () => {
-    const { editButton, onNavigateRegister } = setup();
+  it("수정 메뉴에서 등록을 선택하면 등록 화면으로 이동한다", async () => {
+    const { container, editButton, onNavigateRegister } = setup();
     await flush();
 
     fire(() => editButton.click());
 
+    expect(onNavigateRegister).not.toHaveBeenCalled();
+    fire(() => container.querySelector<HTMLButtonElement>('[role="menuitem"]')!.click());
     expect(onNavigateRegister).toHaveBeenCalledTimes(1);
   });
 
