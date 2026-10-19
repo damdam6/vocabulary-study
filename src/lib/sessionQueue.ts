@@ -22,7 +22,7 @@ export const REVIEW_SHARE = 0.3;
 
 export type QuizMode = "m1" | "m2";
 
-/** 세션 상한을 복습/학습에 나눈 결과. total은 큐 길이이자 홈의 "오늘 세션 · n문제"다. */
+/** 세션 상한을 복습/학습에 나눈 결과. total은 큐 길이이자 홈 세션 수 줄의 "n문제"다. */
 export interface SessionSlots {
   review: number;
   learning: number;

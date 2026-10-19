@@ -149,6 +149,110 @@ describe("세션 시작 — 시트 문제 수 설정이 큐에 반영된다 (#11
   });
 });
 
+describe("이번 세션 문제 수 수정", () => {
+  const learningWord = (hanzi: string): WordEntry => ({
+    tab: "HSK6",
+    hanzi,
+    pinyin: "",
+    meaning: hanzi,
+    m1: 1,
+    m2: 0,
+    nextReview: null,
+    interval: null,
+  });
+
+  // input의 value를 React가 알아채도록 네이티브 setter로 바꾸고 input 이벤트를 쏜다.
+  function typeInto(input: HTMLInputElement, value: string) {
+    fire(() => {
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(input, value);
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+  }
+
+  async function mountWith(count: number, sessionLimit: number) {
+    fetchWordsMock.mockResolvedValue({
+      profile,
+      words: Array.from({ length: count }, (_, i) => learningWord(`词${i}`)),
+      settings: { sessionLimit },
+      tts: { enabled: false },
+    } satisfies WordsResponse);
+    const view = setup();
+    await flush();
+    const { container } = view;
+    return {
+      ...view,
+      link: () => container.querySelector<HTMLButtonElement>(".session-limit-link"),
+      modal: () => container.querySelector('[role="dialog"]'),
+      input: () => container.querySelector<HTMLInputElement>('[role="dialog"] input')!,
+      save: () => container.querySelector<HTMLButtonElement>('[role="dialog"] button[type="submit"]')!,
+      buttonByText: (text: string) =>
+        [...container.querySelectorAll<HTMLButtonElement>('[role="dialog"] button')].find((b) => b.textContent === text)!,
+      sessionCount: () => container.querySelector(".session-count")?.textContent ?? null,
+    };
+  }
+
+  it("세션 수 줄에 '오늘 세션' 문구가 없다", async () => {
+    const home = await mountWith(10, 60);
+    expect(home.sessionCount()).toBe("10문제");
+    expect(home.container.textContent).not.toContain("오늘 세션");
+  });
+
+  it("링크를 누르면 모달이 열리고, 저장한 값이 이번 세션 큐 길이가 된다", async () => {
+    const home = await mountWith(50, 35);
+    expect(home.link()?.textContent).toBe("[이번 세션 문제 수]");
+    expect(home.modal()).toBeNull();
+
+    fire(() => home.link()!.click());
+    expect(home.modal()).not.toBeNull();
+    expect(home.input().value).toBe("35");
+
+    typeInto(home.input(), "12");
+    fire(() => home.save().click());
+
+    expect(home.modal()).toBeNull();
+    expect(home.sessionCount()).toBe("12문제");
+    fire(() => home.startButton().click());
+    expect(home.onStart.mock.calls[0][0]).toHaveLength(12);
+  });
+
+  it("범위를 벗어난 값은 저장할 수 없다", async () => {
+    const home = await mountWith(20, 60);
+    fire(() => home.link()!.click());
+    // 풀 수 있는 최대(20)로 초기값이 잘린다
+    expect(home.input().value).toBe("20");
+
+    typeInto(home.input(), "21");
+    expect(home.save().disabled).toBe(true);
+    typeInto(home.input(), "0");
+    expect(home.save().disabled).toBe(true);
+    typeInto(home.input(), "");
+    expect(home.save().disabled).toBe(true);
+  });
+
+  it("취소하면 값이 바뀌지 않고, 기본값으로를 누르면 시트 설정으로 돌아간다", async () => {
+    const home = await mountWith(50, 35);
+    fire(() => home.link()!.click());
+    typeInto(home.input(), "5");
+    fire(() => home.buttonByText("취소").click());
+    expect(home.modal()).toBeNull();
+    expect(home.sessionCount()).toBe("35문제");
+
+    fire(() => home.link()!.click());
+    typeInto(home.input(), "5");
+    fire(() => home.save().click());
+    expect(home.sessionCount()).toBe("5문제");
+
+    fire(() => home.link()!.click());
+    fire(() => home.buttonByText("기본값으로").click());
+    expect(home.sessionCount()).toBe("35문제");
+  });
+
+  it("할 것이 없으면 링크를 숨긴다", async () => {
+    const home = await mountWith(0, 60);
+    expect(home.link()).toBeNull();
+  });
+});
+
 describe("학습 범위 선택 (#189, PRD-tab-scoped-study §4)", () => {
   // 학습 중: 미졸업(m1<3) — 단어당 1문제. 복습 대기: 졸업 + 복습일 도래. 복습 예정: 졸업 + 미래 복습일.
   const learning = (tab: string, hanzi: string): WordEntry => ({
@@ -232,7 +336,7 @@ describe("학습 범위 선택 (#189, PRD-tab-scoped-study §4)", () => {
     // 범위 도입 전 산식(전체 단어 그대로)과 같은 값이어야 한다
     const expected = computeHomeStats(words, getSeoulToday(), profile.modes, 60);
     expect(home.cards()).toEqual([expected.reviewDue, expected.learning, expected.graduated]);
-    expect(home.sessionCount()).toBe(`오늘 세션 · ${expected.sessionCount}문제`);
+    expect(home.sessionCount()).toBe(`${expected.sessionCount}문제`);
     expect(home.startQueue()).toHaveLength(expected.sessionCount);
   });
 
@@ -245,7 +349,7 @@ describe("학습 범위 선택 (#189, PRD-tab-scoped-study §4)", () => {
     expect(home.chipTexts()).toEqual(["HSK6 · 2", "HSK5 · 3", "교재5과 · 3"]);
     expect(home.pressedTabs()).toEqual(["HSK5"]);
     expect(home.cards()).toEqual([0, 3, 0]);
-    expect(home.sessionCount()).toBe("HSK5 · 오늘 세션 · 3문제");
+    expect(home.sessionCount()).toBe("HSK5 · 3문제");
     const queue = home.startQueue();
     expect(queue).toHaveLength(3);
     expect(queue.every((q) => q.word.tab === "HSK5")).toBe(true);
@@ -264,7 +368,7 @@ describe("학습 범위 선택 (#189, PRD-tab-scoped-study §4)", () => {
     expect(home.chipTexts()).toEqual(["교재5과 · 4", "교재6과 · 4", "HSK6 · 1"]);
     expect(home.pressedTabs()).toEqual(["교재5과", "교재6과"]);
     // 4 + 4 = 8이 아니라 두 탭 합집합(8단어)에 상한 5를 적용한 값
-    expect(home.sessionCount()).toBe("교재5과 외 1개 탭 · 오늘 세션 · 5문제");
+    expect(home.sessionCount()).toBe("교재5과 외 1개 탭 · 5문제");
     const queue = home.startQueue();
     expect(queue).toHaveLength(5);
     expect(queue.every((q) => q.word.tab === "교재5과" || q.word.tab === "교재6과")).toBe(true);
@@ -277,7 +381,7 @@ describe("학습 범위 선택 (#189, PRD-tab-scoped-study §4)", () => {
 
     expect(home.radio("탭 선택").getAttribute("aria-checked")).toBe("true");
     expect(home.cards()).toEqual([0, 2, 0]);
-    expect(home.sessionCount()).toBe("HSK6 · 오늘 세션 · 2문제");
+    expect(home.sessionCount()).toBe("HSK6 · 2문제");
     const queue = home.startQueue();
     expect(queue).toHaveLength(2);
     expect(queue.some((q) => q.isReview || q.word.tab === "HSK5")).toBe(false);
@@ -306,7 +410,7 @@ describe("학습 범위 선택 (#189, PRD-tab-scoped-study §4)", () => {
     fire(() => home.chip("HSK5").click());
     expect(home.startButton().disabled).toBe(false);
     expect(home.startButton().textContent).toBe("학습 시작");
-    expect(home.sessionCount()).toBe("HSK5 · 오늘 세션 · 1문제");
+    expect(home.sessionCount()).toBe("HSK5 · 1문제");
   });
 
   it("범위 안에 할 것이 없으면 기존처럼 '오늘 할 것 없음'이다", async () => {
@@ -317,7 +421,7 @@ describe("학습 범위 선택 (#189, PRD-tab-scoped-study §4)", () => {
     expect(home.chip("HSK5").classList.contains("is-empty")).toBe(true);
     expect(home.startButton().disabled).toBe(true);
     expect(home.startButton().textContent).toBe("오늘 할 것 없음");
-    expect(home.sessionCount()).toBe("HSK5 · 오늘 세션 · 0문제");
+    expect(home.sessionCount()).toBe("HSK5 · 0문제");
   });
 
   it("0문제 칩도 aria-pressed 토글로 선택할 수 있고, 칩 목록은 '학습할 탭' 그룹이다", async () => {
@@ -345,11 +449,11 @@ describe("학습 범위 선택 (#189, PRD-tab-scoped-study §4)", () => {
 
     fire(() => home.radio("전체").click());
     expect(home.chipTexts()).toEqual([]);
-    expect(home.sessionCount()).toBe("오늘 세션 · 5문제");
+    expect(home.sessionCount()).toBe("5문제");
 
     fire(() => home.radio("탭 선택").click());
     expect(home.pressedTabs()).toEqual(["HSK6", "교재5과"]);
-    expect(home.sessionCount()).toBe("HSK6 외 1개 탭 · 오늘 세션 · 4문제");
+    expect(home.sessionCount()).toBe("HSK6 외 1개 탭 · 4문제");
   });
 
   it("새로고침(재마운트)해도 범위와 칩 선택이 복원된다", async () => {
@@ -363,7 +467,7 @@ describe("학습 범위 선택 (#189, PRD-tab-scoped-study §4)", () => {
 
     expect(second.radio("탭 선택").getAttribute("aria-checked")).toBe("true");
     expect(second.pressedTabs()).toEqual(["HSK6", "HSK5"]);
-    expect(second.sessionCount()).toBe("HSK6 외 1개 탭 · 오늘 세션 · 4문제");
+    expect(second.sessionCount()).toBe("HSK6 외 1개 탭 · 4문제");
   });
 
   it("프로필 전환 후 재로그인하면 그 프로필의 범위가 복원되고 다른 프로필과 섞이지 않는다", async () => {
@@ -411,7 +515,7 @@ describe("학습 범위 선택 (#189, PRD-tab-scoped-study §4)", () => {
 
     expect(home.container.querySelector(".error-card")).toBeNull();
     expect(home.radio("전체").getAttribute("aria-checked")).toBe("true");
-    expect(home.sessionCount()).toBe("오늘 세션 · 2문제");
+    expect(home.sessionCount()).toBe("2문제");
   });
 
   it("탭이 1개뿐인 프로필은 선택 UI 없이 전체로 동작한다", async () => {
@@ -420,7 +524,7 @@ describe("학습 범위 선택 (#189, PRD-tab-scoped-study §4)", () => {
     const home = await mount();
 
     expect(home.picker()).toBeNull();
-    expect(home.sessionCount()).toBe("오늘 세션 · 2문제");
+    expect(home.sessionCount()).toBe("2문제");
     expect(home.startQueue()).toHaveLength(2);
   });
 

@@ -6,6 +6,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { readAudioAutoplay, saveAudioAutoplay } from "../lib/audioPreferences.ts";
 import HomeUtilBar from "../components/HomeUtilBar.tsx";
+import SessionLimitModal from "../components/SessionLimitModal.tsx";
 import StudyScopePicker, { type StudyScopeKind } from "../components/StudyScopePicker.tsx";
 import { getStoredProfile, saveProfile, type PublicProfile, type WordEntry } from "../lib/api.ts";
 import { formatHomeDate } from "../lib/date.ts";
@@ -67,7 +68,11 @@ function HomeScreen({ onStart, onNavigateRegister, onSwitchProfile, onNavigateTa
   const [retryKey, setRetryKey] = useState(0);
   const [retryQueueLength, setRetryQueueLength] = useState(0);
   // 시트별 세션 문제 수(세션 설정 플랜 §3.2) — words 응답 동봉값, 미동봉 시 fetchWords가 SESSION_CAP으로 폴백.
-  const [sessionLimit, setSessionLimit] = useState(SESSION_CAP);
+  const [sheetSessionLimit, setSheetSessionLimit] = useState(SESSION_CAP);
+  // 이번 세션 문제 수 수정값 — 이번 홈 진입 동안만 시트 설정을 대신한다(재진입·재조회 시 초기화).
+  const [sessionLimitOverride, setSessionLimitOverride] = useState<number | null>(null);
+  const [sessionLimitModalOpen, setSessionLimitModalOpen] = useState(false);
+  const sessionLimit = sessionLimitOverride ?? sheetSessionLimit;
   const [audioAutoplay, setAudioAutoplay] = useState(true);
   const [audioSaveFailed, setAudioSaveFailed] = useState(false);
   const [tts, setTts] = useState<TtsCapability>({ enabled: false });
@@ -86,7 +91,8 @@ function HomeScreen({ onStart, onNavigateRegister, onSwitchProfile, onNavigateTa
         setAudioAutoplay(readAudioAutoplay(fetchedProfile.id));
         setAudioSaveFailed(false);
         saveProfile(fetchedProfile);
-        setSessionLimit(settings.sessionLimit);
+        setSheetSessionLimit(settings.sessionLimit);
+        setSessionLimitOverride(null);
         setTts(fetchedTts);
         setToday(getSeoulToday());
         // 홈 진입마다 새 응답으로 저장된 범위를 다시 검증한다 — 사라진 탭 정리·저장값 갱신은
@@ -153,6 +159,8 @@ function HomeScreen({ onStart, onNavigateRegister, onSwitchProfile, onNavigateTa
   const noTabSelected = activeScope.kind === "tabs" && activeScope.tabs.length === 0;
   const canStart = status === "ready" && !noTabSelected && (stats?.sessionCount ?? 0) > 0;
   const scopeLabel = describeScope(activeScope, tabs);
+  // 범위 안에서 풀 수 있는 최대 문제 수 — 상한이 없을 때의 세션 수(복습 대기 + 학습 중)와 같다.
+  const sessionMax = stats === null ? 0 : stats.reviewDue + stats.learning;
 
   // 저장은 사용자 조작 경로에서만 한다 — 선택 0개는 saveStudyScope가 알아서 건너뛴다(§4.3).
   const updateScope = (next: StudyScope) => {
@@ -273,22 +281,42 @@ function HomeScreen({ onStart, onNavigateRegister, onSwitchProfile, onNavigateTa
             <>
               <span className="session-count-scope-name">{scopeLabel.name}</span>
               <span className="session-count-rest">
-                {scopeLabel.rest} · 오늘 세션 · {stats.sessionCount}문제
+                {scopeLabel.rest} · {stats.sessionCount}문제
               </span>
             </>
           ) : (
-            <>오늘 세션 · {stats.sessionCount}문제</>
+            <>{stats.sessionCount}문제</>
           )}
         </p>
       )}
-
-
+      {status === "ready" && stats && !noTabSelected && sessionMax > 0 && (
+        <button type="button" className="session-limit-link" onClick={() => setSessionLimitModalOpen(true)}>
+          [이번 세션 문제 수]
+        </button>
+      )}
       </div>
 
       {status !== "error" && (
         <button type="button" className="start-button" disabled={!canStart} onClick={handleStart}>
           {startLabel}
         </button>
+      )}
+
+      {sessionLimitModalOpen && (
+        <SessionLimitModal
+          current={sessionLimit}
+          sheetLimit={sheetSessionLimit}
+          max={sessionMax}
+          onCancel={() => setSessionLimitModalOpen(false)}
+          onSave={(limit) => {
+            setSessionLimitOverride(limit);
+            setSessionLimitModalOpen(false);
+          }}
+          onReset={() => {
+            setSessionLimitOverride(null);
+            setSessionLimitModalOpen(false);
+          }}
+        />
       )}
     </div>
   );

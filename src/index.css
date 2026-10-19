@@ -1033,7 +1033,7 @@ button {
   cursor: default;
 }
 
-/* 세션 수 줄의 범위 표기(#189) — 탭 이름만 말줄임하고 "외 n개 탭 · 오늘 세션 · n문제"는 끝까지 남긴다 */
+/* 세션 수 줄의 범위 표기(#189) — 탭 이름만 말줄임하고 "외 n개 탭 · n문제"는 끝까지 남긴다 */
 .session-count-scope-name {
   min-width: 0;
   overflow: hidden;
@@ -1804,6 +1804,31 @@ textarea.register-modal-input {
 .session-options-row:empty { display: none; }
 .session-options-row .session-count { flex: 1; min-width: 0; flex-wrap: wrap; }
 .session-options-row .session-count-rest { white-space: normal; }
+/* 이번 세션 문제 수 수정 링크 — 세션 수 줄 오른쪽의 작은 저강조 텍스트, 누르면 모달 */
+.session-limit-link {
+  flex: none;
+  padding: 4px 0;
+  border: none;
+  background: none;
+  color: var(--text-faint);
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+.session-limit-link:hover,
+.session-limit-link:active { color: var(--text-muted); }
+.session-limit-modal { max-width: 360px; }
+.session-limit-modal-error { margin: -6px 0 0; font-size: 12px; color: var(--red); }
+.session-limit-modal-reset {
+  margin-right: auto;
+  min-height: 44px;
+  padding: 0 4px;
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  font-size: 14px;
+  cursor: pointer;
+}
+.register-modal-save:disabled { opacity: 0.5; cursor: default; }
 .home-audio-button:hover,
 .home-audio-button:active { color: var(--text-muted); }
 
