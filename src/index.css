@@ -1803,7 +1803,8 @@ textarea.register-modal-input {
 .session-options-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
 .session-options-row:empty { display: none; }
 .session-options-row .session-count { flex: 1; min-width: 0; flex-wrap: wrap; }
-.session-options-row .session-count-rest { white-space: normal; }
+/* pre-wrap: 줄바꿈은 허용하되 플렉스 항목 앞 공백(" · ", " 외 n개 탭")이 잘리지 않게 한다 */
+.session-options-row .session-count-rest { white-space: pre-wrap; }
 /* 세션 수 줄의 "n문제" — 밑줄로 누를 수 있음을 표시, 누르면 이번 세션 문제 수 수정 모달 */
 .session-limit-link {
   padding: 0;
