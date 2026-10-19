@@ -2,7 +2,7 @@
 // `탭 선택`일 때 펼치는 다중 선택 탭 칩 목록. Dropdown(#56)은 단일 선택 전용이라 쓰지
 // 않는다. 범위·선택은 완전 제어형이고 저장·복원·기본 선택은 호출부(HomeScreen)가
 // studyScope.ts로 처리한다 — 이 컴포넌트는 표시와 조작만 맡는다.
-import { useRef, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from 'react'
+import { useRef, type KeyboardEvent as ReactKeyboardEvent } from 'react'
 
 export type StudyScopeKind = 'all' | 'tabs'
 
@@ -19,8 +19,6 @@ interface StudyScopePickerProps {
   selected: readonly string[]
   onKindChange: (kind: StudyScopeKind) => void
   onSelectedChange: (selected: string[]) => void
-  /** 툴바 왼쪽에 둘 요소(홈의 "이번 세션 n문제") — 있으면 전체 범위에서도 툴바 줄을 유지한다. */
-  toolbarStart?: ReactNode
 }
 
 const SEGMENTS: readonly { kind: StudyScopeKind; label: string }[] = [
@@ -39,7 +37,7 @@ function ChipMark({ pressed }: { pressed: boolean }) {
   )
 }
 
-function StudyScopePicker({ kind, tabs, selected, onKindChange, onSelectedChange, toolbarStart }: StudyScopePickerProps) {
+function StudyScopePicker({ kind, tabs, selected, onKindChange, onSelectedChange }: StudyScopePickerProps) {
   const radioRefs = useRef<(HTMLButtonElement | null)[]>([])
   const selectedSet = new Set(selected)
   const allSelected = tabs.every(({ tab }) => selectedSet.has(tab))
@@ -102,11 +100,10 @@ function StudyScopePicker({ kind, tabs, selected, onKindChange, onSelectedChange
         })}
       </div>
 
-      {(kind === 'tabs' || toolbarStart) && <div className="study-scope-toolbar">
-        {toolbarStart}
-        {kind === 'tabs' && <button type="button" className="study-scope-toggle-all" onClick={toggleAll}>
+      {kind === 'tabs' && <div className="study-scope-toolbar">
+        <button type="button" className="study-scope-toggle-all" onClick={toggleAll}>
           {allSelected ? '선택 해제' : '모두 선택'}
-        </button>}
+        </button>
       </div>}
 
       {kind === 'tabs' && (

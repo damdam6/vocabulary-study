@@ -193,13 +193,14 @@ describe("이번 세션 문제 수 수정", () => {
 
   it("세션 수 줄에 '오늘 세션' 문구가 없다", async () => {
     const home = await mountWith(10, 60);
-    expect(home.sessionCount()).toBe("10문제");
+    expect(home.sessionCount()).toBe("전체 · 10문제");
     expect(home.container.textContent).not.toContain("오늘 세션");
   });
 
   it("링크를 누르면 모달이 열리고, 저장한 값이 이번 세션 큐 길이가 된다", async () => {
     const home = await mountWith(50, 35);
-    expect(home.link()?.textContent).toBe("이번 세션 35문제");
+    expect(home.link()?.textContent).toBe("35문제");
+    expect(home.sessionCount()).toBe("전체 · 35문제");
     expect(home.modal()).toBeNull();
 
     fire(() => home.link()!.click());
@@ -210,8 +211,8 @@ describe("이번 세션 문제 수 수정", () => {
     fire(() => home.save().click());
 
     expect(home.modal()).toBeNull();
-    expect(home.sessionCount()).toBe("12문제");
-    expect(home.link()?.textContent).toBe("이번 세션 12문제");
+    expect(home.sessionCount()).toBe("전체 · 12문제");
+    expect(home.link()?.textContent).toBe("12문제");
     fire(() => home.startButton().click());
     expect(home.onStart.mock.calls[0][0]).toHaveLength(12);
   });
@@ -236,42 +237,22 @@ describe("이번 세션 문제 수 수정", () => {
     typeInto(home.input(), "5");
     fire(() => home.buttonByText("취소").click());
     expect(home.modal()).toBeNull();
-    expect(home.sessionCount()).toBe("35문제");
+    expect(home.sessionCount()).toBe("전체 · 35문제");
 
     fire(() => home.link()!.click());
     typeInto(home.input(), "5");
     fire(() => home.save().click());
-    expect(home.sessionCount()).toBe("5문제");
+    expect(home.sessionCount()).toBe("전체 · 5문제");
 
     fire(() => home.link()!.click());
     fire(() => home.buttonByText("기본값으로").click());
-    expect(home.sessionCount()).toBe("35문제");
+    expect(home.sessionCount()).toBe("전체 · 35문제");
   });
 
-  it("할 것이 없으면 링크를 누를 수 없다", async () => {
+  it("할 것이 없으면 '0문제'는 누를 수 없는 일반 텍스트다", async () => {
     const home = await mountWith(0, 60);
-    expect(home.link()?.textContent).toBe("이번 세션 0문제");
-    expect(home.link()?.disabled).toBe(true);
-  });
-
-  it("범위 선택이 있으면 '모두 선택'과 같은 줄 왼쪽에 있고, 전체 범위에서도 유지된다", async () => {
-    fetchWordsMock.mockResolvedValue({
-      profile,
-      words: [learningWord("一"), { ...learningWord("二"), tab: "HSK5" }],
-      settings: { sessionLimit: 60 },
-      tts: { enabled: false },
-    } satisfies WordsResponse);
-    const view = setup();
-    await flush();
-    const toolbar = () => view.container.querySelector(".study-scope .study-scope-toolbar");
-    // 전체 범위: '모두 선택' 없이 링크만
-    expect(toolbar()?.querySelector(".session-limit-link")?.textContent).toBe("이번 세션 2문제");
-    expect(toolbar()?.querySelector(".study-scope-toggle-all")).toBeNull();
-
-    const tabsRadio = [...view.container.querySelectorAll<HTMLButtonElement>('[role="radio"]')].find((el) => el.textContent === "탭 선택")!;
-    fire(() => tabsRadio.click());
-    const buttons = [...toolbar()!.querySelectorAll("button")];
-    expect(buttons.map((b) => b.className)).toEqual(["session-limit-link", "study-scope-toggle-all"]);
+    expect(home.sessionCount()).toBe("전체 · 0문제");
+    expect(home.link()).toBeNull();
   });
 });
 
@@ -358,7 +339,7 @@ describe("학습 범위 선택 (#189, PRD-tab-scoped-study §4)", () => {
     // 범위 도입 전 산식(전체 단어 그대로)과 같은 값이어야 한다
     const expected = computeHomeStats(words, getSeoulToday(), profile.modes, 60);
     expect(home.cards()).toEqual([expected.reviewDue, expected.learning, expected.graduated]);
-    expect(home.sessionCount()).toBe(`${expected.sessionCount}문제`);
+    expect(home.sessionCount()).toBe(`전체 · ${expected.sessionCount}문제`);
     expect(home.startQueue()).toHaveLength(expected.sessionCount);
   });
 
@@ -471,7 +452,7 @@ describe("학습 범위 선택 (#189, PRD-tab-scoped-study §4)", () => {
 
     fire(() => home.radio("전체").click());
     expect(home.chipTexts()).toEqual([]);
-    expect(home.sessionCount()).toBe("5문제");
+    expect(home.sessionCount()).toBe("전체 · 5문제");
 
     fire(() => home.radio("탭 선택").click());
     expect(home.pressedTabs()).toEqual(["HSK6", "교재5과"]);
@@ -537,7 +518,7 @@ describe("학습 범위 선택 (#189, PRD-tab-scoped-study §4)", () => {
 
     expect(home.container.querySelector(".error-card")).toBeNull();
     expect(home.radio("전체").getAttribute("aria-checked")).toBe("true");
-    expect(home.sessionCount()).toBe("2문제");
+    expect(home.sessionCount()).toBe("전체 · 2문제");
   });
 
   it("탭이 1개뿐인 프로필은 선택 UI 없이 전체로 동작한다", async () => {
@@ -546,7 +527,7 @@ describe("학습 범위 선택 (#189, PRD-tab-scoped-study §4)", () => {
     const home = await mount();
 
     expect(home.picker()).toBeNull();
-    expect(home.sessionCount()).toBe("2문제");
+    expect(home.sessionCount()).toBe("전체 · 2문제");
     expect(home.startQueue()).toHaveLength(2);
   });
 

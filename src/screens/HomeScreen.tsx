@@ -47,10 +47,10 @@ const ALL_SCOPE: StudyScope = { kind: "all" };
 
 /**
  * 세션 수 줄 앞에 붙는 범위 표기(PRD-tab-scoped-study §4.2) — 첫 이름은 시트 순서 기준.
- * 이름만 말줄임하도록 이름과 나머지를 나눠 돌려준다. 전체 범위면 null(현행 문구 그대로).
+ * 이름만 말줄임하도록 이름과 나머지를 나눠 돌려준다. 전체 범위면 "전체".
  */
 function describeScope(scope: StudyScope, tabs: readonly string[]): { name: string; rest: string } | null {
-  if (scope.kind === "all") return null;
+  if (scope.kind === "all") return { name: "전체", rest: "" };
   const selected = new Set(scope.tabs);
   const ordered = tabs.filter((tab) => selected.has(tab));
   if (ordered.length === 0) return null;
@@ -161,18 +161,6 @@ function HomeScreen({ onStart, onNavigateRegister, onSwitchProfile, onNavigateTa
   const scopeLabel = describeScope(activeScope, tabs);
   // 범위 안에서 풀 수 있는 최대 문제 수 — 상한이 없을 때의 세션 수(복습 대기 + 학습 중)와 같다.
   const sessionMax = stats === null ? 0 : stats.reviewDue + stats.learning;
-  // "이번 세션 n문제" — 누르면 이번 세션 문제 수 수정 모달. 범위 선택의 '모두 선택'과 같은 줄 왼쪽에 둔다.
-  const sessionLimitLink =
-    status === "ready" && stats && !noTabSelected ? (
-      <button
-        type="button"
-        className="session-limit-link"
-        disabled={sessionMax === 0}
-        onClick={() => setSessionLimitModalOpen(true)}
-      >
-        이번 세션 {stats.sessionCount}문제
-      </button>
-    ) : null;
 
   // 저장은 사용자 조작 경로에서만 한다 — 선택 0개는 saveStudyScope가 알아서 건너뛴다(§4.3).
   const updateScope = (next: StudyScope) => {
@@ -271,11 +259,8 @@ function HomeScreen({ onStart, onNavigateRegister, onSwitchProfile, onNavigateTa
           selected={scope.kind === "tabs" ? scope.tabs : []}
           onKindChange={handleKindChange}
           onSelectedChange={handleSelectedChange}
-          toolbarStart={sessionLimitLink}
         />
       )}
-      {/* 범위 선택이 없을 때(탭 1개)도 같은 위치에 둔다 */}
-      {!scopePickerVisible && sessionLimitLink && <div className="study-scope-toolbar session-limit-row">{sessionLimitLink}</div>}
 
       {audioSaveFailed && <p role="status">설정을 저장하지 못했어요. 이번 학습에만 적용돼요.</p>}
 
@@ -290,18 +275,25 @@ function HomeScreen({ onStart, onNavigateRegister, onSwitchProfile, onNavigateTa
 
       <div className="session-options-row">
       {/* 선택 0개면 세션 수 줄을 숨긴다 — 시작 버튼의 "탭을 선택하세요"가 대신 안내한다(§4.2). */}
+      {/* "n문제"는 밑줄 버튼 — 누르면 이번 세션 문제 수 수정 모달. 할 것이 0문제면 일반 텍스트. */}
       {status === "ready" && stats && !noTabSelected && (
         <p className="session-count">
-          {scopeLabel ? (
-            <>
-              <span className="session-count-scope-name">{scopeLabel.name}</span>
-              <span className="session-count-rest">
-                {scopeLabel.rest} · {stats.sessionCount}문제
-              </span>
-            </>
-          ) : (
-            <>{stats.sessionCount}문제</>
-          )}
+          {scopeLabel && <span className="session-count-scope-name">{scopeLabel.name}</span>}
+          <span className="session-count-rest">
+            {scopeLabel && `${scopeLabel.rest} · `}
+            {sessionMax > 0 ? (
+              <button
+                type="button"
+                className="session-limit-link"
+                aria-label={`이번 세션 문제 수 ${stats.sessionCount}문제, 수정`}
+                onClick={() => setSessionLimitModalOpen(true)}
+              >
+                {stats.sessionCount}문제
+              </button>
+            ) : (
+              <>{stats.sessionCount}문제</>
+            )}
+          </span>
         </p>
       )}
       </div>
