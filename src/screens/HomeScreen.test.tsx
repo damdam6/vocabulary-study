@@ -199,7 +199,7 @@ describe("이번 세션 문제 수 수정", () => {
 
   it("링크를 누르면 모달이 열리고, 저장한 값이 이번 세션 큐 길이가 된다", async () => {
     const home = await mountWith(50, 35);
-    expect(home.link()?.textContent).toBe("[이번 세션 문제 수]");
+    expect(home.link()?.textContent).toBe("이번 세션 35문제");
     expect(home.modal()).toBeNull();
 
     fire(() => home.link()!.click());
@@ -211,6 +211,7 @@ describe("이번 세션 문제 수 수정", () => {
 
     expect(home.modal()).toBeNull();
     expect(home.sessionCount()).toBe("12문제");
+    expect(home.link()?.textContent).toBe("이번 세션 12문제");
     fire(() => home.startButton().click());
     expect(home.onStart.mock.calls[0][0]).toHaveLength(12);
   });
@@ -247,9 +248,30 @@ describe("이번 세션 문제 수 수정", () => {
     expect(home.sessionCount()).toBe("35문제");
   });
 
-  it("할 것이 없으면 링크를 숨긴다", async () => {
+  it("할 것이 없으면 링크를 누를 수 없다", async () => {
     const home = await mountWith(0, 60);
-    expect(home.link()).toBeNull();
+    expect(home.link()?.textContent).toBe("이번 세션 0문제");
+    expect(home.link()?.disabled).toBe(true);
+  });
+
+  it("범위 선택이 있으면 '모두 선택'과 같은 줄 왼쪽에 있고, 전체 범위에서도 유지된다", async () => {
+    fetchWordsMock.mockResolvedValue({
+      profile,
+      words: [learningWord("一"), { ...learningWord("二"), tab: "HSK5" }],
+      settings: { sessionLimit: 60 },
+      tts: { enabled: false },
+    } satisfies WordsResponse);
+    const view = setup();
+    await flush();
+    const toolbar = () => view.container.querySelector(".study-scope .study-scope-toolbar");
+    // 전체 범위: '모두 선택' 없이 링크만
+    expect(toolbar()?.querySelector(".session-limit-link")?.textContent).toBe("이번 세션 2문제");
+    expect(toolbar()?.querySelector(".study-scope-toggle-all")).toBeNull();
+
+    const tabsRadio = [...view.container.querySelectorAll<HTMLButtonElement>('[role="radio"]')].find((el) => el.textContent === "탭 선택")!;
+    fire(() => tabsRadio.click());
+    const buttons = [...toolbar()!.querySelectorAll("button")];
+    expect(buttons.map((b) => b.className)).toEqual(["session-limit-link", "study-scope-toggle-all"]);
   });
 });
 

@@ -161,6 +161,18 @@ function HomeScreen({ onStart, onNavigateRegister, onSwitchProfile, onNavigateTa
   const scopeLabel = describeScope(activeScope, tabs);
   // 범위 안에서 풀 수 있는 최대 문제 수 — 상한이 없을 때의 세션 수(복습 대기 + 학습 중)와 같다.
   const sessionMax = stats === null ? 0 : stats.reviewDue + stats.learning;
+  // "이번 세션 n문제" — 누르면 이번 세션 문제 수 수정 모달. 범위 선택의 '모두 선택'과 같은 줄 왼쪽에 둔다.
+  const sessionLimitLink =
+    status === "ready" && stats && !noTabSelected ? (
+      <button
+        type="button"
+        className="session-limit-link"
+        disabled={sessionMax === 0}
+        onClick={() => setSessionLimitModalOpen(true)}
+      >
+        이번 세션 {stats.sessionCount}문제
+      </button>
+    ) : null;
 
   // 저장은 사용자 조작 경로에서만 한다 — 선택 0개는 saveStudyScope가 알아서 건너뛴다(§4.3).
   const updateScope = (next: StudyScope) => {
@@ -259,8 +271,11 @@ function HomeScreen({ onStart, onNavigateRegister, onSwitchProfile, onNavigateTa
           selected={scope.kind === "tabs" ? scope.tabs : []}
           onKindChange={handleKindChange}
           onSelectedChange={handleSelectedChange}
+          toolbarStart={sessionLimitLink}
         />
       )}
+      {/* 범위 선택이 없을 때(탭 1개)도 같은 위치에 둔다 */}
+      {!scopePickerVisible && sessionLimitLink && <div className="study-scope-toolbar session-limit-row">{sessionLimitLink}</div>}
 
       {audioSaveFailed && <p role="status">설정을 저장하지 못했어요. 이번 학습에만 적용돼요.</p>}
 
@@ -288,11 +303,6 @@ function HomeScreen({ onStart, onNavigateRegister, onSwitchProfile, onNavigateTa
             <>{stats.sessionCount}문제</>
           )}
         </p>
-      )}
-      {status === "ready" && stats && !noTabSelected && sessionMax > 0 && (
-        <button type="button" className="session-limit-link" onClick={() => setSessionLimitModalOpen(true)}>
-          [이번 세션 문제 수]
-        </button>
       )}
       </div>
 
