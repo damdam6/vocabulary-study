@@ -23,14 +23,20 @@ export function getSeoulToday(now: Date = new Date()): string {
 export type WordState = "learning" | "reviewDue" | "reviewScheduled";
 
 /** 출제 모드. PRD-general §3의 프로필 `modes` 원소와 동일 표기. */
-export type Mode = "m1" | "m2";
+export type Mode = StudyMode;
 
 /** getWordState가 필요로 하는 최소 필드. GET /api/words의 WordEntry와 구조적으로 호환된다. */
 export interface WordProgress {
   studyModes?: readonly StudyMode[];
   m1: number;
   m2: number;
+  m3?: number;
   nextReview: string | null;
+}
+
+/** 모드별 정답 수. m3는 THES 탭 단어에만 있어 없으면 0이다. */
+export function modeCount(word: Pick<WordProgress, "m1" | "m2" | "m3">, mode: Mode): number {
+  return word[mode] ?? 0;
 }
 
 /**
@@ -39,7 +45,7 @@ export interface WordProgress {
  * 한 번에 분류하므로, 단어마다 today를 다시 계산하지 않는다.
  */
 export function getWordState(word: WordProgress, today: string, modes: readonly Mode[]): WordState {
-  if (effectiveModes(word, modes).some((mode) => word[mode] < 3)) {
+  if (effectiveModes(word, modes).some((mode) => modeCount(word, mode) < 3)) {
     return "learning";
   }
   // 모드 축소로 졸업(M의 모든 모드 ≥ 3)했는데 nextReview가 없는 경우도 있다. 알 수 없는 미래로

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { StudyMode, TabModeSetting } from '../../shared/studyModes.ts';
+import { isSynonymTab, type StudyMode, type TabModeSetting } from '../../shared/studyModes.ts';
 import { tabModesRequest } from '../lib/tabModesApi.ts';
 import './TabModesScreen.css';
 
@@ -39,7 +39,8 @@ export default function TabModesScreen({ onGoHome }: { onGoHome: () => void }) {
     setMessage('');
     setSaved(false);
     try {
-      const updated = await tabModesRequest(tabs.map(({ id, modes }) => ({ id, modes })));
+      // THES 탭은 m3 고정이라 보내지 않는다.
+      const updated = await tabModesRequest(tabs.filter((tab) => !isSynonymTab(tab.name)).map(({ id, modes }) => ({ id, modes })));
       setTabs(updated);
       setSaved(true);
     } catch (error: unknown) {
@@ -60,13 +61,15 @@ export default function TabModesScreen({ onGoHome }: { onGoHome: () => void }) {
       {tabs.length === 0 && <p className="register-hint">학습 탭이 없습니다. 홈에서 단어를 등록해 주세요.</p>}
       {tabs.map((tab) => <fieldset key={tab.id} disabled={status === 'saving'} className="tab-modes-tab">
         <legend className="register-field-label">{tab.name}</legend>
-        <div className="tab-modes-options">
-          {(['m1', 'm2'] as const).map((mode) => <label key={mode}>
-            <input type="checkbox" checked={tab.modes.includes(mode)} onChange={() => toggle(tab.id, mode)} />
-            {mode === 'm1' ? '뜻 보기' : '쓰기'}
-          </label>)}
-        </div>
-        {!tab.explicit && <p className="register-hint">프로필 기본 유형 사용 중</p>}
+        {isSynonymTab(tab.name) ? <p className="register-hint">유의어 고르기 (THES 탭 고정)</p> : <>
+          <div className="tab-modes-options">
+            {(['m1', 'm2'] as const).map((mode) => <label key={mode}>
+              <input type="checkbox" checked={tab.modes.includes(mode)} onChange={() => toggle(tab.id, mode)} />
+              {mode === 'm1' ? '뜻 보기' : '쓰기'}
+            </label>)}
+          </div>
+          {!tab.explicit && <p className="register-hint">프로필 기본 유형 사용 중</p>}
+        </>}
         {tab.modes.length === 0 && <p className="register-error" role="alert">유형을 하나 이상 선택하세요.</p>}
       </fieldset>)}
       {saved && <p role="status" className="register-limit-success">저장했습니다. 다음 학습부터 적용됩니다.</p>}

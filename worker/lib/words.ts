@@ -1,4 +1,4 @@
-import type { StudyMode } from "../../shared/studyModes.ts";
+import { isSynonymTab, type StudyMode } from "../../shared/studyModes.ts";
 /**
  * 시트 행(A2:F) ↔ 단어 객체 변환. PRD 4.2(컬럼 계약)·7.3(GET /api/words 응답)을 따른다.
  * POST /api/answer(#8)·POST /api/review-fail(#9)도 "GET과 같은 형태"로 응답해야 하므로
@@ -23,14 +23,35 @@ export interface WordEntry {
   meaning: string;
   m1: number;
   m2: number;
+  /** THES 탭(E열)만 갖는다 — 일반 탭 응답 형태는 그대로 둔다. */
+  m3?: number;
+  /** THES 탭(D열)만 갖는다. */
+  synonymGroup?: string;
   nextReview: string | null;
   interval: number | null;
 }
 
-/** A2:F 범위의 한 행(A~F열)을 단어 객체로 정규화한다. D·E 빈칸→0, F 빈칸→null 쌍. */
+/**
+ * A2:F 범위의 한 행(A~F열)을 단어 객체로 정규화한다. D·E 빈칸→0, F 빈칸→null 쌍.
+ * THES 탭은 D열이 유의어 그룹, E열이 m3 정답 수다(shared/studyModes.ts isSynonymTab).
+ */
 export function parseWordRow(tab: string, row: string[]): WordEntry {
   const [hanzi, pinyin, meaning, m1, m2, nextReviewRaw] = row;
   const { nextReview, interval } = parseNextReview(nextReviewRaw);
+  if (isSynonymTab(tab)) {
+    return {
+      tab,
+      hanzi: hanzi ?? "",
+      pinyin: pinyin ?? "",
+      meaning: meaning ?? "",
+      m1: 0,
+      m2: 0,
+      m3: Number(m2 || 0),
+      synonymGroup: (m1 ?? "").trim(),
+      nextReview,
+      interval,
+    };
+  }
   return {
     tab,
     hanzi: hanzi ?? "",

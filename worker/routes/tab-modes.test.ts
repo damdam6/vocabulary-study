@@ -135,3 +135,51 @@ describe('profile/tab study modes', () => {
     expect((await (await call('/api/words', undefined, 'b')).json() as { words: WordEntry[] }).words[1].studyModes).toEqual(['m1']);
   });
 });
+
+describe('THES. 유의어 탭 (m3)', () => {
+  const THES = 'THES. 6급유의어';
+  beforeEach(() => {
+    state.metadata.push({ id: 30, name: THES });
+    state.rows[THES] = [
+      // A 원문 · B 병음 · C 뜻 · D 유의어 그룹 · E m3 정답 수 · F 복습
+      ['美丽', 'měilì', '아름답다', '예쁨', '2', ''],
+      ['漂亮', 'piàoliang', '예쁘다', '예쁨', '0', ''],
+      ['好看', 'hǎokàn', '보기 좋다', '예쁨', '', ''],
+      ['孤独', 'gūdú', '고독하다', '외로움', '0', ''],
+      ['寂寞', 'jìmò', '고독하다', '외로움', '0', ''],
+      ['高兴', 'gāoxìng', '기쁘다', '', '0', ''],
+    ];
+  });
+
+  it('fixes THES tabs to m3, parses D as group and E as m3, and drops words without a usable synonym', async () => {
+    expect((await readTabs()).tabs[2]).toEqual({ id: 30, name: THES, modes: ['m3'], explicit: false });
+    const data = await (await call('/api/words')).json() as { words: WordEntry[] };
+    const thes = data.words.filter((word) => word.tab === THES);
+    expect(thes.map((word) => word.hanzi)).toEqual(['美丽', '漂亮', '好看']);
+    expect(thes[0]).toMatchObject({ m1: 0, m2: 0, m3: 2, synonymGroup: '예쁨', studyModes: ['m3'] });
+    // 일반 탭 응답 형태는 그대로다.
+    expect(data.words.find((word) => word.tab === '단어')).not.toHaveProperty('m3');
+  });
+
+  it('rejects m3 on regular tabs and anything but m3 on THES tabs; never stores THES settings', async () => {
+    expect((await save(['m1', 'm3'])).status).toBe(400);
+    expect((await save(['m1'], 30)).status).toBe(400);
+    expect((await save(['m3'], 30)).status).toBe(200);
+    expect(JSON.parse(state.settings.at(-1)![1])).toEqual({});
+    expect(state.writes.every((write) => write.tab === '_정보')).toBe(true);
+  });
+
+  it('records m3 in column E and graduates on the third m3 answer', async () => {
+    const response = await call('/api/answer', { tab: THES, hanzi: '美丽', mode: 'm3', isReview: false, timestamp: '2026-09-29 10:00', studyModes: ['m3'] });
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ m3: 3, synonymGroup: '예쁨', interval: 1 });
+    expect(state.writes.filter((write) => write.tab === THES).map((write) => write.range)).toEqual(['E2', 'G2', 'F2']);
+    expect(state.writes.find((write) => write.range === 'G2')!.values).toEqual([['2026-09-29 10:00|m3']]);
+  });
+
+  it('refuses to write m3 into a regular tab or m1/m2 into a THES tab', async () => {
+    expect((await call('/api/answer', { tab: '단어', hanzi: '词', mode: 'm3', isReview: false, timestamp: 't', studyModes: ['m3'] })).status).toBe(400);
+    expect((await call('/api/answer', { tab: THES, hanzi: '美丽', mode: 'm1', isReview: false, timestamp: 't', studyModes: ['m1'] })).status).toBe(400);
+    expect(state.writes).toEqual([]);
+  });
+});

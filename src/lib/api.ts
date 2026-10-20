@@ -146,6 +146,10 @@ export interface WordEntry {
   meaning: string;
   m1: number;
   m2: number;
+  /** THES 탭의 유의어 고르기 정답 수. 구서버 응답에는 없다. */
+  m3?: number;
+  /** THES 탭 D열 유의어 그룹. */
+  synonymGroup?: string;
   nextReview: string | null;
   interval: number | null;
 }

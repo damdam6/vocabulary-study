@@ -13,6 +13,7 @@ import { formatHomeDate } from "../lib/date.ts";
 import { computeHomeStats, type HomeStats } from "../lib/homeStats.ts";
 import { RETRY_QUEUE_CHANGED_EVENT, RETRY_QUEUE_STORAGE_KEY, getRetryQueueLength } from "../lib/retryQueue.ts";
 import { buildSessionQueue, SESSION_CAP, type SessionQuestion } from "../lib/sessionQueue.ts";
+import { attachSynonymChoices } from "../lib/synonymQuiz.ts";
 import {
   deriveTabs,
   filterWordsByScope,
@@ -186,7 +187,8 @@ function HomeScreen({ onStart, onNavigateRegister, onSwitchProfile, onNavigateTa
   const handleStart = () => {
     // canStart(sessionCount>0)와 같은 단어 집합(scopedWords)·같은 산식(같은 sessionLimit)이므로 빈 큐가 나올 수 없다
     if (profile === null) return;
-    onStart(buildSessionQueue(scopedWords, getSeoulToday(), profile.modes, undefined, sessionLimit), { profile, tts, audioAutoplay });
+    const queue = buildSessionQueue(scopedWords, getSeoulToday(), profile.modes, undefined, sessionLimit);
+    onStart(attachSynonymChoices(queue, words), { profile, tts, audioAutoplay });
   };
 
   const startLabel =

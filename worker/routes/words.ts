@@ -1,3 +1,4 @@
+import { isSynonymTab, synonymDistractors } from "../../shared/studyModes.ts";
 import { readTabModes } from "../lib/tabModes.ts";
 /**
  * GET /api/words — `_` 접두 탭을 제외한 전 탭의 단어를 하나의 배열로 통합해 반환.
@@ -33,9 +34,11 @@ export async function handleGetWords(
 
   const words: WordEntry[] = [];
   wordTabs.forEach((tab, i) => {
-    for (const row of rowsByTab[i]) {
-      words.push({ ...parseWordRow(tab, row), studyModes: tabs[i].modes });
-    }
+    const entries = rowsByTab[i].map((row) => ({ ...parseWordRow(tab, row), studyModes: tabs[i].modes }));
+    // THES 탭에서 보기를 만들 유의어가 없는 단어는 m3를 낼 수 없어 학습 대상에서 뺀다.
+    words.push(...(isSynonymTab(tab)
+      ? entries.filter((entry) => synonymDistractors(entry, entries).length > 0)
+      : entries));
   });
 
   const resolvedTts = profile.contentType === "zh" ? resolveTtsConfig(env) : undefined;

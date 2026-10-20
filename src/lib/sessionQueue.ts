@@ -8,7 +8,7 @@ import { effectiveModes } from "../../shared/studyModes.ts";
  * 남기지만, 학습 중은 시트 순서를 쓰지 않는다 (동률이면 무작위, #131).
  */
 
-import { getWordState, type Mode, type WordProgress } from "./wordState.ts";
+import { getWordState, modeCount, type Mode, type WordProgress } from "./wordState.ts";
 
 /** PRD §6.1: 세션 전체 상한의 기본값 — 시트 `문제수` 설정이 없을 때 쓰인다(#102). */
 export const SESSION_CAP = 60;
@@ -20,7 +20,7 @@ export const SESSION_CAP = 60;
  */
 export const REVIEW_SHARE = 0.3;
 
-export type QuizMode = "m1" | "m2";
+export type QuizMode = Mode;
 
 /** 세션 상한을 복습/학습에 나눈 결과. total은 큐 길이이자 홈 세션 수 줄의 "n문제"다. */
 export interface SessionSlots {
@@ -55,6 +55,9 @@ export interface SessionQuestion<T> {
   mode: QuizMode;
   /** true면 복습 문제 — 오답 시 POST /api/review-fail 분기(§5.3)에 필요. */
   isReview: boolean;
+  /** m3 전용: 정답을 포함해 섞은 보기와 문제 방향. 시작 시 attachSynonymChoices가 채운다. */
+  choices?: T[];
+  prompt?: "meaning" | "hanzi";
 }
 
 /**
@@ -119,7 +122,7 @@ export function buildSessionQueue<T extends WordProgress>(
 
   // 학습 중 단어는 정의상 M 중 최소 한 모드가 미달 — 미달인 모드로 단어당 1문제만 낸다(#44/#76).
   const learningQuestions: SessionQuestion<T>[] = learning
-    .toSorted((a, b) => a.m1 + a.m2 - (b.m1 + b.m2))
+    .toSorted((a, b) => a.m1 + a.m2 + (a.m3 ?? 0) - (b.m1 + b.m2 + (b.m3 ?? 0)))
     .slice(0, slots.learning)
     .map((word) => ({ word, mode: learningMode(word, effectiveModes(word, modes), rng), isReview: false }));
 
@@ -154,12 +157,12 @@ function randomMode(modes: readonly QuizMode[], rng: () => number): QuizMode {
 
 /** 학습 중 단어의 출제 모드. M 중 미달(<3) 모드가 하나면 그 모드, 복수면 그중 무작위(#44/#76). */
 function learningMode(word: WordProgress, modes: readonly QuizMode[], rng: () => number): QuizMode {
-  const under = modes.filter((mode) => word[mode] < 3);
+  const under = modes.filter((mode) => modeCount(word, mode) < 3);
   return under.length === 1 ? under[0] : randomMode(under, rng);
 }
 
 /** Fisher–Yates 제자리 셔플. */
-function shuffle<T>(items: T[], rng: () => number): void {
+export function shuffle<T>(items: T[], rng: () => number): void {
   for (let i = items.length - 1; i > 0; i--) {
     const j = Math.floor(rng() * (i + 1));
     [items[i], items[j]] = [items[j], items[i]];

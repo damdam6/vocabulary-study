@@ -8,6 +8,7 @@ import type { ContentType } from "./api.ts";
 import type { QuizMode } from "./sessionQueue.ts";
 
 export function modeChipLabel(contentType: ContentType, mode: QuizMode): string {
+  if (mode === "m3") return "유의어 고르기";
   if (contentType === "zh") return mode === "m1" ? "중국어 → 뜻" : "뜻 → 중국어";
   return mode === "m1" ? "단어 → 뜻" : "뜻 → 단어";
 }

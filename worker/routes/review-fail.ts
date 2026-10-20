@@ -54,7 +54,7 @@ export async function handleReviewFail(
 
   const { rowNumber, entry } = found;
   // A legacy retry after expanding modes must not advance a word still being learned.
-  if (modes.some((mode) => entry[mode] < 3)) return Response.json(entry);
+  if (modes.some((mode) => (entry[mode] ?? 0) < 3)) return Response.json(entry);
   // F열이 비어 있거나 형식이 깨진 상태(정상 흐름에서는 발생하지 않음)는 최소 간격으로 취급한다.
   const newInterval = stepBack(entry.interval ?? 1);
   const newDate = addSeoulDays(new Date(), newInterval);

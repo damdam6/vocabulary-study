@@ -12,6 +12,7 @@ import {
   computeAnswerUpdate,
   findNextEmptyColumn,
   MODE_COLUMN,
+  modeRecordableInTab,
   type AnswerMode,
 } from "../lib/answer.ts";
 import type { Profile } from "../lib/profiles.ts";
@@ -32,7 +33,7 @@ function parseAnswerRequest(body: unknown): AnswerRequest | null {
   const { tab, hanzi, mode, timestamp, isReview, studyModes } = body as Record<string, unknown>;
   if (typeof tab !== "string" || !tab) return null;
   if (typeof hanzi !== "string" || !hanzi) return null;
-  if (mode !== "m1" && mode !== "m2") return null;
+  if (mode !== "m1" && mode !== "m2" && mode !== "m3") return null;
   if (typeof timestamp !== "string" || !timestamp) return null;
   if (typeof isReview !== "boolean") return null;
   if (studyModes !== undefined && !isStudyModes(studyModes)) return null;
@@ -54,7 +55,7 @@ export async function handleAnswerPost(
   const answer = parseAnswerRequest(body);
   if (!answer) {
     return Response.json(
-      { error: "tab, hanzi, mode(m1|m2), timestamp, isReview 필드가 필요합니다" },
+      { error: "tab, hanzi, mode(m1|m2|m3), timestamp, isReview 필드가 필요합니다" },
       { status: 400 },
     );
   }
@@ -63,7 +64,7 @@ export async function handleAnswerPost(
   // 인증된 프로필의 실제 학습 탭만 허용하고 해당 세션의 비활성 모드는 기록하지 않는다.
   const modes = await resolveRecordModes(env, profile, answer.tab, answer.studyModes);
   if (modes === null) return Response.json({ error: "tab not found" }, { status: 404 });
-  if (!modes.includes(answer.mode)) {
+  if (!modes.includes(answer.mode) || !modeRecordableInTab(answer.tab, answer.mode)) {
     return Response.json({ error: "이 학습에서 비활성화된 모드입니다" }, { status: 400 });
   }
 
@@ -75,11 +76,11 @@ export async function handleAnswerPost(
 
   const [row = []] = await getValues(env, profile.sheetId, answer.tab, `${rowNumber}:${rowNumber}`);
   const current = parseWordRow(answer.tab, row);
-  const update = computeAnswerUpdate(current, answer.mode, answer.isReview && modes.every((mode) => current[mode] >= 3), new Date(), modes);
+  const update = computeAnswerUpdate(current, answer.mode, answer.isReview && modes.every((mode) => (current[mode] ?? 0) >= 3), new Date(), modes);
 
   // 카운트·F열·타임스탬프는 정답 1건의 한 단위이므로 한 요청으로 묶어 쓴다.
   // 부분 실패로 카운트만 반영된 채 남으면 재시도 큐(PRD 10) 재전송 시 이중 증가한다.
-  const newCount = answer.mode === "m1" ? update.m1 : update.m2;
+  const newCount = update[answer.mode] ?? 0;
   const timestampColumn = columnLetter(findNextEmptyColumn(row));
   const writes = [
     { range: `${MODE_COLUMN[answer.mode]}${rowNumber}`, values: [[newCount]] as (string | number)[][] },
@@ -97,6 +98,8 @@ export async function handleAnswerPost(
     meaning: current.meaning,
     m1: update.m1,
     m2: update.m2,
+    ...(update.m3 === undefined ? {} : { m3: update.m3 }),
+    ...(current.synonymGroup === undefined ? {} : { synonymGroup: current.synonymGroup }),
     nextReview: update.nextReview,
     interval: update.interval,
   };

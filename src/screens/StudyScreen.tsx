@@ -7,6 +7,7 @@
 import { useState } from 'react'
 import Mode1Card from './Mode1Card.tsx'
 import Mode2Card from './Mode2Card.tsx'
+import Mode3Card from './Mode3Card.tsx'
 import { modeChipLabel } from '../lib/contentLabels.ts'
 import { postAnswer, postReviewFail, type AnswerRecord, type PublicProfile, type WordEntry } from '../lib/api.ts'
 import { enqueueAnswer, enqueueReviewFail } from '../lib/retryQueue.ts'
@@ -116,12 +117,14 @@ function StudyScreen({ queue, profile, tts, audioAutoplay = true, onExit, onComp
 
   const handleJudged = (correct: boolean) => {
     if (!question) return
+    // 모드2·3 오답은 카드가 결과 화면을 띄운 채 머문다.
+    const staysOnResult = question.mode !== 'm1' && !correct
     // 다음 문제로 곧바로 진행하는 분기는 기록·state 갱신보다 먼저 이전 질문을 멈춘다.
-    if (question.mode !== 'm2' || correct) stop('advance')
+    if (!staysOnResult) stop('advance')
     const { state: recorded, effect } = recordAnswer(session, correct)
     fireEffect(effect)
-    if (question.mode === 'm2' && !correct) {
-      // 모드2 오답: 카드 컴포넌트가 결과 화면을 띄운 채 머문다 — 오버레이 없음(§4.4),
+    if (staysOnResult) {
+      // 모드2·3 오답: 카드 컴포넌트가 결과 화면을 띄운 채 머문다 — 오버레이 없음(§4.4),
       // 진행은 "다음" 버튼의 handleProceed에서.
       setSession(recorded)
       return
@@ -176,6 +179,15 @@ function StudyScreen({ queue, profile, tts, audioAutoplay = true, onExit, onComp
                 question={question}
                 contentType={profile.contentType}
                 onJudged={handleJudged}
+                pronunciation={pronunciation}
+              />
+            ) : question.mode === 'm3' ? (
+              <Mode3Card
+                key={session.pos}
+                question={question}
+                contentType={profile.contentType}
+                onJudged={handleJudged}
+                onProceed={handleProceed}
                 pronunciation={pronunciation}
               />
             ) : (

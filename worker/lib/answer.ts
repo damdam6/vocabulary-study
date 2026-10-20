@@ -3,13 +3,19 @@
  * 4.2(G열 append 계약)을 따른다.
  */
 
+import { isSynonymTab } from "../../shared/studyModes.ts";
 import { addSeoulDays } from "./time.ts";
 import type { WordEntry } from "./words.ts";
 
-export type AnswerMode = "m1" | "m2";
+export type AnswerMode = "m1" | "m2" | "m3";
 
-/** 모드별 정답 카운트가 쓰이는 열. */
-export const MODE_COLUMN: Record<AnswerMode, "D" | "E"> = { m1: "D", m2: "E" };
+/** 모드별 정답 카운트가 쓰이는 열. m3는 THES 탭에만 있고 E열을 쓴다(D열은 유의어 그룹). */
+export const MODE_COLUMN: Record<AnswerMode, "D" | "E"> = { m1: "D", m2: "E", m3: "E" };
+
+/** 이 탭에 이 모드의 카운트 열이 있는지. 일반 탭의 m3, THES 탭의 m1/m2는 기록할 곳이 없다. */
+export function modeRecordableInTab(tab: string, mode: AnswerMode): boolean {
+  return isSynonymTab(tab) === (mode === "m3");
+}
 
 const INTERVAL_LADDER = [1, 3, 7, 14, 30];
 
@@ -43,6 +49,8 @@ export function columnLetter(index: number): string {
 export interface AnswerUpdate {
   m1: number;
   m2: number;
+  /** THES 탭 단어에만 있다. */
+  m3?: number;
   nextReview: string | null;
   interval: number | null;
   /** F열을 새로 써야 하는지. false면 기존 값 그대로 두고 쓰기 자체를 생략한다. */
@@ -50,31 +58,34 @@ export interface AnswerUpdate {
 }
 
 /** 활성 모드 집합 M(PRD-general §4.1) 기준 졸업 판정 — M의 모든 모드가 3 이상이면 졸업. */
-function graduated(m1: number, m2: number, modes: AnswerMode[]): boolean {
-  return modes.every((mode) => (mode === "m1" ? m1 : m2) >= 3);
+function graduated(counts: Record<AnswerMode, number>, modes: AnswerMode[]): boolean {
+  return modes.every((mode) => counts[mode] >= 3);
 }
 
 /** 정답 1건을 반영한 새 상태를 계산한다. 졸업 판정은 활성 모드 집합 `modes`(M) 기준. */
 export function computeAnswerUpdate(
-  current: Pick<WordEntry, "m1" | "m2" | "nextReview" | "interval">,
+  current: Pick<WordEntry, "m1" | "m2" | "m3" | "nextReview" | "interval">,
   mode: AnswerMode,
   isReview: boolean,
   now: Date,
   modes: AnswerMode[],
 ): AnswerUpdate {
-  const wasGraduated = graduated(current.m1, current.m2, modes);
-  const m1 = mode === "m1" ? current.m1 + 1 : current.m1;
-  const m2 = mode === "m2" ? current.m2 + 1 : current.m2;
+  const before = { m1: current.m1, m2: current.m2, m3: current.m3 ?? 0 };
+  const wasGraduated = graduated(before, modes);
+  const next = { ...before, [mode]: before[mode] + 1 };
+  // m3는 THES 탭 단어에만 실어, 일반 탭 응답 형태를 바꾸지 않는다.
+  const { m3, ...rest } = next;
+  const counts = current.m3 === undefined && mode !== "m3" ? rest : { ...rest, m3 };
 
   if (isReview) {
     const interval = nextLadderInterval(current.interval ?? 0);
-    return { m1, m2, nextReview: addSeoulDays(now, interval), interval, nextReviewChanged: true };
+    return { ...counts, nextReview: addSeoulDays(now, interval), interval, nextReviewChanged: true };
   }
 
-  const justGraduated = !wasGraduated && graduated(m1, m2, modes);
+  const justGraduated = !wasGraduated && graduated(next, modes);
   if (justGraduated && current.nextReview === null) {
-    return { m1, m2, nextReview: addSeoulDays(now, 1), interval: 1, nextReviewChanged: true };
+    return { ...counts, nextReview: addSeoulDays(now, 1), interval: 1, nextReviewChanged: true };
   }
 
-  return { m1, m2, nextReview: current.nextReview, interval: current.interval, nextReviewChanged: false };
+  return { ...counts, nextReview: current.nextReview, interval: current.interval, nextReviewChanged: false };
 }

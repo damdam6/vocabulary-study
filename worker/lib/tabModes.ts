@@ -1,4 +1,4 @@
-import { isStudyModes, type StudyMode, type TabModeSetting } from '../../shared/studyModes.ts';
+import { isStudyModes, isSynonymTab, modesAllowedForTab, SYNONYM_TAB_MODES, type StudyMode, type TabModeSetting } from '../../shared/studyModes.ts';
 import type { Profile } from './profiles.ts';
 import { getSheetMetadata, getValues } from './sheets.ts';
 import { SETTINGS_TAB, SETTINGS_RANGE } from './settings.ts';
@@ -24,10 +24,13 @@ export async function readTabModes(env: Env, profile: Profile) {
     }
     stored = parsed as Record<string, StudyMode[]>;
   }
-  const tabs: TabModeSetting[] = sheets.filter((sheet) => !sheet.name.startsWith('_')).map((sheet) => ({
-    ...sheet, modes: stored[String(sheet.id)] ?? profile.modes,
-    explicit: Object.hasOwn(stored, String(sheet.id)),
-  }));
+  // THES 탭은 열 계약상 m3만 기록할 수 있어 저장값과 무관하게 m3 고정이다.
+  const tabs: TabModeSetting[] = sheets.filter((sheet) => !sheet.name.startsWith('_')).map((sheet) => isSynonymTab(sheet.name)
+    ? { ...sheet, modes: [...SYNONYM_TAB_MODES], explicit: false }
+    : {
+      ...sheet, modes: stored[String(sheet.id)] ?? profile.modes,
+      explicit: Object.hasOwn(stored, String(sheet.id)),
+    });
   return { tabs, hasSettings };
 }
 
@@ -35,5 +38,7 @@ export async function readTabModes(env: Env, profile: Profile) {
 export async function resolveRecordModes(env: Env, profile: Profile, tab: string, snapshot?: StudyMode[]) {
   const { tabs } = await readTabModes(env, profile);
   const found = tabs.find((entry) => entry.name === tab);
-  return found ? (snapshot ?? found.modes) : null;
+  if (!found) return null;
+  // 탭 종류와 맞지 않는 스냅샷(일반 탭의 m3 등)은 기록할 열이 없으므로 현재 설정으로 판정한다.
+  return snapshot && modesAllowedForTab(tab, snapshot) ? snapshot : found.modes;
 }
