@@ -294,7 +294,7 @@ function sliceRange(rows: string[][], range: string): string[][] {
   if (range === "1:1") return rows[0] ? [rows[0]] : [];
   if (range === "A:B") return rows.map((row) => row.slice(0, 2));
   if (range === "A2:A") return rows.slice(1).filter((row) => row[0]).map((row) => [row[0]]);
-  if (range === "A2:ZZ") return rows.slice(1);
+  if (range === "A2:L") return rows.slice(1).map((row) => row.slice(0, 12));
   const wholeRow = range.match(/^(\d+):(\d+)$/);
   if (wholeRow) return rows.slice(Number(wholeRow[1]) - 1, Number(wholeRow[2]));
   throw new Error(`unsupported read range: ${range}`);

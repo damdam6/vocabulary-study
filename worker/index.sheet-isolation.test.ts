@@ -38,7 +38,7 @@ interface SheetState {
   rows: Record<string, string[][]>;
 }
 
-// sheetId별 시트 상태 — words/tabs가 실제로 쓰는 요청(탭 제목 조회, A2:ZZ 읽기)만 지원한다.
+// sheetId별 시트 상태 — words/tabs가 실제로 쓰는 요청(탭 제목 조회, A2:L 읽기)만 지원한다.
 const SHEETS: Record<string, SheetState> = {
   "sheet-zh": {
     titles: ["HSK6급", "_메모"],

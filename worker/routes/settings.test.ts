@@ -47,7 +47,7 @@ interface PutCall {
 
 // Google Sheets API v4 호출을 가로채 sheetId별 메모리 상태로 흉내 낸다.
 // settings.ts가 쓰는 요청(탭 제목 조회·addSheet·A:B 읽기·단일 range PUT)과
-// 회귀 확인용 words/tabs 요청(A2:ZZ 읽기)만 지원한다. 호출 URL 전부를 기록해
+// 회귀 확인용 words/tabs 요청(A2:L 읽기)만 지원한다. 호출 URL 전부를 기록해
 // sheetId 격리·valueInputOption 검증에 쓴다.
 function stubSheetsFetch(sheets: Record<string, SheetState>): {
   urls: string[];
@@ -124,7 +124,7 @@ function sliceRange(rows: string[][], range: string): string[][] {
   if (range === "A:B") {
     return rows;
   }
-  if (range === "A2:ZZ") {
+  if (range === "A2:L") {
     return rows.slice(1);
   }
   throw new Error(`sliceRange: unsupported range ${range}`);
@@ -358,9 +358,9 @@ describe("'_정보' 탭 자연 제외 회귀 — 기존 `_` 규칙", () => {
     const words = ((await wordsRes.json()) as { words: { tab: string }[] }).words;
     expect(words.length).toBeGreaterThan(0);
     expect(words.every((word) => word.tab === "HSK6급")).toBe(true);
-    // 단어 스캔(A2:ZZ)이 '_정보' 탭으로는 한 번도 나가지 않아야 한다 —
+    // 단어 스캔(A2:L)이 '_정보' 탭으로는 한 번도 나가지 않아야 한다 —
     // words의 설정 읽기(A:B 1회, #102 동봉)는 예상된 호출이라 제외 대상이 아니다.
-    const wordScanUrls = urls.filter((url) => decodeURIComponent(url).includes("!A2:ZZ"));
+    const wordScanUrls = urls.filter((url) => decodeURIComponent(url).includes("!A2:L"));
     expect(wordScanUrls.length).toBeGreaterThan(0);
     for (const url of wordScanUrls) {
       expect(decodeURIComponent(url)).not.toContain("_정보");
