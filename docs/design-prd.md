@@ -75,7 +75,7 @@
 - **범위 선택 UI** *(2026-09-25 신설 — 탭 선택 학습 스타일 확정, PRD-tab-scoped-study.md §4.1, #189·#190)*: 구성·상호작용 계약(위치, 세그먼트/칩 형태, 초기 선택, 저장, 접근성)은 `docs/PRD-tab-scoped-study.md` §4.1이 기준이며, 그 문서가 이 문서로 위임한 구체 스타일 값은 다음과 같다.
   - **세그먼트**(`전체 | 탭 선택`): 컨테이너 padding `3px`·radius `12px`·테두리 `border-card`·배경 `bg-panel`. 옵션 높이 `36px`·radius `9px`, 기본 배경 투명·글자 `text-muted`(`0.9rem`/600). 선택된 옵션은 배경 `rgba(47,99,230,0.2)`(`accent` 20% 파생)·글자 `text`.
   - **모두 선택 / 선택 해제** 텍스트 버튼: 칩 목록 위, 우측 정렬. padding `2px 6px`·radius `6px`, 글자 `text-muted`(`0.8rem`), hover 시 `text`.
-  - **칩 목록**: `flex-wrap` + gap `8px`, 최대 높이 `118px`(칩 높이 `34px` × 3줄 + 줄 간격 `8px` × 2)에서 세로 스크롤(`overflow-y: auto`) — 시작 버튼이 화면 밖으로 밀리지 않는다.
+  - **칩 목록**: `flex-wrap` + gap `8px`, 고정 최대 높이 없이 홈 화면의 남는 세로 공간까지 늘어나고(홈 화면 높이는 `max(100dvh, 640px)`로 제한), 그래도 넘칠 때만 세로 스크롤(`overflow-y: auto`) — 시작 버튼이 화면 밖으로 밀리지 않는다. *(2026-10-20 개정 — 고정 `118px` 상한이 아래 공간이 남아도 스크롤을 만들어 폐기)*
   - **칩**: 높이 `34px`, padding `0 12px 0 9px`, radius `999px`(pill), 테두리 `border-card`, 배경 `bg-panel`, 글자 `text-muted`(`0.85rem`). 선택된 칩은 테두리 `accent`·배경 `rgba(47,99,230,0.2)`·글자 `text`. 칩 왼쪽에 `16×16px` 원형 체크 마크(선택 시 채운 원 + 체크, 미선택 시 빈 원)를 둬 색만으로 선택 여부를 구분하지 않는다. 세션 문제 수가 0인 칩은 글자 `text-faint`(선택 시 `text-muted`)로 흐리게 표시하되 선택은 막지 않는다. 칩 라벨(`탭이름 · n`)은 이름만 넘치면 말줄임(`text-overflow: ellipsis`) 처리하고, 개수는 줄지 않는다(`flex: none`, `font-variant-numeric: tabular-nums`).
   - **포커스 링**: 세그먼트 옵션·모두 선택 버튼·칩 모두 `.dropdown-trigger`와 동일(`outline: 2px solid accent`, offset `-1px`). 선택된 칩은 테두리가 이미 `accent`라 포커스 링만 `accent-hover`로 한 톤 밝혀 테두리와 구분한다.
   - **세션 수 줄 문구**: 전체 범위면 기존 "오늘 세션 · n문제" 그대로. 탭 선택 1개는 "HSK6 · 오늘 세션 · n문제", 2개 이상은 시트 순서 기준 첫 탭 이름에 ` 외 N개 탭`(N = 선택 탭 수 − 1)을 붙여 "HSK6 외 2개 탭 · 오늘 세션 · n문제". 붙는 탭 이름만 말줄임 대상이고 뒤의 "외 N개 탭 · 오늘 세션 · n문제"는 줄지 않는다.
