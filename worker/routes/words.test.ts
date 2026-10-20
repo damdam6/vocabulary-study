@@ -193,5 +193,15 @@ it("신규 등록 제한을 기존 장문 조회에 적용하지 않고 원문 �
   stubSheets({ titles: ["문장"], settingsRows: [], rows: { 문장: [[original.hanzi, original.pinyin, original.meaning, "3", "4", "2026-10-01|7"]] } });
   const { res, body } = await getWords();
   expect(res.status).toBe(200);
-  expect(body.words).toEqual([{ ...original, studyModes: ["m1", "m2"], tab: "문장", m1: 3, m2: 4, nextReview: "2026-10-01", interval: 7 }]);
+  expect(body.words).toEqual([{ ...original, studyModes: ["m1", "m2"], tab: "문장", m1: 3, m2: 4, nextReview: "2026-10-01", interval: 7, lastCorrect: null }]);
+});
+
+it("G열 이후 정답 타임스탬프 중 가장 최신 날짜를 lastCorrect로 내려준다 — 깨진 칸은 건너뛴다", async () => {
+  stubSheets({
+    titles: ["HSK6급"],
+    settingsRows: [],
+    rows: { HSK6급: [["经济", "jīngjì", "경제", "1", "1", "", "2026-07-18 09:00|m1", "깨진값", "2026-07-15 21:00|m2"]] },
+  });
+  const { body } = await getWords();
+  expect((body.words[0] as { lastCorrect?: string | null }).lastCorrect).toBe("2026-07-18");
 });

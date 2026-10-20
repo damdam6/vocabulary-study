@@ -38,7 +38,7 @@ interface SheetState {
   rows: Record<string, string[][]>;
 }
 
-// sheetId별 시트 상태 — words/tabs가 실제로 쓰는 요청(탭 제목 조회, A2:F 읽기)만 지원한다.
+// sheetId별 시트 상태 — words/tabs가 실제로 쓰는 요청(탭 제목 조회, A2:L 읽기)만 지원한다.
 const SHEETS: Record<string, SheetState> = {
   "sheet-zh": {
     titles: ["HSK6급", "_메모"],
@@ -111,6 +111,7 @@ describe("프로필별 시트 격리 — GET /api/words", () => {
         m2: 2,
         nextReview: "2026-07-30",
         interval: 3,
+        lastCorrect: null,
       },
     ]);
 
@@ -127,6 +128,7 @@ describe("프로필별 시트 격리 — GET /api/words", () => {
         m2: 0,
         nextReview: null,
         interval: null,
+        lastCorrect: null,
       },
     ]);
   });

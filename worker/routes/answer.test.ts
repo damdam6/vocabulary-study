@@ -243,6 +243,7 @@ describe("POST /api/answer — M = {m1, m2} 기존 동작 보존 (인자 추가�
       m2: 1,
       nextReview: null,
       interval: null,
+      lastCorrect: "2026-07-27",
     });
     expect(writes.some((w) => w.cell === "F2")).toBe(false);
   });

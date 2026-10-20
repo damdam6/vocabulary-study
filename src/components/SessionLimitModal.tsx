@@ -1,6 +1,6 @@
-// 이번 세션 문제 수 수정 모달 — 홈의 "이번 세션 문제 수" 링크로 연다. 고친 값은 이번
-// 홈 진입 동안만 시트 설정(sessionLimit)을 대신하고 시트에는 쓰지 않는다 — 홈을 다시
-// 들어오면 시트 값으로 돌아간다. 모달 외형은 등록 검토 모달(register-modal-*)을 재사용한다.
+// 이번 세션 문제 수 수정 모달 — 홈의 "이번 세션 문제 수" 링크로 연다. 고친 값은 이 브라우저에
+// 프로필별로 저장돼 다음 홈 진입에도 시트 설정(sessionLimit)을 대신하고, 시트에는 쓰지 않는다 —
+// "기본값으로"를 누르면 시트 값으로 돌아간다. 모달 외형은 등록 검토 모달(register-modal-*)을 재사용한다.
 import { useEffect, useState, type FormEvent } from 'react'
 
 interface SessionLimitModalProps {
@@ -47,7 +47,7 @@ function SessionLimitModal({ current, sheetLimit, max, onCancel, onSave, onReset
           이번 세션 문제 수
         </h2>
         <p className="register-modal-hint">
-          이번 학습에만 적용돼요. 시트 설정 {sheetLimit}문제 · 지금 풀 수 있는 문제 최대 {max}개
+          다음에도 이 값이 유지돼요. 시트 설정 {sheetLimit}문제 · 지금 풀 수 있는 문제 최대 {max}개
         </p>
 
         <label className="register-modal-field">

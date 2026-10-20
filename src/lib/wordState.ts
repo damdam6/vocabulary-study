@@ -31,6 +31,8 @@ export interface WordProgress {
   m1: number;
   m2: number;
   nextReview: string | null;
+  /** 마지막 정답 날짜(YYYY-MM-DD). 세션 큐의 재출제 몫(sessionQueue RECALL_SHARE)에만 쓰인다. */
+  lastCorrect?: string | null;
 }
 
 /**

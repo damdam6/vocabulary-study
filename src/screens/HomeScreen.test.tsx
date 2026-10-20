@@ -249,6 +249,23 @@ describe("이번 세션 문제 수 수정", () => {
     expect(home.sessionCount()).toBe("전체 · 35문제");
   });
 
+  it("저장한 값은 홈을 다시 들어와도 유지되고, 기본값으로를 누르면 다음 진입부터 시트 설정으로 돌아간다", async () => {
+    const first = await mountWith(50, 35);
+    fire(() => first.link()!.click());
+    typeInto(first.input(), "12");
+    fire(() => first.save().click());
+    unmountCurrent?.();
+
+    const second = await mountWith(50, 35);
+    expect(second.sessionCount()).toBe("전체 · 12문제");
+    fire(() => second.link()!.click());
+    fire(() => second.buttonByText("기본값으로").click());
+    unmountCurrent?.();
+
+    const third = await mountWith(50, 35);
+    expect(third.sessionCount()).toBe("전체 · 35문제");
+  });
+
   it("할 것이 없으면 '0문제'는 누를 수 없는 일반 텍스트다", async () => {
     const home = await mountWith(0, 60);
     expect(home.sessionCount()).toBe("전체 · 0문제");

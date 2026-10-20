@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { computeHomeStats } from "./homeStats.ts";
-import { buildSessionQueue, SESSION_CAP, type SessionQuestion } from "./sessionQueue.ts";
+import { buildSessionQueue, RECALL_SHARE, SESSION_CAP, type SessionQuestion } from "./sessionQueue.ts";
 
 const today = "2026-07-20";
 const M = ["m1", "m2"] as const;
@@ -11,6 +11,7 @@ interface TestWord {
   m1: number;
   m2: number;
   nextReview: string | null;
+  lastCorrect?: string | null;
 }
 
 /** 학습 중 단어 (미졸업 → nextReview 없음이 정상 흐름). */
@@ -267,9 +268,9 @@ describe("buildSessionQueue — 신규 단어 기아 방지 (#128)", () => {
     const queue = buildSessionQueue([...scored, ...fresh], today, M, mulberry32(21), 35);
 
     expect(queue).toHaveLength(35);
-    // 점수 축 계약(#128): 0점 풀이 상한보다 크므로 점수 있는 19개는 한 개도 못 들어온다.
-    // 그 35개가 0점 126개 중 누구인지는 무작위다 — 시트 위치로 고정되지 않는다(#131).
-    expect(queue.every((q) => q.word.m1 + q.word.m2 === 0)).toBe(true);
+    // 점수 있는 19개는 재출제 몫 floor(35×0.2)=7까지만 들어오고, 나머지 28자리는 0점이다.
+    // 그 28개가 0점 126개 중 누구인지는 무작위다 — 시트 위치로 고정되지 않는다(#131).
+    expect(queue.filter((q) => q.word.m1 + q.word.m2 > 0)).toHaveLength(Math.floor(35 * RECALL_SHARE));
   });
 
   it("복습 대기가 많아도 학습 슬롯이 확보된다 — 복습 몫 상한 30%", () => {
@@ -335,15 +336,15 @@ describe("buildSessionQueue — 동률 구간 무작위 타이브레이커 (#131
     }
   });
 
-  it("점수 오름차순 우선순위는 그대로다 — 셔플은 동점 구간만 건드린다", () => {
-    // 0점 5개가 시트 맨 뒤에 있어도 어떤 시드에서든 2점 40개를 전부 이긴다
+  it("재출제 몫 밖에서는 점수 오름차순 우선순위가 그대로다 — 셔플은 동점 구간만 건드린다", () => {
+    // 0점 5개가 시트 맨 뒤에 있어도 재출제 몫(floor(5×0.2)=1)을 뺀 4자리는 어떤 시드에서든 0점이 차지한다
     const scored = Array.from({ length: 40 }, (_, i) => learningWord(`기존${i}`, 1, 1));
     const fresh = Array.from({ length: 5 }, (_, i) => learningWord(`신규${i}`, 0, 0));
     for (let seed = 1; seed <= 20; seed++) {
       const queue = buildSessionQueue([...scored, ...fresh], today, M, mulberry32(seed), 5);
 
       expect(queue).toHaveLength(5);
-      expect(queue.every((q) => q.word.m1 + q.word.m2 === 0)).toBe(true);
+      expect(queue.filter((q) => q.word.m1 + q.word.m2 === 0)).toHaveLength(4);
     }
   });
 });
@@ -404,5 +405,62 @@ describe("buildSessionQueue — M 파라미터화 (#76)", () => {
     expect(buildSessionQueue(words, today, ["m2"], () => 0.99)).toEqual([
       { word: words[0], mode: "m2", isReview: true },
     ]);
+  });
+});
+
+describe("buildSessionQueue — 재출제 몫 (2일 경과한 1점 이상 단어, 마지막 정답 오래된 순)", () => {
+  /** 학습 중 단어 + 마지막 정답일. */
+  function touched(hanzi: string, m1: number, m2: number, lastCorrect: string | null): TestWord {
+    return { ...learningWord(hanzi, m1, m2), lastCorrect };
+  }
+  const zeros = (n: number) => Array.from({ length: n }, (_, i) => learningWord(`영${i}`, 0, 0));
+
+  it("0점 단어가 학습 슬롯보다 많아도 1점 이상 단어가 몫만큼 들어온다", () => {
+    const recall = Array.from({ length: 20 }, (_, i) => touched(`재${i}`, 1, 0, "2026-07-10"));
+    const queue = buildSessionQueue([...zeros(100), ...recall], today, M, mulberry32(1), 10);
+    expect(queue).toHaveLength(10);
+    expect(queue.filter((q) => q.word.hanzi.startsWith("재"))).toHaveLength(Math.floor(10 * RECALL_SHARE));
+  });
+
+  it("마지막 정답이 2일 전이면 대상, 1일 전·오늘이면 대상이 아니다 (경계값)", () => {
+    const words = [...zeros(100), touched("이틀", 1, 0, "2026-07-18"), touched("하루", 1, 0, "2026-07-19"), touched("오늘", 1, 0, today)];
+    const queue = buildSessionQueue(words, today, M, mulberry32(1), 10);
+    expect(hanziSet(queue).has("이틀")).toBe(true);
+    expect(hanziSet(queue).has("하루")).toBe(false);
+    expect(hanziSet(queue).has("오늘")).toBe(false);
+  });
+
+  it("점수 상한은 없다 — 2일 지난 5점 학습 중 단어도 대상이다", () => {
+    const words = [...zeros(100), touched("다섯", 3, 2, "2026-07-01")];
+    const queue = buildSessionQueue(words, today, M, mulberry32(1), 10);
+    expect(hanziSet(queue).has("다섯")).toBe(true);
+  });
+
+  it("졸업 단어는 마지막 정답이 오래돼도 재출제 몫에 들어오지 않는다", () => {
+    const graduated = { ...touched("졸업", 3, 3, "2026-07-01"), nextReview: "2026-08-01" };
+    const queue = buildSessionQueue([...zeros(100), graduated], today, M, mulberry32(1), 10);
+    expect(hanziSet(queue).has("졸업")).toBe(false);
+  });
+
+  it("후보가 몫보다 많으면 마지막 정답이 오래된 순, 기록 없음(null)이 가장 먼저다", () => {
+    const words = [
+      ...zeros(100),
+      touched("최근", 1, 0, "2026-07-15"),
+      touched("오래", 2, 0, "2026-07-01"),
+      touched("기록없음", 1, 0, null),
+    ];
+    // limit 10 → 몫 floor(10×0.2)=2
+    const queue = buildSessionQueue(words, today, M, mulberry32(1), 10);
+    const picked = hanziSet(queue);
+    expect(picked.has("기록없음")).toBe(true);
+    expect(picked.has("오래")).toBe(true);
+    expect(picked.has("최근")).toBe(false);
+  });
+
+  it("후보가 몫보다 적으면 남은 슬롯은 점수 오름차순 컷이 채운다", () => {
+    const words = [...zeros(100), touched("재", 1, 0, "2026-07-01")];
+    const queue = buildSessionQueue(words, today, M, mulberry32(1), 10);
+    expect(queue).toHaveLength(10);
+    expect(questionsOf(queue, "재")).toHaveLength(1);
   });
 });

@@ -6,7 +6,7 @@ import { resolveRecordModes } from "../lib/tabModes.ts";
  */
 
 import { batchUpdateValues, getValues } from "../lib/sheets.ts";
-import { findRowNumber, parseWordRow, type WordEntry } from "../lib/words.ts";
+import { findRowNumber, latestTimestampDate, parseWordRow, type WordEntry } from "../lib/words.ts";
 import {
   columnLetter,
   computeAnswerUpdate,
@@ -99,6 +99,7 @@ export async function handleAnswerPost(
     m2: update.m2,
     nextReview: update.nextReview,
     interval: update.interval,
+    lastCorrect: latestTimestampDate([current.lastCorrect ?? "", answer.timestamp]),
   };
   return Response.json(updated);
 }
