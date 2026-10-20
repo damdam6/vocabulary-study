@@ -7,6 +7,7 @@ import { useEffect, useMemo, useState } from "react";
 import { readAudioAutoplay, saveAudioAutoplay } from "../lib/audioPreferences.ts";
 import HomeUtilBar from "../components/HomeUtilBar.tsx";
 import SessionLimitModal from "../components/SessionLimitModal.tsx";
+import { readSessionLimitOverride, saveSessionLimitOverride } from "../lib/sessionLimitPreference.ts";
 import StudyScopePicker, { type StudyScopeKind } from "../components/StudyScopePicker.tsx";
 import { getStoredProfile, saveProfile, type PublicProfile, type WordEntry } from "../lib/api.ts";
 import { formatHomeDate } from "../lib/date.ts";
@@ -69,7 +70,7 @@ function HomeScreen({ onStart, onNavigateRegister, onSwitchProfile, onNavigateTa
   const [retryQueueLength, setRetryQueueLength] = useState(0);
   // 시트별 세션 문제 수(세션 설정 플랜 §3.2) — words 응답 동봉값, 미동봉 시 fetchWords가 SESSION_CAP으로 폴백.
   const [sheetSessionLimit, setSheetSessionLimit] = useState(SESSION_CAP);
-  // 이번 세션 문제 수 수정값 — 이번 홈 진입 동안만 시트 설정을 대신한다(재진입·재조회 시 초기화).
+  // 세션 문제 수 수정값 — 시트 설정을 대신하고, 프로필별로 localStorage에 남아 다음 홈 진입에도 유지된다.
   const [sessionLimitOverride, setSessionLimitOverride] = useState<number | null>(null);
   const [sessionLimitModalOpen, setSessionLimitModalOpen] = useState(false);
   const sessionLimit = sessionLimitOverride ?? sheetSessionLimit;
@@ -92,7 +93,7 @@ function HomeScreen({ onStart, onNavigateRegister, onSwitchProfile, onNavigateTa
         setAudioSaveFailed(false);
         saveProfile(fetchedProfile);
         setSheetSessionLimit(settings.sessionLimit);
-        setSessionLimitOverride(null);
+        setSessionLimitOverride(readSessionLimitOverride(fetchedProfile.id));
         setTts(fetchedTts);
         setToday(getSeoulToday());
         // 홈 진입마다 새 응답으로 저장된 범위를 다시 검증한다 — 사라진 탭 정리·저장값 갱신은
@@ -312,10 +313,12 @@ function HomeScreen({ onStart, onNavigateRegister, onSwitchProfile, onNavigateTa
           onCancel={() => setSessionLimitModalOpen(false)}
           onSave={(limit) => {
             setSessionLimitOverride(limit);
+            if (profile) saveSessionLimitOverride(profile.id, limit);
             setSessionLimitModalOpen(false);
           }}
           onReset={() => {
             setSessionLimitOverride(null);
+            if (profile) saveSessionLimitOverride(profile.id, null);
             setSessionLimitModalOpen(false);
           }}
         />
