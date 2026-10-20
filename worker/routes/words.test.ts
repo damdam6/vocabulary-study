@@ -203,5 +203,5 @@ it("G열 이후 정답 타임스탬프 중 가장 최신 날짜를 lastCorrect�
     rows: { HSK6급: [["经济", "jīngjì", "경제", "1", "1", "", "2026-07-18 09:00|m1", "깨진값", "2026-07-15 21:00|m2"]] },
   });
   const { body } = await getWords();
-  expect(body.words[0].lastCorrect).toBe("2026-07-18");
+  expect((body.words[0] as { lastCorrect?: string | null }).lastCorrect).toBe("2026-07-18");
 });
