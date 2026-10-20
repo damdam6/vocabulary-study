@@ -21,17 +21,12 @@ export const SESSION_CAP = 60;
 export const REVIEW_SHARE = 0.3;
 
 /**
- * 재출제 몫: 학습 슬롯 중 이 비율만큼을 "한두 번 맞힌 뒤 며칠 묵은" 단어에 먼저 준다.
- * 점수 오름차순 정렬만 쓰면 0점 단어가 학습 슬롯보다 많은 동안 1~2점 단어가 영영 다시
- * 나오지 않아(오답은 점수를 안 올리므로 0점 풀이 잘 줄지 않는다) 졸업이 막힌다.
- * 추후 조정할 수 있도록 상수로 둔다.
+ * 재출제 몫: 학습 슬롯 중 이 비율까지를 한 번 이상 맞힌(총 정답 수 ≥ 1) 학습 중 단어에
+ * 마지막 정답이 오래된 순으로 먼저 준다. 점수 오름차순 정렬만 쓰면 0점 단어가 학습 슬롯보다
+ * 많은 동안 점수 있는 단어가 영영 다시 나오지 않아(오답은 점수를 안 올리므로 0점 풀이 잘
+ * 줄지 않는다) 졸업이 막힌다. 추후 조정할 수 있도록 상수로 둔다.
  */
-export const RECALL_SHARE = 0.3;
-/** 재출제 대상 총 정답 수(m1+m2) 범위 — 이상·이하. */
-export const RECALL_MIN_SCORE = 1;
-export const RECALL_MAX_SCORE = 2;
-/** 마지막 정답 후 이만큼(일) 지나야 재출제 대상이 된다 — 오늘이 2026-07-20이면 07-18 이전 정답. */
-export const RECALL_GAP_DAYS = 2;
+export const RECALL_SHARE = 0.2;
 
 export type QuizMode = "m1" | "m2";
 
@@ -73,7 +68,7 @@ export interface SessionQuestion<T> {
 /**
  * PRD-general §4.2의 세션 큐를 만든다. ① splitSessionSlots로 상한을 복습/학습에 배분 →
  * ② 복습 대기를 복습일 오래된 순으로 그 몫만큼(단어당 1문제·모드는 M 중 무작위) →
- * ③ 남은 슬롯 중 RECALL_SHARE만큼은 마지막 정답 후 RECALL_GAP_DAYS일 지난 1~2점 단어에 먼저 주고,
+ * ③ 남은 슬롯 중 RECALL_SHARE만큼은 1점 이상 단어에 마지막 정답이 오래된 순으로 먼저 주고,
  * 나머지 슬롯에 학습 중 단어를 총 정답 수 오름차순·동률이면 무작위로(단어당 1문제 — M 중
  * 미달 모드가 하나면 그 모드, 복수면 그중 무작위, #44/#76) → ④ 전체 셔플. 상태가 상호
  * 배타라 같은 단어는 큐에 최대 한 번 들어간다. 상태 분류는 getWordState(word, today, modes)를
@@ -133,9 +128,8 @@ export function buildSessionQueue<T extends WordProgress>(
 
   // 재출제 몫을 먼저 뽑는다 — 마지막 정답이 오래된 순(정답 기록 없음은 가장 오래된 것으로).
   // 몫을 못 채운 슬롯과 탈락한 후보는 아래 점수 오름차순 컷으로 그대로 돌아간다.
-  const recallCutoff = shiftDate(today, -RECALL_GAP_DAYS);
   const recallPicked = learning
-    .filter((word) => isRecallCandidate(word, recallCutoff))
+    .filter((word) => word.m1 + word.m2 >= 1)
     .toSorted((a, b) => compareNextReview(a.lastCorrect ?? null, b.lastCorrect ?? null))
     .slice(0, Math.floor(slots.learning * RECALL_SHARE));
   const recallSet = new Set<T>(recallPicked);
@@ -152,21 +146,6 @@ export function buildSessionQueue<T extends WordProgress>(
   const queue = [...reviewQuestions, ...learningQuestions];
   shuffle(queue, rng);
   return queue;
-}
-
-/** 재출제 대상: 총 정답 수가 RECALL 범위 안이고 마지막 정답이 cutoff 이전(포함). 기록 없음도 대상. */
-function isRecallCandidate(word: WordProgress, cutoff: string): boolean {
-  const score = word.m1 + word.m2;
-  if (score < RECALL_MIN_SCORE || score > RECALL_MAX_SCORE) {
-    return false;
-  }
-  return word.lastCorrect == null || word.lastCorrect <= cutoff;
-}
-
-/** `YYYY-MM-DD`에 days일을 더한 `YYYY-MM-DD`. 달력 연산만 하므로 UTC로 계산해도 시간대 영향이 없다. */
-function shiftDate(date: string, days: number): string {
-  const [y, m, d] = date.split("-").map(Number);
-  return new Date(Date.UTC(y, m - 1, d + days)).toISOString().slice(0, 10);
 }
 
 /**
