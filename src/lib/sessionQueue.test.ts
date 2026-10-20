@@ -408,7 +408,7 @@ describe("buildSessionQueue — M 파라미터화 (#76)", () => {
   });
 });
 
-describe("buildSessionQueue — 재출제 몫 (1점 이상 단어, 마지막 정답 오래된 순)", () => {
+describe("buildSessionQueue — 재출제 몫 (2일 경과한 1점 이상 단어, 마지막 정답 오래된 순)", () => {
   /** 학습 중 단어 + 마지막 정답일. */
   function touched(hanzi: string, m1: number, m2: number, lastCorrect: string | null): TestWord {
     return { ...learningWord(hanzi, m1, m2), lastCorrect };
@@ -416,17 +416,30 @@ describe("buildSessionQueue — 재출제 몫 (1점 이상 단어, 마지막 정
   const zeros = (n: number) => Array.from({ length: n }, (_, i) => learningWord(`영${i}`, 0, 0));
 
   it("0점 단어가 학습 슬롯보다 많아도 1점 이상 단어가 몫만큼 들어온다", () => {
-    const recall = Array.from({ length: 20 }, (_, i) => touched(`재${i}`, 1, 0, today));
+    const recall = Array.from({ length: 20 }, (_, i) => touched(`재${i}`, 1, 0, "2026-07-10"));
     const queue = buildSessionQueue([...zeros(100), ...recall], today, M, mulberry32(1), 10);
     expect(queue).toHaveLength(10);
     expect(queue.filter((q) => q.word.hanzi.startsWith("재"))).toHaveLength(Math.floor(10 * RECALL_SHARE));
   });
 
-  it("점수 상한·경과일 조건은 없다 — 오늘 맞힌 단어, 5점 단어도 대상이다", () => {
-    const words = [...zeros(100), touched("오늘", 1, 0, today), touched("다섯", 3, 2, today)];
+  it("마지막 정답이 2일 전이면 대상, 1일 전·오늘이면 대상이 아니다 (경계값)", () => {
+    const words = [...zeros(100), touched("이틀", 1, 0, "2026-07-18"), touched("하루", 1, 0, "2026-07-19"), touched("오늘", 1, 0, today)];
     const queue = buildSessionQueue(words, today, M, mulberry32(1), 10);
-    expect(hanziSet(queue).has("오늘")).toBe(true);
+    expect(hanziSet(queue).has("이틀")).toBe(true);
+    expect(hanziSet(queue).has("하루")).toBe(false);
+    expect(hanziSet(queue).has("오늘")).toBe(false);
+  });
+
+  it("점수 상한은 없다 — 2일 지난 5점 학습 중 단어도 대상이다", () => {
+    const words = [...zeros(100), touched("다섯", 3, 2, "2026-07-01")];
+    const queue = buildSessionQueue(words, today, M, mulberry32(1), 10);
     expect(hanziSet(queue).has("다섯")).toBe(true);
+  });
+
+  it("졸업 단어는 마지막 정답이 오래돼도 재출제 몫에 들어오지 않는다", () => {
+    const graduated = { ...touched("졸업", 3, 3, "2026-07-01"), nextReview: "2026-08-01" };
+    const queue = buildSessionQueue([...zeros(100), graduated], today, M, mulberry32(1), 10);
+    expect(hanziSet(queue).has("졸업")).toBe(false);
   });
 
   it("후보가 몫보다 많으면 마지막 정답이 오래된 순, 기록 없음(null)이 가장 먼저다", () => {
