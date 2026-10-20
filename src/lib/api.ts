@@ -148,6 +148,8 @@ export interface WordEntry {
   m2: number;
   nextReview: string | null;
   interval: number | null;
+  /** 마지막 정답 날짜(YYYY-MM-DD). 정답 기록이 없으면 null, 구서버 응답이면 생략. */
+  lastCorrect?: string | null;
 }
 
 /** POST /api/answer 요청 바디 (PRD §7.3). timestamp는 판정 시각(YYYY-MM-DD HH:mm, Asia/Seoul). */
