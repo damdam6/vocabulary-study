@@ -135,7 +135,7 @@ describe("StudyScreen 발음 정지 경계 (#145)", () => {
     expect(mocks.stop.mock.invocationCallOrder[0]).toBeLessThan(onExit.mock.invocationCallOrder[0]);
   });
 
-  it("정답 즉시 다음 문제는 새 textarea의 값·높이·scroll·focus로 초기화한다", async () => {
+  it("정답 즉시 다음 문제는 새 textarea의 값·높이·scroll로 초기화하고 자동 포커스하지 않는다", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(Response.json(word)));
     const secondWord = { ...word, hanzi: "学习", meaning: "공부하다" };
     const { container, unmount } = renderComponent(
@@ -161,10 +161,10 @@ describe("StudyScreen 발음 정지 경계 (#145)", () => {
     expect(next.value).toBe("");
     expect(next.style.height).toBe("60px");
     expect(next.scrollTop).toBe(0);
-    expect(document.activeElement).toBe(next);
+    expect(document.activeElement).not.toBe(next);
   });
 
-  it("오답 다음도 새 textarea 상태와 focus를 초기화한다", () => {
+  it("오답 다음도 새 textarea 상태를 초기화하고 자동 포커스하지 않는다", () => {
     const secondWord = { ...word, hanzi: "学习", meaning: "공부하다" };
     const { container, unmount } = renderComponent(
       <StudyScreen
@@ -185,6 +185,6 @@ describe("StudyScreen 발음 정지 경계 (#145)", () => {
     expect(next.value).toBe("");
     expect(next.style.height).toBe("60px");
     expect(next.scrollTop).toBe(0);
-    expect(document.activeElement).toBe(next);
+    expect(document.activeElement).not.toBe(next);
   });
 });

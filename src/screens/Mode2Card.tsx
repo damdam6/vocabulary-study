@@ -4,6 +4,8 @@
 //   - 오답이면 이 컴포넌트가 결과 화면(정답 한자·병음·뜻·내 답)을 띄운 채 머물고,
 //     "다음" 버튼에서 onProceed를 호출해야 셸이 진행한다.
 //   - 셸이 문제마다 key를 바꿔 리마운트하므로 값·높이·scroll·focus는 새 입력 기준으로 초기화한다.
+//   - 진입 시 입력란에 자동 포커스하지 않는다 — 모바일에서 키보드가 바로 올라와 뜻 카드를 가리지 않게,
+//     사용자가 입력란을 눌렀을 때만 입력을 시작한다.
 import { useEffect, useLayoutEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react'
 import { headwordLang, mode2Hint, mode2Placeholder } from '../lib/contentLabels.ts'
 import { gradeMode2, type StudyQuestion } from '../lib/studySession.ts'
@@ -144,7 +146,6 @@ function Mode2Card({ question, contentType, onJudged, onProceed, pronunciation }
           value={value}
           onChange={(event) => setValue(event.target.value)}
           onKeyDown={handleTextareaKeyDown}
-          autoFocus
           autoComplete="off"
           autoCorrect="off"
           autoCapitalize="off"
@@ -161,7 +162,6 @@ function Mode2Card({ question, contentType, onJudged, onProceed, pronunciation }
           placeholder={mode2Placeholder(contentType)}
           value={value}
           onChange={(event) => setValue(event.target.value)}
-          autoFocus
           autoComplete="off"
           autoCorrect="off"
           autoCapitalize="off"

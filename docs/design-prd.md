@@ -112,7 +112,7 @@
 
 ### 4.3 모드 2 (뜻 → 중국어, 자동 채점)
 
-- 출제: 뜻 카드(27px) + 힌트 문구 + 입력란(60px, 중앙 정렬 28px, 자동 포커스, `autocomplete/autocorrect/autocapitalize off`, `spellcheck=false`, `enterKeyHint="done"` — 이 4개는 IME 언어와 무관해 콘텐츠 타입 공통) + "제출" 버튼. Enter 제출 가능.
+- 출제: 뜻 카드(27px) + 힌트 문구 + 입력란(60px, 중앙 정렬 28px, 자동 포커스 없음, `autocomplete/autocorrect/autocapitalize off`, `spellcheck=false`, `enterKeyHint="done"` — 이 4개는 IME 언어와 무관해 콘텐츠 타입 공통) + "제출" 버튼. Enter 제출 가능.
   - **`zh`**: 힌트 "이 뜻의 중국어 단어·문장을 입력하세요", 여러 줄 입력란 `lang="zh-Hans"` + placeholder "중국어". Enter 제출, Shift+Enter 개행, IME 조합 Enter는 제출하지 않는다.
   - **`generic`**: 힌트 "이 뜻에 해당하는 단어를 입력하세요", 입력란 `lang`/`placeholder` 미지정(§4.6, #80).
 - 채점: 공통 정규화(NFC·소문자화·공백 전면 제거) 후 일치 — 느슨 채점(#123, 공백 제거는 #126), `zh`만 문장 PRD §4의 고정 문장부호를 추가로 제거한다(#175). 빈 입력·공백만 입력 = 오답 (기능 PRD §5.2). 채점 규칙은 PRD.md §5.2·PRD-general §4.2가 기준(contentType 분기, #175). "내 답" 표시는 정규화 전 트림 원입력 그대로.

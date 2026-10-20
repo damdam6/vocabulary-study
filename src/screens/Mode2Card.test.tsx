@@ -41,6 +41,18 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
+describe("Mode2Card 진입 포커스", () => {
+  it.each(["zh", "generic"] as const)("%s 진입 시 입력란에 자동 포커스하지 않는다", (contentType) => {
+    const view = renderComponent(
+      <Mode2Card question={question} contentType={contentType} onJudged={vi.fn()} onProceed={vi.fn()} />,
+    );
+    unmountCurrent = view.unmount;
+    const input = view.container.querySelector<ModeInput>(".mode-input")!;
+    expect(input.hasAttribute("autofocus")).toBe(false);
+    expect(document.activeElement).not.toBe(input);
+  });
+});
+
 describe("Mode2Card 정답 음성", () => {
   it("zh만 textarea를 사용하고 generic은 기존 단일 행 input을 유지한다", () => {
     const zh = renderComponent(
