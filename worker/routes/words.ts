@@ -12,7 +12,7 @@ import { getValues } from "../lib/sheets.ts";
 import { parseWordRow, WORD_ROW_RANGE, type WordEntry } from "../lib/words.ts";
 import { toPublicProfile, type Profile } from "../lib/profiles.ts";
 import { readSettings } from "../lib/settings.ts";
-import { resolveTtsConfig } from "../lib/tts/config.ts";
+import { resolveSelectedTtsConfig } from "../lib/tts/modelSelection.ts";
 import { MAX_TTS_TEXT_LENGTH, type TtsCapability, type TtsWorkerEnv } from "../lib/tts/types.ts";
 
 export async function handleGetWords(
@@ -38,7 +38,7 @@ export async function handleGetWords(
     }
   });
 
-  const resolvedTts = profile.contentType === "zh" ? resolveTtsConfig(env) : undefined;
+  const resolvedTts = profile.contentType === "zh" ? await resolveSelectedTtsConfig(env) : undefined;
   const tts: TtsCapability = resolvedTts?.status === "ready"
     ? { enabled: true, revision: resolvedTts.config.revision, maxTextLength: MAX_TTS_TEXT_LENGTH }
     : { enabled: false };

@@ -1,3 +1,4 @@
+import { handleTtsModels } from "./routes/tts-models.ts";
 import { handleTabModes } from "./routes/tab-modes.ts";
 import { handleAnswerPost } from "./routes/answer.ts";
 import { handleGetWords } from "./routes/words.ts";
@@ -27,7 +28,7 @@ export default {
         // 설정 오류는 비밀번호 불일치(401)와 구분해 500으로 — 설정 사고를 관측 가능하게 (#71)
         console.error("[profiles]", err);
         const headers: HeadersInit = { "X-Worker-Version": version };
-        if (url.pathname === "/api/tts") headers["Cache-Control"] = "private, no-store";
+        if (url.pathname === "/api/tts" || url.pathname === "/api/tts-models") headers["Cache-Control"] = "private, no-store";
         return Response.json(
           { error: "invalid profile configuration" },
           { status: 500, headers },
@@ -35,12 +36,14 @@ export default {
       }
       if (!profile) {
         const headers: HeadersInit = { "WWW-Authenticate": "Bearer", "X-Worker-Version": version };
-        if (url.pathname === "/api/tts") headers["Cache-Control"] = "private, no-store";
+        if (url.pathname === "/api/tts" || url.pathname === "/api/tts-models") headers["Cache-Control"] = "private, no-store";
         return new Response(null, {
           status: 401,
           headers,
         });
       }
+
+      if (url.pathname === "/api/tts-models") return handleTtsModels(request, env, profile);
 
       if (url.pathname === "/api/health") {
         return Response.json(
