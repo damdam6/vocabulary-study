@@ -38,6 +38,7 @@ interface HomeScreenProps {
   /** 큐는 시트 문제 수 설정 상한까지 잘라서 올린다 — 세션 문제 수는 이 큐로 확정된다(#116). */
   onStart: (queue: SessionQuestion<WordEntry>[], context: StudySessionContext) => void
   onNavigateRegister: () => void
+  onNavigateTtsModels?: () => void
   onNavigateTabModes?: () => void
   onSwitchProfile: () => void
 }
@@ -58,7 +59,7 @@ function describeScope(scope: StudyScope, tabs: readonly string[]): { name: stri
   return { name: ordered[0], rest: ordered.length > 1 ? ` 외 ${ordered.length - 1}개 탭` : "" };
 }
 
-function HomeScreen({ onStart, onNavigateRegister, onSwitchProfile, onNavigateTabModes }: HomeScreenProps) {
+function HomeScreen({ onStart, onNavigateRegister, onSwitchProfile, onNavigateTtsModels, onNavigateTabModes }: HomeScreenProps) {
   const [status, setStatus] = useState<Status>("loading");
   const [words, setWords] = useState<WordEntry[]>([]);
   // 현황 집계의 기준일은 조회 시점으로 고정한다 — 범위를 바꿀 때마다 다시 계산해도 같은 날짜를 쓴다.
@@ -205,6 +206,7 @@ function HomeScreen({ onStart, onNavigateRegister, onSwitchProfile, onNavigateTa
           {profile && <p className="home-profile-name">{profile.name}</p>}
         </div>
         <HomeUtilBar
+          onNavigateTtsModels={profile?.contentType === "zh" ? onNavigateTtsModels : undefined}
           onNavigateTabModes={onNavigateTabModes}
           onNavigateRegister={onNavigateRegister}
           onSwitchProfile={onSwitchProfile}

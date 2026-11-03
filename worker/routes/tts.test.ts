@@ -69,7 +69,10 @@ function configuredEnv(bucket: { get: (...args: never[]) => unknown; put: (...ar
     PROFILES: JSON.stringify(PROFILES),
     TTS_ENABLED: "true",
     DASHSCOPE_API_KEY: "test-only-key",
-    TTS_AUDIO: bucket,
+    TTS_AUDIO: {
+      get: (key: string) => key === "settings/tts-model.json" ? null : (bucket.get as (key: string) => unknown)(key),
+      put: bucket.put,
+    },
   });
 }
 

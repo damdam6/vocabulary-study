@@ -1,3 +1,4 @@
+import { isTtsModel } from "../../../shared/ttsModels.ts";
 import {
   DEFAULT_TTS_RATE,
   DEFAULT_TTS_REVISION,
@@ -39,7 +40,7 @@ export function resolveTtsConfig(env: TtsEnv): ResolvedTtsConfig {
   const rate = parseRate(env.TTS_RATE);
   if (
     provider !== TTS_PROVIDER ||
-    model !== TTS_MODEL ||
+    !isTtsModel(model) ||
     voice !== TTS_VOICE ||
     !REVISION_PATTERN.test(revision) ||
     rate === null ||
@@ -51,7 +52,7 @@ export function resolveTtsConfig(env: TtsEnv): ResolvedTtsConfig {
 
   const config: TtsConfig = {
     provider: TTS_PROVIDER,
-    model: TTS_MODEL,
+    model,
     voice: TTS_VOICE,
     rate,
     revision,
