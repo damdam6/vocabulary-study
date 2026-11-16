@@ -153,6 +153,22 @@ describe("GET /api/words — '_정보' 탭은 학습에서 자연 제외된다 (
 });
 
 describe("GET /api/words — TTS capability", () => {
+  it("모델 선택(R2) 읽기가 실패해도 words는 200으로 응답하고 발음만 끈다", async () => {
+    stubSheets({ titles: ["HSK6급"] });
+    const failingEnv = makeEnv({
+      PROFILES: JSON.stringify([{ id: "zh", name: "중국어", password: "pw-zh", sheetId: "sheet-zh", modes: ["m1"], contentType: "zh" }]),
+      TTS_ENABLED: "true",
+      DASHSCOPE_API_KEY: "test-only-key",
+      TTS_AUDIO: { get: async () => { throw new Error("storage unavailable"); }, put() {} },
+    });
+    const res = await worker.fetch(makeRequest("/api/words", { Authorization: "Bearer pw-zh" }), failingEnv);
+
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as WordsBody;
+    expect(body.tts).toEqual({ enabled: false });
+    expect(body.words).toHaveLength(1);
+  });
+
   it("중국어 프로필에서 유효한 TTS 설정만 공개 capability를 켠다", async () => {
     const { urls } = stubSheets({ titles: ["HSK6급"] });
     const readyEnv = makeEnv({

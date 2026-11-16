@@ -1,3 +1,4 @@
+import type { TtsModel } from "../../../shared/ttsModels.ts";
 /**
  * 중국어 TTS의 Worker 공통 계약. 이 파일은 라우트·저장소·제공자 구현보다 먼저
  * 고정되는 경계이며, 비밀값은 공개 설정과 분리한다.
@@ -149,7 +150,7 @@ export type TtsWorkerEnv = Env & TtsEnv;
 /** 해시·진단에 사용할 수 있는 비밀 없는 설정. */
 export interface TtsConfig {
   provider: typeof TTS_PROVIDER;
-  model: typeof TTS_MODEL;
+  model: TtsModel;
   voice: typeof TTS_VOICE;
   rate: number;
   revision: string;

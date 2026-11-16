@@ -12,7 +12,7 @@ import { getValues } from "../lib/sheets.ts";
 import { parseWordRow, WORD_ROW_RANGE, type WordEntry } from "../lib/words.ts";
 import { toPublicProfile, type Profile } from "../lib/profiles.ts";
 import { readSettings } from "../lib/settings.ts";
-import { resolveTtsConfig } from "../lib/tts/config.ts";
+import { resolveSelectedTtsConfig } from "../lib/tts/modelSelection.ts";
 import { MAX_TTS_TEXT_LENGTH, type TtsCapability, type TtsWorkerEnv } from "../lib/tts/types.ts";
 
 export async function handleGetWords(
@@ -21,6 +21,15 @@ export async function handleGetWords(
   profile: Profile,
 ): Promise<Response> {
   // 설정 읽기는 단어 조회와 독립이므로 병렬로 — 시트 왕복이 직렬로 늘지 않는다.
+  // 모델 선택(R2) 읽기도 시트 조회와 독립이라 함께 시작한다. 실패해도 단어 목록은
+  // 막지 않고 발음 기능만 끈다 — TTS 설정 사고가 학습 전체 장애로 번지지 않게 한다.
+  const resolvedTtsPromise = profile.contentType === "zh"
+    ? resolveSelectedTtsConfig(env).catch(() => {
+      console.error("[GET /api/words] tts model selection unavailable");
+      return undefined;
+    })
+    : Promise.resolve(undefined);
+
   const [{ tabs }, settings] = await Promise.all([
     readTabModes(env, profile),
     readSettings(env, profile.sheetId),
@@ -38,7 +47,7 @@ export async function handleGetWords(
     }
   });
 
-  const resolvedTts = profile.contentType === "zh" ? resolveTtsConfig(env) : undefined;
+  const resolvedTts = await resolvedTtsPromise;
   const tts: TtsCapability = resolvedTts?.status === "ready"
     ? { enabled: true, revision: resolvedTts.config.revision, maxTextLength: MAX_TTS_TEXT_LENGTH }
     : { enabled: false };
