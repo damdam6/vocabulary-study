@@ -181,6 +181,15 @@ function encodeRange(tab: string, range: string): string {
   return encodeURIComponent(fullRange(tab, range));
 }
 
+// 재시도 전 대기(ms). 429(분당 쿼터)·일시적 5xx 한 번에 요청 전체가 500으로 떨어지지 않게 한다.
+const RETRY_DELAYS_MS = [300, 900];
+
+// 429는 요청이 처리되지 않았으므로 메서드와 무관하게 재시도해도 안전하다.
+// 5xx는 서버가 쓰기를 반영했을 수 있어(append 중복 위험) 읽기(GET)만 재시도한다.
+function isRetryable(method: string, status: number): boolean {
+  return status === 429 || (method === "GET" && status >= 500);
+}
+
 async function sheetsFetch(
   env: Env,
   sheetId: string,
@@ -189,16 +198,28 @@ async function sheetsFetch(
   body?: unknown,
 ): Promise<Response> {
   const token = await getAccessToken(env);
-  const res = await fetch(`${API_BASE}/${sheetId}${path}`, {
-    method,
-    headers: {
-      authorization: `Bearer ${token}`,
-      ...(body === undefined ? {} : { "content-type": "application/json" }),
-    },
-    body: body === undefined ? undefined : JSON.stringify(body),
-  });
-  if (!res.ok) {
-    throw new SheetsApiError(res.status, await res.text(), `${method} ${decodeURIComponent(path)}`);
+  const action = `${method} ${decodeURIComponent(path)}`;
+  for (let attempt = 0; ; attempt++) {
+    const res = await fetch(`${API_BASE}/${sheetId}${path}`, {
+      method,
+      headers: {
+        authorization: `Bearer ${token}`,
+        ...(body === undefined ? {} : { "content-type": "application/json" }),
+      },
+      body: body === undefined ? undefined : JSON.stringify(body),
+    });
+    if (res.ok) {
+      return res;
+    }
+    const errorBody = await res.text();
+    const delay = RETRY_DELAYS_MS[attempt];
+    if (delay !== undefined && isRetryable(method, res.status)) {
+      console.warn(`[sheets] ${action} -> ${res.status}, retry ${attempt + 1}/${RETRY_DELAYS_MS.length}`);
+      await new Promise((resolve) => setTimeout(resolve, delay));
+      continue;
+    }
+    // Workers Logs가 Error 객체를 스택만 남기고 메시지를 떨어뜨리는 경우가 있어 상태·본문을 문자열로 따로 남긴다.
+    console.error(`[sheets] ${action} failed: ${res.status} ${errorBody.slice(0, 500)}`);
+    throw new SheetsApiError(res.status, errorBody, action);
   }
-  return res;
 }
