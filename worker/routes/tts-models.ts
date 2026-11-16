@@ -1,7 +1,10 @@
 import { TTS_MODELS, isTtsModel } from '../../shared/ttsModels.ts';
 import { MODEL_SELECTION_KEY, readModelSelection, selectionBucket } from '../lib/tts/modelSelection.ts';
+import { isJsonContentType, readLimitedBody, TtsInputError } from '../lib/tts/input.ts';
 import type { Profile } from '../lib/profiles.ts';
 import type { TtsWorkerEnv } from '../lib/tts/types.ts';
+
+const MAX_MODEL_REQUEST_BYTES = 1024;
 
 export async function handleTtsModels(request: Request, env: TtsWorkerEnv, profile: Profile): Promise<Response> {
   const reply = (body: unknown, status = 200) => Response.json(body, { status, headers: { 'Cache-Control': 'private, no-store' } });
@@ -9,27 +12,17 @@ export async function handleTtsModels(request: Request, env: TtsWorkerEnv, profi
   if (request.method !== 'GET' && request.method !== 'POST') return new Response(null, { status: 405, headers: { Allow: 'GET, POST' } });
   let model;
   if (request.method === 'POST') {
-    if (request.headers.get('content-type')?.split(';')[0].trim().toLowerCase() !== 'application/json') return reply({ error: 'JSON 요청이 필요합니다.' }, 415);
+    if (!isJsonContentType(request.headers.get('content-type'))) return reply({ error: 'JSON 요청이 필요합니다.' }, 415);
+    let body;
     try {
       // The setting is a small identifier, never an arbitrary provider configuration.
-      const reader = request.body?.getReader();
-      if (!reader) return reply({ error: '모델을 선택해 주세요.' }, 400);
-      let size = 0;
-      const chunks: Uint8Array[] = [];
-      while (true) {
-        const { value, done } = await reader.read();
-        if (done) break;
-        size += value.byteLength;
-        if (size > 1024) { await reader.cancel(); return reply({ error: '요청이 너무 큽니다.' }, 413); }
-        chunks.push(value);
-      }
-      const bytes = new Uint8Array(size);
-      let offset = 0;
-      for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.length; }
-      const body = JSON.parse(new TextDecoder().decode(bytes));
-      if (!isTtsModel(body?.model)) return reply({ error: '등록된 음성 모델 하나를 선택해 주세요.' }, 400);
-      model = body.model;
-    } catch { return reply({ error: '올바른 JSON 요청이 필요합니다.' }, 400); }
+      body = JSON.parse(new TextDecoder().decode(await readLimitedBody(request.body, MAX_MODEL_REQUEST_BYTES)));
+    } catch (error) {
+      if (error instanceof TtsInputError && error.code === 'tts_request_too_large') return reply({ error: '요청이 너무 큽니다.' }, 413);
+      return reply({ error: '올바른 JSON 요청이 필요합니다.' }, 400);
+    }
+    if (!isTtsModel(body?.model)) return reply({ error: '등록된 음성 모델 하나를 선택해 주세요.' }, 400);
+    model = body.model;
   }
   try {
     if (model !== undefined) await selectionBucket(env).put(MODEL_SELECTION_KEY, JSON.stringify({ model }), { httpMetadata: { contentType: 'application/json' } });

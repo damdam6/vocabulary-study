@@ -19,7 +19,8 @@ import {
 } from "./types.ts";
 
 const RATE_PATTERN = /^(?:0(?:\.\d+)?|1(?:\.\d+)?|2(?:\.0+)?)$/;
-const REVISION_PATTERN = /^[A-Za-z0-9_-]{1,64}$/;
+/** 서버·클라이언트(wordsApi의 TTS_REVISION_RE)가 공유하는 revision 형식. */
+export const TTS_REVISION_PATTERN = /^[A-Za-z0-9_-]{1,64}$/;
 
 /**
  * 설정은 TTS 경로에서만 사용한다. disabled/not_configured는 예외가 아니라
@@ -42,7 +43,7 @@ export function resolveTtsConfig(env: TtsEnv): ResolvedTtsConfig {
     provider !== TTS_PROVIDER ||
     !isTtsModel(model) ||
     voice !== TTS_VOICE ||
-    !REVISION_PATTERN.test(revision) ||
+    !TTS_REVISION_PATTERN.test(revision) ||
     rate === null ||
     !isNonEmptyString(env.DASHSCOPE_API_KEY) ||
     !isTtsAudioBinding(env.TTS_AUDIO)

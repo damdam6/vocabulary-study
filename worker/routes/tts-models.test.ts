@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import worker from '../index.ts';
 import { makeEnv, makeRequest } from '../test-utils.ts';
 import { TTS_MODELS } from '../../shared/ttsModels.ts';
+import { TTS_STORAGE_TIMEOUT_MS } from '../lib/tts/types.ts';
 import { MODEL_SELECTION_KEY, resolveSelectedTtsConfig } from '../lib/tts/modelSelection.ts';
 import { buildAudioObjectKey } from '../lib/tts/storage.ts';
 import { createQwenClientMessages } from '../lib/tts/providers/qwenProtocol.ts';
@@ -68,5 +69,32 @@ describe('persisted Qwen model selection', () => {
     bucket.get.mockRejectedValue(new Error('storage unavailable'));
     expect((await call()).status).toBe(503);
     await expect(resolveSelectedTtsConfig(env)).rejects.toThrow();
+  });
+  it('bounds a stalled selection read by the storage timeout and honours aborts', async () => {
+    const { bucket, env } = setup();
+    bucket.get.mockReturnValue(new Promise(() => {}) as never);
+    vi.useFakeTimers();
+    try {
+      const stalled = resolveSelectedTtsConfig(env);
+      const outcome = expect(stalled).rejects.toThrow('timed out');
+      await vi.advanceTimersByTimeAsync(TTS_STORAGE_TIMEOUT_MS);
+      await outcome;
+    } finally { vi.useRealTimers(); }
+    const controller = new AbortController();
+    const aborted = resolveSelectedTtsConfig(env, undefined, controller.signal);
+    controller.abort(new Error('client gone'));
+    await expect(aborted).rejects.toThrow('client gone');
+  });
+  it('reports not_configured instead of emitting a revision longer than the shared format allows', async () => {
+    const { call, env } = setup();
+    const longRevision = { ...env, TTS_REVISION: 'r'.repeat(60) };
+    expect((await resolveSelectedTtsConfig(longRevision)).status).toBe('ready');
+    await call(TTS_MODELS[3]);
+    expect(await resolveSelectedTtsConfig(longRevision)).toEqual({ status: 'not_configured', code: 'tts_not_configured' });
+  });
+  it('rejects oversized bodies with 413 without writing', async () => {
+    const { call, bucket } = setup();
+    expect((await call('x'.repeat(2000))).status).toBe(413);
+    expect(bucket.put).not.toHaveBeenCalled();
   });
 });

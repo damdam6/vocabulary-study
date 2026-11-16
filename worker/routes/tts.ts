@@ -4,7 +4,7 @@ import { resolveTtsConfig } from "../lib/tts/config.ts";
  * 이 파일은 순서 고정, ExecutionContext 연결, 공개 응답 직렬화만 담당한다.
  */
 import { resolveSelectedTtsConfig } from "../lib/tts/modelSelection.ts";
-import { readTtsRequest, TtsInputError } from "../lib/tts/input.ts";
+import { isJsonContentType, readTtsRequest, TtsInputError } from "../lib/tts/input.ts";
 import { createQwenTtsProvider } from "../lib/tts/providers/qwen.ts";
 import { createR2TtsAudioService, TtsServiceError } from "../lib/tts/service.ts";
 import type { TtsAudioStorageBucket } from "../lib/tts/storage.ts";
@@ -39,10 +39,13 @@ export async function handleTtsPost(
 
   if (request.signal.aborted) throw request.signal.reason;
   let resolved;
-  try { resolved = await resolveSelectedTtsConfig(env); }
-  catch { return ttsError("tts_storage_unavailable"); }
+  try {
+    resolved = await resolveSelectedTtsConfig(env, initial, request.signal);
+  } catch {
+    if (request.signal.aborted) throw request.signal.reason;
+    return ttsError("tts_storage_unavailable");
+  }
   if (resolved.status !== "ready") return ttsError(resolved.code);
-  if (request.signal.aborted) throw request.signal.reason;
   const requestId = crypto.randomUUID();
   const provider = createQwenTtsProvider(resolved.config, resolved.dependencies.apiKey);
   // Env의 최소 binding 계약을 실제 R2 저장소 표면으로 좁히는 유일한 조합 지점이다.
@@ -106,8 +109,4 @@ function ttsInternalError(): Response {
     { error, message },
     { status: 500, headers: { "Cache-Control": TTS_RESPONSE_HEADERS.cacheControl } },
   );
-}
-
-function isJsonContentType(value: string | null): boolean {
-  return value?.split(";", 1)[0]?.trim().toLowerCase() === "application/json";
 }
