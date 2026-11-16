@@ -3,6 +3,7 @@ import LoginScreen from './screens/LoginScreen.tsx'
 import HomeScreen, { type StudySessionContext } from './screens/HomeScreen.tsx'
 import StudyScreen, { type SessionResult } from './screens/StudyScreen.tsx'
 import DoneScreen from './screens/DoneScreen.tsx'
+import AutoPlayScreen from './screens/AutoPlayScreen.tsx'
 import {
   clearPassword,
   getStoredPassword,
@@ -21,7 +22,7 @@ const TtsModelsScreen = lazy(() => import('./screens/TtsModelsScreen.tsx'))
 const TabModesScreen = lazy(() => import('./screens/TabModesScreen.tsx'))
 const RegisterScreen = lazy(() => import('./screens/RegisterScreen.tsx'))
 
-type Screen = 'login' | 'home' | 'study' | 'done' | 'register' | 'tab-modes' | 'tts-models'
+type Screen = 'login' | 'home' | 'study' | 'autoplay' | 'done' | 'register' | 'tab-modes' | 'tts-models'
 
 interface ActiveStudySession {
   queue: SessionQuestion<WordEntry>[]
@@ -30,11 +31,18 @@ interface ActiveStudySession {
   audioAutoplay: boolean
 }
 
+interface ActiveAutoPlay {
+  words: WordEntry[]
+  profile: StudySessionContext['profile']
+  tts: TtsCapability
+}
+
 function App() {
   // 새로고침 시 저장된 비밀번호가 있으면 재입력 없이 통과 (PRD §8)
   const [screen, setScreen] = useState<Screen>(() => (getStoredPassword() ? 'home' : 'login'))
   // 세션 큐는 홈이 만들고(PRD §6.1) 셸이 소비한다(§6.2) — App은 화면 간 전달만 담당
   const [activeStudy, setActiveStudy] = useState<ActiveStudySession | null>(null)
+  const [activeAutoPlay, setActiveAutoPlay] = useState<ActiveAutoPlay | null>(null)
   const [sessionResult, setSessionResult] = useState<SessionResult>({ correct: 0, wrong: 0 })
 
   // 어느 API든 401 수신 시 로그인 화면 복귀 — 저장값 삭제는 apiFetch가 이미 수행
@@ -56,6 +64,11 @@ function App() {
     setScreen('study')
   }
 
+  const startAutoPlay = (words: WordEntry[], context: StudySessionContext) => {
+    setActiveAutoPlay({ words, profile: context.profile, tts: context.tts })
+    setScreen('autoplay')
+  }
+
   const completeSession = (result: SessionResult) => {
     setSessionResult(result)
     setScreen('done')
@@ -74,6 +87,7 @@ function App() {
         {screen === 'home' && (
           <HomeScreen
             onStart={startSession}
+            onStartAutoPlay={startAutoPlay}
             onNavigateRegister={() => setScreen('register')}
             onSwitchProfile={switchProfile}
             onNavigateTtsModels={() => setScreen('tts-models')}
@@ -88,6 +102,14 @@ function App() {
             audioAutoplay={activeStudy.audioAutoplay}
             onExit={() => setScreen('home')}
             onComplete={completeSession}
+          />
+        )}
+        {screen === 'autoplay' && activeAutoPlay !== null && (
+          <AutoPlayScreen
+            words={activeAutoPlay.words}
+            profile={activeAutoPlay.profile}
+            tts={activeAutoPlay.tts}
+            onExit={() => setScreen('home')}
           />
         )}
         {screen === 'done' && (
