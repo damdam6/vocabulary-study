@@ -1,17 +1,9 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 
-// 실제 RSA 서명 없이 시트 읽기 경로를 테스트하기 위해 토큰 발급을 모킹한다 —
-// sheets.ts가 이 모듈의 getAccessToken을 그대로 가져다 쓴다 (index.sheet-isolation.test.ts와 동일 패턴).
-vi.mock("./google-auth.ts", () => ({ getAccessToken: async () => "test-token" }));
-
-import { makeEnv } from "../test-utils.ts";
 import {
   DEFAULT_SESSION_LIMIT,
   parseSettings,
-  readSettings,
   SESSION_LIMIT_KEY,
-  SETTINGS_RANGE,
-  SETTINGS_TAB,
 } from "./settings.ts";
 
 // '_정보' 탭 파서 — 플랜 docs/plans/session-limit-and-home-utils.md §3.1(읽기는 관대).
@@ -91,52 +83,5 @@ describe("parseSettings — 이상 입력은 기본 60으로 폴백", () => {
     expect(parseSettings([[SESSION_LIMIT_KEY, "0"]])).toEqual(fallback);
     expect(parseSettings([[SESSION_LIMIT_KEY, "501"]])).toEqual(fallback);
     expect(parseSettings([[SESSION_LIMIT_KEY, "-5"]])).toEqual(fallback);
-  });
-});
-
-// readSettings는 시트 1회 읽기 + 전 예외 흡수만 담당한다 — 값 해석은 위 파서 스위트가 덮는다.
-describe("readSettings — 시트 읽기와 실패 흡수", () => {
-  const env = makeEnv();
-  const fallback = { sessionLimit: DEFAULT_SESSION_LIMIT };
-
-  afterEach(() => {
-    vi.unstubAllGlobals();
-  });
-
-  it("'_정보' 탭 A:B를 대상 sheetId로 1회 읽는다", async () => {
-    const urls: string[] = [];
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async (input: string | URL) => {
-        urls.push(input.toString());
-        return Response.json({ values: [[SESSION_LIMIT_KEY, "30"]] });
-      }),
-    );
-
-    await expect(readSettings(env, "sheet-x")).resolves.toEqual({ sessionLimit: 30 });
-
-    expect(urls).toHaveLength(1);
-    expect(urls[0]).toContain("/spreadsheets/sheet-x");
-    expect(decodeURIComponent(urls[0])).toContain(`'${SETTINGS_TAB}'!${SETTINGS_RANGE}`);
-  });
-
-  it("탭이 없어 400이 나도 던지지 않고 기본값을 준다", async () => {
-    vi.stubGlobal("fetch", vi.fn(async () => new Response("Unable to parse range", { status: 400 })));
-    await expect(readSettings(env, "sheet-x")).resolves.toEqual(fallback);
-  });
-
-  it("500 응답도 기본값으로 흡수한다", async () => {
-    vi.stubGlobal("fetch", vi.fn(async () => new Response("boom", { status: 500 })));
-    await expect(readSettings(env, "sheet-x")).resolves.toEqual(fallback);
-  });
-
-  it("네트워크 오류도 기본값으로 흡수한다", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async () => {
-        throw new TypeError("network down");
-      }),
-    );
-    await expect(readSettings(env, "sheet-x")).resolves.toEqual(fallback);
   });
 });

@@ -20,6 +20,12 @@ vi.mock('../lib/sheets.ts', () => ({
     const match = range.match(/^(\d+):(\d+)$/);
     return match ? [rows[Number(match[1]) - 2]] : rows;
   },
+  batchGetValues: async (_env: Env, _sheet: string, ranges: { tab: string; range?: string }[]) => ranges.map(({ tab, range }) => {
+    if (tab === '_정보') { if (state.failRead) throw new Error('read failed'); return state.settings; }
+    const rows = state.rows[tab] ?? [];
+    // 탭 전체 읽기는 1행 헤더를 포함한다 — state.rows는 2행부터라 빈 헤더를 앞에 붙인다.
+    return range === undefined ? [[], ...rows] : rows;
+  }),
   addSheet: async (_env: Env, _sheet: string, name: string) => { state.metadata.push({ id: 99, name }); },
   appendValues: async (_env: Env, _sheet: string, tab: string, range: string, values: string[][]) => {
     if (state.failWrite) throw new Error('write failed');

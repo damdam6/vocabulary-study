@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 vi.mock("./lib/google-auth.ts", () => ({ getAccessToken: async () => "test-token" }));
 
 import worker from "./index.ts";
-import { makeEnv, makeRequest } from "./test-utils.ts";
+import { makeEnv, makeRequest, expandBatchGet } from "./test-utils.ts";
 
 // 프로필 간 시트 격리 스위트 (#73, PRD-general §6) — "모든 Sheets 호출 경로가 인증된
 // 프로필의 sheetId만 쓰는가"를 mock fetch URL 전수 기록으로 직접 검증한다.
@@ -55,7 +55,7 @@ function stubSheetsFetch(): { urls: string[] } {
   const urls: string[] = [];
   vi.stubGlobal(
     "fetch",
-    vi.fn(async (input: string | URL) => {
+    expandBatchGet(vi.fn(async (input: string | URL) => {
       const url = input.toString();
       urls.push(url);
       const sheetId = url.match(/\/spreadsheets\/([^/?]+)/)?.[1] ?? "";
@@ -73,7 +73,7 @@ function stubSheetsFetch(): { urls: string[] } {
       const decoded = decodeURIComponent(valuesPath.split("?")[0]);
       const tab = decoded.slice(1, decoded.indexOf("!") - 1);
       return Response.json({ values: sheet.rows[tab] ?? [] });
-    }),
+    })),
   );
   return { urls };
 }
