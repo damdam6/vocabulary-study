@@ -37,6 +37,8 @@ export interface StudySessionContext {
 interface HomeScreenProps {
   /** 큐는 시트 문제 수 설정 상한까지 잘라서 올린다 — 세션 문제 수는 이 큐로 확정된다(#116). */
   onStart: (queue: SessionQuestion<WordEntry>[], context: StudySessionContext) => void
+  /** 자동 재생(문제 풀이 없이 듣기) — 학습 큐와 같은 단어를 중복 없이 같은 순서로 올린다. */
+  onStartAutoPlay?: (words: WordEntry[], context: StudySessionContext) => void
   onNavigateRegister: () => void
   onNavigateTtsModels?: () => void
   onNavigateTabModes?: () => void
@@ -59,7 +61,7 @@ function describeScope(scope: StudyScope, tabs: readonly string[]): { name: stri
   return { name: ordered[0], rest: ordered.length > 1 ? ` 외 ${ordered.length - 1}개 탭` : "" };
 }
 
-function HomeScreen({ onStart, onNavigateRegister, onSwitchProfile, onNavigateTtsModels, onNavigateTabModes }: HomeScreenProps) {
+function HomeScreen({ onStart, onStartAutoPlay, onNavigateRegister, onSwitchProfile, onNavigateTtsModels, onNavigateTabModes }: HomeScreenProps) {
   const [status, setStatus] = useState<Status>("loading");
   const [words, setWords] = useState<WordEntry[]>([]);
   // 현황 집계의 기준일은 조회 시점으로 고정한다 — 범위를 바꿀 때마다 다시 계산해도 같은 날짜를 쓴다.
@@ -191,6 +193,21 @@ function HomeScreen({ onStart, onNavigateRegister, onSwitchProfile, onNavigateTt
     onStart(buildSessionQueue(scopedWords, getSeoulToday(), profile.modes, undefined, sessionLimit), { profile, tts, audioAutoplay });
   };
 
+  const handleStartAutoPlay = () => {
+    if (profile === null || onStartAutoPlay === undefined) return;
+    const queue = buildSessionQueue(scopedWords, getSeoulToday(), profile.modes, undefined, sessionLimit);
+    // 한 단어가 모드별로 두 번 큐에 들 수 있다 — 듣기에서는 첫 등장만 남긴다.
+    const seen = new Set<string>();
+    const unique: WordEntry[] = [];
+    for (const { word } of queue) {
+      const key = JSON.stringify([word.tab, word.hanzi]);
+      if (seen.has(key)) continue;
+      seen.add(key);
+      unique.push(word);
+    }
+    onStartAutoPlay(unique, { profile, tts, audioAutoplay });
+  };
+
   const startLabel =
     status === "loading" ? "불러오는 중…" : noTabSelected ? "탭을 선택하세요" : canStart ? "학습 시작" : "오늘 할 것 없음";
 
@@ -304,6 +321,12 @@ function HomeScreen({ onStart, onNavigateRegister, onSwitchProfile, onNavigateTt
       {status !== "error" && (
         <button type="button" className="start-button" disabled={!canStart} onClick={handleStart}>
           {startLabel}
+        </button>
+      )}
+
+      {onStartAutoPlay && canStart && (
+        <button type="button" className="autoplay-start-button" onClick={handleStartAutoPlay}>
+          자동 재생
         </button>
       )}
 
