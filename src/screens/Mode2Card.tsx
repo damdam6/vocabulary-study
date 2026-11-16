@@ -1,8 +1,7 @@
 // 모드 2 (뜻 → 한자 입력 자동채점, design-prd §4.3 · #17). 셸(#15)과의 계약:
 //   - 제출 순간 onJudged(정답 여부)를 한 번 호출한다. 채점은 gradeMode2(PRD §5.2).
-//   - 정답이면 셸이 즉시 다음 문제로 전환한다(§4.5) — 결과 화면 없음.
-//   - 오답이면 이 컴포넌트가 결과 화면(정답 한자·병음·뜻·내 답)을 띄운 채 머물고,
-//     "다음" 버튼에서 onProceed를 호출해야 셸이 진행한다.
+//   - 정답·오답 모두 이 컴포넌트가 채점 결과 화면(정답 한자·병음·뜻, 오답이면 내 답)을
+//     띄운 채 머물고, "다음" 버튼에서 onProceed를 호출해야 셸이 진행한다.
 //   - 셸이 문제마다 key를 바꿔 리마운트하므로 값·높이·scroll·focus는 새 입력 기준으로 초기화한다.
 //   - 진입 시 입력란에 자동 포커스하지 않는다 — 모바일에서 키보드가 바로 올라와 뜻 카드를 가리지 않게,
 //     사용자가 입력란을 눌렀을 때만 입력을 시작한다.
@@ -25,8 +24,8 @@ interface Mode2CardProps {
 
 function Mode2Card({ question, contentType, onJudged, onProceed, pronunciation }: Mode2CardProps) {
   const [value, setValue] = useState('')
-  // null이 아니면 오답 결과 화면 표시 중 — 값은 사용자가 제출한 원문이다.
-  const [wrongAnswer, setWrongAnswer] = useState<string | null>(null)
+  // null이 아니면 채점 결과 화면 표시 중 — answer는 사용자가 제출한 원문이다.
+  const [result, setResult] = useState<{ correct: boolean; answer: string } | null>(null)
   const textInputRef = useRef<HTMLInputElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const pronunciationRef = useRef<HTMLDivElement>(null)
@@ -49,16 +48,16 @@ function Mode2Card({ question, contentType, onJudged, onProceed, pronunciation }
   }, [value])
 
   useEffect(() => {
-    if (wrongAnswer === null || pronunciation === undefined || revealConsumedRef.current) return
+    if (result === null || pronunciation === undefined || revealConsumedRef.current) return
     const timer = window.setTimeout(() => {
       revealConsumedRef.current = true
       pronunciation.reveal()
     }, 0)
     return () => window.clearTimeout(timer)
-  }, [pronunciation, wrongAnswer])
+  }, [pronunciation, result])
 
   useLayoutEffect(() => {
-    if (wrongAnswer === null || !shouldMoveFocusRef.current) return
+    if (result === null || !shouldMoveFocusRef.current) return
     shouldMoveFocusRef.current = false
     const activeElement = document.activeElement
     const input = isChinese ? textareaRef.current : textInputRef.current
@@ -66,21 +65,17 @@ function Mode2Card({ question, contentType, onJudged, onProceed, pronunciation }
     const pronunciationButton = pronunciationRef.current?.querySelector<HTMLButtonElement>('button:not(:disabled)')
     const focusTarget = pronunciationButton ?? proceedRef.current
     focusTarget?.focus()
-  }, [isChinese, wrongAnswer])
+  }, [isChinese, result])
 
   const submit = (event: FormEvent) => {
     event.preventDefault()
-    if (wrongAnswer !== null || submittedRef.current) return
+    if (result !== null || submittedRef.current) return
     submittedRef.current = true
     const { correct, answer } = gradeMode2(value, word.hanzi, contentType)
-    if (correct) {
-      onJudged(true)
-    } else {
-      const input = isChinese ? textareaRef.current : textInputRef.current
-      shouldMoveFocusRef.current = document.activeElement === input
-      setWrongAnswer(answer)
-      onJudged(false)
-    }
+    const input = isChinese ? textareaRef.current : textInputRef.current
+    shouldMoveFocusRef.current = document.activeElement === input
+    setResult({ correct, answer })
+    onJudged(correct)
   }
 
   const handleTextareaKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -91,11 +86,13 @@ function Mode2Card({ question, contentType, onJudged, onProceed, pronunciation }
     event.currentTarget.form?.requestSubmit()
   }
 
-  if (wrongAnswer !== null) {
+  if (result !== null) {
     return (
       <div className="mode-area mode-area--m2">
         <div className="mode-card mode-card--result">
-          <span className="mode-result-title">오답</span>
+          <span className={`mode-result-title${result.correct ? ' mode-result-title--correct' : ''}`}>
+            {result.correct ? '정답' : '오답'}
+          </span>
           <div className="mode2-result-scroll">
             <span lang={lang} className="mode-card-hanzi">{word.hanzi}</span>
             {(word.pinyin || pronunciation) && (
@@ -113,9 +110,9 @@ function Mode2Card({ question, contentType, onJudged, onProceed, pronunciation }
               </div>
             )}
             <span className="mode-card-meaning">{word.meaning}</span>
-            {wrongAnswer.trim() !== '' && (
+            {!result.correct && result.answer.trim() !== '' && (
               <span className="mode-my-answer">
-                내 답: <s lang={lang}>{wrongAnswer}</s>
+                내 답: <s lang={lang}>{result.answer}</s>
               </span>
             )}
           </div>

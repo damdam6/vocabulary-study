@@ -295,7 +295,7 @@ describe("StudyScreen 중국어 음성 실제 연결 (#150)", () => {
     fire(() => setInput(correct.container.querySelector<HTMLTextAreaElement>(".mode-input")!, "经济"));
     fire(() => correct.container.querySelector<HTMLButtonElement>('button[type="submit"]')!.click());
     expect(ttsRequestCount()).toBe(2);
-    expect(correct.container.querySelector(".study-feedback-glyph")).not.toBeNull();
+    expect(correct.container.querySelector(".mode-result-title--correct")).not.toBeNull();
   });
 
   it("C5: B열 병음이 비어도 모드1 공개 뒤 A열만으로 실제 Audio를 재생한다", async () => {
@@ -488,7 +488,7 @@ describe("StudyScreen 중국어 음성 실제 연결 (#150)", () => {
       fire(() => rendered.container.querySelector<HTMLButtonElement>('button[type="submit"]')!.click());
       expect(rendered.container.textContent).toContain("오답"); expect(rendered.container.querySelector(".study-progress-now")?.textContent).toBe("3");
       fire(() => [...rendered.container.querySelectorAll<HTMLButtonElement>("button")].find((button) => button.textContent === "다음")!.click());
-      const input = rendered.container.querySelector<HTMLTextAreaElement>(".mode-input")!; fire(() => setInput(input, "四")); fire(() => rendered.container.querySelector<HTMLButtonElement>('button[type="submit"]')!.click()); finishFeedback(rendered.container.querySelector<HTMLElement>(".study-feedback-glyph")!);
+      const input = rendered.container.querySelector<HTMLTextAreaElement>(".mode-input")!; fire(() => setInput(input, "四")); fire(() => rendered.container.querySelector<HTMLButtonElement>('button[type="submit"]')!.click()); expect(rendered.container.textContent).toContain("정답"); fire(() => [...rendered.container.querySelectorAll<HTMLButtonElement>("button")].find((button) => button.textContent === "다음")!.click());
       await flush();
       const calls = fetchMock.mock.calls.slice(start); outcomes.push({ complete: complete.mock.calls[0]?.[0], answers: calls.filter(([path]) => path === "/api/answer").map(([, init]) => JSON.parse(String((init as RequestInit).body)).hanzi), reviews: calls.filter(([path]) => path === "/api/review-fail").map(([, init]) => JSON.parse(String((init as RequestInit).body)).hanzi), tts: calls.filter(([path]) => path === "/api/tts").length }); rendered.unmount();
     }
@@ -522,7 +522,7 @@ describe("StudyScreen 중국어 음성 실제 연결 (#150)", () => {
       fire(() => [...rendered.container.querySelectorAll<HTMLButtonElement>("button")].find((button) => button.textContent === "다음")!.click());
       fire(() => setInput(rendered.container.querySelector<HTMLTextAreaElement>(".mode-input")!, "四"));
       fire(() => rendered.container.querySelector<HTMLButtonElement>('button[type="submit"]')!.click());
-      finishFeedback(rendered.container.querySelector<HTMLElement>(".study-feedback-glyph")!);
+      fire(() => [...rendered.container.querySelectorAll<HTMLButtonElement>("button")].find((button) => button.textContent === "다음")!.click());
       await flush(); await flush();
       const calls = fetchMock.mock.calls.slice(start);
       outcomes.push({ tts: calls.filter(([path]) => path === "/api/tts").length, queue: JSON.parse(localStorage.getItem(RETRY_QUEUE_STORAGE_KEY) ?? "[]") });
