@@ -72,7 +72,16 @@ function normalizePinyin(value: string): string | null {
   return normalized === "" ? null : normalized;
 }
 
-async function readLimitedBody(body: ReadableStream<Uint8Array> | null): Promise<Uint8Array> {
+/** Content-Type의 매개변수(charset 등)를 무시하고 JSON 여부만 판별한다. */
+export function isJsonContentType(value: string | null): boolean {
+  return value?.split(";", 1)[0]?.trim().toLowerCase() === "application/json";
+}
+
+/** 실제 스트림 바이트가 maxBytes를 넘으면 즉시 취소한다. 다른 소형 JSON 라우트도 재사용한다. */
+export async function readLimitedBody(
+  body: ReadableStream<Uint8Array> | null,
+  maxBytes: number = MAX_TTS_REQUEST_BYTES,
+): Promise<Uint8Array> {
   if (!body) return new Uint8Array();
   const reader = body.getReader();
   const chunks: Uint8Array[] = [];
@@ -81,7 +90,7 @@ async function readLimitedBody(body: ReadableStream<Uint8Array> | null): Promise
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
-      if (length + value.byteLength > MAX_TTS_REQUEST_BYTES) {
+      if (length + value.byteLength > maxBytes) {
         await reader.cancel();
         throw new TtsInputError("tts_request_too_large");
       }

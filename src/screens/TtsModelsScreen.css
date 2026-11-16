@@ -1,0 +1,6 @@
+.tts-model-options { border: 0; margin: 1.5rem 0; padding: 0; min-width: 0; }
+.tts-model-options legend { margin-bottom: .75rem; font-weight: 600; }
+.tts-model-option { display: flex; align-items: center; gap: .75rem; padding: 1rem .75rem; margin-bottom: .5rem; border: 1px solid currentColor; border-radius: .75rem; cursor: pointer; }
+.tts-model-option span { overflow-wrap: anywhere; min-width: 0; }
+.tts-model-option input { flex-shrink: 0; }
+.tts-model-option small { display: block; margin-top: .25rem; opacity: .65; }
