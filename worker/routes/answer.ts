@@ -1,12 +1,12 @@
 import { isStudyModes, type StudyMode } from "../../shared/studyModes.ts";
-import { resolveRecordModes } from "../lib/tabModes.ts";
+import { readRecordTarget } from "../lib/tabModes.ts";
 /**
  * POST /api/answer — 정답 1건 기록: 카운트 증가·졸업 판정·간격 갱신·G열 타임스탬프 append를
  * 한 요청 안에서 수행한다 (PRD 5.1, 5.3, 7.3, #8). 응답은 GET /api/words와 같은 단어 객체 형태.
  */
 
-import { batchUpdateValues, getValues } from "../lib/sheets.ts";
-import { findRowNumber, latestTimestampDate, parseWordRow, type WordEntry } from "../lib/words.ts";
+import { batchUpdateValues } from "../lib/sheets.ts";
+import { latestTimestampDate, parseWordRow, type WordEntry } from "../lib/words.ts";
 import {
   columnLetter,
   computeAnswerUpdate,
@@ -61,19 +61,19 @@ export async function handleAnswerPost(
 
   // 설정 변경/재전송에도 출제 당시 모드로 판정한다. 스냅샷 없는 구클라이언트는 현재 설정 사용.
   // 인증된 프로필의 실제 학습 탭만 허용하고 해당 세션의 비활성 모드는 기록하지 않는다.
-  const modes = await resolveRecordModes(env, profile, answer.tab, answer.studyModes);
-  if (modes === null) return Response.json({ error: "tab not found" }, { status: 404 });
+  // 탭 모드 + 대상 탭을 읽기 2회로 가져온다 — 정답마다 불리는 경로라 읽기 쿼터(분당 60회)의 주 소비처다.
+  const target = await readRecordTarget(env, profile, answer.tab, answer.hanzi, answer.studyModes);
+  if (target === null) return Response.json({ error: "tab not found" }, { status: 404 });
+  const { modes } = target;
   if (!modes.includes(answer.mode)) {
     return Response.json({ error: "이 학습에서 비활성화된 모드입니다" }, { status: 400 });
   }
 
-  // 행 번호는 캐시하지 않고 매 요청마다 탭 이름 + A열 한자로 재탐색한다 (PRD 4.2).
-  const rowNumber = await findRowNumber(env, profile.sheetId, answer.tab, answer.hanzi);
-  if (rowNumber === null) {
+  if (target.row === null) {
     return Response.json({ error: "word not found" }, { status: 404 });
   }
+  const { rowNumber, values: row } = target.row;
 
-  const [row = []] = await getValues(env, profile.sheetId, answer.tab, `${rowNumber}:${rowNumber}`);
   const current = parseWordRow(answer.tab, row);
   const update = computeAnswerUpdate(current, answer.mode, answer.isReview && modes.every((mode) => current[mode] >= 3), new Date(), modes);
 

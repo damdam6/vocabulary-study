@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 vi.mock("../lib/google-auth.ts", () => ({ getAccessToken: async () => "test-token" }));
 
 import worker from "../index.ts";
-import { makeEnv } from "../test-utils.ts";
+import { makeEnv, expandBatchGet } from "../test-utils.ts";
 
 type WorkerRequest = Parameters<typeof worker.fetch>[0];
 
@@ -25,11 +25,12 @@ afterEach(() => vi.unstubAllGlobals());
 describe("POST /api/review-fail — 문장 원문 행 식별", () => {
   it("정확한 tab+hanzi 행의 F열만 갱신하고 원문을 응답한다", async () => {
     const writes: { range: string; values: string[][] }[] = [];
-    vi.stubGlobal("fetch", vi.fn(async (input: string | URL, init?: RequestInit) => {
+    vi.stubGlobal("fetch", expandBatchGet(vi.fn(async (input: string | URL, init?: RequestInit) => {
       const url = input.toString();
       if (url.includes("?fields=")) return Response.json({ sheets: [{ properties: { title: TAB, sheetId: 0 } }] });
       if ((init?.method ?? "GET") === "GET") {
         return Response.json({ values: [
+          ["한자", "병음", "뜻", "모드1", "모드2", "복습"],
           ["我有2本书", "wrong", "wrong", "3", "3", "2026-09-20|7"],
           [SENTENCE, "wǒ yǒu liǎng běn shū.", "나는 책이 두 권 있다.", "3", "3", "2026-09-20|7"],
         ] });
@@ -37,7 +38,7 @@ describe("POST /api/review-fail — 문장 원문 행 식별", () => {
       const body = JSON.parse(init?.body as string) as { values: string[][] };
       writes.push({ range: decodeURIComponent(url.split("/values/")[1].split("?")[0]), values: body.values });
       return Response.json({});
-    }));
+    })));
     const request = new Request("https://example.com/api/review-fail", {
       method: "POST",
       headers: { Authorization: "Bearer pw-zh", "content-type": "application/json" },

@@ -47,6 +47,33 @@ export async function getValues(
   return body.values ?? [];
 }
 
+export interface RangeRef {
+  tab: string;
+  /** 생략하면 탭 전체(1행 헤더 포함). */
+  range?: string;
+}
+
+/**
+ * 여러 범위를 한 번의 API 호출로 읽는다 — 결과는 요청한 ranges와 같은 순서.
+ * Sheets 읽기 쿼터(분당 60회/사용자)는 요청 수 기준이라, 범위마다 values.get을
+ * 부르는 대신 이걸 쓰면 탭 수와 무관하게 1회로 센다.
+ */
+export async function batchGetValues(
+  env: Env,
+  sheetId: string,
+  ranges: RangeRef[],
+): Promise<string[][][]> {
+  if (ranges.length === 0) {
+    return [];
+  }
+  const query = ranges
+    .map(({ tab, range }) => `ranges=${encodeURIComponent(range === undefined ? quoteTab(tab) : fullRange(tab, range))}`)
+    .join("&");
+  const res = await sheetsFetch(env, sheetId, "GET", `/values:batchGet?${query}`);
+  const body = (await res.json()) as { valueRanges?: { values?: string[][] }[] };
+  return ranges.map((_, i) => body.valueRanges?.[i]?.values ?? []);
+}
+
 /** 스프레드시트의 모든 탭 제목을 순서대로 반환한다. */
 export async function getSheetTitles(env: Env, sheetId: string): Promise<string[]> {
   const res = await sheetsFetch(env, sheetId, "GET", "?fields=sheets.properties.title");
@@ -171,8 +198,12 @@ export async function appendValues(
 }
 
 // 탭 이름은 한글('HSK6급')일 수 있어 작은따옴표로 감싼다.
+function quoteTab(tab: string): string {
+  return `'${tab.replaceAll("'", "''")}'`;
+}
+
 function fullRange(tab: string, range: string): string {
-  return `'${tab.replaceAll("'", "''")}'!${range}`;
+  return `${quoteTab(tab)}!${range}`;
 }
 
 // URL 경로에 들어가는 범위는 전체를 URL 인코딩한다.

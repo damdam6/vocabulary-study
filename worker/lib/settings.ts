@@ -10,8 +10,6 @@
  * (쓰기 경로 POST /api/settings는 반대로 엄격하며, 여기 상수·키 탐색을 재사용한다 — 플랜 §3.3.)
  */
 
-import { getValues } from "./sheets.ts";
-
 export const SETTINGS_TAB = "_정보";
 // 헤더 행이 없고 키의 행 위치가 자유이므로 A·B열 전체를 읽어 A열에서 키를 찾는다.
 export const SETTINGS_RANGE = "A:B";
@@ -32,21 +30,6 @@ export interface SheetSettings {
  */
 export function parseSettings(rows: string[][]): SheetSettings {
   return { sessionLimit: parseSessionLimit(findValue(rows, SESSION_LIMIT_KEY)) };
-}
-
-/**
- * '_정보' 탭을 1회 읽어 설정을 만든다. 없는 탭 조회는 Sheets API가 400(Unable to parse range)을
- * 던지는데, 그 외 어떤 실패(권한·5xx·네트워크)도 여기서 기본값으로 흡수한다 — 설정 읽기는
- * words 응답의 부가 정보일 뿐 실패 사유가 아니다.
- */
-export async function readSettings(env: Env, sheetId: string): Promise<SheetSettings> {
-  try {
-    return parseSettings(await getValues(env, sheetId, SETTINGS_TAB, SETTINGS_RANGE));
-  } catch (err) {
-    // 삼킨 예외가 디버깅을 가리지 않도록 흔적은 남긴다.
-    console.warn(`[settings] '${SETTINGS_TAB}' 읽기 실패 — 기본값 사용`, err);
-    return { sessionLimit: DEFAULT_SESSION_LIMIT };
-  }
 }
 
 // A열 키를 트림 후 정확 일치로 찾는다. 같은 키가 여러 행이면 첫 행이 이긴다.

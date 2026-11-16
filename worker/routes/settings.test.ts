@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 vi.mock("../lib/google-auth.ts", () => ({ getAccessToken: async () => "test-token" }));
 
 import worker from "../index.ts";
-import { makeEnv, makeRequest } from "../test-utils.ts";
+import { makeEnv, makeRequest, expandBatchGet } from "../test-utils.ts";
 
 // getProfiles·다이제스트 캐시가 isolate 수명 동안 첫 성공 구성을 고정하므로 이 파일의
 // 모든 테스트가 같은 PROFILES 값을 쓴다 (index.sheet-isolation.test.ts와 같은 규약).
@@ -60,7 +60,7 @@ function stubSheetsFetch(sheets: Record<string, SheetState>): {
 
   vi.stubGlobal(
     "fetch",
-    vi.fn(async (input: string | URL, init?: RequestInit) => {
+    expandBatchGet(vi.fn(async (input: string | URL, init?: RequestInit) => {
       const url = input.toString();
       const method = init?.method ?? "GET";
       urls.push(url);
@@ -107,7 +107,7 @@ function stubSheetsFetch(sheets: Record<string, SheetState>): {
       }
 
       throw new Error(`unhandled mock request: ${method} ${url}`);
-    }),
+    })),
   );
 
   return { urls, putCalls, batchUpdateCalls };

@@ -6,7 +6,7 @@ vi.mock("../lib/google-auth.ts", () => ({ getAccessToken: async () => "test-toke
 
 import fixturesSource from "../../tests/fixtures/chinese-sentence-registration.json?raw";
 import worker from "../index.ts";
-import { makeEnv, makeRequest } from "../test-utils.ts";
+import { makeEnv, makeRequest, expandBatchGet } from "../test-utils.ts";
 import { DEFAULT_SESSION_LIMIT, SESSION_LIMIT_KEY, SETTINGS_TAB } from "../lib/settings.ts";
 
 // GET /api/words 응답의 settings 블록 (#102, 플랜 §3.2) — 시트 설정을 클라이언트로 전파하는 경로.
@@ -47,7 +47,7 @@ function stubSheets(options: {
   const urls: string[] = [];
   vi.stubGlobal(
     "fetch",
-    vi.fn(async (input: string | URL) => {
+    expandBatchGet(vi.fn(async (input: string | URL) => {
       const url = input.toString();
       urls.push(url);
       if (url.includes("?fields=")) {
@@ -61,7 +61,7 @@ function stubSheets(options: {
           : new Response("Unable to parse range", { status: 400 });
       }
       return Response.json({ values: rows[tab] ?? [] });
-    }),
+    })),
   );
   return { urls };
 }
@@ -96,26 +96,12 @@ describe("GET /api/words — settings 동봉", () => {
     expect(body.settings).toEqual({ sessionLimit: DEFAULT_SESSION_LIMIT });
   });
 
-  it("설정 읽기가 500으로 실패해도 words는 200으로 응답한다", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async (input: string | URL) => {
-        const url = input.toString();
-        if (url.includes("?fields=")) {
-          return Response.json({ sheets: [{ properties: { title: "HSK6급", sheetId: 0 } }] });
-        }
-        const decoded = decodeURIComponent(url.split("/values/")[1].split("?")[0]);
-        if (decoded.includes(SETTINGS_TAB)) {
-          return new Response("boom", { status: 500 });
-        }
-        return Response.json({ values: WORD_ROWS });
-      }),
-    );
-
+  it("'_정보' 탭이 메타데이터에 없으면 설정 범위를 아예 읽지 않는다", async () => {
+    const { urls } = stubSheets({ titles: ["HSK6급"] });
     const { res, body } = await getWords();
     expect(res.status).toBe(200);
-    expect(body.settings).toEqual({ sessionLimit: DEFAULT_SESSION_LIMIT });
     expect(body.words).toHaveLength(1);
+    expect(urls.some((url) => decodeURIComponent(url).includes(SETTINGS_TAB))).toBe(false);
   });
 
   it("'_정보' 읽기도 인증된 프로필의 sheetId로만 나간다", async () => {

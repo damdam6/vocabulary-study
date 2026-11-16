@@ -8,7 +8,7 @@ vi.mock("../hooks/usePronunciation.ts", () => ({
 
 import fixturesSource from "../../tests/fixtures/chinese-sentence-registration.json?raw";
 import worker from "../../worker/index.ts";
-import { makeEnv, type WorkerRequest } from "../../worker/test-utils.ts";
+import { makeEnv, type WorkerRequest, expandBatchGet } from "../../worker/test-utils.ts";
 import { fire, flush, renderComponent } from "../test-utils.tsx";
 import { gradeMode2 } from "../lib/studySession.ts";
 import { fetchWords } from "../lib/wordsApi.ts";
@@ -59,7 +59,7 @@ beforeEach(() => {
   appCalls = [];
   failNext = {};
   unmounts = [];
-  vi.stubGlobal("fetch", vi.fn(routeFetch));
+  vi.stubGlobal("fetch", expandBatchGet(vi.fn(routeFetch)));
 });
 
 afterEach(() => {
@@ -291,6 +291,7 @@ function parseFullRange(value: string): { tab: string; range: string } {
 }
 
 function sliceRange(rows: string[][], range: string): string[][] {
+  if (range === "A1:ZZZ") return rows;
   if (range === "1:1") return rows[0] ? [rows[0]] : [];
   if (range === "A:B") return rows.map((row) => row.slice(0, 2));
   if (range === "A2:A") return rows.slice(1).filter((row) => row[0]).map((row) => [row[0]]);

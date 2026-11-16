@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 vi.mock("../lib/google-auth.ts", () => ({ getAccessToken: async () => "test-token" }));
 
 import worker from "../index.ts";
-import { makeEnv } from "../test-utils.ts";
+import { makeEnv, expandBatchGet } from "../test-utils.ts";
 
 type WorkerRequest = Parameters<typeof worker.fetch>[0];
 
@@ -72,6 +72,7 @@ function stubSheetsFetch(state: SheetsState): { writes: CellWrite[]; fetchMock: 
     if (method === "GET") {
       const { tab, range } = parseUrlTabRange(url);
       const rows = state.rows[tab] ?? [];
+      if (range === "A1:ZZZ") return Response.json({ values: rows });
       if (range === "A2:A") {
         return Response.json({ values: rows.slice(1).map((r) => [r[0] ?? ""]) });
       }
@@ -103,7 +104,7 @@ function stubSheetsFetch(state: SheetsState): { writes: CellWrite[]; fetchMock: 
     throw new Error(`stubSheetsFetch: unhandled request ${method} ${url}`);
   });
 
-  vi.stubGlobal("fetch", fetchMock);
+  vi.stubGlobal("fetch", expandBatchGet(fetchMock));
   return { writes, fetchMock };
 }
 
@@ -145,7 +146,8 @@ describe("POST /api/answer — 비활성 모드 400 (PRD-general §5.2)", () => 
     );
     expect(res.status).toBe(400);
     expect(writes).toEqual([]);
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    // 읽기 2회(탭 메타데이터 + 대상 탭) 뒤 쓰기 없이 끝난다.
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
   it("M={m2} 프로필에 mode:'m1' 요청 → 400, 설정 확인 후 쓰기 없음", async () => {
@@ -162,7 +164,8 @@ describe("POST /api/answer — 비활성 모드 400 (PRD-general §5.2)", () => 
     );
     expect(res.status).toBe(400);
     expect(writes).toEqual([]);
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    // 읽기 2회(탭 메타데이터 + 대상 탭) 뒤 쓰기 없이 끝난다.
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 });
 

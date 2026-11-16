@@ -51,3 +51,29 @@ export function makeExecutionContext(): ExecutionContext & { readonly tasks: Pro
     },
   } as ExecutionContext & { readonly tasks: Promise<unknown>[]; drain(): Promise<void> };
 }
+
+type FetchLike = (input: string | URL, init?: RequestInit) => Promise<Response>;
+
+/**
+ * Sheets `values:batchGet` 요청을 범위별 `values.get` 호출로 풀어 기존 단일 범위 목에 위임한다.
+ * 탭 전체 범위(`'탭'`)는 목이 다루기 쉽게 `'탭'!A1:ZZZ`로 바꿔 넘긴다(1행 헤더 포함).
+ * 하나라도 실패하면 그 응답을 그대로 돌려준다 — 실제 batchGet도 범위 하나가 잘못되면 전체가 실패한다.
+ */
+export function expandBatchGet<T extends FetchLike>(inner: T): T {
+  const wrapped: FetchLike = async (input, init) => {
+    const url = input.toString();
+    const marker = "/values:batchGet?";
+    const at = url.indexOf(marker);
+    if (at === -1) return inner(input, init);
+    const base = url.slice(0, at);
+    const valueRanges: { values: string[][] }[] = [];
+    for (const encoded of new URLSearchParams(url.slice(at + marker.length)).getAll("ranges")) {
+      const range = /^'(?:''|[^'])*'$/.test(encoded) ? `${encoded}!A1:ZZZ` : encoded;
+      const res = await inner(`${base}/values/${encodeURIComponent(range)}`, init);
+      if (!res.ok) return res;
+      valueRanges.push({ values: ((await res.json()) as { values?: string[][] }).values ?? [] });
+    }
+    return Response.json({ valueRanges });
+  };
+  return wrapped as T;
+}

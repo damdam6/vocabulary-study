@@ -1,4 +1,4 @@
-import { readTabModes } from "../lib/tabModes.ts";
+import { readTabModesWith } from "../lib/tabModes.ts";
 /**
  * GET /api/words — `_` 접두 탭을 제외한 전 탭의 단어를 하나의 배열로 통합해 반환.
  * 큐 구성·상태 판정(PRD 5.1, 6.1)은 클라이언트 책임 — 여기는 데이터 중계·정규화만 한다.
@@ -8,10 +8,9 @@ import { readTabModes } from "../lib/tabModes.ts";
  */
 
 import { formatSeoulDateTime } from "../lib/time.ts";
-import { getValues } from "../lib/sheets.ts";
 import { parseWordRow, WORD_ROW_RANGE, type WordEntry } from "../lib/words.ts";
 import { toPublicProfile, type Profile } from "../lib/profiles.ts";
-import { readSettings } from "../lib/settings.ts";
+import { parseSettings } from "../lib/settings.ts";
 import { resolveTtsConfig } from "../lib/tts/config.ts";
 import { MAX_TTS_TEXT_LENGTH, type TtsCapability, type TtsWorkerEnv } from "../lib/tts/types.ts";
 
@@ -20,16 +19,12 @@ export async function handleGetWords(
   env: TtsWorkerEnv,
   profile: Profile,
 ): Promise<Response> {
-  // 설정 읽기는 단어 조회와 독립이므로 병렬로 — 시트 왕복이 직렬로 늘지 않는다.
-  const [{ tabs }, settings] = await Promise.all([
-    readTabModes(env, profile),
-    readSettings(env, profile.sheetId),
-  ]);
-
+  // 읽기 2회(메타데이터 + batchGet)로 고정 — 탭마다 따로 읽으면 탭 수만큼 읽기 쿼터를 쓴다.
+  // '_정보' 탭도 같은 batchGet에 실려 오므로 설정(문제수)은 그 행들을 관대하게 파싱해 얻는다.
+  const { tabs, settingsRows, extra: rowsByTab } = await readTabModesWith(env, profile, (names) =>
+    names.map((tab) => ({ tab, range: WORD_ROW_RANGE })));
+  const settings = parseSettings(settingsRows);
   const wordTabs = tabs.map((tab) => tab.name);
-  const rowsByTab = await Promise.all(
-    wordTabs.map((tab) => getValues(env, profile.sheetId, tab, WORD_ROW_RANGE)),
-  );
 
   const words: WordEntry[] = [];
   wordTabs.forEach((tab, i) => {
