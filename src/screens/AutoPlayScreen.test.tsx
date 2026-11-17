@@ -199,11 +199,11 @@ describe("AutoPlayScreen", () => {
     fire(() => button(container, "닫기").click());
     expect(container.querySelector(".autoplay-options-modal")).toBeNull();
   }
-  const repeatSwitch = (modal: HTMLElement) => modal.querySelector<HTMLButtonElement>('[role="switch"]')!;
-  const setRepeat = (container: HTMLElement, on: boolean) => withOptions(container, (modal) => {
-    if ((repeatSwitch(modal).getAttribute("aria-checked") === "true") !== on) fire(() => repeatSwitch(modal).click());
-    expect(repeatSwitch(modal).getAttribute("aria-checked")).toBe(String(on));
-  });
+  const repeatToggle = (container: HTMLElement) => container.querySelector<HTMLButtonElement>(".autoplay-repeat-toggle")!;
+  const setRepeat = (container: HTMLElement, on: boolean) => {
+    if ((repeatToggle(container).getAttribute("aria-pressed") === "true") !== on) fire(() => repeatToggle(container).click());
+    expect(repeatToggle(container).getAttribute("aria-pressed")).toBe(String(on));
+  };
   const stepGap = (container: HTMLElement, label: "대기 시간 늘리기" | "대기 시간 줄이기", times: number) =>
     withOptions(container, (modal) => {
       for (let i = 0; i < times; i += 1) fire(() => modal.querySelector<HTMLButtonElement>(`[aria-label="${label}"]`)!.click());
@@ -212,16 +212,17 @@ describe("AutoPlayScreen", () => {
   it("반복을 켜면 마지막 단어 뒤 처음으로 돌아가 계속 재생하고, 끄면 완료 화면으로 끝난다", () => {
     mocks.bound = false;
     const container = mount(generic, words, { enabled: false });
-    expect(container.querySelector(".autoplay-repeat-mark")).toBeNull();
+    // 토글은 아이콘만 보이고 이름은 aria-label로 전달한다.
+    expect(repeatToggle(container).textContent).toBe("");
+    expect(repeatToggle(container).getAttribute("aria-label")).toBe("반복 재생");
     setRepeat(container, true);
-    expect(container.querySelector(".autoplay-repeat-mark")).not.toBeNull();
+    expect(repeatToggle(container).classList.contains("autoplay-repeat-toggle--on")).toBe(true);
     for (const expected of ["学习", "经济", "学习", "经济"]) {
       fire(() => vi.advanceTimersByTime(AUTO_PLAY_SILENT_MS));
       expect(hanzi(container)).toBe(expected);
     }
     expect(container.querySelector(".study-progress")?.textContent).toBe("1 / 2");
     setRepeat(container, false);
-    expect(container.querySelector(".autoplay-repeat-mark")).toBeNull();
     fire(() => vi.advanceTimersByTime(AUTO_PLAY_SILENT_MS));
     fire(() => vi.advanceTimersByTime(AUTO_PLAY_SILENT_MS));
     expect(container.textContent).toContain("재생이 끝났어요");
@@ -307,11 +308,11 @@ describe("AutoPlayScreen", () => {
     stepGap(container, "대기 시간 늘리기", 2);
     view!.unmount();
     const again = mount(generic, words, { enabled: false });
-    expect(again.querySelector(".autoplay-repeat-mark")).not.toBeNull();
+    expect(repeatToggle(again).getAttribute("aria-pressed")).toBe("true");
     withOptions(again, (modal) => expect(modal.querySelector(".autoplay-stepper-value")?.textContent).toBe("4초"));
     view!.unmount();
     const other = mount(zh);
-    expect(other.querySelector(".autoplay-repeat-mark")).toBeNull();
+    expect(repeatToggle(other).getAttribute("aria-pressed")).toBe("false");
     withOptions(other, (modal) => expect(modal.querySelector(".autoplay-stepper-value")?.textContent).toBe("2초"));
   });
 

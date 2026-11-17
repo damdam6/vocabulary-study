@@ -4,14 +4,12 @@ import { useEffect } from 'react'
 import { AUTO_PLAY_GAP_MAX_SECONDS, AUTO_PLAY_GAP_MIN_SECONDS } from '../lib/autoPlayPreferences.ts'
 
 interface AutoPlayOptionsModalProps {
-  repeat: boolean
   gapSeconds: number
-  onRepeatChange: (repeat: boolean) => void
   onGapChange: (seconds: number) => void
   onClose: () => void
 }
 
-function AutoPlayOptionsModal({ repeat, gapSeconds, onRepeatChange, onGapChange, onClose }: AutoPlayOptionsModalProps) {
+function AutoPlayOptionsModal({ gapSeconds, onGapChange, onClose }: AutoPlayOptionsModalProps) {
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') onClose()
@@ -35,7 +33,7 @@ function AutoPlayOptionsModal({ repeat, gapSeconds, onRepeatChange, onGapChange,
         <div className="autoplay-option">
           <div className="autoplay-option-text">
             <span className="autoplay-option-label">다음 단어까지 대기</span>
-            <span className="autoplay-option-hint">발음이 끝난 뒤 기다리는 시간 ({AUTO_PLAY_GAP_MIN_SECONDS}–{AUTO_PLAY_GAP_MAX_SECONDS}초)</span>
+            <span className="autoplay-option-hint">발음이 끝난 뒤 · {AUTO_PLAY_GAP_MIN_SECONDS}–{AUTO_PLAY_GAP_MAX_SECONDS}초</span>
           </div>
           <div className="autoplay-stepper" role="group" aria-label="대기 시간">
             <button
@@ -58,23 +56,6 @@ function AutoPlayOptionsModal({ repeat, gapSeconds, onRepeatChange, onGapChange,
               +
             </button>
           </div>
-        </div>
-
-        <div className="autoplay-option">
-          <div className="autoplay-option-text">
-            <span className="autoplay-option-label">반복 재생</span>
-            <span className="autoplay-option-hint">끝까지 들으면 처음부터 다시 재생</span>
-          </div>
-          <button
-            type="button"
-            role="switch"
-            aria-checked={repeat}
-            aria-label="반복 재생"
-            className={`autoplay-switch${repeat ? ' autoplay-switch--on' : ''}`}
-            onClick={() => onRepeatChange(!repeat)}
-          >
-            <span className="autoplay-switch-knob" />
-          </button>
         </div>
 
         <div className="register-modal-actions">

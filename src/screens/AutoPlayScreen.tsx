@@ -202,18 +202,28 @@ function AutoPlayScreen({ words, profile, tts, onExit }: AutoPlayScreenProps) {
         <div className="study-progress">
           <span className="study-progress-now">{Math.min(index + 1, words.length)}</span>
           <span className="study-progress-total"> / {words.length}</span>
-          {repeat && (
-            <svg className="autoplay-repeat-mark" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" role="img" aria-label="반복 재생 켜짐">
+        </div>
+        <div className="autoplay-header-actions">
+          {/* 반복 토글은 아이콘만 둔다 — 이름은 aria-label로 전달하고, 켜지면 강조색으로 표시한다. */}
+          <button
+            type="button"
+            className={`study-exit autoplay-repeat-toggle${repeat ? ' autoplay-repeat-toggle--on' : ''}`}
+            aria-pressed={repeat}
+            aria-label="반복 재생"
+            title="반복 재생"
+            onClick={() => changeRepeat(!repeat)}
+          >
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="M17 2l4 4-4 4" />
               <path d="M3 11V9a4 4 0 0 1 4-4h14" />
               <path d="M7 22l-4-4 4-4" />
               <path d="M21 13v2a4 4 0 0 1-4 4H3" />
             </svg>
-          )}
+          </button>
+          <button type="button" className="study-exit autoplay-options-button" onClick={openOptions}>
+            옵션
+          </button>
         </div>
-        <button type="button" className="study-exit autoplay-options-button" onClick={openOptions}>
-          옵션
-        </button>
       </header>
       <div className="study-chips">
         <span className="study-chip">자동 재생</span>
@@ -268,9 +278,7 @@ function AutoPlayScreen({ words, profile, tts, onExit }: AutoPlayScreenProps) {
       )}
       {optionsOpen && (
         <AutoPlayOptionsModal
-          repeat={repeat}
           gapSeconds={gapSeconds}
-          onRepeatChange={changeRepeat}
           onGapChange={changeGap}
           onClose={closeOptions}
         />
