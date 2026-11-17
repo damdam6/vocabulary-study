@@ -218,7 +218,11 @@ describe("PronunciationController", () => {
     expect(requests).toHaveLength(2);
     requests[1].pending.reject({ kind: "timeout" });
     await Promise.resolve();
-    expect(controller.getSnapshot().message).toBe("발음을 불러오지 못했어요. 다시 눌러 주세요.");
+    expect(controller.getSnapshot().message).toBe("발음을 불러오지 못했어요. 다시 눌러 주세요. (응답 시간 초과)");
+    controller.replay("q");
+    requests[2].pending.reject({ kind: "http", status: 502, error: "tts_upstream_error", message: "x" });
+    await Promise.resolve();
+    expect(controller.getSnapshot().message).toBe("발음을 불러오지 못했어요. 다시 눌러 주세요. (서버 응답 502 tts_upstream_error)");
   });
 
   it("차단된 Blob은 유지하고 다음 manual replay는 fetch 없이 시작한다", async () => {
