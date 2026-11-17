@@ -106,12 +106,11 @@ describe("Mode2Card 정답 음성", () => {
     expect(enter.defaultPrevented).toBe(true);
     const repeated = new KeyboardEvent("keydown", { key: "Enter", repeat: true, bubbles: true, cancelable: true });
     fire(() => textarea.dispatchEvent(repeated));
-    expect(repeated.defaultPrevented).toBe(true);
     expect(onJudged).toHaveBeenCalledTimes(1);
     expect(onJudged).toHaveBeenCalledWith(true);
   });
 
-  it("입력 중과 정답 제출에는 음성 UI나 명령이 없다", () => {
+  it("입력 중에는 음성 UI가 없고 정답 제출은 채점 화면에서 공개를 한 번 호출한다", () => {
     const pronunciation = binding();
     const onJudged = vi.fn();
     const { container, unmount } = renderComponent(
@@ -121,8 +120,14 @@ describe("Mode2Card 정답 음성", () => {
     expect(container.querySelector('[aria-label="발음 듣기"]')).toBeNull();
     submit(container, "经济");
     fire(() => vi.runAllTimers());
+    expect(onJudged).toHaveBeenCalledTimes(1);
     expect(onJudged).toHaveBeenCalledWith(true);
-    expect(pronunciation.reveal).not.toHaveBeenCalled();
+    expect(container.querySelector(".mode-card--result")).not.toBeNull();
+    expect(container.querySelector(".mode-result-title--correct")?.textContent).toBe("정답");
+    expect(container.querySelector(".mode-card-hanzi")?.textContent).toBe("经济");
+    expect(container.querySelector(".mode-my-answer")).toBeNull();
+    expect(container.querySelector('[aria-label="발음 듣기"]')).not.toBeNull();
+    expect(pronunciation.reveal).toHaveBeenCalledTimes(1);
     expect(pronunciation.replay).not.toHaveBeenCalled();
   });
 
@@ -135,6 +140,8 @@ describe("Mode2Card 정답 음성", () => {
     unmountCurrent = unmount;
     submit(container, answer);
     expect(container.querySelector(".mode-card--result")).not.toBeNull();
+    expect(container.querySelector(".mode-result-title")?.textContent).toBe("오답");
+    expect(container.querySelector(".mode-result-title--correct")).toBeNull();
     expect(pronunciation.reveal).not.toHaveBeenCalled();
     fire(() => vi.runAllTimers());
     expect(pronunciation.reveal).toHaveBeenCalledTimes(1);
@@ -307,7 +314,7 @@ describe("Mode2Card 정답 음성", () => {
       />,
     );
     submit(zh.container, "你好, 世界!");
-    expect(zh.container.querySelector(".mode-card--result")).toBeNull();
+    expect(zh.container.querySelector(".mode-result-title--correct")).not.toBeNull();
     zh.unmount();
 
     const generic = renderComponent(

@@ -117,11 +117,11 @@ function StudyScreen({ queue, profile, tts, audioAutoplay = true, onExit, onComp
   const handleJudged = (correct: boolean) => {
     if (!question) return
     // 다음 문제로 곧바로 진행하는 분기는 기록·state 갱신보다 먼저 이전 질문을 멈춘다.
-    if (question.mode !== 'm2' || correct) stop('advance')
+    if (question.mode !== 'm2') stop('advance')
     const { state: recorded, effect } = recordAnswer(session, correct)
     fireEffect(effect)
-    if (question.mode === 'm2' && !correct) {
-      // 모드2 오답: 카드 컴포넌트가 결과 화면을 띄운 채 머문다 — 오버레이 없음(§4.4),
+    if (question.mode === 'm2') {
+      // 모드2: 정답·오답 모두 카드 컴포넌트가 채점 결과 화면을 띄운 채 머문다 — 오버레이 없음(§4.4),
       // 진행은 "다음" 버튼의 handleProceed에서.
       setSession(recorded)
       return

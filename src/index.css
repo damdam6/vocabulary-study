@@ -476,6 +476,11 @@ button {
   animation: shake 0.4s ease;
 }
 
+.mode-result-title--correct {
+  color: var(--green);
+  animation: none;
+}
+
 .mode-my-answer {
   font-size: 14px;
   color: var(--text-muted);
