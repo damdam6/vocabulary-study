@@ -92,7 +92,7 @@ function setInput(input: HTMLInputElement | HTMLTextAreaElement, value: string) 
 }
 
 describe("StudyScreen 발음 정지 경계 (#145)", () => {
-  it("모드2 정답은 완료 피드백 대기 중에도 즉시 advance 정지한다", async () => {
+  it("모드2 정답은 채점 화면에 머무는 동안 advance 정지를 호출하지 않고 다음에서만 진행한다", async () => {
     const onComplete = vi.fn();
     const { container, unmount } = renderComponent(
       <StudyScreen queue={[question("m2")]} profile={profile} tts={tts} onExit={vi.fn()} onComplete={onComplete} />,
@@ -103,9 +103,14 @@ describe("StudyScreen 발음 정지 경계 (#145)", () => {
     fire(() => container.querySelector<HTMLButtonElement>("button[type=submit]")!.click());
     await flush();
 
-    expect(mocks.stop).toHaveBeenCalledWith("advance");
+    expect(mocks.stop).not.toHaveBeenCalledWith("advance");
     expect(onComplete).not.toHaveBeenCalled();
-    expect(container.querySelector(".study-feedback-glyph")).not.toBeNull();
+    expect(container.querySelector(".study-feedback-glyph")).toBeNull();
+    expect(container.querySelector(".mode-result-title--correct")?.textContent).toBe("정답");
+
+    fire(() => [...container.querySelectorAll<HTMLButtonElement>("button")].find((button) => button.textContent === "다음")!.click());
+    expect(mocks.stop).toHaveBeenCalledWith("advance");
+    expect(onComplete).toHaveBeenCalledWith({ correct: 1, wrong: 0 });
   });
 
   it("모드2 오답은 결과 화면에 머무는 동안 advance 정지를 호출하지 않고 다음에서만 호출한다", () => {
@@ -135,7 +140,7 @@ describe("StudyScreen 발음 정지 경계 (#145)", () => {
     expect(mocks.stop.mock.invocationCallOrder[0]).toBeLessThan(onExit.mock.invocationCallOrder[0]);
   });
 
-  it("정답 즉시 다음 문제는 새 textarea의 값·높이·scroll로 초기화하고 자동 포커스하지 않는다", async () => {
+  it("정답 다음 문제는 새 textarea의 값·높이·scroll로 초기화하고 자동 포커스하지 않는다", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(Response.json(word)));
     const secondWord = { ...word, hanzi: "学习", meaning: "공부하다" };
     const { container, unmount } = renderComponent(
@@ -155,6 +160,7 @@ describe("StudyScreen 발음 정지 경계 (#145)", () => {
     expect(first.style.height).toBe("144px");
     fire(() => container.querySelector<HTMLButtonElement>("button[type=submit]")!.click());
     await flush();
+    fire(() => [...container.querySelectorAll<HTMLButtonElement>("button")].find((button) => button.textContent === "다음")!.click());
 
     const next = container.querySelector<HTMLTextAreaElement>(".mode-input")!;
     expect(next).not.toBe(first);
