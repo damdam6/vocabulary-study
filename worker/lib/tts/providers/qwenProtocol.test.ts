@@ -143,7 +143,10 @@ describe("createQwenEventProcessor", () => {
   ])("maps task failure %s without exposing its message", (errorCode, expected) => {
     const processor = createQwenEventProcessor(TASK_ID);
     const result = processor.push(event("task-failed", {}, TASK_ID, { error_code: errorCode, error_message: "SECRET SENTINEL" }));
-    expect(result).toEqual({ status: "failed", code: expected });
+    // 제공자 오류 코드(식별자)는 서버 로그 진단용으로 함께 전달하되, 메시지 원문은 버린다.
+    expect(result).toEqual(errorCode === ""
+      ? { status: "failed", code: expected }
+      : { status: "failed", code: expected, upstreamErrorCode: errorCode });
     expect(JSON.stringify(result)).not.toContain("SECRET SENTINEL");
   });
 

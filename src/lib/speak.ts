@@ -42,6 +42,18 @@ interface PlayAttempt {
 }
 
 const MANUAL_FAILURE_MESSAGE = "발음을 불러오지 못했어요. 다시 눌러 주세요.";
+
+/** 수동 재시도 실패 문구 뒤에 붙이는 원인 — 스크린샷만으로 어느 단계가 실패했는지 알 수 있게 한다. */
+function describeTransportFailure(failure: Partial<TtsTransportFailure>): string {
+  switch (failure.kind) {
+    case "http": return `서버 응답 ${failure.status ?? "?"} ${failure.error ?? ""}`.trim();
+    case "timeout": return "응답 시간 초과";
+    case "network": return "네트워크 연결 실패";
+    case "invalid_response": return "잘못된 응답";
+    default: return "알 수 없는 오류";
+  }
+}
+
 const MANUAL_BLOCKED_MESSAGE = "발음이 준비됐어요. 다시 눌러 주세요.";
 
 /**
@@ -282,7 +294,10 @@ export function createPronunciationController(options: CreatePronunciationContro
         const intent = pendingIntent;
         pendingIntent = null;
         autoConsumed = true;
-        update({ status: "error", message: intent === "manual" ? MANUAL_FAILURE_MESSAGE : null });
+        update({
+          status: "error",
+          message: intent === "manual" ? `${MANUAL_FAILURE_MESSAGE} (${describeTransportFailure(failure)})` : null,
+        });
       },
     );
   };

@@ -43,9 +43,13 @@ export async function handleTtsPost(
     resolved = await resolveSelectedTtsConfig(env, initial, request.signal);
   } catch {
     if (request.signal.aborted) throw request.signal.reason;
+    console.warn("tts_error", { profileId: profile.id, code: "tts_storage_unavailable", stage: "model_selection" });
     return ttsError("tts_storage_unavailable");
   }
-  if (resolved.status !== "ready") return ttsError(resolved.code);
+  if (resolved.status !== "ready") {
+    console.warn("tts_error", { profileId: profile.id, code: resolved.code, stage: "model_selection" });
+    return ttsError(resolved.code);
+  }
   const requestId = crypto.randomUUID();
   const provider = createQwenTtsProvider(resolved.config, resolved.dependencies.apiKey);
   // Env의 최소 binding 계약을 실제 R2 저장소 표면으로 좁히는 유일한 조합 지점이다.
@@ -89,7 +93,12 @@ export async function handleTtsPost(
     });
   } catch (error) {
     if (request.signal.aborted) throw request.signal.reason;
-    if (error instanceof TtsServiceError) return ttsError(error.code);
+    const log = { requestId, profileId: profile.id, model: resolved.config.model, revision: resolved.config.revision, characterCount: Array.from(input.text).length };
+    if (error instanceof TtsServiceError) {
+      console.warn("tts_error", { ...log, code: error.code, stage: "service" });
+      return ttsError(error.code);
+    }
+    console.error("tts_error", { ...log, code: "internal_error", stage: "service" });
     return ttsInternalError();
   }
 }

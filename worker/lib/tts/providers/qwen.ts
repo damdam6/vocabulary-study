@@ -78,7 +78,8 @@ export function createQwenTtsProvider(
               ? processor.push(new Uint8Array(data))
               : { status: "failed" as const, code: "tts_upstream_error" as const };
           if (update.status === "failed") {
-            fail(update.code);
+            fail(update.code, update.upstreamErrorCode === undefined ? "protocol" : "task_failed",
+              update.upstreamErrorCode === undefined ? {} : { upstreamErrorCode: update.upstreamErrorCode });
             return;
           }
           if (update.status === "completed") {
@@ -102,9 +103,9 @@ export function createQwenTtsProvider(
         const onClose = () => {
           if (terminal) return;
           const update = processor?.end();
-          fail(update?.status === "failed" ? update.code : "tts_upstream_error");
+          fail(update?.status === "failed" ? update.code : "tts_upstream_error", "socket_closed");
         };
-        const onError = () => fail("tts_upstream_error");
+        const onError = () => fail("tts_upstream_error", "socket_error");
         const removeListeners = () => {
           if (!socket || !listenersAttached) return;
           listenersAttached = false;
@@ -141,7 +142,14 @@ export function createQwenTtsProvider(
           }
         };
         const succeed = (value: { audio: Uint8Array; contentType: "audio/mpeg"; billedCharacters?: number }) => settle({ kind: "success", value });
-        const fail = (code: ProviderErrorCode) => settle({ kind: "failure", reason: new QwenTtsError(code), cancel: false });
+        // 실패 원인은 응답에 싣지 않으므로 여기서 남기지 않으면 운영에서 알 길이 없다.
+        // 요청 원문·제공자 메시지·키는 남기지 않고 단계와 식별자만 기록한다.
+        const fail = (code: ProviderErrorCode, stage: string = "internal", detail: { upgradeStatus?: number; upstreamErrorCode?: string } = {}) => {
+          if (!terminal) {
+            try { console.warn("tts_provider_failure", { code, stage, model: config.model, voice: config.voice, ...detail }); } catch { /* logging only */ }
+          }
+          settle({ kind: "failure", reason: new QwenTtsError(code), cancel: false });
+        };
         const onAbort = () => settle({ kind: "failure", reason: signal.reason, cancel: true });
         const disposeUpgradeSocket = (lateSocket: QwenWebSocket | null) => {
           if (!lateSocket) return;
@@ -155,7 +163,11 @@ export function createQwenTtsProvider(
           }
           if (response.status !== 101 || !response.webSocket) {
             disposeUpgradeSocket(response.webSocket);
-            fail(response.status === 401 || response.status === 403 || response.status === 429 ? "tts_unavailable" : "tts_upstream_error");
+            fail(
+              response.status === 401 || response.status === 403 || response.status === 429 ? "tts_unavailable" : "tts_upstream_error",
+              "upgrade_rejected",
+              { upgradeStatus: response.status },
+            );
             return;
           }
           socket = response.webSocket;
@@ -196,7 +208,7 @@ export function createQwenTtsProvider(
           fail("tts_upstream_error");
           return;
         }
-        pendingUpgrade.then(start, () => fail("tts_upstream_error"));
+        pendingUpgrade.then(start, () => fail("tts_upstream_error", "upgrade_fetch_failed"));
       });
     },
   };

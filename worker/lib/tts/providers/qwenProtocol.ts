@@ -26,7 +26,12 @@ export interface QwenClientMessages {
 export type QwenProtocolUpdate =
   | { status: "pending" }
   | { status: "completed"; audio: Uint8Array; contentType: "audio/mpeg"; billedCharacters?: number }
-  | { status: "failed"; code: Extract<TtsErrorCode, "tts_unavailable" | "tts_upstream_error"> };
+  | {
+      status: "failed";
+      code: Extract<TtsErrorCode, "tts_unavailable" | "tts_upstream_error">;
+      /** task-failed가 준 제공자 오류 코드(형식 검증된 식별자만) — 서버 로그 진단용, 응답에는 싣지 않는다. */
+      upstreamErrorCode?: string;
+    };
 
 export interface QwenEventProcessor {
   push(message: string | Uint8Array): QwenProtocolUpdate;
@@ -101,7 +106,14 @@ export function createQwenEventProcessor(taskId: string): QwenEventProcessor {
         awaitingBinary = event.payload.output.type === "sentence-synthesis";
         return { status: "pending" };
       case "task-failed":
-        return failed(UNAVAILABLE_CODES.has(event.header.error_code ?? "") ? "tts_unavailable" : "tts_upstream_error");
+      {
+        const code = UNAVAILABLE_CODES.has(event.header.error_code ?? "") ? "tts_unavailable" : "tts_upstream_error";
+        failed(code);
+        const upstreamErrorCode = event.header.error_code;
+        return upstreamErrorCode !== undefined && /^[A-Za-z0-9_.:-]{1,80}$/.test(upstreamErrorCode)
+          ? { status: "failed", code, upstreamErrorCode }
+          : { status: "failed", code };
+      }
       case "task-finished": {
         if (state !== "streaming") return failed();
         billedCharacters = readUsage(event.payload, billedCharacters);
