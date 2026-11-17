@@ -23,6 +23,7 @@ import {
   saveStudyScope,
   type StudyScope,
 } from "../lib/studyScope.ts";
+import { unlockSharedTtsAudio } from "../lib/sharedTtsAudio.ts";
 import { getSeoulToday } from "../lib/wordState.ts";
 import { fetchWords } from "../lib/wordsApi.ts";
 import type { TtsCapability } from "../lib/ttsTypes.ts";
@@ -195,6 +196,8 @@ function HomeScreen({ onStart, onStartAutoPlay, onNavigateRegister, onSwitchProf
 
   const handleStartAutoPlay = () => {
     if (profile === null || onStartAutoPlay === undefined) return;
+    // 이 클릭의 동기 경로에서 Audio를 풀어 둬야 모바일에서 첫 발음부터 자동으로 나온다.
+    if (profile.contentType === "zh" && tts.enabled) unlockSharedTtsAudio();
     const queue = buildSessionQueue(scopedWords, getSeoulToday(), profile.modes, undefined, sessionLimit);
     // 한 단어가 모드별로 두 번 큐에 들 수 있다 — 듣기에서는 첫 등장만 남긴다.
     const seen = new Set<string>();
