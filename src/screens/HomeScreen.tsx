@@ -318,16 +318,18 @@ function HomeScreen({ onStart, onStartAutoPlay, onNavigateRegister, onSwitchProf
       )}
       </div>
 
+      {/* 자동 재생(왼쪽)·학습 시작(오른쪽)을 한 줄에 둔다 — 세로로 쌓으면 서로 붙어 잘못 누르기 쉽다. */}
       {status !== "error" && (
-        <button type="button" className="start-button" disabled={!canStart} onClick={handleStart}>
-          {startLabel}
-        </button>
-      )}
-
-      {onStartAutoPlay && canStart && (
-        <button type="button" className="autoplay-start-button" onClick={handleStartAutoPlay}>
-          자동 재생
-        </button>
+        <div className="start-row">
+          {onStartAutoPlay && canStart && (
+            <button type="button" className="autoplay-start-button" onClick={handleStartAutoPlay}>
+              자동 재생
+            </button>
+          )}
+          <button type="button" className="start-button" disabled={!canStart} onClick={handleStart}>
+            {startLabel}
+          </button>
+        </div>
       )}
 
       {sessionLimitModalOpen && (
