@@ -9,13 +9,19 @@ import { usePronunciation } from '../hooks/usePronunciation.ts'
 import type { PublicProfile, WordEntry } from '../lib/api.ts'
 import type { TtsCapability } from '../lib/ttsTypes.ts'
 import PronunciationButton from '../components/PronunciationButton.tsx'
+import {
+  clampAutoPlayGapSeconds,
+  readAutoPlayGapSeconds,
+  readAutoPlayRepeat,
+  saveAutoPlayGapSeconds,
+  saveAutoPlayRepeat,
+} from '../lib/autoPlayPreferences.ts'
+import AutoPlayOptionsModal from '../components/AutoPlayOptionsModal.tsx'
 import './Mode2Card.css'
 
-/** 발음이 끝난 뒤 다음 단어로 넘어가기 전 쉬는 시간. */
-export const AUTO_PLAY_GAP_MS = 1500
-/** 발음이 없는 단어를 보여 주는 시간. */
+/** 발음이 없는 단어를 보여 주는 최소 시간 — 대기 시간 설정이 더 길면 그 값을 따른다. */
 export const AUTO_PLAY_SILENT_MS = 3000
-/** 발음 로드·재생에 실패한 단어를 보여 주는 시간. */
+/** 발음 로드·재생에 실패한 단어를 보여 주는 최소 시간 — 대기 시간 설정이 더 길면 그 값을 따른다. */
 export const AUTO_PLAY_ERROR_MS = 2500
 /** 발음 상태가 끝내 진행되지 않을 때 다음으로 넘기는 안전장치. */
 export const AUTO_PLAY_STALL_MS = 20000
@@ -42,6 +48,16 @@ function AutoPlayScreen({ words, profile, tts, onExit }: AutoPlayScreenProps) {
   // 일시정지 후 재개는 같은 단어를 새 질문으로 다시 활성화해 처음부터 재생한다.
   const [epoch, setEpoch] = useState(0)
   const [sessionId] = useState(createAutoPlayId)
+  // 반복 재생: 마지막 단어 뒤 처음으로 돌아가 사용자가 멈출 때까지 계속 재생한다.
+  const [repeat, setRepeat] = useState(() => readAutoPlayRepeat(profile.id))
+  // 타이머가 도는 중에 토글해도 대기 시간이 다시 시작되지 않도록 ref로 읽는다.
+  const repeatRef = useRef(repeat)
+  // 발음이 끝난 뒤 다음 단어로 넘어가기 전 대기 시간(초) — 옵션에서 2초 이상으로 늘릴 수 있다.
+  const [gapSeconds, setGapSeconds] = useState(() => readAutoPlayGapSeconds(profile.id))
+  const [optionsOpen, setOptionsOpen] = useState(false)
+  // 옵션을 여는 동안 재생을 멈췄다가, 재생 중에 열었을 때만 닫으면서 이어 간다.
+  const resumeOnCloseRef = useRef(false)
+  const gapMs = gapSeconds * 1000
   const revealedRef = useRef<string | null>(null)
   const playedRef = useRef<string | null>(null)
 
@@ -87,9 +103,9 @@ function AutoPlayScreen({ words, profile, tts, onExit }: AutoPlayScreenProps) {
     let delay: number
     if (!hasBinding) {
       // 발음을 지원하는 세션이면 binding이 곧 붙는다 — 끝내 안 붙을 때만 넘긴다.
-      delay = audioSupported ? AUTO_PLAY_STALL_MS : AUTO_PLAY_SILENT_MS
+      delay = audioSupported ? AUTO_PLAY_STALL_MS : Math.max(AUTO_PLAY_SILENT_MS, gapMs)
     } else if (unplayable) {
-      delay = AUTO_PLAY_SILENT_MS
+      delay = Math.max(AUTO_PLAY_SILENT_MS, gapMs)
     } else if (status === 'playing') {
       playedRef.current = questionId
       return
@@ -99,14 +115,19 @@ function AutoPlayScreen({ words, profile, tts, onExit }: AutoPlayScreenProps) {
       setPaused(true)
       return
     } else if (status === 'error') {
-      delay = AUTO_PLAY_ERROR_MS
+      delay = Math.max(AUTO_PLAY_ERROR_MS, gapMs)
     } else if (status === 'ready' && playedRef.current === questionId) {
-      delay = AUTO_PLAY_GAP_MS
+      delay = gapMs
     } else {
       delay = AUTO_PLAY_STALL_MS
     }
     const timer = window.setTimeout(() => {
-      if (index + 1 >= words.length) {
+      if (index + 1 >= words.length && repeatRef.current) {
+        // 단어가 하나뿐이면 index가 그대로라 epoch를 올려 같은 단어를 다시 활성화한다.
+        stop('advance')
+        setIndex(0)
+        setEpoch((value) => value + 1)
+      } else if (index + 1 >= words.length) {
         stop('exit')
         setDone(true)
       } else {
@@ -115,7 +136,7 @@ function AutoPlayScreen({ words, profile, tts, onExit }: AutoPlayScreenProps) {
       }
     }, delay)
     return () => window.clearTimeout(timer)
-  }, [audioSupported, hasBinding, index, questionId, status, stop, unplayable, words.length])
+  }, [audioSupported, gapMs, hasBinding, index, questionId, status, stop, unplayable, words.length])
 
   const handleExit = () => {
     stop('exit')
@@ -131,6 +152,35 @@ function AutoPlayScreen({ words, profile, tts, onExit }: AutoPlayScreenProps) {
       stop('advance')
       setPaused(true)
     }
+  }
+
+  const changeRepeat = (next: boolean) => {
+    repeatRef.current = next
+    setRepeat(next)
+    saveAutoPlayRepeat(profile.id, next)
+  }
+
+  const changeGap = (seconds: number) => {
+    const next = clampAutoPlayGapSeconds(seconds)
+    setGapSeconds(next)
+    saveAutoPlayGapSeconds(profile.id, next)
+  }
+
+  const openOptions = () => {
+    resumeOnCloseRef.current = !paused && !done
+    if (resumeOnCloseRef.current) {
+      stop('advance')
+      setPaused(true)
+    }
+    setOptionsOpen(true)
+  }
+
+  const closeOptions = () => {
+    setOptionsOpen(false)
+    if (!resumeOnCloseRef.current) return
+    resumeOnCloseRef.current = false
+    setEpoch((value) => value + 1)
+    setPaused(false)
   }
 
   const restart = () => {
@@ -153,7 +203,27 @@ function AutoPlayScreen({ words, profile, tts, onExit }: AutoPlayScreenProps) {
           <span className="study-progress-now">{Math.min(index + 1, words.length)}</span>
           <span className="study-progress-total"> / {words.length}</span>
         </div>
-        <div className="study-header-spacer" aria-hidden="true" />
+        <div className="autoplay-header-actions">
+          {/* 반복 토글은 아이콘만 둔다 — 이름은 aria-label로 전달하고, 켜지면 강조색으로 표시한다. */}
+          <button
+            type="button"
+            className={`study-exit autoplay-repeat-toggle${repeat ? ' autoplay-repeat-toggle--on' : ''}`}
+            aria-pressed={repeat}
+            aria-label="반복 재생"
+            title="반복 재생"
+            onClick={() => changeRepeat(!repeat)}
+          >
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M17 2l4 4-4 4" />
+              <path d="M3 11V9a4 4 0 0 1 4-4h14" />
+              <path d="M7 22l-4-4 4-4" />
+              <path d="M21 13v2a4 4 0 0 1-4 4H3" />
+            </svg>
+          </button>
+          <button type="button" className="study-exit autoplay-options-button" onClick={openOptions}>
+            옵션
+          </button>
+        </div>
       </header>
       <div className="study-chips">
         <span className="study-chip">자동 재생</span>
@@ -205,6 +275,13 @@ function AutoPlayScreen({ words, profile, tts, onExit }: AutoPlayScreenProps) {
             {paused ? '재생' : '일시정지'}
           </button>
         </div>
+      )}
+      {optionsOpen && (
+        <AutoPlayOptionsModal
+          gapSeconds={gapSeconds}
+          onGapChange={changeGap}
+          onClose={closeOptions}
+        />
       )}
     </div>
   )

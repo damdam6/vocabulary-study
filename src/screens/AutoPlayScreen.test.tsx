@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import AutoPlayScreen, {
-  AUTO_PLAY_ERROR_MS, AUTO_PLAY_GAP_MS, AUTO_PLAY_SILENT_MS,
+  AUTO_PLAY_ERROR_MS, AUTO_PLAY_SILENT_MS,
 } from "./AutoPlayScreen.tsx";
 import { fire, renderComponent } from "../test-utils.tsx";
 import type { PublicProfile, WordEntry } from "../lib/api.ts";
@@ -54,6 +54,8 @@ function mount(profile = zh, list = words, capability: typeof tts | { enabled: f
   view = renderComponent(<AutoPlayScreen words={list} profile={profile} tts={capability} onExit={onExit} />);
   return view.container;
 }
+// 기본 대기 시간(2초) — 옵션에서 바꾸지 않았을 때 발음 종료 뒤 넘어가기까지의 시간.
+const AUTO_PLAY_GAP_MS = 2000;
 const hanzi = (container: HTMLElement) => container.querySelector(".mode-card-hanzi")?.textContent;
 const button = (container: HTMLElement, label: string) =>
   [...container.querySelectorAll<HTMLButtonElement>("button")].find((item) => item.textContent === label)!;
@@ -63,6 +65,7 @@ beforeEach(() => {
   mocks.stop.mockReset(); mocks.reveal.mockReset(); mocks.replay.mockReset();
   mocks.status = "idle"; mocks.inputReason = null; mocks.bound = true; mocks.options = [];
   onExit = vi.fn();
+  localStorage.clear();
   fetchMock = vi.fn();
   vi.stubGlobal("fetch", fetchMock);
 });
@@ -186,6 +189,131 @@ describe("AutoPlayScreen", () => {
     expect(mocks.stop).toHaveBeenCalledWith("exit");
     expect(onExit).toHaveBeenCalledTimes(1);
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  // 옵션 모달을 열어 조작하고 닫는다 — 여는 동안은 재생이 멈추고, 닫으면 현재 단어부터 이어진다.
+  function withOptions(container: HTMLElement, action: (modal: HTMLElement) => void) {
+    fire(() => button(container, "옵션").click());
+    const modal = container.querySelector<HTMLElement>(".autoplay-options-modal")!;
+    action(modal);
+    fire(() => button(container, "닫기").click());
+    expect(container.querySelector(".autoplay-options-modal")).toBeNull();
+  }
+  const repeatToggle = (container: HTMLElement) => container.querySelector<HTMLButtonElement>(".autoplay-repeat-toggle")!;
+  const setRepeat = (container: HTMLElement, on: boolean) => {
+    if ((repeatToggle(container).getAttribute("aria-pressed") === "true") !== on) fire(() => repeatToggle(container).click());
+    expect(repeatToggle(container).getAttribute("aria-pressed")).toBe(String(on));
+  };
+  const stepGap = (container: HTMLElement, label: "대기 시간 늘리기" | "대기 시간 줄이기", times: number) =>
+    withOptions(container, (modal) => {
+      for (let i = 0; i < times; i += 1) fire(() => modal.querySelector<HTMLButtonElement>(`[aria-label="${label}"]`)!.click());
+    });
+
+  it("반복을 켜면 마지막 단어 뒤 처음으로 돌아가 계속 재생하고, 끄면 완료 화면으로 끝난다", () => {
+    mocks.bound = false;
+    const container = mount(generic, words, { enabled: false });
+    // 토글은 아이콘만 보이고 이름은 aria-label로 전달한다.
+    expect(repeatToggle(container).textContent).toBe("");
+    expect(repeatToggle(container).getAttribute("aria-label")).toBe("반복 재생");
+    setRepeat(container, true);
+    expect(repeatToggle(container).classList.contains("autoplay-repeat-toggle--on")).toBe(true);
+    for (const expected of ["学习", "经济", "学习", "经济"]) {
+      fire(() => vi.advanceTimersByTime(AUTO_PLAY_SILENT_MS));
+      expect(hanzi(container)).toBe(expected);
+    }
+    expect(container.querySelector(".study-progress")?.textContent).toBe("1 / 2");
+    setRepeat(container, false);
+    fire(() => vi.advanceTimersByTime(AUTO_PLAY_SILENT_MS));
+    fire(() => vi.advanceTimersByTime(AUTO_PLAY_SILENT_MS));
+    expect(container.textContent).toContain("재생이 끝났어요");
+  });
+
+  it("단어가 하나뿐이어도 반복하며 발음을 다시 요청한다", () => {
+    const container = mount(zh, [words[0]]);
+    setRepeat(container, true);
+    const before = mocks.reveal.mock.calls.length;
+    fire(() => mocks.setStatus("playing"));
+    fire(() => mocks.setStatus("ready"));
+    fire(() => vi.advanceTimersByTime(AUTO_PLAY_GAP_MS));
+    expect(hanzi(container)).toBe("经济");
+    expect(container.textContent).not.toContain("재생이 끝났어요");
+    expect(mocks.reveal.mock.calls.length).toBe(before + 1);
+  });
+
+  it("발음이 끝난 뒤 기본 2초를 기다리고, 옵션에서 늘린 대기 시간을 따른다", () => {
+    const container = mount();
+    fire(() => mocks.setStatus("playing"));
+    fire(() => mocks.setStatus("ready"));
+    fire(() => vi.advanceTimersByTime(1999));
+    expect(hanzi(container)).toBe("经济");
+    fire(() => vi.advanceTimersByTime(1));
+    expect(hanzi(container)).toBe("学习");
+
+    stepGap(container, "대기 시간 늘리기", 3);
+    fire(() => mocks.setStatus("playing"));
+    fire(() => mocks.setStatus("ready"));
+    fire(() => vi.advanceTimersByTime(4999));
+    expect(hanzi(container)).toBe("学习");
+    fire(() => vi.advanceTimersByTime(1));
+    expect(container.textContent).toContain("재생이 끝났어요");
+  });
+
+  it("대기 시간은 2초 아래로 내려가지 않고 값이 화면에 표시된다", () => {
+    mocks.bound = false;
+    const container = mount(generic, words, { enabled: false });
+    withOptions(container, (modal) => {
+      const down = modal.querySelector<HTMLButtonElement>('[aria-label="대기 시간 줄이기"]')!;
+      expect(modal.querySelector(".autoplay-stepper-value")?.textContent).toBe("2초");
+      expect(down.disabled).toBe(true);
+      fire(() => modal.querySelector<HTMLButtonElement>('[aria-label="대기 시간 늘리기"]')!.click());
+      expect(modal.querySelector(".autoplay-stepper-value")?.textContent).toBe("3초");
+      expect(down.disabled).toBe(false);
+      fire(() => down.click());
+      expect(modal.querySelector(".autoplay-stepper-value")?.textContent).toBe("2초");
+    });
+  });
+
+  it("발음 없는 단어도 늘린 대기 시간이 3초보다 길면 그만큼 보여 준다", () => {
+    mocks.bound = false;
+    const container = mount(generic, words, { enabled: false });
+    stepGap(container, "대기 시간 늘리기", 4);
+    fire(() => vi.advanceTimersByTime(5999));
+    expect(hanzi(container)).toBe("经济");
+    fire(() => vi.advanceTimersByTime(1));
+    expect(hanzi(container)).toBe("学习");
+  });
+
+  it("옵션을 여는 동안 재생이 멈추고, 일시정지 상태에서 열었다 닫으면 그대로 멈춰 있다", () => {
+    mocks.bound = false;
+    const container = mount(generic, words, { enabled: false });
+    fire(() => button(container, "옵션").click());
+    expect(mocks.stop).toHaveBeenCalledWith("advance");
+    fire(() => vi.advanceTimersByTime(60_000));
+    expect(hanzi(container)).toBe("经济");
+    fire(() => button(container, "닫기").click());
+    fire(() => vi.advanceTimersByTime(AUTO_PLAY_SILENT_MS));
+    expect(hanzi(container)).toBe("学习");
+
+    fire(() => button(container, "일시정지").click());
+    withOptions(container, () => {});
+    fire(() => vi.advanceTimersByTime(60_000));
+    expect(hanzi(container)).toBe("学习");
+    expect(button(container, "재생")).toBeDefined();
+  });
+
+  it("반복·대기 시간 설정은 프로필별로 저장되어 다음 진입에 유지된다", () => {
+    mocks.bound = false;
+    const container = mount(generic, words, { enabled: false });
+    setRepeat(container, true);
+    stepGap(container, "대기 시간 늘리기", 2);
+    view!.unmount();
+    const again = mount(generic, words, { enabled: false });
+    expect(repeatToggle(again).getAttribute("aria-pressed")).toBe("true");
+    withOptions(again, (modal) => expect(modal.querySelector(".autoplay-stepper-value")?.textContent).toBe("4초"));
+    view!.unmount();
+    const other = mount(zh);
+    expect(repeatToggle(other).getAttribute("aria-pressed")).toBe("false");
+    withOptions(other, (modal) => expect(modal.querySelector(".autoplay-stepper-value")?.textContent).toBe("2초"));
   });
 
   it("완료 화면에서 처음부터 다시 재생할 수 있다", () => {
