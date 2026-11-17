@@ -11,3 +11,27 @@ export function saveAutoPlayRepeat(profileId: string, enabled: boolean): void {
   try { localStorage.setItem(key(profileId), String(enabled)); }
   catch { /* 이번 재생에만 적용 */ }
 }
+
+/** 발음이 끝난 뒤 다음 단어로 넘어가기 전 대기 시간(초). 기본이자 최솟값은 2초. */
+export const AUTO_PLAY_GAP_DEFAULT_SECONDS = 2;
+export const AUTO_PLAY_GAP_MIN_SECONDS = 2;
+export const AUTO_PLAY_GAP_MAX_SECONDS = 30;
+
+const gapKey = (profileId: string) => `vocab-study:autoplay-gap:${encodeURIComponent(profileId)}`;
+
+export function clampAutoPlayGapSeconds(value: number): number {
+  if (!Number.isFinite(value)) return AUTO_PLAY_GAP_DEFAULT_SECONDS;
+  return Math.min(AUTO_PLAY_GAP_MAX_SECONDS, Math.max(AUTO_PLAY_GAP_MIN_SECONDS, Math.round(value)));
+}
+
+export function readAutoPlayGapSeconds(profileId: string): number {
+  try {
+    const raw = localStorage.getItem(gapKey(profileId));
+    return raw === null ? AUTO_PLAY_GAP_DEFAULT_SECONDS : clampAutoPlayGapSeconds(Number(raw));
+  } catch { return AUTO_PLAY_GAP_DEFAULT_SECONDS; }
+}
+
+export function saveAutoPlayGapSeconds(profileId: string, seconds: number): void {
+  try { localStorage.setItem(gapKey(profileId), String(clampAutoPlayGapSeconds(seconds))); }
+  catch { /* 이번 재생에만 적용 */ }
+}

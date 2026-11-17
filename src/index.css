@@ -1895,10 +1895,48 @@ textarea.register-modal-input {
 .autoplay-done-title { font-size: 22px; font-weight: 700; }
 .autoplay-notice { margin: 0; text-align: center; font-size: 13px; color: var(--text-muted); }
 
-/* 자동 재생 헤더 우측의 반복 토글 — 종료 버튼과 같은 틀, 켜지면 강조색 */
-.autoplay-repeat-toggle { display: inline-flex; align-items: center; gap: 5px; padding: 0 11px; }
-.autoplay-repeat-toggle--on {
-  border-color: var(--accent);
-  background: rgba(91, 139, 245, 0.14);
-  color: var(--accent-light);
+/* 자동 재생 헤더 — 옵션 버튼은 종료 버튼과 같은 틀, 반복이 켜지면 진행도 옆에 표시 */
+.autoplay-repeat-mark { margin-left: 6px; vertical-align: -1px; color: var(--accent-light); }
+
+/* 자동 재생 옵션 모달 */
+.autoplay-options-modal { max-width: 360px; gap: 18px; }
+.autoplay-option { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+.autoplay-option-text { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.autoplay-option-label { font-size: 15px; font-weight: 600; }
+.autoplay-option-hint { font-size: 12px; color: var(--text-muted); }
+.autoplay-stepper { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.autoplay-stepper-button {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: 1px solid var(--border-input);
+  background: transparent;
+  color: var(--text);
+  font-size: 20px;
+  line-height: 1;
 }
+.autoplay-stepper-button:disabled { opacity: 0.35; }
+.autoplay-stepper-value { min-width: 44px; text-align: center; font-size: 16px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.autoplay-switch {
+  position: relative;
+  flex-shrink: 0;
+  width: 52px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: var(--bg-disabled);
+  transition: background 0.15s ease;
+}
+.autoplay-switch--on { background: var(--accent); }
+.autoplay-switch-knob {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.15s ease;
+}
+.autoplay-switch--on .autoplay-switch-knob { transform: translateX(20px); }
