@@ -151,11 +151,16 @@ describe("AutoPlayScreen", () => {
     const container = mount();
     expect(container.querySelector(".autoplay-notice")).not.toBeNull();
     expect(button(container, "재생")).toBeDefined();
-    fire(() => mocks.setStatus("idle"));
-    const before = mocks.reveal.mock.calls.length;
+    fire(() => vi.advanceTimersByTime(60_000));
+    expect(hanzi(container)).toBe("经济");
+    // 재생 버튼은 클릭 스택에서 수동 재생(replay)을 직접 호출한다.
     fire(() => button(container, "재생").click());
+    expect(mocks.replay).toHaveBeenCalledTimes(1);
     expect(container.querySelector(".autoplay-notice")).toBeNull();
-    expect(mocks.reveal.mock.calls.length).toBe(before + 1);
+    fire(() => mocks.setStatus("playing"));
+    fire(() => mocks.setStatus("ready"));
+    fire(() => vi.advanceTimersByTime(AUTO_PLAY_GAP_MS));
+    expect(hanzi(container)).toBe("学习");
   });
 
   it("화면이 가려지면 일시정지한다", () => {

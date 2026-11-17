@@ -1,7 +1,7 @@
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { supportsPronunciation } from "../lib/contentLabels.ts";
 import { createPronunciationController } from "../lib/speak.ts";
-import { createTtsAudioOutput } from "../lib/ttsAudio.ts";
+import { createTtsAudioOutput, type TtsAudioElement } from "../lib/ttsAudio.ts";
 import { fetchTtsAudio } from "../lib/ttsApi.ts";
 import { createTtsBlobCache } from "../lib/ttsBlobCache.ts";
 import type {
@@ -20,6 +20,8 @@ export interface UsePronunciationOptions {
   autoPlay?: boolean;
   questionId: string | null;
   input: PronunciationInput | null;
+  /** 제스처로 미리 풀어 둔 Audio 요소를 쓰게 한다(자동 재생 화면). 참조가 바뀌어도 다시 만들지 않는다. */
+  createAudio?: () => TtsAudioElement;
 }
 
 export interface UsePronunciationResult {
@@ -47,6 +49,7 @@ export function usePronunciation({
   autoPlay = true,
   questionId,
   input,
+  createAudio,
 }: UsePronunciationOptions): UsePronunciationResult {
   const controllerRef = useRef<PronunciationController | null>(null);
   const hiddenRef = useRef(false);
@@ -72,7 +75,7 @@ export function usePronunciation({
       capability,
       autoPlay,
       transport: fetchTtsAudio,
-      audio: createTtsAudioOutput(),
+      audio: createTtsAudioOutput(createAudio ? { createAudio } : {}),
       cache: createTtsBlobCache(),
     });
     controllerRef.current = next;

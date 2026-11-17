@@ -8,6 +8,7 @@ import { headwordLang, supportsPronunciation } from '../lib/contentLabels.ts'
 import { usePronunciation } from '../hooks/usePronunciation.ts'
 import type { PublicProfile, WordEntry } from '../lib/api.ts'
 import type { TtsCapability } from '../lib/ttsTypes.ts'
+import { getSharedTtsAudio } from '../lib/sharedTtsAudio.ts'
 import PronunciationButton from '../components/PronunciationButton.tsx'
 import './Mode2Card.css'
 
@@ -54,6 +55,7 @@ function AutoPlayScreen({ words, profile, tts, onExit }: AutoPlayScreenProps) {
     autoPlay: true,
     questionId,
     input: word === null ? null : { text: word.hanzi, pinyin: word.pinyin || null },
+    createAudio: getSharedTtsAudio,
   })
   const audioSupported = supportsPronunciation(profile.contentType) && tts.enabled
   const hasBinding = pronunciation !== undefined
@@ -94,9 +96,8 @@ function AutoPlayScreen({ words, profile, tts, onExit }: AutoPlayScreenProps) {
       playedRef.current = questionId
       return
     } else if (status === 'blocked') {
-      // 브라우저가 자동 재생을 막았다 — 사용자가 재생 버튼을 눌러야 이어진다.
+      // 브라우저가 자동 재생을 막았다 — 단어를 그대로 둔 채 재생 버튼의 클릭(제스처)으로 직접 재생한다.
       setBlocked(true)
-      setPaused(true)
       return
     } else if (status === 'error') {
       delay = AUTO_PLAY_ERROR_MS
@@ -123,6 +124,12 @@ function AutoPlayScreen({ words, profile, tts, onExit }: AutoPlayScreenProps) {
   }
 
   const togglePaused = () => {
+    if (blocked && !paused && pronunciation !== undefined) {
+      // 준비된 발음을 이 클릭의 호출 스택에서 재생해 브라우저의 자동 재생 제한을 푼다.
+      setBlocked(false)
+      pronunciation.replay()
+      return
+    }
     if (paused) {
       setBlocked(false)
       setEpoch((value) => value + 1)
@@ -157,7 +164,7 @@ function AutoPlayScreen({ words, profile, tts, onExit }: AutoPlayScreenProps) {
       </header>
       <div className="study-chips">
         <span className="study-chip">자동 재생</span>
-        {paused && !done && <span className="study-chip study-chip--review">일시정지</span>}
+        {(paused || blocked) && !done && <span className="study-chip study-chip--review">일시정지</span>}
       </div>
       {word === null ? (
         <div className="mode-area mode-area--m2">
@@ -196,13 +203,13 @@ function AutoPlayScreen({ words, profile, tts, onExit }: AutoPlayScreenProps) {
               <span className="mode-card-meaning">{word.meaning}</span>
             </div>
           </div>
-          {blocked && paused && (
+          {blocked && (
             <p className="autoplay-notice" role="status">
               브라우저가 자동 재생을 막았어요. 재생을 눌러 주세요.
             </p>
           )}
           <button type="button" className="primary-button" onClick={togglePaused}>
-            {paused ? '재생' : '일시정지'}
+            {paused || blocked ? '재생' : '일시정지'}
           </button>
         </div>
       )}
