@@ -36,7 +36,10 @@ describe('persisted Qwen model selection', () => {
     expect(resolved.status).toBe('ready');
     if (resolved.status !== 'ready') throw new Error('not ready');
     expect(resolved.config.model).toBe(model);
-    expect(JSON.parse(createQwenClientMessages('00000000-0000-4000-8000-000000000001', resolved.config, { text: '你好' }).runTask).payload.model).toBe(model);
+    const payload = JSON.parse(createQwenClientMessages('00000000-0000-4000-8000-000000000001', resolved.config, { text: '你好' }).runTask).payload;
+    expect(payload.model).toBe(model);
+    // 음색 ID는 모델 세대와 짝이 맞아야 한다 — 어긋나면 Qwen이 요청을 거부한다.
+    expect(payload.parameters.voice).toBe(model.includes('-3.1-') ? 'longanfengyue_v3.1' : 'longanfengyue');
   });
   it('rejects unauthenticated, non-Chinese and unregistered choices without writing', async () => {
     const { call, bucket } = setup();

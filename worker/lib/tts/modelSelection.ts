@@ -1,4 +1,4 @@
-import { isTtsModel, type TtsModel } from '../../../shared/ttsModels.ts';
+import { isTtsModel, ttsVoiceForModel, type TtsModel } from '../../../shared/ttsModels.ts';
 import { resolveTtsConfig, TTS_REVISION_PATTERN } from './config.ts';
 import { TTS_MODEL, TTS_STORAGE_TIMEOUT_MS, type ResolvedTtsConfig, type TtsEnv } from './types.ts';
 
@@ -62,5 +62,6 @@ export async function resolveSelectedTtsConfig(
   const revision = model === TTS_MODEL ? initial.config.revision : initial.config.revision + '-' + model.replaceAll('.', '-');
   // 접미사를 붙인 revision도 클라이언트와 공유하는 형식 계약을 지켜야 한다.
   if (!TTS_REVISION_PATTERN.test(revision)) return { status: 'not_configured', code: 'tts_not_configured' };
-  return { ...initial, config: { ...initial.config, model, revision } };
+  // 음색 ID는 모델 세대별로 달라 모델과 함께 바꿔야 한다.
+  return { ...initial, config: { ...initial.config, model, voice: ttsVoiceForModel(model), revision } };
 }
