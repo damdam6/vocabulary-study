@@ -39,7 +39,12 @@ describe('persisted Qwen model selection', () => {
     const payload = JSON.parse(createQwenClientMessages('00000000-0000-4000-8000-000000000001', resolved.config, { text: '你好' }).runTask).payload;
     expect(payload.model).toBe(model);
     // 음색 ID는 모델 세대와 짝이 맞아야 한다 — 어긋나면 Qwen이 요청을 거부한다.
-    expect(payload.parameters.voice).toBe(model.includes('-3.1-') ? 'longanfengyue_v3.1' : 'longanfengyue');
+    expect(payload.parameters.voice).toBe({
+      'qwen-audio-3.0-tts-flash': 'longanfengyue',
+      'qwen-audio-3.0-tts-plus': 'longanlingxin',
+      'qwen-audio-3.1-tts-flash': 'longanfengyue_v3.1',
+      'qwen-audio-3.1-tts-plus': 'longanfengyue_v3.1',
+    }[model]);
   });
   it('rejects unauthenticated, non-Chinese and unregistered choices without writing', async () => {
     const { call, bucket } = setup();
