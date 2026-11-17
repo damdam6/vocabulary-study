@@ -91,7 +91,7 @@ describe("GET /api/words — settings 동봉", () => {
   });
 
   it("설정 값이 이상해도(범위 밖) 기본 60으로 폴백한다", async () => {
-    stubSheets({ titles: ["HSK6급", SETTINGS_TAB], settingsRows: [[SESSION_LIMIT_KEY, "501"]] });
+    stubSheets({ titles: ["HSK6급", SETTINGS_TAB], settingsRows: [[SESSION_LIMIT_KEY, "901"]] });
     const { body } = await getWords();
     expect(body.settings).toEqual({ sessionLimit: DEFAULT_SESSION_LIMIT });
   });

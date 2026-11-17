@@ -234,7 +234,7 @@ async function extractErrorMessage(response: Response, fallback: string): Promis
 
 /**
  * POST /api/settings — 세션당 문제 수 저장 (세션 설정 플랜 §3.3, #103). 요청·응답
- * 형태는 WordsSettings와 같다. 비정상 응답은 Worker의 `{error}` 본문(예: 1~500 범위
+ * 형태는 WordsSettings와 같다. 비정상 응답은 Worker의 `{error}` 본문(예: 1~900 범위
  * 안내)을 우선해 throw한다 — 등록 화면의 문제수 필드가 그 메시지를 그대로 보여준다
  * (플랜 §3.5). 재시도 큐 대상이 아니다(설정은 최신 의도만 유효) — 호출부가 실패를
  * 그 자리에서 표시하고 재시도 큐에 넣지 않는다.

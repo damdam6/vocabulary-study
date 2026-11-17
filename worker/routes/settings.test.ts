@@ -197,7 +197,7 @@ describe("POST /api/settings — 검증", () => {
     ["비정수(1.5)", JSON.stringify({ sessionLimit: 1.5 })],
     ["문자열 값", JSON.stringify({ sessionLimit: "30" })],
     ["하한 밖(0)", JSON.stringify({ sessionLimit: 0 })],
-    ["상한 밖(501)", JSON.stringify({ sessionLimit: 501 })],
+    ["상한 밖(901)", JSON.stringify({ sessionLimit: 901 })],
   ])("%s면 400 — 시트 접근 없음", async (_label, rawBody) => {
     const { urls } = stubSheetsFetch(baseSheets());
     const res = await worker.fetch(settingsRequest(rawBody), env);
@@ -205,12 +205,12 @@ describe("POST /api/settings — 검증", () => {
     expect(urls).toEqual([]);
   });
 
-  it("400 오류 문구에 허용 범위(1~500)를 명시한다", async () => {
+  it("400 오류 문구에 허용 범위(1~900)를 명시한다", async () => {
     stubSheetsFetch(baseSheets());
     const res = await worker.fetch(settingsRequest({ sessionLimit: 0 }), env);
     expect(res.status).toBe(400);
     const body = (await res.json()) as { error: string };
-    expect(body.error).toContain("1~500");
+    expect(body.error).toContain("1~900");
   });
 
   it.each([[1], [500]])("경계값 %i은 200과 반영값 응답", async (limit) => {

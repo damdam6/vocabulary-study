@@ -17,7 +17,7 @@ export const SESSION_LIMIT_KEY = "문제수";
 export const DEFAULT_SESSION_LIMIT = 60;
 // 쓰기 경로(POST /api/settings)의 엄격 검증도 같은 경계를 쓰므로 export한다 (플랜 §3.3).
 export const MIN_SESSION_LIMIT = 1;
-export const MAX_SESSION_LIMIT = 500;
+export const MAX_SESSION_LIMIT = 900;
 
 export interface SheetSettings {
   /** 세션당 최대 문제 수 (PRD 6.1). 시트 설정이 없거나 이상하면 DEFAULT_SESSION_LIMIT. */

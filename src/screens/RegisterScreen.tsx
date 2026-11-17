@@ -73,9 +73,9 @@ type TabCreateStatus = 'idle' | 'creating'
 
 const NEW_TAB_VALUE = '__new__'
 const MIN_SESSION_LIMIT = 1
-const MAX_SESSION_LIMIT = 500
+const MAX_SESSION_LIMIT = 900
 
-/** 문제수 입력란 클라 선검증(정수 1~500) — 최종 강제는 Worker(#103) 책임. 유효하면 null. */
+/** 문제수 입력란 클라 선검증(정수 1~900) — 최종 강제는 Worker(#103) 책임. 유효하면 null. */
 function validateSessionLimit(rawValue: string): string | null {
   const trimmed = rawValue.trim()
   if (trimmed === '' || !/^\d+$/.test(trimmed)) return '정수를 입력하세요'

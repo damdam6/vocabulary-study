@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 //
 // 등록 화면 테스트 두 묶음:
-// - '문제수' 필드 회귀 (세션 설정 플랜 §3.5, #110) — 현재값 프리필·1~500 클라
+// - '문제수' 필드 회귀 (세션 설정 플랜 §3.5, #110) — 현재값 프리필·1~900 클라
 //   선검증·저장 성공/실패 표시·등록 배치와의 독립성만 다룬다. 이 묶음에서
 //   fetchTabs/registerWords는 빈 목록/미사용 고정 응답.
 // - 탭 우선 흐름 (#118·#120) — 탭 섹션이 붙여넣기보다 위, "+ 새 탭"의 "생성" 버튼이
@@ -135,7 +135,7 @@ describe("RegisterScreen 문제수 필드", () => {
 
   it.each([
     ["0", "0"],
-    ["501", "501"],
+    ["901", "901"],
     // type="number" 입력란이라 "abc" 같은 순수 문자는 브라우저(jsdom도 동일)가 자체
     // 필터링한다 — 이 입력 타입에서 실제로 들어올 수 있는 비정수 값은 소수점이다.
     ["1.5(비정수)", "1.5"],
@@ -162,7 +162,7 @@ describe("RegisterScreen 문제수 필드", () => {
   });
 
   it("저장 실패 시 Worker의 오류 문구를 보여주고 입력값을 유지한다", async () => {
-    postSettingsMock.mockRejectedValue(new Error("sessionLimit은 1~500 사이의 정수여야 합니다"));
+    postSettingsMock.mockRejectedValue(new Error("sessionLimit은 1~900 사이의 정수여야 합니다"));
     const { limitInput, saveButton, limitFieldErrors, successMessage } = setup();
     await flush();
 
@@ -170,7 +170,7 @@ describe("RegisterScreen 문제수 필드", () => {
     fire(() => saveButton().click());
     await flush();
 
-    expect(limitFieldErrors()).toEqual(["sessionLimit은 1~500 사이의 정수여야 합니다"]);
+    expect(limitFieldErrors()).toEqual(["sessionLimit은 1~900 사이의 정수여야 합니다"]);
     expect(limitInput().value).toBe("45");
     expect(successMessage()).toBeNull();
   });

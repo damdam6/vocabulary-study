@@ -79,9 +79,9 @@ describe("parseSettings — 이상 입력은 기본 60으로 폴백", () => {
     expect(parseSettings([[SESSION_LIMIT_KEY, "0x1E"]])).toEqual(fallback);
   });
 
-  it("범위 밖 값(0·501·음수)은 기본값", () => {
+  it("범위 밖 값(0·901·음수)은 기본값", () => {
     expect(parseSettings([[SESSION_LIMIT_KEY, "0"]])).toEqual(fallback);
-    expect(parseSettings([[SESSION_LIMIT_KEY, "501"]])).toEqual(fallback);
+    expect(parseSettings([[SESSION_LIMIT_KEY, "901"]])).toEqual(fallback);
     expect(parseSettings([[SESSION_LIMIT_KEY, "-5"]])).toEqual(fallback);
   });
 });

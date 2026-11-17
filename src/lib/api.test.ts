@@ -345,10 +345,10 @@ describe("postSettings", () => {
     vi.stubGlobal(
       "fetch",
       vi.fn().mockResolvedValue(
-        Response.json({ error: "sessionLimit은 1~500 사이의 정수여야 합니다" }, { status: 400 }),
+        Response.json({ error: "sessionLimit은 1~900 사이의 정수여야 합니다" }, { status: 400 }),
       ),
     );
-    await expect(postSettings(0)).rejects.toThrow("sessionLimit은 1~500 사이의 정수여야 합니다");
+    await expect(postSettings(0)).rejects.toThrow("sessionLimit은 1~900 사이의 정수여야 합니다");
   });
 
   it("비정상 응답이고 본문이 JSON이 아니면 HTTP 상태를 담은 메시지로 throw한다", async () => {
