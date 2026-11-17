@@ -8,6 +8,7 @@ import { headwordLang, supportsPronunciation } from '../lib/contentLabels.ts'
 import { usePronunciation } from '../hooks/usePronunciation.ts'
 import type { PublicProfile, WordEntry } from '../lib/api.ts'
 import type { TtsCapability } from '../lib/ttsTypes.ts'
+import { readAutoPlayRepeat, saveAutoPlayRepeat } from '../lib/autoPlayPreferences.ts'
 import PronunciationButton from '../components/PronunciationButton.tsx'
 import './Mode2Card.css'
 
@@ -42,6 +43,10 @@ function AutoPlayScreen({ words, profile, tts, onExit }: AutoPlayScreenProps) {
   // 일시정지 후 재개는 같은 단어를 새 질문으로 다시 활성화해 처음부터 재생한다.
   const [epoch, setEpoch] = useState(0)
   const [sessionId] = useState(createAutoPlayId)
+  // 반복 재생: 마지막 단어 뒤 처음으로 돌아가 사용자가 멈출 때까지 계속 재생한다.
+  const [repeat, setRepeat] = useState(() => readAutoPlayRepeat(profile.id))
+  // 타이머가 도는 중에 토글해도 대기 시간이 다시 시작되지 않도록 ref로 읽는다.
+  const repeatRef = useRef(repeat)
   const revealedRef = useRef<string | null>(null)
   const playedRef = useRef<string | null>(null)
 
@@ -106,7 +111,12 @@ function AutoPlayScreen({ words, profile, tts, onExit }: AutoPlayScreenProps) {
       delay = AUTO_PLAY_STALL_MS
     }
     const timer = window.setTimeout(() => {
-      if (index + 1 >= words.length) {
+      if (index + 1 >= words.length && repeatRef.current) {
+        // 단어가 하나뿐이면 index가 그대로라 epoch를 올려 같은 단어를 다시 활성화한다.
+        stop('advance')
+        setIndex(0)
+        setEpoch((value) => value + 1)
+      } else if (index + 1 >= words.length) {
         stop('exit')
         setDone(true)
       } else {
@@ -133,6 +143,13 @@ function AutoPlayScreen({ words, profile, tts, onExit }: AutoPlayScreenProps) {
     }
   }
 
+  const toggleRepeat = () => {
+    const next = !repeat
+    repeatRef.current = next
+    setRepeat(next)
+    saveAutoPlayRepeat(profile.id, next)
+  }
+
   const restart = () => {
     setIndex(0)
     setEpoch((value) => value + 1)
@@ -153,7 +170,21 @@ function AutoPlayScreen({ words, profile, tts, onExit }: AutoPlayScreenProps) {
           <span className="study-progress-now">{Math.min(index + 1, words.length)}</span>
           <span className="study-progress-total"> / {words.length}</span>
         </div>
-        <div className="study-header-spacer" aria-hidden="true" />
+        <button
+          type="button"
+          className={`study-exit autoplay-repeat-toggle${repeat ? ' autoplay-repeat-toggle--on' : ''}`}
+          aria-pressed={repeat}
+          aria-label="반복 재생"
+          onClick={toggleRepeat}
+        >
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M17 2l4 4-4 4" />
+            <path d="M3 11V9a4 4 0 0 1 4-4h14" />
+            <path d="M7 22l-4-4 4-4" />
+            <path d="M21 13v2a4 4 0 0 1-4 4H3" />
+          </svg>
+          반복
+        </button>
       </header>
       <div className="study-chips">
         <span className="study-chip">자동 재생</span>

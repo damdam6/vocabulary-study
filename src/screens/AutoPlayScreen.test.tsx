@@ -63,6 +63,7 @@ beforeEach(() => {
   mocks.stop.mockReset(); mocks.reveal.mockReset(); mocks.replay.mockReset();
   mocks.status = "idle"; mocks.inputReason = null; mocks.bound = true; mocks.options = [];
   onExit = vi.fn();
+  localStorage.clear();
   fetchMock = vi.fn();
   vi.stubGlobal("fetch", fetchMock);
 });
@@ -186,6 +187,49 @@ describe("AutoPlayScreen", () => {
     expect(mocks.stop).toHaveBeenCalledWith("exit");
     expect(onExit).toHaveBeenCalledTimes(1);
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("반복을 켜면 마지막 단어 뒤 처음으로 돌아가 계속 재생하고, 끄면 완료 화면으로 끝난다", () => {
+    mocks.bound = false;
+    const container = mount(generic, words, { enabled: false });
+    const toggle = container.querySelector<HTMLButtonElement>(".autoplay-repeat-toggle")!;
+    expect(toggle.getAttribute("aria-pressed")).toBe("false");
+    fire(() => toggle.click());
+    expect(toggle.getAttribute("aria-pressed")).toBe("true");
+    for (const expected of ["学习", "经济", "学习", "经济"]) {
+      fire(() => vi.advanceTimersByTime(AUTO_PLAY_SILENT_MS));
+      expect(hanzi(container)).toBe(expected);
+    }
+    expect(container.querySelector(".study-progress")?.textContent).toBe("1 / 2");
+    fire(() => toggle.click());
+    fire(() => vi.advanceTimersByTime(AUTO_PLAY_SILENT_MS));
+    fire(() => vi.advanceTimersByTime(AUTO_PLAY_SILENT_MS));
+    expect(container.textContent).toContain("재생이 끝났어요");
+  });
+
+  it("단어가 하나뿐이어도 반복하며 발음을 다시 요청한다", () => {
+    const container = mount(zh, [words[0]]);
+    fire(() => container.querySelector<HTMLButtonElement>(".autoplay-repeat-toggle")!.click());
+    expect(mocks.reveal).toHaveBeenCalledTimes(1);
+    fire(() => mocks.setStatus("playing"));
+    fire(() => mocks.setStatus("ready"));
+    fire(() => vi.advanceTimersByTime(AUTO_PLAY_GAP_MS));
+    expect(hanzi(container)).toBe("经济");
+    expect(container.textContent).not.toContain("재생이 끝났어요");
+    expect(mocks.reveal).toHaveBeenCalledTimes(2);
+  });
+
+  it("반복 설정은 프로필별로 저장되어 다음 진입에 유지되고, 토글해도 대기 시간이 다시 시작되지 않는다", () => {
+    mocks.bound = false;
+    const container = mount(generic, words, { enabled: false });
+    fire(() => vi.advanceTimersByTime(AUTO_PLAY_SILENT_MS - 1));
+    fire(() => container.querySelector<HTMLButtonElement>(".autoplay-repeat-toggle")!.click());
+    fire(() => vi.advanceTimersByTime(1));
+    expect(hanzi(container)).toBe("学习");
+    view!.unmount();
+    const again = mount(generic, words, { enabled: false });
+    expect(again.querySelector(".autoplay-repeat-toggle")?.getAttribute("aria-pressed")).toBe("true");
+    expect(mount(zh).querySelector(".autoplay-repeat-toggle")?.getAttribute("aria-pressed")).toBe("false");
   });
 
   it("완료 화면에서 처음부터 다시 재생할 수 있다", () => {

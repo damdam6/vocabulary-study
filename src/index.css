@@ -1894,3 +1894,11 @@ textarea.register-modal-input {
 .autoplay-secondary-button:active { transform: scale(0.98); }
 .autoplay-done-title { font-size: 22px; font-weight: 700; }
 .autoplay-notice { margin: 0; text-align: center; font-size: 13px; color: var(--text-muted); }
+
+/* 자동 재생 헤더 우측의 반복 토글 — 종료 버튼과 같은 틀, 켜지면 강조색 */
+.autoplay-repeat-toggle { display: inline-flex; align-items: center; gap: 5px; padding: 0 11px; }
+.autoplay-repeat-toggle--on {
+  border-color: var(--accent);
+  background: rgba(91, 139, 245, 0.14);
+  color: var(--accent-light);
+}
