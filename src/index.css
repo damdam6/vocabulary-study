@@ -1887,7 +1887,9 @@ textarea.register-modal-input {
   font-size: 15px;
   font-weight: 600;
 }
-.autoplay-start-button { margin-top: 10px; }
+.start-row { display: flex; gap: 10px; }
+.start-row .start-button { flex: 1.6 1 0; min-width: 0; }
+.start-row .autoplay-start-button { flex: 1 1 0; min-width: 0; height: 58px; border-radius: 16px; }
 .autoplay-start-button:active,
 .autoplay-secondary-button:active { transform: scale(0.98); }
 .autoplay-done-title { font-size: 22px; font-weight: 700; }
