@@ -1,4 +1,4 @@
-import { isTtsModel } from "../../../shared/ttsModels.ts";
+import { isTtsModel, ttsVoiceForModel } from "../../../shared/ttsModels.ts";
 import {
   DEFAULT_TTS_RATE,
   DEFAULT_TTS_REVISION,
@@ -54,7 +54,7 @@ export function resolveTtsConfig(env: TtsEnv): ResolvedTtsConfig {
   const config: TtsConfig = {
     provider: TTS_PROVIDER,
     model,
-    voice: TTS_VOICE,
+    voice: ttsVoiceForModel(model),
     rate,
     revision,
     region: TTS_REGION,

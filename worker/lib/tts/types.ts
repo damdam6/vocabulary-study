@@ -1,4 +1,4 @@
-import type { TtsModel } from "../../../shared/ttsModels.ts";
+import type { TtsModel, TtsVoice } from "../../../shared/ttsModels.ts";
 /**
  * 중국어 TTS의 Worker 공통 계약. 이 파일은 라우트·저장소·제공자 구현보다 먼저
  * 고정되는 경계이며, 비밀값은 공개 설정과 분리한다.
@@ -18,6 +18,7 @@ export const TTS_BLOB_CACHE_MAX_BYTES = 8 * 1024 * 1024;
 
 export const TTS_PROVIDER = "qwen" as const;
 export const TTS_MODEL = "qwen-audio-3.0-tts-flash" as const;
+/** 음색의 기본 이름(설정값 `TTS_VOICE`). 실제로 보내는 ID는 모델별로 다르다 — ttsVoiceForModel. */
 export const TTS_VOICE = "longanfengyue" as const;
 export const TTS_REGION = "intl" as const;
 export const TTS_OUTPUT_FORMAT = "mp3" as const;
@@ -151,7 +152,8 @@ export type TtsWorkerEnv = Env & TtsEnv;
 export interface TtsConfig {
   provider: typeof TTS_PROVIDER;
   model: TtsModel;
-  voice: typeof TTS_VOICE;
+  /** 선택된 모델에 맞는 제공자 음색 ID. */
+  voice: TtsVoice;
   rate: number;
   revision: string;
   region: typeof TTS_REGION;
