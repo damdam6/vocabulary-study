@@ -205,12 +205,6 @@ function HomeScreen({ onStart, onStartAutoPlay, onNavigateRegister, onSwitchProf
     onStart(buildQueue(profile.modes), { profile, tts, audioAutoplay });
   };
 
-  const toggleSequential = () => {
-    const next = !sequential;
-    setSequential(next);
-    if (profile !== null) saveSequentialOrder(profile.id, next);
-  };
-
   const handleStartAutoPlay = () => {
     if (profile === null || onStartAutoPlay === undefined) return;
     const queue = buildQueue(profile.modes);
@@ -314,17 +308,17 @@ function HomeScreen({ onStart, onStartAutoPlay, onNavigateRegister, onSwitchProf
       <div className="session-options-row">
       {/* 선택 0개면 세션 수 줄을 숨긴다 — 시작 버튼의 "탭을 선택하세요"가 대신 안내한다(§4.2). */}
       {/* "n문제"는 밑줄 버튼 — 누르면 이번 세션 문제 수 수정 모달. 할 것이 0문제면 일반 텍스트. */}
-      {/* "순서대로"가 켜져 있으면 문제 수가 최대로 고정이라 수정 링크 대신 일반 텍스트로 보여 준다. */}
+      {/* "순서대로"는 이 링크로 여는 모달에서 켜고 끈다 — 홈에는 버튼 없이 켜진 상태만 글자로 덧붙인다. */}
       {status === "ready" && stats && !noTabSelected && (
         <p className="session-count">
           {scopeLabel && <span className="session-count-scope-name">{scopeLabel.name}</span>}
           <span className="session-count-rest">
             {scopeLabel && `${scopeLabel.rest} · `}
-            {sessionMax > 0 && !sequential ? (
+            {sessionMax > 0 ? (
               <button
                 type="button"
                 className="session-limit-link"
-                aria-label={`이번 세션 문제 수 ${stats.sessionCount}문제, 수정`}
+                aria-label={`이번 세션 문제 수 ${stats.sessionCount}문제${sequential ? ", 순서대로" : ""}, 수정`}
                 onClick={() => setSessionLimitModalOpen(true)}
               >
                 {stats.sessionCount}문제
@@ -332,18 +326,9 @@ function HomeScreen({ onStart, onStartAutoPlay, onNavigateRegister, onSwitchProf
             ) : (
               <>{stats.sessionCount}문제</>
             )}
+            {sequential && sessionMax > 0 && " · 순서대로"}
           </span>
         </p>
-      )}
-      {status === "ready" && stats && !noTabSelected && sessionMax > 0 && (
-        <button
-          type="button"
-          className={`sequential-toggle${sequential ? " sequential-toggle--on" : ""}`}
-          aria-pressed={sequential}
-          onClick={toggleSequential}
-        >
-          순서대로
-        </button>
       )}
       </div>
 
@@ -366,15 +351,25 @@ function HomeScreen({ onStart, onStartAutoPlay, onNavigateRegister, onSwitchProf
           current={configuredSessionLimit}
           sheetLimit={sheetSessionLimit}
           max={sessionMax}
+          sequential={sequential}
           onCancel={() => setSessionLimitModalOpen(false)}
-          onSave={(limit) => {
-            setSessionLimitOverride(limit);
-            if (profile) saveSessionLimitOverride(profile.id, limit);
+          onSave={(limit, nextSequential) => {
+            // 순서대로를 켠 저장은 문제 수 설정을 건드리지 않는다 — 끄면 이전 값으로 돌아간다.
+            if (!nextSequential) {
+              setSessionLimitOverride(limit);
+              if (profile) saveSessionLimitOverride(profile.id, limit);
+            }
+            setSequential(nextSequential);
+            if (profile) saveSequentialOrder(profile.id, nextSequential);
             setSessionLimitModalOpen(false);
           }}
           onReset={() => {
             setSessionLimitOverride(null);
-            if (profile) saveSessionLimitOverride(profile.id, null);
+            setSequential(false);
+            if (profile) {
+              saveSessionLimitOverride(profile.id, null);
+              saveSequentialOrder(profile.id, false);
+            }
             setSessionLimitModalOpen(false);
           }}
         />
