@@ -13,7 +13,8 @@ import { getStoredProfile, saveProfile, type PublicProfile, type WordEntry } fro
 import { formatHomeDate } from "../lib/date.ts";
 import { computeHomeStats, type HomeStats } from "../lib/homeStats.ts";
 import { RETRY_QUEUE_CHANGED_EVENT, RETRY_QUEUE_STORAGE_KEY, getRetryQueueLength } from "../lib/retryQueue.ts";
-import { buildSessionQueue, SESSION_CAP, type SessionQuestion } from "../lib/sessionQueue.ts";
+import { buildSequentialQueue, buildSessionQueue, SESSION_CAP, type SessionQuestion } from "../lib/sessionQueue.ts";
+import { readSequentialOrder, saveSequentialOrder } from "../lib/sequentialOrderPreference.ts";
 import {
   deriveTabs,
   filterWordsByScope,
@@ -76,7 +77,11 @@ function HomeScreen({ onStart, onStartAutoPlay, onNavigateRegister, onSwitchProf
   // 세션 문제 수 수정값 — 시트 설정을 대신하고, 프로필별로 localStorage에 남아 다음 홈 진입에도 유지된다.
   const [sessionLimitOverride, setSessionLimitOverride] = useState<number | null>(null);
   const [sessionLimitModalOpen, setSessionLimitModalOpen] = useState(false);
-  const sessionLimit = sessionLimitOverride ?? sheetSessionLimit;
+  // "순서대로"(시트 순서 출제) — 켜면 문제 수는 풀 수 있는 최대로 고정된다. 전체 단어 수는 어느 범위의
+  // 복습 대기 + 학습 중보다도 크거나 같아서, 이 값을 상한으로 주면 집계·칩 카운트가 모두 최대가 된다.
+  const [sequential, setSequential] = useState(false);
+  const configuredSessionLimit = sessionLimitOverride ?? sheetSessionLimit;
+  const sessionLimit = sequential ? Math.max(1, words.length) : configuredSessionLimit;
   const [audioAutoplay, setAudioAutoplay] = useState(true);
   const [audioSaveFailed, setAudioSaveFailed] = useState(false);
   const [tts, setTts] = useState<TtsCapability>({ enabled: false });
@@ -97,6 +102,7 @@ function HomeScreen({ onStart, onStartAutoPlay, onNavigateRegister, onSwitchProf
         saveProfile(fetchedProfile);
         setSheetSessionLimit(settings.sessionLimit);
         setSessionLimitOverride(readSessionLimitOverride(fetchedProfile.id));
+        setSequential(readSequentialOrder(fetchedProfile.id));
         setTts(fetchedTts);
         setToday(getSeoulToday());
         // 홈 진입마다 새 응답으로 저장된 범위를 다시 검증한다 — 사라진 탭 정리·저장값 갱신은
@@ -187,15 +193,21 @@ function HomeScreen({ onStart, onStartAutoPlay, onNavigateRegister, onSwitchProf
     updateScope({ kind: "tabs", tabs: selected });
   };
 
+  // 학습 시작·자동 재생이 같은 큐를 쓴다. "순서대로"면 시트 순서로 전부, 아니면 기존 선별·셔플 큐.
+  const buildQueue = (modes: PublicProfile["modes"]) =>
+    sequential
+      ? buildSequentialQueue(scopedWords, getSeoulToday(), modes)
+      : buildSessionQueue(scopedWords, getSeoulToday(), modes, undefined, sessionLimit);
+
   const handleStart = () => {
     // canStart(sessionCount>0)와 같은 단어 집합(scopedWords)·같은 산식(같은 sessionLimit)이므로 빈 큐가 나올 수 없다
     if (profile === null) return;
-    onStart(buildSessionQueue(scopedWords, getSeoulToday(), profile.modes, undefined, sessionLimit), { profile, tts, audioAutoplay });
+    onStart(buildQueue(profile.modes), { profile, tts, audioAutoplay });
   };
 
   const handleStartAutoPlay = () => {
     if (profile === null || onStartAutoPlay === undefined) return;
-    const queue = buildSessionQueue(scopedWords, getSeoulToday(), profile.modes, undefined, sessionLimit);
+    const queue = buildQueue(profile.modes);
     // 한 단어가 모드별로 두 번 큐에 들 수 있다 — 듣기에서는 첫 등장만 남긴다.
     const seen = new Set<string>();
     const unique: WordEntry[] = [];
@@ -296,6 +308,7 @@ function HomeScreen({ onStart, onStartAutoPlay, onNavigateRegister, onSwitchProf
       <div className="session-options-row">
       {/* 선택 0개면 세션 수 줄을 숨긴다 — 시작 버튼의 "탭을 선택하세요"가 대신 안내한다(§4.2). */}
       {/* "n문제"는 밑줄 버튼 — 누르면 이번 세션 문제 수 수정 모달. 할 것이 0문제면 일반 텍스트. */}
+      {/* "순서대로"는 이 링크로 여는 모달에서 켜고 끈다 — 홈에는 버튼 없이 켜진 상태만 글자로 덧붙인다. */}
       {status === "ready" && stats && !noTabSelected && (
         <p className="session-count">
           {scopeLabel && <span className="session-count-scope-name">{scopeLabel.name}</span>}
@@ -305,7 +318,7 @@ function HomeScreen({ onStart, onStartAutoPlay, onNavigateRegister, onSwitchProf
               <button
                 type="button"
                 className="session-limit-link"
-                aria-label={`이번 세션 문제 수 ${stats.sessionCount}문제, 수정`}
+                aria-label={`이번 세션 문제 수 ${stats.sessionCount}문제${sequential ? ", 순서대로" : ""}, 수정`}
                 onClick={() => setSessionLimitModalOpen(true)}
               >
                 {stats.sessionCount}문제
@@ -313,6 +326,7 @@ function HomeScreen({ onStart, onStartAutoPlay, onNavigateRegister, onSwitchProf
             ) : (
               <>{stats.sessionCount}문제</>
             )}
+            {sequential && sessionMax > 0 && " · 순서대로"}
           </span>
         </p>
       )}
@@ -334,18 +348,28 @@ function HomeScreen({ onStart, onStartAutoPlay, onNavigateRegister, onSwitchProf
 
       {sessionLimitModalOpen && (
         <SessionLimitModal
-          current={sessionLimit}
+          current={configuredSessionLimit}
           sheetLimit={sheetSessionLimit}
           max={sessionMax}
+          sequential={sequential}
           onCancel={() => setSessionLimitModalOpen(false)}
-          onSave={(limit) => {
-            setSessionLimitOverride(limit);
-            if (profile) saveSessionLimitOverride(profile.id, limit);
+          onSave={(limit, nextSequential) => {
+            // 순서대로를 켠 저장은 문제 수 설정을 건드리지 않는다 — 끄면 이전 값으로 돌아간다.
+            if (!nextSequential) {
+              setSessionLimitOverride(limit);
+              if (profile) saveSessionLimitOverride(profile.id, limit);
+            }
+            setSequential(nextSequential);
+            if (profile) saveSequentialOrder(profile.id, nextSequential);
             setSessionLimitModalOpen(false);
           }}
           onReset={() => {
             setSessionLimitOverride(null);
-            if (profile) saveSessionLimitOverride(profile.id, null);
+            setSequential(false);
+            if (profile) {
+              saveSessionLimitOverride(profile.id, null);
+              saveSequentialOrder(profile.id, false);
+            }
             setSessionLimitModalOpen(false);
           }}
         />

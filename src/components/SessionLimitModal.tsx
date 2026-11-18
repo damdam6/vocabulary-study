@@ -1,6 +1,7 @@
 // 이번 세션 문제 수 수정 모달 — 홈의 "이번 세션 문제 수" 링크로 연다. 고친 값은 이 브라우저에
 // 프로필별로 저장돼 다음 홈 진입에도 시트 설정(sessionLimit)을 대신하고, 시트에는 쓰지 않는다 —
 // "기본값으로"를 누르면 시트 값으로 돌아간다. 모달 외형은 등록 검토 모달(register-modal-*)을 재사용한다.
+// "순서대로" 스위치도 여기서 켜고 끈다 — 켜면 시트 순서대로 전부 출제하므로 문제 수는 최대로 고정된다.
 import { useEffect, useState, type FormEvent } from 'react'
 
 interface SessionLimitModalProps {
@@ -10,13 +11,17 @@ interface SessionLimitModalProps {
   sheetLimit: number
   /** 지금 범위에서 풀 수 있는 최대 문제 수(복습 대기 + 학습 중). */
   max: number
+  /** 지금 "순서대로"가 켜져 있는지 — 스위치 초기값. */
+  sequential: boolean
   onCancel: () => void
-  onSave: (limit: number) => void
+  /** sequential이 true면 limit은 max다 — 호출부는 그때 문제 수 설정을 덮어쓰지 않는다. */
+  onSave: (limit: number, sequential: boolean) => void
   onReset: () => void
 }
 
-function SessionLimitModal({ current, sheetLimit, max, onCancel, onSave, onReset }: SessionLimitModalProps) {
+function SessionLimitModal({ current, sheetLimit, max, sequential, onCancel, onSave, onReset }: SessionLimitModalProps) {
   const [draft, setDraft] = useState(() => String(Math.min(current, max)))
+  const [sequentialDraft, setSequentialDraft] = useState(sequential)
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -26,12 +31,13 @@ function SessionLimitModal({ current, sheetLimit, max, onCancel, onSave, onReset
     return () => document.removeEventListener('keydown', onKeyDown)
   }, [onCancel])
 
-  const value = Number(draft)
-  const valid = /^\d+$/.test(draft.trim()) && value >= 1 && value <= max
+  // 순서대로가 켜져 있으면 입력값과 무관하게 최대 문제 수다 — 입력한 값은 끄면 그대로 돌아온다.
+  const value = sequentialDraft ? max : Number(draft)
+  const valid = sequentialDraft || (/^\d+$/.test(draft.trim()) && value >= 1 && value <= max)
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault()
-    if (valid) onSave(value)
+    if (valid) onSave(value, sequentialDraft)
   }
 
   return (
@@ -59,13 +65,31 @@ function SessionLimitModal({ current, sheetLimit, max, onCancel, onSave, onReset
             min={1}
             max={max}
             step={1}
-            value={draft}
+            value={sequentialDraft ? String(max) : draft}
             onChange={(event) => setDraft(event.target.value)}
             aria-invalid={!valid}
+            disabled={sequentialDraft}
             autoFocus
           />
         </label>
         {!valid && <p className="session-limit-modal-error">1부터 {max} 사이의 숫자를 입력하세요.</p>}
+
+        <div className="session-limit-modal-option">
+          <div className="session-limit-modal-option-text">
+            <span className="session-limit-modal-option-label" id="session-limit-sequential-label">순서대로</span>
+            <span className="session-limit-modal-option-hint">시트 순서대로 출제 · 문제 수 최대</span>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={sequentialDraft}
+            aria-labelledby="session-limit-sequential-label"
+            className={`toggle-switch${sequentialDraft ? ' toggle-switch--on' : ''}`}
+            onClick={() => setSequentialDraft((on) => !on)}
+          >
+            <span className="toggle-switch-knob" />
+          </button>
+        </div>
 
         <div className="register-modal-actions">
           <button type="button" className="session-limit-modal-reset" onClick={onReset}>

@@ -602,3 +602,126 @@ describe("자동 재생 설정", () => {
     expect(second.container.querySelector<HTMLButtonElement>('[aria-label="발음 자동 재생"]')!.getAttribute("aria-pressed")).toBe("false");
   });
 });
+
+describe("순서대로 출제", () => {
+  const word = (tab: string, hanzi: string, over: Partial<WordEntry> = {}): WordEntry => ({
+    tab, hanzi, pinyin: "", meaning: hanzi, m1: 1, m2: 0, nextReview: null, interval: null, ...over,
+  });
+  // 시트 순서: A탭 3개(가운데는 복습 예정이라 출제 대상 아님) → B탭 복습 대기 1개 + 학습 중 2개.
+  const words = [
+    word("A", "a1"),
+    word("A", "a2", { m1: 3, m2: 3, nextReview: "2999-01-01", interval: 30 }),
+    word("A", "a3"),
+    word("B", "b1", { m1: 3, m2: 3, nextReview: "2000-01-01", interval: 1 }),
+    word("B", "b2"),
+    word("B", "b3"),
+  ];
+
+  async function mount(sessionLimit = 2, onStartAutoPlay?: ReturnType<typeof vi.fn>) {
+    fetchWordsMock.mockResolvedValue({ profile, words, settings: { sessionLimit }, tts: { enabled: false } } satisfies WordsResponse);
+    const onStart = vi.fn();
+    const { container, unmount } = renderComponent(
+      <HomeScreen onStart={onStart} onStartAutoPlay={onStartAutoPlay as never} onNavigateRegister={vi.fn()} onSwitchProfile={vi.fn()} />,
+    );
+    unmountCurrent = unmount;
+    await flush();
+    const link = () => container.querySelector<HTMLButtonElement>(".session-limit-link");
+    const dialog = () => container.querySelector<HTMLElement>('[role="dialog"]');
+    const switchButton = () => dialog()!.querySelector<HTMLButtonElement>('[role="switch"]')!;
+    const save = () => fire(() => dialog()!.querySelector<HTMLButtonElement>('button[type="submit"]')!.click());
+    return {
+      container,
+      onStart,
+      link,
+      dialog,
+      switchButton,
+      save,
+      open: () => fire(() => link()!.click()),
+      // 모달을 열어 스위치를 원하는 상태로 맞추고 저장한다.
+      setSequential: (on: boolean) => {
+        fire(() => link()!.click());
+        if ((switchButton().getAttribute("aria-checked") === "true") !== on) fire(() => switchButton().click());
+        save();
+      },
+      input: () => dialog()!.querySelector<HTMLInputElement>("input")!,
+      count: () => container.querySelector(".session-count")?.textContent ?? null,
+      start: () => fire(() => container.querySelector<HTMLButtonElement>(".start-button")!.click()),
+    };
+  }
+  const hanziOf = (queue: SessionQuestion<WordEntry>[]) => queue.map((question) => question.word.hanzi);
+
+  it("홈에는 토글 버튼이 없고, 기본은 꺼진 채 설정한 문제 수를 따른다", async () => {
+    const home = await mount(2);
+    expect(home.count()).toBe("전체 · 2문제");
+    expect(home.container.querySelector(".home-screen > .session-options-row button:not(.session-limit-link)")).toBeNull();
+    home.open();
+    expect(home.switchButton().getAttribute("aria-checked")).toBe("false");
+    expect(home.input().disabled).toBe(false);
+  });
+
+  it("모달에서 켜면 문제 수 입력이 최대로 고정되고, 저장하면 시트 순서대로 전부 출제한다", async () => {
+    const home = await mount(2);
+    home.open();
+    fire(() => home.switchButton().click());
+    expect(home.switchButton().getAttribute("aria-checked")).toBe("true");
+    // 최대 = 복습 대기 + 학습 중(복습 예정 a2 제외)
+    expect(home.input().value).toBe("5");
+    expect(home.input().disabled).toBe(true);
+    home.save();
+    expect(home.dialog()).toBeNull();
+    // 홈에는 켜진 상태가 글자로만 덧붙는다.
+    expect(home.count()).toBe("전체 · 5문제 · 순서대로");
+
+    home.start();
+    const queue = home.onStart.mock.calls[0][0] as SessionQuestion<WordEntry>[];
+    expect(hanziOf(queue)).toEqual(["a1", "a3", "b1", "b2", "b3"]);
+    expect(queue.map((question) => question.isReview)).toEqual([false, false, true, false, false]);
+  });
+
+  it("모달에서 켰다가 취소하면 바뀌지 않는다", async () => {
+    const home = await mount(2);
+    home.open();
+    fire(() => home.switchButton().click());
+    fire(() => [...home.dialog()!.querySelectorAll<HTMLButtonElement>("button")].find((b) => b.textContent === "취소")!.click());
+    expect(home.count()).toBe("전체 · 2문제");
+  });
+
+  it("끄면 원래 문제 수 설정으로 돌아간다", async () => {
+    const home = await mount(2);
+    home.setSequential(true);
+    home.open();
+    expect(home.switchButton().getAttribute("aria-checked")).toBe("true");
+    fire(() => home.switchButton().click());
+    expect(home.input().disabled).toBe(false);
+    expect(home.input().value).toBe("2");
+    home.save();
+    expect(home.count()).toBe("전체 · 2문제");
+    home.start();
+    expect(home.onStart.mock.calls[0][0]).toHaveLength(2);
+  });
+
+  it("기본값으로를 누르면 순서대로도 꺼진다", async () => {
+    const home = await mount(2);
+    home.setSequential(true);
+    home.open();
+    fire(() => [...home.dialog()!.querySelectorAll<HTMLButtonElement>("button")].find((b) => b.textContent === "기본값으로")!.click());
+    expect(home.count()).toBe("전체 · 2문제");
+  });
+
+  it("설정은 프로필별로 저장되어 다음 홈 진입에도 유지된다", async () => {
+    const first = await mount(2);
+    first.setSequential(true);
+    unmountCurrent?.();
+    unmountCurrent = null;
+    const second = await mount(2);
+    expect(second.count()).toBe("전체 · 5문제 · 순서대로");
+  });
+
+  it("자동 재생도 같은 순서를 쓴다", async () => {
+    const onStartAutoPlay = vi.fn();
+    const home = await mount(2, onStartAutoPlay);
+    home.setSequential(true);
+    fire(() => home.container.querySelector<HTMLButtonElement>(".autoplay-start-button")!.click());
+    expect((onStartAutoPlay.mock.calls[0][0] as WordEntry[]).map((entry) => entry.hanzi)).toEqual(["a1", "a3", "b1", "b2", "b3"]);
+  });
+});
