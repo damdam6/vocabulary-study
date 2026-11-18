@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { computeHomeStats } from "./homeStats.ts";
-import { buildSessionQueue, RECALL_SHARE, SESSION_CAP, type SessionQuestion } from "./sessionQueue.ts";
+import { buildSequentialQueue, buildSessionQueue, RECALL_SHARE, SESSION_CAP, type SessionQuestion } from "./sessionQueue.ts";
 
 const today = "2026-07-20";
 const M = ["m1", "m2"] as const;
@@ -462,5 +462,36 @@ describe("buildSessionQueue — 재출제 몫 (2일 경과한 1점 이상 단어
     const queue = buildSessionQueue(words, today, M, mulberry32(1), 10);
     expect(queue).toHaveLength(10);
     expect(questionsOf(queue, "재")).toHaveLength(1);
+  });
+});
+
+describe("buildSequentialQueue — 시트 순서 그대로 전부 출제", () => {
+  const scheduled = (hanzi: string): TestWord => ({ tab: "HSK6", hanzi, m1: 3, m2: 3, nextReview: "2999-01-01" });
+
+  it("입력 순서를 유지하고 복습 예정만 뺀다 — 상한·셔플 없음", () => {
+    const words = [
+      learningWord("가", 2, 2), reviewWord("나", "2026-07-01"), scheduled("다"),
+      learningWord("라", 0, 0), reviewWord("마", null), learningWord("바", 3, 0),
+    ];
+    for (const seed of [1, 2, 3]) {
+      const queue = buildSequentialQueue(words, today, M, mulberry32(seed));
+      expect(queue.map((q) => q.word.hanzi)).toEqual(["가", "나", "라", "마", "바"]);
+      expect(queue.map((q) => q.isReview)).toEqual([false, true, false, true, false]);
+    }
+  });
+
+  it("SESSION_CAP보다 많아도 전부 내고, 길이는 limit을 충분히 준 홈 집계와 같다", () => {
+    const words = Array.from({ length: SESSION_CAP * 3 }, (_, i) => learningWord(`词${i}`, i % 3, 0));
+    const queue = buildSequentialQueue(words, today, M, mulberry32(7));
+    expect(queue).toHaveLength(words.length);
+    expect(computeHomeStats(words, today, M, words.length).sessionCount).toBe(queue.length);
+    expect(new Set(wordKeys(queue)).size).toBe(queue.length);
+  });
+
+  it("모드 규칙은 기존 큐와 같다 — 미달 모드가 하나면 그 모드, M이 하나면 항상 그 모드", () => {
+    const queue = buildSequentialQueue([learningWord("가", 3, 0), learningWord("나", 0, 3)], today, M, mulberry32(1));
+    expect(queue.map((q) => q.mode)).toEqual(["m2", "m1"]);
+    const single = buildSequentialQueue([reviewWord("다", "2026-07-01"), learningWord("라", 0, 0)], today, ["m1"], mulberry32(9));
+    expect(single.map((q) => q.mode)).toEqual(["m1", "m1"]);
   });
 });

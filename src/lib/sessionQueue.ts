@@ -153,6 +153,30 @@ export function buildSessionQueue<T extends WordProgress>(
   return queue;
 }
 
+/**
+ * "순서대로" 큐 — 입력 words의 순서(= 시트의 탭·행 순서)를 그대로 유지하고, 풀 수 있는 문제
+ * (복습 대기 + 학습 중)를 상한·선별·셔플 없이 전부 낸다. 출제 대상과 단어당 1문제·모드 규칙은
+ * buildSessionQueue와 같다 — 복습 예정(reviewScheduled)은 여기서도 내지 않는다.
+ * 길이는 항상 복습 대기 + 학습 중이라, 홈 집계에 limit ≥ 그 합을 주면 sessionCount와 일치한다.
+ */
+export function buildSequentialQueue<T extends WordProgress>(
+  words: readonly T[],
+  today: string,
+  modes: readonly Mode[],
+  rng: () => number = Math.random,
+): SessionQuestion<T>[] {
+  const queue: SessionQuestion<T>[] = [];
+  for (const word of words) {
+    const state = getWordState(word, today, modes);
+    if (state === "reviewDue") {
+      queue.push({ word, mode: randomMode(effectiveModes(word, modes), rng), isReview: true });
+    } else if (state === "learning") {
+      queue.push({ word, mode: learningMode(word, effectiveModes(word, modes), rng), isReview: false });
+    }
+  }
+  return queue;
+}
+
 /** 재출제 대상: 총 정답 수 ≥ 1이고 마지막 정답이 cutoff 이전(포함). 정답 기록 없음(수동 편집 등)도 대상. */
 function isRecallCandidate(word: WordProgress, cutoff: string): boolean {
   return word.m1 + word.m2 >= 1 && (word.lastCorrect == null || word.lastCorrect <= cutoff);

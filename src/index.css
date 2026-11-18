@@ -1926,3 +1926,21 @@ textarea.register-modal-input {
 }
 .autoplay-stepper-button:disabled { opacity: 0.35; }
 .autoplay-stepper-value { min-width: 44px; text-align: center; font-size: 16px; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+/* 홈 "순서대로" 토글 — 세션 수 줄 오른쪽. 켜지면 강조색, 문제 수는 최대로 고정된다. */
+.sequential-toggle {
+  flex: none;
+  min-height: 36px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border-input);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+.sequential-toggle--on {
+  border-color: var(--accent);
+  background: rgba(91, 139, 245, 0.14);
+  color: var(--accent-light);
+}
