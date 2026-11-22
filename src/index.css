@@ -1286,6 +1286,7 @@ button {
 }
 
 .register-field-label {
+  margin: 0;
   font-size: 13px;
   color: var(--text-muted);
   font-weight: 600;
@@ -1331,7 +1332,85 @@ button {
   color: var(--red);
 }
 
-/* 새 탭 확정 행 (#118) — 이름 입력란 우측에 "생성" 버튼 */
+/* 탭 선택 단계 — 탭 전체를 한 화면에 나열한다(드롭다운 대체). */
+.register-tab-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.register-tab-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  min-height: 52px;
+  padding: 10px 16px;
+  border: 1px solid var(--border-input);
+  border-radius: 12px;
+  background: var(--bg-panel);
+  color: var(--text);
+  font-size: 15px;
+  text-align: left;
+}
+
+.register-tab-item:hover {
+  border-color: var(--accent-light);
+}
+
+.register-tab-item:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.register-tab-item-name {
+  min-width: 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.register-tab-item-count {
+  flex: none;
+  font-size: 12px;
+  color: var(--text-faint);
+}
+
+.register-tab-manage {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+/* 등록 폼 상단의 선택된 탭 + "탭 변경" */
+.register-tab-current {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 48px;
+  padding: 6px 8px 6px 14px;
+  border: 1px solid var(--border-input);
+  border-radius: 12px;
+  background: var(--bg-panel);
+}
+
+.register-tab-current-name {
+  min-width: 0;
+  font-size: 15px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.register-tab-change {
+  flex: none;
+}
+
+/* 새 탭 이름 입력 + "생성" 버튼 (탭 관리 화면) */
 .register-new-tab-row {
   display: flex;
   gap: 10px;

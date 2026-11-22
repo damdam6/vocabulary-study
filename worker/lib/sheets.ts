@@ -95,7 +95,7 @@ export async function getSheetMetadata(env: Env, sheetId: string): Promise<{ id:
   });
 }
 
-// Sheets API batchUpdate request 형태 — 이 코드베이스가 실제로 보내는 두 종류만 다룬다.
+// Sheets API batchUpdate request 형태 — 이 코드베이스가 실제로 보내는 종류만 다룬다.
 // https://developers.google.com/workspace/sheets/api/reference/rest/v4/spreadsheets/batchUpdate
 export interface AddSheetRequest {
   addSheet: {
@@ -127,7 +127,27 @@ export interface RepeatCellRequest {
   };
 }
 
-export type SpreadsheetRequest = AddSheetRequest | RepeatCellRequest;
+/** 탭 삭제 — 탭의 모든 셀·학습 기록이 함께 사라진다(되돌릴 수 없음). */
+export interface DeleteSheetRequest {
+  deleteSheet: { sheetId: number };
+}
+
+/** 탭 위치 이동. index는 "이동 전" 기준 위치다(Sheets API 규약). */
+export interface MoveSheetRequest {
+  updateSheetProperties: { properties: { sheetId: number; index: number }; fields: "index" };
+}
+
+/** 행 삭제(0-기준, endIndex 미포함). `_정보` 탭의 낡은 설정 행 정리에 쓴다. */
+export interface DeleteRowsRequest {
+  deleteDimension: { range: { sheetId: number; dimension: "ROWS"; startIndex: number; endIndex: number } };
+}
+
+export type SpreadsheetRequest =
+  | AddSheetRequest
+  | RepeatCellRequest
+  | DeleteSheetRequest
+  | MoveSheetRequest
+  | DeleteRowsRequest;
 
 // 값(`/values:batchUpdate`)이 아니라 스프레드시트 구조·서식을 바꾸는 별도 엔드포인트.
 /** 구조/서식 request 배열을 한 번의 batchUpdate로 전송한다. request는 배열 순서대로 처리된다. */

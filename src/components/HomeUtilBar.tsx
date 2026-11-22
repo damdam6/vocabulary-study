@@ -7,7 +7,7 @@ import { useEffect, useId, useRef, useState } from "react"
 interface HomeUtilBarProps {
   onNavigateRegister: () => void
   onNavigateTtsModels?: () => void
-  onNavigateTabModes?: () => void
+  onNavigateTabs?: () => void
   onSwitchProfile: () => void
   audioAutoplay?: boolean
   onToggleAudio?: () => void
@@ -58,7 +58,7 @@ function PersonIcon() {
   )
 }
 
-function HomeUtilBar({ onNavigateRegister, onSwitchProfile, onNavigateTtsModels, onNavigateTabModes, audioAutoplay, onToggleAudio }: HomeUtilBarProps) {
+function HomeUtilBar({ onNavigateRegister, onSwitchProfile, onNavigateTtsModels, onNavigateTabs, audioAutoplay, onToggleAudio }: HomeUtilBarProps) {
   const [open, setOpen] = useState(false)
   const menuId = useId()
   const menuRef = useRef<HTMLDivElement>(null)
@@ -111,7 +111,7 @@ function HomeUtilBar({ onNavigateRegister, onSwitchProfile, onNavigateTtsModels,
         {open && <div id={menuId} className="home-edit-menu-panel" role="menu" aria-label="등록 및 문제 유형 설정">
           <button type="button" role="menuitem" onClick={() => { setOpen(false); onNavigateRegister() }}>어휘/문장 등록</button>
           {onNavigateTtsModels && <button type="button" role="menuitem" onClick={() => { setOpen(false); onNavigateTtsModels() }}>음성모델교체</button>}
-          {onNavigateTabModes && <button type="button" role="menuitem" onClick={() => { setOpen(false); onNavigateTabModes() }}>탭별 문제 유형 설정</button>}
+          {onNavigateTabs && <button type="button" role="menuitem" onClick={() => { setOpen(false); onNavigateTabs() }}>탭 관리</button>}
         </div>}
       </div>
 

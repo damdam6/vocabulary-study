@@ -16,7 +16,7 @@ const env = makeEnv({ PROFILES: JSON.stringify(PROFILES) });
 function stubTitlesFetch(titles: string[]) {
   vi.stubGlobal(
     "fetch",
-    vi.fn(async () => Response.json({ sheets: titles.map((title) => ({ properties: { title } })) })),
+    vi.fn(async () => Response.json({ sheets: titles.map((title, sheetId) => ({ properties: { title, sheetId } })) })),
   );
 }
 
@@ -71,7 +71,7 @@ function stubSheetsFetch(state: SheetsState): {
       const method = init?.method ?? "GET";
 
       if (method === "GET" && url.includes("?fields=")) {
-        return Response.json({ sheets: state.titles.map((title) => ({ properties: { title } })) });
+        return Response.json({ sheets: state.titles.map((title, sheetId) => ({ properties: { title, sheetId } })) });
       }
 
       if (url.includes(":batchUpdate") && !url.includes("/values:batchUpdate")) {

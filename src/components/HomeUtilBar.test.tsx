@@ -13,16 +13,16 @@ afterEach(() => {
 function setup() {
   const onNavigateRegister = vi.fn();
   const onSwitchProfile = vi.fn();
-  const onNavigateTabModes = vi.fn();
+  const onNavigateTabs = vi.fn();
   const { container, unmount } = renderComponent(
-    <HomeUtilBar onNavigateTabModes={onNavigateTabModes} onNavigateRegister={onNavigateRegister} onSwitchProfile={onSwitchProfile} />,
+    <HomeUtilBar onNavigateTabs={onNavigateTabs} onNavigateRegister={onNavigateRegister} onSwitchProfile={onSwitchProfile} />,
   );
   unmountCurrent = unmount;
 
   const byLabel = (label: string) => container.querySelector<HTMLButtonElement>(`button[aria-label="${label}"]`);
   return {
     container,
-    onNavigateTabModes,
+    onNavigateTabs,
     onNavigateRegister,
     onSwitchProfile,
     editButton: byLabel("수정")!,
@@ -66,15 +66,15 @@ describe("HomeUtilBar", () => {
 });
 
 it("설정 이동, Esc와 바깥 클릭 닫기를 지원한다", () => {
-  const { container, editButton, onNavigateTabModes } = setup();
+  const { container, editButton, onNavigateTabs } = setup();
   fire(() => editButton.click());
   const items = container.querySelectorAll<HTMLButtonElement>('[role="menuitem"]');
-  expect([...items].map(item => item.textContent)).toEqual(['어휘/문장 등록', '탭별 문제 유형 설정']);
+  expect([...items].map(item => item.textContent)).toEqual(['어휘/문장 등록', '탭 관리']);
   expect(document.activeElement).toBe(items[0]);
   fire(() => items[0].dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true })));
   expect(document.activeElement).toBe(items[1]);
   fire(() => items[1].click());
-  expect(onNavigateTabModes).toHaveBeenCalledOnce();
+  expect(onNavigateTabs).toHaveBeenCalledOnce();
   expect(container.querySelector('[role="menu"]')).toBeNull();
   fire(() => editButton.click());
   fire(() => document.activeElement!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })));

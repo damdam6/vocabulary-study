@@ -7,6 +7,22 @@ export function tabModesKey(profileId: string): string {
   return `탭출제유형:${profileId}`;
 }
 
+/** 비활성 탭 ID 목록 키. 값은 `[탭 ID, ...]` JSON이고 같은 키의 마지막 행이 유효하다. */
+export function tabDisabledKey(profileId: string): string {
+  return `탭비활성:${profileId}`;
+}
+
+/** 비활성 탭 ID 집합. 탭 모드와 같이 손상된 값은 조용히 무시하지 않고 throw한다. */
+export function parseDisabledIds(settingsRows: string[][], profile: Profile): Set<number> {
+  const raw = settingsRows.findLast((row) => row[0] === tabDisabledKey(profile.id))?.[1];
+  if (raw === undefined) return new Set();
+  const parsed: unknown = JSON.parse(raw);
+  if (!Array.isArray(parsed) || !parsed.every((id) => Number.isInteger(id) && id >= 0)) {
+    throw new Error('Invalid disabled tab settings');
+  }
+  return new Set(parsed as number[]);
+}
+
 interface SheetMeta {
   id: number;
   name: string;
@@ -36,7 +52,10 @@ export async function readTabModes(env: Env, profile: Profile) {
   const hasSettings = sheets.some((sheet) => sheet.name === SETTINGS_TAB);
   // Unlike sessionLimit, a failed mode read must not silently change graduation rules.
   const rows = hasSettings ? await getValues(env, profile.sheetId, SETTINGS_TAB, SETTINGS_RANGE) : [];
-  return { tabs: buildTabs(sheets, rows, profile), hasSettings };
+  return {
+    tabs: buildTabs(sheets, rows, profile), hasSettings, sheets, settingsRows: rows,
+    disabledIds: parseDisabledIds(rows, profile),
+  };
 }
 
 /**
@@ -60,6 +79,8 @@ export async function readTabModesWith(
     tabs: buildTabs(sheets, settingsRows, profile),
     hasSettings,
     settingsRows,
+    sheets,
+    disabledIds: parseDisabledIds(settingsRows, profile),
     extra: values.slice(settingsRange.length),
   };
 }
