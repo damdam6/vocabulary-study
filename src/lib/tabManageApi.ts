@@ -19,6 +19,7 @@ export interface TabSaveEntry {
 
 export type TabManageAction =
   | { action: 'save'; tabs: TabSaveEntry[]; order?: number[] }
+  | { action: 'rename'; id: number; name: string }
   | { action: 'delete'; id: number }
   | { action: 'sync' };
 

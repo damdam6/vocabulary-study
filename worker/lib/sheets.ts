@@ -137,6 +137,11 @@ export interface MoveSheetRequest {
   updateSheetProperties: { properties: { sheetId: number; index: number }; fields: "index" };
 }
 
+/** 탭 이름 변경. 탭 ID는 그대로라 ID 기반 설정(출제 유형·비활성)은 유지된다. */
+export interface RenameSheetRequest {
+  updateSheetProperties: { properties: { sheetId: number; title: string }; fields: "title" };
+}
+
 /** 행 삭제(0-기준, endIndex 미포함). `_정보` 탭의 낡은 설정 행 정리에 쓴다. */
 export interface DeleteRowsRequest {
   deleteDimension: { range: { sheetId: number; dimension: "ROWS"; startIndex: number; endIndex: number } };
@@ -147,6 +152,7 @@ export type SpreadsheetRequest =
   | RepeatCellRequest
   | DeleteSheetRequest
   | MoveSheetRequest
+  | RenameSheetRequest
   | DeleteRowsRequest;
 
 // 값(`/values:batchUpdate`)이 아니라 스프레드시트 구조·서식을 바꾸는 별도 엔드포인트.

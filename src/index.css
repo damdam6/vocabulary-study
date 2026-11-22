@@ -1379,11 +1379,9 @@ button {
   color: var(--text-faint);
 }
 
+/* 탭 선택 단계 헤더 우측의 "탭 관리" */
 .register-tab-manage {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  margin-left: auto;
 }
 
 /* 등록 폼 상단의 선택된 탭 + "탭 변경" */
