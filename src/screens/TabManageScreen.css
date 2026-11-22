@@ -1,0 +1,208 @@
+.tab-manage-description {
+  line-height: 1.6;
+}
+
+.tab-manage-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tab-manage-item {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--border-input);
+  border-radius: 14px;
+  background: var(--bg-panel);
+}
+
+.tab-manage-item.is-disabled .tab-manage-name {
+  color: var(--text-faint);
+}
+
+.tab-manage-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.tab-manage-move {
+  display: flex;
+  flex: none;
+  gap: 4px;
+}
+
+.tab-manage-move button {
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--border-input);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.tab-manage-move button:disabled {
+  opacity: 0.3;
+}
+
+.tab-manage-title {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.tab-manage-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+.tab-manage-meta {
+  font-size: 12px;
+  color: var(--text-faint);
+}
+
+.tab-manage-delete {
+  flex: none;
+  height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--border-input);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--red);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.tab-manage-delete:disabled {
+  opacity: 0.5;
+}
+
+.tab-manage-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 18px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
+/* 그룹 이름은 스크린 리더에만 — 눈으로는 위의 탭 이름이 같은 역할을 한다. */
+.tab-manage-legend {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.tab-manage-options label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  font-size: 14px;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.tab-manage-options .tab-manage-visible {
+  margin-left: auto;
+  color: var(--text-muted);
+}
+
+.tab-manage-options input {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.tab-manage-options input:focus-visible,
+.tab-manage-move button:focus-visible,
+.tab-manage-delete:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.tab-manage-options:disabled label {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.tab-manage-confirm {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--red);
+  border-radius: 12px;
+}
+
+.tab-manage-confirm p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text);
+}
+
+.tab-manage-confirm-actions,
+.tab-manage-action-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.tab-manage-confirm-delete {
+  height: 34px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 10px;
+  background: var(--red);
+  color: var(--bg-app);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.tab-manage-confirm-delete:disabled {
+  opacity: 0.5;
+}
+
+/* 탭이 많아도 저장 버튼이 항상 보이도록 하단에 붙인다. */
+.tab-manage-actions {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0 -20px -28px;
+  padding: 12px 20px 20px;
+  border-top: 1px solid var(--border-card);
+  background: var(--bg-app);
+}
+
+.tab-manage-save {
+  align-self: auto;
+  min-height: 40px;
+}
+
+.tab-manage-sync {
+  height: 40px;
+}
+
+.tab-manage-sync:disabled {
+  opacity: 0.5;
+}

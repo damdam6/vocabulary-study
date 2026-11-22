@@ -6,7 +6,7 @@ import { getWordState } from './wordState.ts';
 import { saveProfile } from './api.ts';
 import { enqueueAnswer, enqueueReviewFail, flushRetryQueue, RETRY_QUEUE_STORAGE_KEY } from './retryQueue.ts';
 import { fetchWords } from './wordsApi.ts';
-import { tabModesRequest } from './tabModesApi.ts';
+import { tabManageRequest } from './tabManageApi.ts';
 import type { StudyMode } from '../../shared/studyModes.ts';
 afterEach(() => { localStorage.clear(); vi.unstubAllGlobals(); });
 
@@ -43,7 +43,7 @@ describe('tab-specific session rules', () => {
   it('rejects malformed nonempty server mode contracts instead of silently changing the queue', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json({ words: [{ studyModes: [] }] })));
     await expect(fetchWords()).rejects.toThrow('올바르지');
-    vi.mocked(fetch).mockResolvedValueOnce(Response.json({ tabs: [{ id: 1, name: 'tab', modes: ['m3'], explicit: true }] }));
-    await expect(tabModesRequest()).rejects.toThrow('올바르지');
+    vi.mocked(fetch).mockResolvedValueOnce(Response.json({ tabs: [{ id: 1, name: 'tab', modes: ['m3'], explicit: true, disabled: false, wordCount: 0 }] }));
+    await expect(tabManageRequest()).rejects.toThrow('올바르지');
   });
 });

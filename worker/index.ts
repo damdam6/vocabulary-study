@@ -1,5 +1,6 @@
 import { handleTtsModels } from "./routes/tts-models.ts";
 import { handleTabModes } from "./routes/tab-modes.ts";
+import { handleTabManage } from "./routes/tab-manage.ts";
 import { handleAnswerPost } from "./routes/answer.ts";
 import { handleGetWords } from "./routes/words.ts";
 import { handleReviewFail } from "./routes/review-fail.ts";
@@ -125,6 +126,14 @@ export default {
         catch (err) {
           console.error("[tab-modes]", err);
           return Response.json({ error: "탭별 설정을 불러오거나 저장하지 못했습니다." }, { status: 500 });
+        }
+      }
+
+      if (url.pathname === "/api/tab-manage" && (request.method === "GET" || request.method === "POST")) {
+        try { return await handleTabManage(request, env, profile); }
+        catch (err) {
+          console.error("[tab-manage]", err);
+          return Response.json({ error: "탭 관리 요청을 처리하지 못했습니다." }, { status: 500 });
         }
       }
 

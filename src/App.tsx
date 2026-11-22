@@ -19,10 +19,10 @@ import type { TtsCapability } from './lib/ttsTypes.ts'
 // pinyin-pro(gzip 약 145KB) 의존성이 등록 화면에만 있어(#49) 학습 플로우 번들에서
 // 제외되도록 지연 로딩한다 — 등록 화면은 홈의 저강조 링크로만 진입하는 비핵심 경로.
 const TtsModelsScreen = lazy(() => import('./screens/TtsModelsScreen.tsx'))
-const TabModesScreen = lazy(() => import('./screens/TabModesScreen.tsx'))
+const TabManageScreen = lazy(() => import('./screens/TabManageScreen.tsx'))
 const RegisterScreen = lazy(() => import('./screens/RegisterScreen.tsx'))
 
-type Screen = 'login' | 'home' | 'study' | 'autoplay' | 'done' | 'register' | 'tab-modes' | 'tts-models'
+type Screen = 'login' | 'home' | 'study' | 'autoplay' | 'done' | 'register' | 'tabs' | 'tts-models'
 
 interface ActiveStudySession {
   queue: SessionQuestion<WordEntry>[]
@@ -91,7 +91,7 @@ function App() {
             onNavigateRegister={() => setScreen('register')}
             onSwitchProfile={switchProfile}
             onNavigateTtsModels={() => setScreen('tts-models')}
-            onNavigateTabModes={() => setScreen('tab-modes')}
+            onNavigateTabs={() => setScreen('tabs')}
           />
         )}
         {screen === 'study' && activeStudy !== null && (
@@ -120,9 +120,9 @@ function App() {
           />
         )}
         {screen === 'tts-models' && <Suspense fallback={<p>설정을 불러오는 중…</p>}><TtsModelsScreen onGoHome={() => setScreen('home')} /></Suspense>}
-        {screen === 'tab-modes' && (
+        {screen === 'tabs' && (
           <Suspense fallback={<p>설정을 불러오는 중…</p>}>
-            <TabModesScreen onGoHome={() => setScreen('home')} />
+            <TabManageScreen onGoHome={() => setScreen('home')} />
           </Suspense>
         )}
         {screen === 'register' && (
@@ -130,6 +130,7 @@ function App() {
             <RegisterScreen
               contentType={getStoredProfile()?.contentType ?? 'zh'}
               onGoHome={() => setScreen('home')}
+              onNavigateTabs={() => setScreen('tabs')}
             />
           </Suspense>
         )}

@@ -30,15 +30,17 @@ export async function handleGetWords(
 
   // 읽기 2회(메타데이터 + batchGet)로 고정 — 탭마다 따로 읽으면 탭 수만큼 읽기 쿼터를 쓴다.
   // '_정보' 탭도 같은 batchGet에 실려 오므로 설정(문제수)은 그 행들을 관대하게 파싱해 얻는다.
-  const { tabs, settingsRows, extra: rowsByTab } = await readTabModesWith(env, profile, (names) =>
+  const { tabs, settingsRows, disabledIds, extra: rowsByTab } = await readTabModesWith(env, profile, (names) =>
     names.map((tab) => ({ tab, range: WORD_ROW_RANGE })));
   const settings = parseSettings(settingsRows);
-  const wordTabs = tabs.map((tab) => tab.name);
 
+  // 비활성 탭(탭 관리 화면)은 시트에 남아 있지만 홈·학습에는 내보내지 않는다. 비활성 여부가
+  // 같은 batchGet의 '_정보' 행에 있어 범위를 미리 뺄 수 없으므로 읽은 뒤 걸러낸다.
   const words: WordEntry[] = [];
-  wordTabs.forEach((tab, i) => {
+  tabs.forEach((tab, i) => {
+    if (disabledIds.has(tab.id)) return;
     for (const row of rowsByTab[i]) {
-      words.push({ ...parseWordRow(tab, row), studyModes: tabs[i].modes });
+      words.push({ ...parseWordRow(tab.name, row), studyModes: tab.modes });
     }
   });
 

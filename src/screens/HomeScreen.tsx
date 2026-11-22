@@ -42,7 +42,7 @@ interface HomeScreenProps {
   onStartAutoPlay?: (words: WordEntry[], context: StudySessionContext) => void
   onNavigateRegister: () => void
   onNavigateTtsModels?: () => void
-  onNavigateTabModes?: () => void
+  onNavigateTabs?: () => void
   onSwitchProfile: () => void
 }
 
@@ -62,7 +62,7 @@ function describeScope(scope: StudyScope, tabs: readonly string[]): { name: stri
   return { name: ordered[0], rest: ordered.length > 1 ? ` 외 ${ordered.length - 1}개 탭` : "" };
 }
 
-function HomeScreen({ onStart, onStartAutoPlay, onNavigateRegister, onSwitchProfile, onNavigateTtsModels, onNavigateTabModes }: HomeScreenProps) {
+function HomeScreen({ onStart, onStartAutoPlay, onNavigateRegister, onSwitchProfile, onNavigateTtsModels, onNavigateTabs }: HomeScreenProps) {
   const [status, setStatus] = useState<Status>("loading");
   const [words, setWords] = useState<WordEntry[]>([]);
   // 현황 집계의 기준일은 조회 시점으로 고정한다 — 범위를 바꿀 때마다 다시 계산해도 같은 날짜를 쓴다.
@@ -236,7 +236,7 @@ function HomeScreen({ onStart, onStartAutoPlay, onNavigateRegister, onSwitchProf
         </div>
         <HomeUtilBar
           onNavigateTtsModels={profile?.contentType === "zh" ? onNavigateTtsModels : undefined}
-          onNavigateTabModes={onNavigateTabModes}
+          onNavigateTabs={onNavigateTabs}
           onNavigateRegister={onNavigateRegister}
           onSwitchProfile={onSwitchProfile}
           audioAutoplay={audioAutoplay}
