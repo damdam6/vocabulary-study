@@ -1,7 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { MEANING_SPEECH_TIMEOUT_MS, meaningSpeechSupported, meaningSpeechText, speakMeaning } from "./meaningSpeech.ts";
+import {
+  MEANING_SPEECH_START_TIMEOUT_MS, meaningSpeechSupported, meaningSpeechText, meaningSpeechTimeoutMs, speakMeaning,
+} from "./meaningSpeech.ts";
 
-interface FakeUtterance { text: string; lang: string; voice: unknown; onend: (() => void) | null; onerror: (() => void) | null }
+const MEANING_SPEECH_TIMEOUT_MS = meaningSpeechTimeoutMs("가".repeat(200));
+
+interface FakeUtterance { text: string; lang: string; voice: unknown; onstart: (() => void) | null; onend: (() => void) | null; onerror: (() => void) | null }
 
 let spoken: FakeUtterance[] = [];
 let cancel = vi.fn();
@@ -11,7 +15,7 @@ beforeEach(() => {
   vi.useFakeTimers();
   spoken = []; cancel = vi.fn(); voices = [];
   vi.stubGlobal("SpeechSynthesisUtterance", class {
-    lang = ""; voice: unknown = null; onend = null; onerror = null;
+    lang = ""; voice: unknown = null; onstart = null; onend = null; onerror = null;
     text: string;
     constructor(text: string) { this.text = text; }
   });
@@ -77,9 +81,24 @@ describe("speakMeaning", () => {
     speakMeaning("경제", done);
     spoken[0].onerror!();
     speakMeaning("공부하다", done);
-    vi.advanceTimersByTime(MEANING_SPEECH_TIMEOUT_MS);
+    spoken[1].onstart!();
+    vi.advanceTimersByTime(meaningSpeechTimeoutMs("공부하다") - 1);
+    expect(done).toHaveBeenCalledTimes(1);
+    vi.advanceTimersByTime(1);
     expect(cancel).toHaveBeenCalledTimes(1);
     expect(done.mock.calls).toEqual([["failed"], ["failed"]]);
+  });
+
+  it("읽기가 시작되지 않으면 오래 기다리지 않고 실패로 끝낸다", () => {
+    const done = vi.fn();
+    speakMeaning("경제", done);
+    vi.advanceTimersByTime(MEANING_SPEECH_START_TIMEOUT_MS);
+    expect(cancel).toHaveBeenCalledTimes(1);
+    expect(done.mock.calls).toEqual([["failed"]]);
+  });
+
+  it("긴 뜻은 글자 수만큼 더 기다린다", () => {
+    expect(meaningSpeechTimeoutMs("가".repeat(100))).toBeGreaterThan(meaningSpeechTimeoutMs("경제") + 30_000);
   });
 
   it("취소하면 읽기를 끊고 알리지 않는다", () => {

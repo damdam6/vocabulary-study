@@ -317,7 +317,7 @@ describe("AutoPlayScreen", () => {
   });
 
   describe("뜻(한국어) 읽어주기", () => {
-    interface FakeUtterance { text: string; lang: string; volume: number; onend: (() => void) | null; onerror: (() => void) | null }
+    interface FakeUtterance { text: string; lang: string; volume: number; onstart: (() => void) | null; onend: (() => void) | null; onerror: (() => void) | null }
     let spoken: FakeUtterance[] = [];
     let cancel = vi.fn();
     let voices: Array<{ lang: string; localService: boolean }> = [];
@@ -347,6 +347,7 @@ describe("AutoPlayScreen", () => {
       fire(() => mocks.setStatus("ready"));
       fire(() => vi.advanceTimersByTime(AUTO_PLAY_MEANING_LEAD_MS));
       expect(read().map((item) => [item.text, item.lang])).toEqual([["경제", "ko-KR"]]);
+      fire(() => read()[0].onstart!());
       // 읽는 동안에는 넘어가지 않는다.
       fire(() => vi.advanceTimersByTime(10_000));
       expect(hanzi(container)).toBe("经济");

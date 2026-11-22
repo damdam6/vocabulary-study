@@ -8,8 +8,21 @@
 
 export type MeaningSpeechResult = "ended" | "failed";
 
-/** 끝났다는 신호가 오지 않는 브라우저(일부 Chrome)에서 진행이 멈추지 않게 하는 안전장치. */
+/** 읽기가 시작됐다는 신호조차 없으면(음성 엔진 없음 등) 이 시간 뒤 실패로 끝낸다. */
+export const MEANING_SPEECH_START_TIMEOUT_MS = 4_000;
+/** 끝났다는 신호가 오지 않는 브라우저에서 진행이 멈추지 않게 하는 안전장치 — 긴 뜻은 글자 수만큼 더 기다린다. */
 export const MEANING_SPEECH_TIMEOUT_MS = 15_000;
+const MEANING_SPEECH_TIMEOUT_PER_CHAR_MS = 400;
+
+export function meaningSpeechTimeoutMs(text: string): number {
+  return MEANING_SPEECH_TIMEOUT_MS + Array.from(text).length * MEANING_SPEECH_TIMEOUT_PER_CHAR_MS;
+}
+
+/**
+ * 읽는 중인 발화를 붙잡아 둔다 — Chrome은 참조가 없는 발화를 읽는 도중 수거해
+ * 종료 이벤트를 영영 보내지 않는 일이 있다.
+ */
+let activeUtterance: SpeechSynthesisUtterance | null = null;
 
 export function meaningSpeechSupported(): boolean {
   return typeof globalThis.speechSynthesis !== "undefined" && typeof globalThis.SpeechSynthesisUtterance !== "undefined";
@@ -46,10 +59,14 @@ function koreanVoice(synth: SpeechSynthesis): SpeechSynthesisVoice | null | unde
 export function speakMeaning(meaning: string, onDone: (result: MeaningSpeechResult) => void): () => void {
   let finished = false;
   let timer: ReturnType<typeof setTimeout> | null = null;
+  let startTimer: ReturnType<typeof setTimeout> | null = null;
+  let utterance: SpeechSynthesisUtterance | null = null;
   const finish = (result: MeaningSpeechResult | null): void => {
     if (finished) return;
     finished = true;
     if (timer !== null) clearTimeout(timer);
+    if (startTimer !== null) clearTimeout(startTimer);
+    if (utterance !== null && activeUtterance === utterance) activeUtterance = null;
     if (result !== null) onDone(result);
   };
   // 실패는 호출 스택 밖에서 알린다 — 호출한 쪽이 반환값(취소 함수)을 받은 뒤에 처리하게 한다.
@@ -66,21 +83,30 @@ export function speakMeaning(meaning: string, onDone: (result: MeaningSpeechResu
   if (voice === null) return failLater();
 
   try {
-    const utterance = new SpeechSynthesisUtterance(text);
+    utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = "ko-KR";
     if (voice) utterance.voice = voice;
+    let started = false;
+    utterance.onstart = () => { started = true; };
     utterance.onend = () => finish("ended");
     utterance.onerror = () => finish("failed");
     // 이전 읽기가 남아 있으면 대기열 뒤에 붙지 않도록 비운다.
     if (synth.speaking || synth.pending) synth.cancel();
+    activeUtterance = utterance;
     synth.speak(utterance);
+    // 시작 신호도 없고 읽는 중도 아니면 소리가 나지 않는 환경이다 — 오래 붙잡지 않고 넘긴다.
+    startTimer = setTimeout(() => {
+      if (started || synth.speaking) return;
+      try { synth.cancel(); } catch {}
+      finish("failed");
+    }, MEANING_SPEECH_START_TIMEOUT_MS);
   } catch {
     return failLater();
   }
   timer = setTimeout(() => {
     try { synth.cancel(); } catch {}
     finish("failed");
-  }, MEANING_SPEECH_TIMEOUT_MS);
+  }, meaningSpeechTimeoutMs(text));
   return () => {
     if (finished) return;
     finish(null);
