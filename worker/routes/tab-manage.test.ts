@@ -34,6 +34,11 @@ vi.mock('../lib/sheets.ts', () => ({
     for (const request of requests) {
       if (request.deleteSheet) {
         state.metadata = state.metadata.filter((sheet) => sheet.id !== request.deleteSheet.sheetId);
+      } else if (request.updateSheetProperties?.fields === 'title') {
+        const { sheetId, title } = request.updateSheetProperties.properties;
+        const sheet = state.metadata.find((entry) => entry.id === sheetId)!;
+        state.rows[title] = state.rows[sheet.name]; delete state.rows[sheet.name];
+        sheet.name = title;
       } else if (request.updateSheetProperties) {
         const { sheetId, index } = request.updateSheetProperties.properties;
         const from = state.metadata.findIndex((sheet) => sheet.id === sheetId);
@@ -133,6 +138,25 @@ describe('save', () => {
     ]) expect((await manage(body)).status).toBe(409);
     expect(state.settings).toEqual([]);
     expect(state.metadata.map((sheet) => sheet.id)).toEqual([10, 5, 20, 30]);
+  });
+});
+
+describe('rename', () => {
+  it('renames the tab while keeping its words and ID-based settings', async () => {
+    await manage({ action: 'save', tabs: [entry(20, true, ['m2'])] });
+    const response = await manage({ action: 'rename', id: 20, name: '  긴 문장 ' });
+    expect(response.status).toBe(200);
+    expect((await response.json() as { tabs: ManagedTab[] }).tabs[1]).toEqual(
+      { id: 20, name: '긴 문장', modes: ['m2'], explicit: true, disabled: true, wordCount: 1 });
+  });
+
+  it('rejects bad names with 400 and duplicates or unknown tabs with 409', async () => {
+    for (const name of ['', '   ', '_메모', 3]) expect((await manage({ action: 'rename', id: 20, name })).status).toBe(400);
+    for (const body of [{ id: 20, name: '단어' }, { id: 999, name: '새 이름' }, { id: 5, name: '새 이름' }]) {
+      expect((await manage({ action: 'rename', ...body })).status).toBe(409);
+    }
+    expect((await manage({ action: 'rename', id: 20, name: '문장' })).status).toBe(200);
+    expect(state.metadata.map((sheet) => sheet.name)).toEqual(['단어', '_메모', '문장', '회화']);
   });
 });
 

@@ -254,7 +254,7 @@ describe("RegisterScreen 탭 선택 단계", () => {
     await flush();
 
     expect(container.textContent).toContain("등록할 수 있는 탭이 없습니다");
-    fire(() => container.querySelector<HTMLButtonElement>(".register-tab-manage button")!.click());
+    fire(() => container.querySelector<HTMLButtonElement>(".register-header .register-tab-manage")!.click());
     expect(onNavigateTabs).toHaveBeenCalledTimes(1);
   });
 

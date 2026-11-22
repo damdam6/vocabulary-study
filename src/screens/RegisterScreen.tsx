@@ -344,7 +344,7 @@ function RegisterScreen({ contentType, onGoHome, onNavigateTabs }: RegisterScree
   if (selectedTab === null) {
     return (
       <div className="register-screen">
-        <RegisterHeader onGoHome={onGoHome} contentType={contentType} />
+        <RegisterHeader onGoHome={onGoHome} contentType={contentType} onNavigateTabs={onNavigateTabs} />
         <div className="register-field">
           <p className="register-field-label">등록할 탭을 선택하세요</p>
           {tabsStatus === 'loading' && <p className="register-hint">탭 목록을 불러오는 중…</p>}
@@ -357,7 +357,7 @@ function RegisterScreen({ contentType, onGoHome, onNavigateTabs }: RegisterScree
             </>
           )}
           {tabsStatus === 'ready' && tabs.length === 0 && (
-            <p className="register-hint">등록할 수 있는 탭이 없습니다. 탭 관리에서 새 탭을 만들어 주세요.</p>
+            <p className="register-hint">등록할 수 있는 탭이 없습니다.</p>
           )}
           {tabsStatus === 'ready' && tabs.length > 0 && (
             <ul className="register-tab-list">
@@ -372,14 +372,6 @@ function RegisterScreen({ contentType, onGoHome, onNavigateTabs }: RegisterScree
             </ul>
           )}
         </div>
-        {onNavigateTabs && (
-          <div className="register-tab-manage">
-            <p className="register-hint">새 탭 추가·숨김·순서 변경은 탭 관리에서 할 수 있습니다.</p>
-            <button type="button" className="register-back" onClick={onNavigateTabs}>
-              탭 관리
-            </button>
-          </div>
-        )}
       </div>
     )
   }
@@ -522,7 +514,12 @@ function RegisterScreen({ contentType, onGoHome, onNavigateTabs }: RegisterScree
   )
 }
 
-function RegisterHeader({ onGoHome, contentType }: { onGoHome?: () => void; contentType: ContentType }) {
+function RegisterHeader({ onGoHome, contentType, onNavigateTabs }: {
+  onGoHome?: () => void
+  contentType: ContentType
+  /** 탭 선택 단계에서만 넘긴다 — 헤더 우측 "탭 관리" 버튼. */
+  onNavigateTabs?: () => void
+}) {
   return (
     <header className="register-header">
       {onGoHome && (
@@ -531,6 +528,11 @@ function RegisterHeader({ onGoHome, contentType }: { onGoHome?: () => void; cont
         </button>
       )}
       <h1 className="register-title">{contentType === 'zh' ? '단어·문장 등록' : '단어 등록'}</h1>
+      {onNavigateTabs && (
+        <button type="button" className="register-back register-tab-manage" onClick={onNavigateTabs}>
+          탭 관리
+        </button>
+      )}
     </header>
   )
 }

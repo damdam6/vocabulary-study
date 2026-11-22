@@ -4,6 +4,7 @@
  * GET  /api/tab-manage → `{ tabs: ManagedTab[] }` — 비활성 탭을 포함한 모든 학습 탭(시트 순서).
  * POST /api/tab-manage ← `{ action: "save", tabs: [{ id, modes, disabled }], order?: number[] }`
  *                         출제 유형·비활성 여부·탭 순서를 한 번에 저장한다.
+ *                      ← `{ action: "rename", id, name }` 탭 이름을 바꾼다(단어·기록·설정은 그대로).
  *                      ← `{ action: "delete", id }` 탭과 그 안의 단어·학습 기록을 지우고 싱크한다.
  *                      ← `{ action: "sync" }` `_정보`의 낡은 탭 설정을 정리한다(lib/tabSync.ts).
  * 응답은 모두 GET과 같은 목록이며 delete·sync는 `removed`(정리한 항목 수)를 덧붙인다.
@@ -12,6 +13,7 @@
 
 import { isStudyModes, type ManagedTab, type StudyMode } from "../../shared/studyModes.ts";
 import type { Profile } from "../lib/profiles.ts";
+import { normalizeTabName } from "../lib/register.ts";
 import { addSheet, appendValues, batchUpdateSpreadsheet, type MoveSheetRequest } from "../lib/sheets.ts";
 import { SETTINGS_RANGE, SETTINGS_TAB } from "../lib/settings.ts";
 import { readTabModes, readTabModesWith, tabDisabledKey, tabModesKey } from "../lib/tabModes.ts";
@@ -109,6 +111,23 @@ async function save(env: Env, profile: Profile, body: Record<string, unknown>): 
   return listResponse(env, profile);
 }
 
+async function rename(env: Env, profile: Profile, body: Record<string, unknown>): Promise<Response> {
+  if (!isTabId(body.id)) return bad("이름을 바꿀 탭이 올바르지 않습니다.");
+  const nameResult = normalizeTabName(body.name);
+  if ("error" in nameResult) return bad(nameResult.error);
+  const { tabs, sheets } = await readTabModes(env, profile);
+  const target = tabs.find((tab) => tab.id === body.id);
+  if (!target) return bad(STALE, 409);
+  if (target.name !== nameResult.name) {
+    // 시트 안에서 탭 이름은 유일해야 한다(`_` 탭 포함).
+    if (sheets.some((sheet) => sheet.name === nameResult.name)) return bad("같은 이름의 탭이 이미 있습니다.", 409);
+    await batchUpdateSpreadsheet(env, profile.sheetId, [
+      { updateSheetProperties: { properties: { sheetId: target.id, title: nameResult.name }, fields: "title" } },
+    ]);
+  }
+  return listResponse(env, profile);
+}
+
 async function remove(env: Env, profile: Profile, body: Record<string, unknown>): Promise<Response> {
   if (!isTabId(body.id)) return bad("삭제할 탭이 올바르지 않습니다.");
   const { tabs, sheets } = await readTabModes(env, profile);
@@ -137,6 +156,7 @@ export async function handleTabManage(request: Request, env: Env, profile: Profi
   if (typeof body !== "object" || body === null) return bad("action이 필요합니다.");
   const payload = body as Record<string, unknown>;
   if (payload.action === "save") return save(env, profile, payload);
+  if (payload.action === "rename") return rename(env, profile, payload);
   if (payload.action === "delete") return remove(env, profile, payload);
   if (payload.action === "sync") return listResponse(env, profile, { removed: await syncSettings(env, profile) });
   return bad("알 수 없는 action입니다.");
