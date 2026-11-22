@@ -1,6 +1,8 @@
 // 자동 재생 화면 — 문제 풀이 없이 오늘 학습 큐의 단어를 차례로 보여 주며 발음을 들려준다.
 //   - 표제어·병음·뜻을 한 번에 보여 주고, 발음이 끝나면 잠깐 쉬었다가 다음 단어로 넘어간다.
 //   - 발음이 없는 단어(TTS 미지원 프로필·TTS off·재생 불가 표제어)는 고정 시간만 보여 주고 넘어간다.
+//   - 표제어 발음 뒤에는 뜻을 기기의 한국어 음성으로 읽어 준다(옵션에서 끌 수 있다). 한국어 음성이
+//     없는 기기에서는 건너뛴다.
 //   - 학습 기록(/api/answer, /api/review-fail)은 일절 보내지 않는다 — 순수 듣기·보기 전용.
 //   - 홈의 발음 자동재생 설정과 무관하게 소리를 낸다 — 이 화면은 재생 자체가 목적이다.
 import { useEffect, useRef, useState } from 'react'
@@ -13,9 +15,12 @@ import {
   clampAutoPlayGapSeconds,
   readAutoPlayGapSeconds,
   readAutoPlayRepeat,
+  readAutoPlaySpeakMeaning,
   saveAutoPlayGapSeconds,
   saveAutoPlayRepeat,
+  saveAutoPlaySpeakMeaning,
 } from '../lib/autoPlayPreferences.ts'
+import { meaningSpeechSupported, primeMeaningSpeech, speakMeaning, type MeaningSpeechResult } from '../lib/meaningSpeech.ts'
 import AutoPlayOptionsModal from '../components/AutoPlayOptionsModal.tsx'
 import './Mode2Card.css'
 
@@ -25,6 +30,8 @@ export const AUTO_PLAY_SILENT_MS = 3000
 export const AUTO_PLAY_ERROR_MS = 2500
 /** 발음 상태가 끝내 진행되지 않을 때 다음으로 넘기는 안전장치. */
 export const AUTO_PLAY_STALL_MS = 20000
+/** 표제어 발음이 끝나고 뜻을 읽기 시작하기 전의 짧은 쉼. */
+export const AUTO_PLAY_MEANING_LEAD_MS = 400
 
 interface AutoPlayScreenProps {
   words: WordEntry[]
@@ -58,6 +65,11 @@ function AutoPlayScreen({ words, profile, tts, onExit }: AutoPlayScreenProps) {
   // 옵션을 여는 동안 재생을 멈췄다가, 재생 중에 열었을 때만 닫으면서 이어 간다.
   const resumeOnCloseRef = useRef(false)
   const gapMs = gapSeconds * 1000
+  // 뜻(한국어) 읽어주기 — 표제어 발음 뒤에 기기의 한국어 음성으로 뜻을 읽는다.
+  const [speakMeaningOn, setSpeakMeaningOn] = useState(() => readAutoPlaySpeakMeaning(profile.id))
+  const [meaningSupported] = useState(meaningSpeechSupported)
+  // 어느 단어의 뜻 읽기가 어떻게 끝났는지 — 끝나야 다음 단어로 넘어가는 대기를 시작한다.
+  const [meaningDone, setMeaningDone] = useState<{ id: string; result: MeaningSpeechResult } | null>(null)
   const revealedRef = useRef<string | null>(null)
   const playedRef = useRef<string | null>(null)
 
@@ -75,6 +87,9 @@ function AutoPlayScreen({ words, profile, tts, onExit }: AutoPlayScreenProps) {
   const hasBinding = pronunciation !== undefined
   const status = pronunciation?.snapshot.status ?? null
   const unplayable = pronunciation !== undefined && pronunciation.snapshot.inputReason !== null
+  const meaningText = word?.meaning ?? ''
+  const meaningWanted = speakMeaningOn && meaningSupported
+  const meaningResult = questionId !== null && meaningDone?.id === questionId ? meaningDone.result : null
 
   // 화면이 가려지면 발음 훅이 재생을 멈춘다 — 진행도 함께 멈춰 돌아왔을 때 이어 듣게 한다.
   useEffect(() => {
@@ -101,9 +116,14 @@ function AutoPlayScreen({ words, profile, tts, onExit }: AutoPlayScreenProps) {
   useEffect(() => {
     if (questionId === null) return
     let delay: number
-    if (!hasBinding) {
+    // 표제어 차례가 끝났는지 — 끝났으면 뜻을 읽은 뒤에 다음 단어로 넘어간다.
+    let headwordOver = true
+    if (!hasBinding && audioSupported) {
       // 발음을 지원하는 세션이면 binding이 곧 붙는다 — 끝내 안 붙을 때만 넘긴다.
-      delay = audioSupported ? AUTO_PLAY_STALL_MS : Math.max(AUTO_PLAY_SILENT_MS, gapMs)
+      delay = AUTO_PLAY_STALL_MS
+      headwordOver = false
+    } else if (!hasBinding) {
+      delay = Math.max(AUTO_PLAY_SILENT_MS, gapMs)
     } else if (unplayable) {
       delay = Math.max(AUTO_PLAY_SILENT_MS, gapMs)
     } else if (status === 'playing') {
@@ -120,7 +140,21 @@ function AutoPlayScreen({ words, profile, tts, onExit }: AutoPlayScreenProps) {
       delay = gapMs
     } else {
       delay = AUTO_PLAY_STALL_MS
+      headwordOver = false
     }
+    if (headwordOver && meaningWanted && meaningResult === null) {
+      // 뜻을 읽는 동안에는 넘기지 않는다 — 읽기가 끝나면(또는 실패하면) 이 effect가 다시 돈다.
+      let cancel: (() => void) | null = null
+      const lead = window.setTimeout(() => {
+        cancel = speakMeaning(meaningText, (result) => setMeaningDone({ id: questionId, result }))
+      }, AUTO_PLAY_MEANING_LEAD_MS)
+      return () => {
+        window.clearTimeout(lead)
+        cancel?.()
+      }
+    }
+    // 뜻을 읽어 줬으면 표제어 발음이 없던 단어도 대기 시간만 쉬고 넘어간다.
+    if (headwordOver && meaningResult === 'ended') delay = gapMs
     const timer = window.setTimeout(() => {
       if (index + 1 >= words.length && repeatRef.current) {
         // 단어가 하나뿐이면 index가 그대로라 epoch를 올려 같은 단어를 다시 활성화한다.
@@ -136,7 +170,10 @@ function AutoPlayScreen({ words, profile, tts, onExit }: AutoPlayScreenProps) {
       }
     }, delay)
     return () => window.clearTimeout(timer)
-  }, [audioSupported, gapMs, hasBinding, index, questionId, status, stop, unplayable, words.length])
+  }, [
+    audioSupported, gapMs, hasBinding, index, meaningResult, meaningText, meaningWanted, questionId, status, stop,
+    unplayable, words.length,
+  ])
 
   const handleExit = () => {
     stop('exit')
@@ -145,6 +182,8 @@ function AutoPlayScreen({ words, profile, tts, onExit }: AutoPlayScreenProps) {
 
   const togglePaused = () => {
     if (paused) {
+      // 사용자 조작 안에서 음성 합성을 깨워 둔다(iOS) — 이후 타이머에서 뜻을 읽을 수 있게.
+      if (meaningWanted) primeMeaningSpeech()
       setBlocked(false)
       setEpoch((value) => value + 1)
       setPaused(false)
@@ -164,6 +203,11 @@ function AutoPlayScreen({ words, profile, tts, onExit }: AutoPlayScreenProps) {
     const next = clampAutoPlayGapSeconds(seconds)
     setGapSeconds(next)
     saveAutoPlayGapSeconds(profile.id, next)
+  }
+
+  const changeSpeakMeaning = (next: boolean) => {
+    setSpeakMeaningOn(next)
+    saveAutoPlaySpeakMeaning(profile.id, next)
   }
 
   const openOptions = () => {
@@ -280,6 +324,9 @@ function AutoPlayScreen({ words, profile, tts, onExit }: AutoPlayScreenProps) {
         <AutoPlayOptionsModal
           gapSeconds={gapSeconds}
           onGapChange={changeGap}
+          speakMeaning={speakMeaningOn}
+          meaningSupported={meaningSupported}
+          onSpeakMeaningChange={changeSpeakMeaning}
           onClose={closeOptions}
         />
       )}

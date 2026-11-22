@@ -1947,6 +1947,7 @@ textarea.register-modal-input {
   cursor: pointer;
 }
 .toggle-switch--on { background: var(--accent); }
+.toggle-switch:disabled { opacity: 0.45; cursor: default; }
 .toggle-switch-knob {
   position: absolute;
   top: 4px;

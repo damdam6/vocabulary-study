@@ -6,10 +6,16 @@ import { AUTO_PLAY_GAP_MAX_SECONDS, AUTO_PLAY_GAP_MIN_SECONDS } from '../lib/aut
 interface AutoPlayOptionsModalProps {
   gapSeconds: number
   onGapChange: (seconds: number) => void
+  speakMeaning: boolean
+  /** 이 브라우저가 음성 합성을 지원하는지 — 지원하지 않으면 스위치를 잠근다. */
+  meaningSupported: boolean
+  onSpeakMeaningChange: (enabled: boolean) => void
   onClose: () => void
 }
 
-function AutoPlayOptionsModal({ gapSeconds, onGapChange, onClose }: AutoPlayOptionsModalProps) {
+function AutoPlayOptionsModal({
+  gapSeconds, onGapChange, speakMeaning, meaningSupported, onSpeakMeaningChange, onClose,
+}: AutoPlayOptionsModalProps) {
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') onClose()
@@ -56,6 +62,28 @@ function AutoPlayOptionsModal({ gapSeconds, onGapChange, onClose }: AutoPlayOpti
               +
             </button>
           </div>
+        </div>
+
+        <div className="autoplay-option">
+          <div className="autoplay-option-text">
+            <span className="autoplay-option-label" id="autoplay-meaning-label">뜻 읽어주기</span>
+            <span className="autoplay-option-hint">
+              {meaningSupported
+                ? '발음 뒤에 뜻을 한국어로 · 기기 음성 사용'
+                : '이 브라우저는 음성 읽기를 지원하지 않아요'}
+            </span>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={speakMeaning && meaningSupported}
+            aria-labelledby="autoplay-meaning-label"
+            className={`toggle-switch${speakMeaning && meaningSupported ? ' toggle-switch--on' : ''}`}
+            disabled={!meaningSupported}
+            onClick={() => onSpeakMeaningChange(!speakMeaning)}
+          >
+            <span className="toggle-switch-knob" />
+          </button>
         </div>
 
         <div className="register-modal-actions">
