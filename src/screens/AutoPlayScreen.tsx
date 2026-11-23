@@ -1,8 +1,8 @@
 // 자동 재생 화면 — 문제 풀이 없이 오늘 학습 큐의 단어를 차례로 보여 주며 발음을 들려준다.
 //   - 표제어·병음·뜻을 한 번에 보여 주고, 발음이 끝나면 잠깐 쉬었다가 다음 단어로 넘어간다.
 //   - 발음이 없는 단어(TTS 미지원 프로필·TTS off·재생 불가 표제어)는 고정 시간만 보여 주고 넘어간다.
-//   - 표제어 발음 뒤에는 뜻을 기기의 한국어 음성으로 읽어 준다(옵션에서 끌 수 있다). 한국어 음성이
-//     없는 기기에서는 건너뛴다.
+//   - 표제어 발음 뒤에는 뜻을 기기의 한국어 음성으로 읽어 준다. 한국어 음성이 없는 기기에서는 건너뛴다.
+//   - 중국어 읽기와 뜻 읽기는 옵션에서 따로 끌 수 있다. 중국어 읽기를 꺼도 스피커 버튼으로는 들을 수 있다.
 //   - 학습 기록(/api/answer, /api/review-fail)은 일절 보내지 않는다 — 순수 듣기·보기 전용.
 //   - 홈의 발음 자동재생 설정과 무관하게 소리를 낸다 — 이 화면은 재생 자체가 목적이다.
 import { useEffect, useRef, useState } from 'react'
@@ -15,13 +15,16 @@ import {
   clampAutoPlayGapSeconds,
   readAutoPlayGapSeconds,
   readAutoPlayRepeat,
+  readAutoPlaySpeakHeadword,
   readAutoPlaySpeakMeaning,
   saveAutoPlayGapSeconds,
   saveAutoPlayRepeat,
+  saveAutoPlaySpeakHeadword,
   saveAutoPlaySpeakMeaning,
 } from '../lib/autoPlayPreferences.ts'
 import { meaningSpeechSupported, primeMeaningSpeech, speakMeaning, type MeaningSpeechResult } from '../lib/meaningSpeech.ts'
 import AutoPlayOptionsModal from '../components/AutoPlayOptionsModal.tsx'
+import HomeIcon from '../components/HomeIcon.tsx'
 import './Mode2Card.css'
 
 /** 발음이 없는 단어를 보여 주는 최소 시간 — 대기 시간 설정이 더 길면 그 값을 따른다. */
@@ -65,6 +68,8 @@ function AutoPlayScreen({ words, profile, tts, onExit }: AutoPlayScreenProps) {
   // 옵션을 여는 동안 재생을 멈췄다가, 재생 중에 열었을 때만 닫으면서 이어 간다.
   const resumeOnCloseRef = useRef(false)
   const gapMs = gapSeconds * 1000
+  // 중국어 읽기 — 끄면 표제어 발음을 자동으로 재생하지 않는다(스피커 버튼으로는 들을 수 있다).
+  const [speakHeadwordOn, setSpeakHeadwordOn] = useState(() => readAutoPlaySpeakHeadword(profile.id))
   // 뜻(한국어) 읽어주기 — 표제어 발음 뒤에 기기의 한국어 음성으로 뜻을 읽는다.
   const [speakMeaningOn, setSpeakMeaningOn] = useState(() => readAutoPlaySpeakMeaning(profile.id))
   const [meaningSupported] = useState(meaningSpeechSupported)
@@ -79,7 +84,7 @@ function AutoPlayScreen({ words, profile, tts, onExit }: AutoPlayScreenProps) {
     profileId: profile.id,
     contentType: profile.contentType,
     capability: tts,
-    autoPlay: true,
+    autoPlay: speakHeadwordOn,
     questionId,
     input: word === null ? null : { text: word.hanzi, pinyin: word.pinyin || null },
   })
@@ -118,7 +123,7 @@ function AutoPlayScreen({ words, profile, tts, onExit }: AutoPlayScreenProps) {
     let delay: number
     // 표제어 차례가 끝났는지 — 끝났으면 뜻을 읽은 뒤에 다음 단어로 넘어간다.
     let headwordOver = true
-    if (!hasBinding && audioSupported) {
+    if (!hasBinding && audioSupported && speakHeadwordOn) {
       // 발음을 지원하는 세션이면 binding이 곧 붙는다 — 끝내 안 붙을 때만 넘긴다.
       delay = AUTO_PLAY_STALL_MS
       headwordOver = false
@@ -138,6 +143,9 @@ function AutoPlayScreen({ words, profile, tts, onExit }: AutoPlayScreenProps) {
       delay = Math.max(AUTO_PLAY_ERROR_MS, gapMs)
     } else if (status === 'ready' && playedRef.current === questionId) {
       delay = gapMs
+    } else if (!speakHeadwordOn && status !== 'loading') {
+      // 중국어 읽기를 껐다 — 발음 없는 단어처럼 보여 주기만 하고 넘어간다.
+      delay = Math.max(AUTO_PLAY_SILENT_MS, gapMs)
     } else {
       delay = AUTO_PLAY_STALL_MS
       headwordOver = false
@@ -171,8 +179,8 @@ function AutoPlayScreen({ words, profile, tts, onExit }: AutoPlayScreenProps) {
     }, delay)
     return () => window.clearTimeout(timer)
   }, [
-    audioSupported, gapMs, hasBinding, index, meaningResult, meaningText, meaningWanted, questionId, status, stop,
-    unplayable, words.length,
+    audioSupported, gapMs, hasBinding, index, meaningResult, meaningText, meaningWanted, questionId, speakHeadwordOn,
+    status, stop, unplayable, words.length,
   ])
 
   const handleExit = () => {
@@ -203,6 +211,11 @@ function AutoPlayScreen({ words, profile, tts, onExit }: AutoPlayScreenProps) {
     const next = clampAutoPlayGapSeconds(seconds)
     setGapSeconds(next)
     saveAutoPlayGapSeconds(profile.id, next)
+  }
+
+  const changeSpeakHeadword = (next: boolean) => {
+    setSpeakHeadwordOn(next)
+    saveAutoPlaySpeakHeadword(profile.id, next)
   }
 
   const changeSpeakMeaning = (next: boolean) => {
@@ -284,8 +297,8 @@ function AutoPlayScreen({ words, profile, tts, onExit }: AutoPlayScreenProps) {
               처음부터 다시
             </button>
           )}
-          <button type="button" className="primary-button" onClick={handleExit}>
-            홈으로
+          <button type="button" className="primary-button" aria-label="홈으로" title="홈으로" onClick={handleExit}>
+            <HomeIcon />
           </button>
         </div>
       ) : (
@@ -324,6 +337,9 @@ function AutoPlayScreen({ words, profile, tts, onExit }: AutoPlayScreenProps) {
         <AutoPlayOptionsModal
           gapSeconds={gapSeconds}
           onGapChange={changeGap}
+          headwordSupported={audioSupported}
+          speakHeadword={speakHeadwordOn}
+          onSpeakHeadwordChange={changeSpeakHeadword}
           speakMeaning={speakMeaningOn}
           meaningSupported={meaningSupported}
           onSpeakMeaningChange={changeSpeakMeaning}

@@ -48,3 +48,16 @@ export function saveAutoPlaySpeakMeaning(profileId: string, enabled: boolean): v
   try { localStorage.setItem(meaningKey(profileId), String(enabled)); }
   catch { /* 이번 재생에만 적용 */ }
 }
+
+/** 표제어 발음(중국어)을 자동으로 읽어 줄지. 기본은 켬. */
+const headwordKey = (profileId: string) => `vocab-study:autoplay-headword:${encodeURIComponent(profileId)}`;
+
+export function readAutoPlaySpeakHeadword(profileId: string): boolean {
+  try { return localStorage.getItem(headwordKey(profileId)) !== "false"; }
+  catch { return true; }
+}
+
+export function saveAutoPlaySpeakHeadword(profileId: string, enabled: boolean): void {
+  try { localStorage.setItem(headwordKey(profileId), String(enabled)); }
+  catch { /* 이번 재생에만 적용 */ }
+}

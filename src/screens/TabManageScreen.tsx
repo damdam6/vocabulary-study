@@ -13,6 +13,7 @@ import { createTab } from '../lib/registerApi.ts';
 import { validateNewTabName } from '../lib/registerValidation.ts';
 import { tabManageRequest, type TabSaveEntry } from '../lib/tabManageApi.ts';
 import './TabManageScreen.css';
+import HomeIcon from '../components/HomeIcon.tsx';
 
 type Busy = 'idle' | 'saving' | 'syncing' | 'creating' | 'renaming' | 'deleting';
 
@@ -171,7 +172,7 @@ export default function TabManageScreen({ onGoHome }: { onGoHome: () => void }) 
 
   return <section className="register-screen tab-manage-screen" aria-labelledby="tab-manage-title">
     <header className="register-header">
-      <button type="button" className="register-back" onClick={onGoHome} disabled={working}>홈으로</button>
+      <button type="button" className="register-back" aria-label="홈으로" title="홈으로" onClick={onGoHome} disabled={working}><HomeIcon /></button>
       <h1 id="tab-manage-title" className="register-title">탭 관리</h1>
     </header>
 

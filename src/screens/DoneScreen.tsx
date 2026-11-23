@@ -1,5 +1,7 @@
 // 세션 완료 화면 (#15, design-prd §5). 수치는 이번 세션의 모드1·2 합산 —
 // X 자가판정도 오답으로 집계된 값이 그대로 온다.
+import HomeIcon from '../components/HomeIcon.tsx'
+
 interface DoneScreenProps {
   correct: number
   wrong: number
@@ -25,8 +27,8 @@ function DoneScreen({ correct, wrong, onGoHome }: DoneScreenProps) {
           </div>
         </div>
       </div>
-      <button type="button" className="done-home" onClick={onGoHome}>
-        홈으로
+      <button type="button" className="done-home" aria-label="홈으로" title="홈으로" onClick={onGoHome}>
+        <HomeIcon />
       </button>
     </div>
   )
