@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import AutoPlayScreen, {
-  AUTO_PLAY_ERROR_MS, AUTO_PLAY_SILENT_MS,
+  AUTO_PLAY_ERROR_MS, AUTO_PLAY_MEANING_LEAD_MS, AUTO_PLAY_SILENT_MS,
 } from "./AutoPlayScreen.tsx";
 import { fire, renderComponent } from "../test-utils.tsx";
 import type { PublicProfile, WordEntry } from "../lib/api.ts";
@@ -314,6 +314,116 @@ describe("AutoPlayScreen", () => {
     const other = mount(zh);
     expect(repeatToggle(other).getAttribute("aria-pressed")).toBe("false");
     withOptions(other, (modal) => expect(modal.querySelector(".autoplay-stepper-value")?.textContent).toBe("2초"));
+  });
+
+  describe("뜻(한국어) 읽어주기", () => {
+    interface FakeUtterance { text: string; lang: string; volume: number; onstart: (() => void) | null; onend: (() => void) | null; onerror: (() => void) | null }
+    let spoken: FakeUtterance[] = [];
+    let cancel = vi.fn();
+    let voices: Array<{ lang: string; localService: boolean }> = [];
+    // 소리 없는 깨우기 발화(primeMeaningSpeech)는 빼고 실제로 읽은 뜻만 본다.
+    const read = () => spoken.filter((item) => item.volume !== 0);
+    const meaningSwitch = (modal: HTMLElement) => modal.querySelector<HTMLButtonElement>('[role="switch"]')!;
+
+    beforeEach(() => {
+      spoken = []; cancel = vi.fn(); voices = [{ lang: "ko-KR", localService: true }];
+      vi.stubGlobal("SpeechSynthesisUtterance", class {
+        lang = ""; volume = 1; voice: unknown = null; onend = null; onerror = null;
+        text: string;
+        constructor(text: string) { this.text = text; }
+      });
+      vi.stubGlobal("speechSynthesis", {
+        speaking: false, pending: false, cancel,
+        getVoices: () => voices,
+        speak: (utterance: FakeUtterance) => { spoken.push(utterance); },
+      });
+    });
+
+    it("발음이 끝나면 뜻을 한국어로 읽고, 읽기가 끝난 뒤 대기 시간을 쉬고 넘어간다", () => {
+      const container = mount();
+      fire(() => mocks.setStatus("playing"));
+      fire(() => vi.advanceTimersByTime(5000));
+      expect(read()).toHaveLength(0);
+      fire(() => mocks.setStatus("ready"));
+      fire(() => vi.advanceTimersByTime(AUTO_PLAY_MEANING_LEAD_MS));
+      expect(read().map((item) => [item.text, item.lang])).toEqual([["경제", "ko-KR"]]);
+      fire(() => read()[0].onstart!());
+      // 읽는 동안에는 넘어가지 않는다.
+      fire(() => vi.advanceTimersByTime(10_000));
+      expect(hanzi(container)).toBe("经济");
+      fire(() => read()[0].onend!());
+      fire(() => vi.advanceTimersByTime(AUTO_PLAY_GAP_MS - 1));
+      expect(hanzi(container)).toBe("经济");
+      fire(() => vi.advanceTimersByTime(1));
+      expect(hanzi(container)).toBe("学习");
+    });
+
+    it("발음 없는 프로필도 뜻을 읽어 주고 대기 시간 뒤 넘어간다", () => {
+      mocks.bound = false;
+      const container = mount(generic, words, { enabled: false });
+      fire(() => vi.advanceTimersByTime(AUTO_PLAY_MEANING_LEAD_MS));
+      expect(read().map((item) => item.text)).toEqual(["경제"]);
+      fire(() => read()[0].onend!());
+      fire(() => vi.advanceTimersByTime(AUTO_PLAY_GAP_MS));
+      expect(hanzi(container)).toBe("学习");
+    });
+
+    it("한국어 음성이 없는 기기에서는 읽지 않고 기존 간격대로 넘어간다", () => {
+      voices = [{ lang: "en-US", localService: true }];
+      const container = mount();
+      fire(() => mocks.setStatus("playing"));
+      fire(() => mocks.setStatus("ready"));
+      fire(() => vi.advanceTimersByTime(AUTO_PLAY_MEANING_LEAD_MS));
+      fire(() => vi.advanceTimersByTime(1));
+      expect(read()).toHaveLength(0);
+      fire(() => vi.advanceTimersByTime(AUTO_PLAY_GAP_MS));
+      expect(hanzi(container)).toBe("学习");
+    });
+
+    it("읽는 중 일시정지하면 읽기를 끊고, 재생하면 같은 단어를 처음부터 다시 진행한다", () => {
+      mocks.bound = false;
+      const container = mount(generic, words, { enabled: false });
+      fire(() => vi.advanceTimersByTime(AUTO_PLAY_MEANING_LEAD_MS));
+      expect(read()).toHaveLength(1);
+      fire(() => button(container, "일시정지").click());
+      expect(cancel).toHaveBeenCalled();
+      // 끊긴 읽기의 늦은 종료 신호는 진행에 영향을 주지 않는다.
+      fire(() => read()[0].onend!());
+      fire(() => vi.advanceTimersByTime(60_000));
+      expect(hanzi(container)).toBe("经济");
+      fire(() => button(container, "재생").click());
+      fire(() => vi.advanceTimersByTime(AUTO_PLAY_MEANING_LEAD_MS));
+      expect(read().map((item) => item.text)).toEqual(["경제", "경제"]);
+    });
+
+    it("옵션에서 끄면 읽지 않고, 설정은 프로필별로 저장된다", () => {
+      mocks.bound = false;
+      const container = mount(generic, words, { enabled: false });
+      withOptions(container, (modal) => {
+        expect(meaningSwitch(modal).getAttribute("aria-checked")).toBe("true");
+        fire(() => meaningSwitch(modal).click());
+        expect(meaningSwitch(modal).getAttribute("aria-checked")).toBe("false");
+      });
+      fire(() => vi.advanceTimersByTime(AUTO_PLAY_SILENT_MS));
+      expect(hanzi(container)).toBe("学习");
+      expect(read()).toHaveLength(0);
+      view!.unmount();
+      const again = mount(generic, words, { enabled: false });
+      withOptions(again, (modal) => expect(meaningSwitch(modal).getAttribute("aria-checked")).toBe("false"));
+      view!.unmount();
+      const other = mount(zh);
+      withOptions(other, (modal) => expect(meaningSwitch(modal).getAttribute("aria-checked")).toBe("true"));
+    });
+  });
+
+  it("음성 읽기를 지원하지 않는 브라우저에서는 뜻 읽어주기 스위치가 잠긴다", () => {
+    mocks.bound = false;
+    const container = mount(generic, words, { enabled: false });
+    withOptions(container, (modal) => {
+      const toggle = modal.querySelector<HTMLButtonElement>('[role="switch"]')!;
+      expect(toggle.disabled).toBe(true);
+      expect(toggle.getAttribute("aria-checked")).toBe("false");
+    });
   });
 
   it("완료 화면에서 처음부터 다시 재생할 수 있다", () => {

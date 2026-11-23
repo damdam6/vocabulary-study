@@ -35,3 +35,16 @@ export function saveAutoPlayGapSeconds(profileId: string, seconds: number): void
   try { localStorage.setItem(gapKey(profileId), String(clampAutoPlayGapSeconds(seconds))); }
   catch { /* 이번 재생에만 적용 */ }
 }
+
+/** 표제어 발음 뒤에 뜻을 한국어로 읽어 줄지. 기본은 켬 — 기기에 한국어 음성이 없으면 조용히 건너뛴다. */
+const meaningKey = (profileId: string) => `vocab-study:autoplay-meaning:${encodeURIComponent(profileId)}`;
+
+export function readAutoPlaySpeakMeaning(profileId: string): boolean {
+  try { return localStorage.getItem(meaningKey(profileId)) !== "false"; }
+  catch { return true; }
+}
+
+export function saveAutoPlaySpeakMeaning(profileId: string, enabled: boolean): void {
+  try { localStorage.setItem(meaningKey(profileId), String(enabled)); }
+  catch { /* 이번 재생에만 적용 */ }
+}

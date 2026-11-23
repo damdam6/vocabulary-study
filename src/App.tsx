@@ -4,6 +4,8 @@ import HomeScreen, { type StudySessionContext } from './screens/HomeScreen.tsx'
 import StudyScreen, { type SessionResult } from './screens/StudyScreen.tsx'
 import DoneScreen from './screens/DoneScreen.tsx'
 import AutoPlayScreen from './screens/AutoPlayScreen.tsx'
+import { readAutoPlaySpeakMeaning } from './lib/autoPlayPreferences.ts'
+import { primeMeaningSpeech } from './lib/meaningSpeech.ts'
 import {
   clearPassword,
   getStoredPassword,
@@ -65,6 +67,8 @@ function App() {
   }
 
   const startAutoPlay = (words: WordEntry[], context: StudySessionContext) => {
+    // 시작 탭 안에서 음성 합성을 깨워 둔다 — 자동 재생 화면이 타이머에서 뜻(한국어)을 읽을 수 있게.
+    if (readAutoPlaySpeakMeaning(context.profile.id)) primeMeaningSpeech()
     setActiveAutoPlay({ words, profile: context.profile, tts: context.tts })
     setScreen('autoplay')
   }
