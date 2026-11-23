@@ -1987,9 +1987,9 @@ textarea.register-modal-input {
 /* 자동 재생 옵션 모달 */
 .autoplay-options-modal { max-width: 360px; gap: 18px; }
 .autoplay-option { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
-.autoplay-option-text { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
 .autoplay-option-label { font-size: 15px; font-weight: 600; }
-.autoplay-option-hint { font-size: 12px; color: var(--text-muted); }
+/* 홈으로 버튼의 집 아이콘 — 버튼 가운데에 둔다 */
+.home-icon { display: block; margin: 0 auto; }
 .autoplay-stepper { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
 .autoplay-stepper-button {
   width: 44px;

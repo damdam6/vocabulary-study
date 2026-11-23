@@ -6,6 +6,10 @@ import { AUTO_PLAY_GAP_MAX_SECONDS, AUTO_PLAY_GAP_MIN_SECONDS } from '../lib/aut
 interface AutoPlayOptionsModalProps {
   gapSeconds: number
   onGapChange: (seconds: number) => void
+  /** 이 세션이 표제어 발음(중국어 TTS)을 낼 수 있는지 — 없으면 중국어 읽기 스위치를 보이지 않는다. */
+  headwordSupported: boolean
+  speakHeadword: boolean
+  onSpeakHeadwordChange: (enabled: boolean) => void
   speakMeaning: boolean
   /** 이 브라우저가 음성 합성을 지원하는지 — 지원하지 않으면 스위치를 잠근다. */
   meaningSupported: boolean
@@ -14,7 +18,8 @@ interface AutoPlayOptionsModalProps {
 }
 
 function AutoPlayOptionsModal({
-  gapSeconds, onGapChange, speakMeaning, meaningSupported, onSpeakMeaningChange, onClose,
+  gapSeconds, onGapChange, headwordSupported, speakHeadword, onSpeakHeadwordChange,
+  speakMeaning, meaningSupported, onSpeakMeaningChange, onClose,
 }: AutoPlayOptionsModalProps) {
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -37,10 +42,7 @@ function AutoPlayOptionsModal({
         </h2>
 
         <div className="autoplay-option">
-          <div className="autoplay-option-text">
-            <span className="autoplay-option-label">다음 단어까지 대기</span>
-            <span className="autoplay-option-hint">발음이 끝난 뒤 · {AUTO_PLAY_GAP_MIN_SECONDS}–{AUTO_PLAY_GAP_MAX_SECONDS}초</span>
-          </div>
+          <span className="autoplay-option-label">다음 단어까지 대기</span>
           <div className="autoplay-stepper" role="group" aria-label="대기 시간">
             <button
               type="button"
@@ -64,15 +66,24 @@ function AutoPlayOptionsModal({
           </div>
         </div>
 
-        <div className="autoplay-option">
-          <div className="autoplay-option-text">
-            <span className="autoplay-option-label" id="autoplay-meaning-label">뜻 읽어주기</span>
-            <span className="autoplay-option-hint">
-              {meaningSupported
-                ? '발음 뒤에 뜻을 한국어로 · 기기 음성 사용'
-                : '이 브라우저는 음성 읽기를 지원하지 않아요'}
-            </span>
+        {headwordSupported && (
+          <div className="autoplay-option">
+            <span className="autoplay-option-label" id="autoplay-headword-label">중국어 읽기</span>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={speakHeadword}
+              aria-labelledby="autoplay-headword-label"
+              className={`toggle-switch${speakHeadword ? ' toggle-switch--on' : ''}`}
+              onClick={() => onSpeakHeadwordChange(!speakHeadword)}
+            >
+              <span className="toggle-switch-knob" />
+            </button>
           </div>
+        )}
+
+        <div className="autoplay-option">
+          <span className="autoplay-option-label" id="autoplay-meaning-label">뜻 읽기</span>
           <button
             type="button"
             role="switch"

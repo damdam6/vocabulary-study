@@ -58,7 +58,8 @@ function mount(profile = zh, list = words, capability: typeof tts | { enabled: f
 const AUTO_PLAY_GAP_MS = 2000;
 const hanzi = (container: HTMLElement) => container.querySelector(".mode-card-hanzi")?.textContent;
 const button = (container: HTMLElement, label: string) =>
-  [...container.querySelectorAll<HTMLButtonElement>("button")].find((item) => item.textContent === label)!;
+  [...container.querySelectorAll<HTMLButtonElement>("button")]
+    .find((item) => item.textContent === label || item.getAttribute("aria-label") === label)!;
 
 beforeEach(() => {
   vi.useFakeTimers();
@@ -323,7 +324,9 @@ describe("AutoPlayScreen", () => {
     let voices: Array<{ lang: string; localService: boolean }> = [];
     // 소리 없는 깨우기 발화(primeMeaningSpeech)는 빼고 실제로 읽은 뜻만 본다.
     const read = () => spoken.filter((item) => item.volume !== 0);
-    const meaningSwitch = (modal: HTMLElement) => modal.querySelector<HTMLButtonElement>('[role="switch"]')!;
+    const meaningSwitch = (modal: HTMLElement) =>
+      modal.querySelector<HTMLButtonElement>('[role="switch"][aria-labelledby="autoplay-meaning-label"]')!;
+
 
     beforeEach(() => {
       spoken = []; cancel = vi.fn(); voices = [{ lang: "ko-KR", localService: true }];
@@ -416,11 +419,55 @@ describe("AutoPlayScreen", () => {
     });
   });
 
+  it("중국어 읽기를 끄면 발음을 자동 재생하지 않고 고정 시간 뒤 넘어가며, 설정이 저장된다", () => {
+    const headwordSwitch = (modal: HTMLElement) =>
+      modal.querySelector<HTMLButtonElement>('[role="switch"][aria-labelledby="autoplay-headword-label"]')!;
+    const container = mount();
+    withOptions(container, (modal) => {
+      expect(headwordSwitch(modal).getAttribute("aria-checked")).toBe("true");
+      fire(() => headwordSwitch(modal).click());
+      expect(headwordSwitch(modal).getAttribute("aria-checked")).toBe("false");
+    });
+    expect(mocks.options.at(-1)!.autoPlay).toBe(false);
+    fire(() => vi.advanceTimersByTime(AUTO_PLAY_SILENT_MS - 1));
+    expect(hanzi(container)).toBe("经济");
+    fire(() => vi.advanceTimersByTime(1));
+    expect(hanzi(container)).toBe("学习");
+    // 스피커 버튼으로 직접 들으면 재생이 끝난 뒤 대기 시간을 쉬고 넘어간다.
+    fire(() => mocks.setStatus("playing"));
+    fire(() => vi.advanceTimersByTime(60_000));
+    expect(hanzi(container)).toBe("学习");
+    fire(() => mocks.setStatus("ready"));
+    fire(() => vi.advanceTimersByTime(AUTO_PLAY_GAP_MS));
+    expect(container.textContent).toContain("재생이 끝났어요");
+    view!.unmount();
+    const again = mount();
+    withOptions(again, (modal) => expect(headwordSwitch(modal).getAttribute("aria-checked")).toBe("false"));
+  });
+
+  it("발음을 낼 수 없는 프로필에는 중국어 읽기 스위치가 없고, 옵션에 설명 문구를 두지 않는다", () => {
+    mocks.bound = false;
+    const container = mount(generic, words, { enabled: false });
+    withOptions(container, (modal) => {
+      expect(modal.querySelector('[aria-labelledby="autoplay-headword-label"]')).toBeNull();
+      expect(modal.querySelector(".autoplay-option-hint")).toBeNull();
+      expect([...modal.querySelectorAll(".autoplay-option-label")].map((item) => item.textContent))
+        .toEqual(["다음 단어까지 대기", "뜻 읽기"]);
+    });
+  });
+
+  it("완료 화면의 홈으로 버튼은 글자 없이 집 아이콘만 보여 준다", () => {
+    const container = mount(zh, []);
+    const home = button(container, "홈으로");
+    expect(home.textContent).toBe("");
+    expect(home.querySelector("svg.home-icon")).not.toBeNull();
+  });
+
   it("음성 읽기를 지원하지 않는 브라우저에서는 뜻 읽어주기 스위치가 잠긴다", () => {
     mocks.bound = false;
     const container = mount(generic, words, { enabled: false });
     withOptions(container, (modal) => {
-      const toggle = modal.querySelector<HTMLButtonElement>('[role="switch"]')!;
+      const toggle = modal.querySelector<HTMLButtonElement>('[role="switch"][aria-labelledby="autoplay-meaning-label"]')!;
       expect(toggle.disabled).toBe(true);
       expect(toggle.getAttribute("aria-checked")).toBe("false");
     });

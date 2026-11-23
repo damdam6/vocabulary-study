@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { TTS_MODELS, type TtsModel } from '../../shared/ttsModels.ts';
 import { ttsModelsRequest } from '../lib/ttsModelsApi.ts';
 import './TtsModelsScreen.css';
+import HomeIcon from '../components/HomeIcon.tsx';
 
 export default function TtsModelsScreen({ onGoHome }: { onGoHome: () => void }) {
   const [model, setModel] = useState<TtsModel | null>(null);
@@ -32,7 +33,7 @@ export default function TtsModelsScreen({ onGoHome }: { onGoHome: () => void }) 
   };
   return <section className="register-screen" aria-labelledby="tts-models-title">
     <header className="register-header">
-      <button type="button" className="register-back" disabled={status === 'saving'} onClick={onGoHome}>홈으로</button>
+      <button type="button" className="register-back" aria-label="홈으로" title="홈으로" disabled={status === 'saving'} onClick={onGoHome}><HomeIcon /></button>
       <h1 id="tts-models-title" className="register-title">음성모델교체</h1>
     </header>
     <p className="register-hint">사용할 모델 하나를 선택하고 저장하세요. 모든 중국어 프로필에 적용됩니다.</p>

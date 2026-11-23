@@ -52,6 +52,7 @@ import {
   parseRegistrationInput,
   type ParsedWord,
 } from '../lib/registerValidation.ts'
+import HomeIcon from '../components/HomeIcon.tsx'
 
 interface RegisterScreenProps {
   contentType: ContentType
@@ -334,8 +335,8 @@ function RegisterScreen({ contentType, onGoHome, onNavigateTabs }: RegisterScree
             )}
           </p>
         </div>
-        <button type="button" className="primary-button" onClick={onGoHome}>
-          홈으로
+        <button type="button" className="primary-button" aria-label="홈으로" title="홈으로" onClick={onGoHome}>
+          <HomeIcon />
         </button>
       </div>
     )
@@ -523,8 +524,8 @@ function RegisterHeader({ onGoHome, contentType, onNavigateTabs }: {
   return (
     <header className="register-header">
       {onGoHome && (
-        <button type="button" className="register-back" onClick={onGoHome}>
-          홈으로
+        <button type="button" className="register-back" aria-label="홈으로" title="홈으로" onClick={onGoHome}>
+          <HomeIcon />
         </button>
       )}
       <h1 className="register-title">{contentType === 'zh' ? '단어·문장 등록' : '단어 등록'}</h1>
