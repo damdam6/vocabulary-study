@@ -107,7 +107,7 @@ describe("Mode2Card 정답 음성", () => {
     const repeated = new KeyboardEvent("keydown", { key: "Enter", repeat: true, bubbles: true, cancelable: true });
     fire(() => textarea.dispatchEvent(repeated));
     expect(onJudged).toHaveBeenCalledTimes(1);
-    expect(onJudged).toHaveBeenCalledWith(true);
+    expect(onJudged).toHaveBeenCalledWith(true, "经济");
   });
 
   it("입력 중에는 음성 UI가 없고 정답 제출은 채점 화면에서 공개를 한 번 호출한다", () => {
@@ -121,7 +121,7 @@ describe("Mode2Card 정답 음성", () => {
     submit(container, "经济");
     fire(() => vi.runAllTimers());
     expect(onJudged).toHaveBeenCalledTimes(1);
-    expect(onJudged).toHaveBeenCalledWith(true);
+    expect(onJudged).toHaveBeenCalledWith(true, "经济");
     expect(container.querySelector(".mode-card--result")).not.toBeNull();
     expect(container.querySelector(".mode-result-title--correct")?.textContent).toBe("정답");
     expect(container.querySelector(".mode-card-hanzi")?.textContent).toBe("经济");
@@ -146,7 +146,7 @@ describe("Mode2Card 정답 음성", () => {
     fire(() => vi.runAllTimers());
     expect(pronunciation.reveal).toHaveBeenCalledTimes(1);
     expect(onJudged).toHaveBeenCalledTimes(1);
-    expect(onJudged).toHaveBeenCalledWith(false);
+    expect(onJudged).toHaveBeenCalledWith(false, answer);
     expect(container.textContent).toContain("经济");
     if (renderedAnswer === "") expect(container.querySelector(".mode-my-answer")).toBeNull();
   });
