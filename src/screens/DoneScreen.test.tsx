@@ -41,7 +41,6 @@ beforeEach(() => {
   mocks.render.mockReset();
   mocks.render.mockResolvedValue(new Blob(["png"], { type: "image/png" }));
   mocks.save.mockReset();
-  mocks.save.mockResolvedValue("downloaded");
 });
 
 afterEach(() => {

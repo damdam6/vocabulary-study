@@ -3,8 +3,8 @@
 // [이미지 저장] [홈] 두 버튼만 누를 수 있다. 수치는 이번 세션의 모드1·2 합산 — X 자가판정도
 // 오답으로 집계된다.
 //
-// 이미지는 화면 진입 시 미리 그려 둔다(renderResultImage). 저장 버튼에서 그리기 시작하면
-// 폰트 로딩·canvas 작업 사이에 사용자 제스처가 만료돼 모바일 공유 시트가 거부될 수 있다.
+// 이미지는 화면 진입 시 미리 그려 둔다(renderResultImage) — 저장 버튼은 곧바로 PNG 파일을
+// 내려받는다.
 import { useEffect, useMemo, useRef, useState } from 'react'
 import HomeIcon from '../components/HomeIcon.tsx'
 import { headwordLang, modeChipLabel } from '../lib/contentLabels.ts'
@@ -108,7 +108,7 @@ function DoneScreen({ result, profile, onGoHome }: DoneScreenProps) {
         imageRef.current = retry
         blob = await retry
       }
-      await saveResultImage(blob, resultImageFileName(completedAt))
+      saveResultImage(blob, resultImageFileName(completedAt))
     } catch {
       setSaveError(true)
     } finally {

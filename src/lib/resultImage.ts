@@ -360,24 +360,8 @@ export async function renderResultImage(input: ResultImageInput): Promise<Blob> 
   });
 }
 
-export type SaveOutcome = "shared" | "downloaded" | "cancelled";
-
-/**
- * 휴대폰(굵은 포인터)에서는 공유 시트로 넘겨 사진첩에 저장할 수 있게 하고, 공유를 못 쓰면
- * 파일로 내려받는다. 사용자가 공유 시트를 닫으면 cancelled — 오류가 아니다.
- */
-export async function saveResultImage(blob: Blob, fileName: string): Promise<SaveOutcome> {
-  const file = new File([blob], fileName, { type: "image/png" });
-  const prefersShare = typeof window.matchMedia === "function" && window.matchMedia("(pointer: coarse)").matches;
-  if (prefersShare && typeof navigator.canShare === "function" && navigator.canShare({ files: [file] })) {
-    try {
-      await navigator.share({ files: [file] });
-      return "shared";
-    } catch (error) {
-      if (error instanceof DOMException && error.name === "AbortError") return "cancelled";
-      // NotAllowedError 등 — 아래 내려받기로 대신한다.
-    }
-  }
+/** PNG 파일로 내려받는다. */
+export function saveResultImage(blob: Blob, fileName: string): void {
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
@@ -386,5 +370,4 @@ export async function saveResultImage(blob: Blob, fileName: string): Promise<Sav
   link.click();
   link.remove();
   setTimeout(() => URL.revokeObjectURL(url), 10_000);
-  return "downloaded";
 }
