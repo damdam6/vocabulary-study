@@ -45,7 +45,7 @@ function App() {
   // 세션 큐는 홈이 만들고(PRD §6.1) 셸이 소비한다(§6.2) — App은 화면 간 전달만 담당
   const [activeStudy, setActiveStudy] = useState<ActiveStudySession | null>(null)
   const [activeAutoPlay, setActiveAutoPlay] = useState<ActiveAutoPlay | null>(null)
-  const [sessionResult, setSessionResult] = useState<SessionResult>({ correct: 0, wrong: 0 })
+  const [sessionResult, setSessionResult] = useState<SessionResult>({ correct: 0, wrong: 0, results: [] })
 
   // 어느 API든 401 수신 시 로그인 화면 복귀 — 저장값 삭제는 apiFetch가 이미 수행
   useEffect(() => {
@@ -116,10 +116,10 @@ function App() {
             onExit={() => setScreen('home')}
           />
         )}
-        {screen === 'done' && (
+        {screen === 'done' && activeStudy !== null && (
           <DoneScreen
-            correct={sessionResult.correct}
-            wrong={sessionResult.wrong}
+            result={sessionResult}
+            profile={activeStudy.profile}
             onGoHome={() => setScreen('home')}
           />
         )}

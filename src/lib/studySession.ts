@@ -18,6 +18,21 @@ export interface StudySessionState {
   pos: number;
   correct: number;
   wrong: number;
+  /** 판정한 순서대로 쌓는 문제별 결과 — 세션 결과 화면이 그대로 그린다. */
+  results: QuestionResult[];
+}
+
+/**
+ * 문제 하나의 판정 결과. word는 판정 시점의 스냅샷이다 — 결과 화면이 쓰는 표제어·
+ * 보조 표기·뜻은 기록 응답(applyWordUpdate)으로 바뀌지 않는다.
+ */
+export interface QuestionResult {
+  word: WordEntry;
+  mode: StudyQuestion["mode"];
+  isReview: boolean;
+  correct: boolean;
+  /** 모드2에서 사용자가 제출한 원문(정규화 전). 모드1은 입력이 없어 undefined. */
+  answer?: string;
 }
 
 /** 판정 직후 셸이 발사해야 할 기록 API. none = 학습 중 오답(호출 없음, §6.2). */
@@ -94,6 +109,7 @@ export function startSession(
     pos: 0,
     correct: 0,
     wrong: 0,
+    results: [],
   };
 }
 
@@ -113,18 +129,27 @@ export function isDone(state: StudySessionState): boolean {
 export function recordAnswer(
   state: StudySessionState,
   isCorrect: boolean,
+  answer?: string,
 ): { state: StudySessionState; effect: RecordEffect } {
   const question = state.queue[state.pos];
+  const result: QuestionResult = {
+    word: question.word,
+    mode: question.mode,
+    isReview: question.isReview,
+    correct: isCorrect,
+    ...(answer !== undefined ? { answer } : {}),
+  };
+  const results = [...state.results, result];
   if (isCorrect) {
     return {
-      state: { ...state, correct: state.correct + 1 },
+      state: { ...state, correct: state.correct + 1, results },
       effect: { kind: "answer", question },
     };
   }
   if (question.isReview) {
     // 복습 오답: 간격 후퇴만(§5.3).
     return {
-      state: { ...state, wrong: state.wrong + 1 },
+      state: { ...state, wrong: state.wrong + 1, results },
       effect: { kind: "review-fail", question },
     };
   }
@@ -132,7 +157,7 @@ export function recordAnswer(
   // 세션에 자연히 재출제된다. 같은 세션에 다시 내지 않는 이유(#116): 방금 정답까지 본
   // 단어는 단기 기억으로 맞히게 돼 학습 효과 없이 D/E만 부풀린다.
   return {
-    state: { ...state, wrong: state.wrong + 1 },
+    state: { ...state, wrong: state.wrong + 1, results },
     effect: { kind: "none" },
   };
 }

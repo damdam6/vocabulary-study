@@ -769,97 +769,358 @@ button {
   transform: scale(0.98);
 }
 
-/* §5 세션 완료 화면 (#15) */
-.done {
+/* §5 세션 결과 화면 (#15) — 요약 카드 + 틀린 문제 → 맞힌 문제 목록, 하단 [이미지 저장] [홈].
+   이미지 저장본(src/lib/resultImage.ts)이 같은 수치를 canvas로 다시 그리므로 함께 고칠 것. */
+.result-screen {
   flex: 1;
   display: flex;
   flex-direction: column;
-  padding: 30px 24px 26px;
 }
 
-.done-body {
+/* 페이지 자체가 스크롤되고 하단 버튼 줄만 sticky로 붙는다 — 모바일 주소창 접힘과 충돌하지 않는다. */
+.result-scroll {
   flex: 1;
+  padding: 26px 20px 20px;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
   gap: 16px;
 }
 
-.done-check {
-  width: 76px;
-  height: 76px;
-  border-radius: 50%;
-  background: rgba(63, 206, 143, 0.12);
+.result-header {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 34px;
-  color: var(--green);
-  font-weight: 700;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
 }
 
-.done-title {
+.result-title {
   margin: 0;
-  font-size: 24px;
+  font-size: 22px;
   font-weight: 700;
 }
 
-.done-note {
-  margin: -6px 0 0;
-  font-size: 13px;
+.result-summary {
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: 15px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.result-summary-top {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+
+.result-rate {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.result-rate-label,
+.result-stat-label {
+  font-size: 12px;
   color: var(--text-muted);
 }
 
-.done-stats {
-  display: flex;
-  gap: 44px;
-  margin-top: 18px;
-}
-
-.done-stat {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-}
-
-.done-stat-num {
-  font-size: 40px;
+.result-rate-value {
+  font-size: 34px;
   font-weight: 700;
+  line-height: 1.1;
   font-variant-numeric: tabular-nums;
 }
 
-.done-stat-num--correct {
+.result-rate-value--perfect {
   color: var(--green);
 }
 
-.done-stat-num--wrong {
-  color: var(--red);
-}
-
-.done-stat-label {
-  font-size: 13px;
+.result-rate-unit {
+  margin-left: 2px;
+  font-size: 18px;
   color: var(--text-muted);
 }
 
-.done-divider {
+.result-stats {
+  display: flex;
+  gap: 22px;
+}
+
+.result-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.result-stat-num {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.result-stat-num--correct {
+  color: var(--green);
+}
+
+.result-stat-num--wrong {
+  color: var(--red);
+}
+
+.result-stat-divider {
   width: 1px;
   background: rgba(255, 255, 255, 0.08);
 }
 
-.done-home {
-  height: 58px;
-  border-radius: 16px;
-  border: none;
-  background: var(--accent);
-  color: #ffffff;
-  font-size: 17px;
+.result-bar {
+  display: flex;
+  gap: 3px;
+  height: 6px;
+}
+
+.result-bar-correct,
+.result-bar-wrong {
+  flex-basis: 0;
+  border-radius: 999px;
+}
+
+.result-bar-correct {
+  background: var(--green);
+}
+
+.result-bar-wrong {
+  background: var(--red);
+}
+
+.result-perfect {
+  margin: 0;
+  font-size: 14px;
+  color: #b4bac8;
+}
+
+.result-section {
+  margin-top: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.result-section-title {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
   font-weight: 700;
 }
 
-.done-home:active {
+.result-section-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.result-section-dot--wrong {
+  background: var(--red);
+}
+
+.result-section-dot--correct {
+  background: var(--green);
+}
+
+.result-section-count {
+  font-variant-numeric: tabular-nums;
+}
+
+.result-section-count--wrong {
+  color: var(--red);
+}
+
+.result-section-count--correct {
+  color: var(--green);
+}
+
+.result-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.result-row {
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: 14px;
+  padding: 14px 14px 13px;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.result-mark {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  margin-top: 1px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.result-row--wrong .result-mark {
+  background: rgba(240, 101, 90, 0.13);
+  color: var(--red);
+}
+
+.result-row--correct .result-mark {
+  background: rgba(63, 206, 143, 0.13);
+  color: var(--green);
+}
+
+.result-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.result-headline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 8px;
+  row-gap: 2px;
+}
+
+.result-hanzi {
+  font-size: 20px;
+  font-weight: 500;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.result-pinyin {
+  font-size: 13px;
+  color: var(--accent-light);
+}
+
+.result-meaning {
+  font-size: 14px;
+  line-height: 1.4;
+  color: #b4bac8;
+  overflow-wrap: anywhere;
+}
+
+.result-answer {
+  margin-top: 2px;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 15px;
+  color: var(--red);
+  overflow-wrap: anywhere;
+}
+
+.result-answer s {
+  text-decoration-thickness: 1.5px;
+}
+
+.result-answer-label {
+  flex: none;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.result-chips {
+  margin-top: 4px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.result-chip {
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-card);
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.result-chip--review {
+  border-color: transparent;
+  background: rgba(47, 99, 230, 0.16);
+  color: var(--accent-light);
+  font-weight: 500;
+}
+
+.result-actions {
+  position: sticky;
+  bottom: 0;
+  background: var(--bg-app);
+  padding: 12px 20px calc(24px + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid var(--border-faint);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.result-save-error {
+  margin: 0;
+  font-size: 13px;
+  color: var(--red);
+  text-align: center;
+}
+
+.result-action-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.result-save,
+.result-home {
+  flex: 1;
+  height: 58px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.result-save {
+  border: 1px solid var(--border-input);
+  background: var(--bg-panel);
+  color: var(--text);
+}
+
+.result-save:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.result-home {
+  border: none;
+  background: var(--accent);
+  color: #ffffff;
+}
+
+.result-save:not(:disabled):active,
+.result-home:active {
   transform: scale(0.98);
+}
+
+.result-save svg {
+  display: block;
 }
 
 /* design-prd §3 홈 화면 (#13) */

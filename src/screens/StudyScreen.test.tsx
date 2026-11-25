@@ -110,7 +110,7 @@ describe("StudyScreen 발음 정지 경계 (#145)", () => {
 
     fire(() => [...container.querySelectorAll<HTMLButtonElement>("button")].find((button) => button.textContent === "다음")!.click());
     expect(mocks.stop).toHaveBeenCalledWith("advance");
-    expect(onComplete).toHaveBeenCalledWith({ correct: 1, wrong: 0 });
+    expect(onComplete).toHaveBeenCalledWith(expect.objectContaining({ correct: 1, wrong: 0 }));
   });
 
   it("모드2 오답은 결과 화면에 머무는 동안 advance 정지를 호출하지 않고 다음에서만 호출한다", () => {
@@ -192,5 +192,26 @@ describe("StudyScreen 발음 정지 경계 (#145)", () => {
     expect(next.style.height).toBe("60px");
     expect(next.scrollTop).toBe(0);
     expect(document.activeElement).not.toBe(next);
+  });
+});
+
+describe("StudyScreen 세션 결과 전달", () => {
+  it("완료 시 문제별 정오와 모드2 입력 원문을 onComplete로 넘긴다", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(Response.json(word)));
+    const onComplete = vi.fn();
+    const { container, unmount } = renderComponent(
+      <StudyScreen queue={[question("m2")]} profile={profile} tts={tts} onExit={vi.fn()} onComplete={onComplete} />,
+    );
+    unmountCurrent = unmount;
+    fire(() => setInput(container.querySelector<HTMLTextAreaElement>(".mode-input")!, " 经齐 "));
+    fire(() => container.querySelector<HTMLButtonElement>("button[type=submit]")!.click());
+    fire(() => [...container.querySelectorAll<HTMLButtonElement>("button")].find((button) => button.textContent === "다음")!.click());
+    await flush();
+
+    expect(onComplete).toHaveBeenCalledWith({
+      correct: 0,
+      wrong: 1,
+      results: [{ word, mode: "m2", isReview: false, correct: false, answer: " 经齐 " }],
+    });
   });
 });

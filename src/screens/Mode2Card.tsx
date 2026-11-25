@@ -16,7 +16,8 @@ import './Mode2Card.css'
 interface Mode2CardProps {
   question: StudyQuestion
   contentType: ContentType
-  onJudged: (correct: boolean) => void
+  /** answer는 사용자가 제출한 원문(정규화 전) — 세션 결과 화면의 "내 답"에 쓴다. */
+  onJudged: (correct: boolean, answer: string) => void
   onProceed: () => void
   /** #145에서 선언·전달만 한다. 결과 공개와 재생 UI는 #148이 소유한다. */
   pronunciation?: PronunciationBinding
@@ -75,7 +76,7 @@ function Mode2Card({ question, contentType, onJudged, onProceed, pronunciation }
     const input = isChinese ? textareaRef.current : textInputRef.current
     shouldMoveFocusRef.current = document.activeElement === input
     setResult({ correct, answer })
-    onJudged(correct)
+    onJudged(correct, answer)
   }
 
   const handleTextareaKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {

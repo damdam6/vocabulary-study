@@ -290,3 +290,24 @@ describe("applyWordUpdate", () => {
     expect(next.queue[0].word.m1).toBe(1);
   });
 });
+
+describe("recordAnswer — 문제별 결과 기록 (세션 결과 화면)", () => {
+  it("판정 순서대로 단어·모드·복습 여부·정오를 쌓고 모드2 답 원문을 보존한다", () => {
+    const first = makeQuestion({ mode: "m1" });
+    const second = makeQuestion({ mode: "m2", isReview: true, word: makeWord({ hanzi: "犹豫" }) });
+    let state = startSession([first, second]);
+    state = advance(recordAnswer(state, false).state);
+    state = recordAnswer(state, false, " 尤豫 ").state;
+
+    expect(state.results).toEqual([
+      { word: first.word, mode: "m1", isReview: false, correct: false },
+      { word: second.word, mode: "m2", isReview: true, correct: false, answer: " 尤豫 " },
+    ]);
+  });
+
+  it("기록 응답(applyWordUpdate)이 와도 이미 쌓인 결과의 단어 스냅샷은 바뀌지 않는다", () => {
+    const state = recordAnswer(sessionAt([makeQuestion()]), true).state;
+    const updated = applyWordUpdate(state, makeWord({ meaning: "경제(갱신)" }));
+    expect(updated.results[0].word.meaning).toBe("경제");
+  });
+});

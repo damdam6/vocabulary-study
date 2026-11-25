@@ -20,6 +20,7 @@ import {
   isDone,
   recordAnswer,
   startSession,
+  type QuestionResult,
   type RecordEffect,
   type StudySessionState,
 } from '../lib/studySession.ts'
@@ -28,6 +29,8 @@ import { formatSeoulDateTime } from '../lib/time.ts'
 export interface SessionResult {
   correct: number
   wrong: number
+  /** 출제 순서대로의 문제별 결과 — 세션 결과 화면이 사용한다. */
+  results: QuestionResult[]
 }
 
 interface StudyScreenProps {
@@ -104,7 +107,7 @@ function StudyScreen({ queue, profile, tts, audioAutoplay = true, onExit, onComp
       setSession(next)
       return
     }
-    const result = { correct: next.correct, wrong: next.wrong }
+    const result = { correct: next.correct, wrong: next.wrong, results: next.results }
     if (overlayPlaying) {
       setPendingComplete(result)
       setSession(next)
@@ -114,11 +117,11 @@ function StudyScreen({ queue, profile, tts, audioAutoplay = true, onExit, onComp
     }
   }
 
-  const handleJudged = (correct: boolean) => {
+  const handleJudged = (correct: boolean, answer?: string) => {
     if (!question) return
     // 다음 문제로 곧바로 진행하는 분기는 기록·state 갱신보다 먼저 이전 질문을 멈춘다.
     if (question.mode !== 'm2') stop('advance')
-    const { state: recorded, effect } = recordAnswer(session, correct)
+    const { state: recorded, effect } = recordAnswer(session, correct, answer)
     fireEffect(effect)
     if (question.mode === 'm2') {
       // 모드2: 정답·오답 모두 카드 컴포넌트가 채점 결과 화면을 띄운 채 머문다 — 오버레이 없음(§4.4),
