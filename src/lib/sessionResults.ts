@@ -48,11 +48,6 @@ export function visibleAnswer(result: QuestionResult): string | null {
   return trimmed === "" ? null : trimmed;
 }
 
-/** 모드1 오답은 사용자가 직접 '몰랐음'을 고른 문제다. */
-export function isSelfJudgedWrong(result: QuestionResult): boolean {
-  return !result.correct && result.mode === "m1";
-}
-
 const CJK = /[⺀-鿿豈-﫿＀-￯　-〿]/u;
 
 /**

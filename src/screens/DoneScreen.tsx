@@ -10,7 +10,6 @@ import HomeIcon from '../components/HomeIcon.tsx'
 import { headwordLang, modeChipLabel } from '../lib/contentLabels.ts'
 import { renderResultImage, saveResultImage, type ResultImageInput } from '../lib/resultImage.ts'
 import {
-  isSelfJudgedWrong,
   resultImageFileName,
   summarizeResults,
   visibleAnswer,
@@ -71,7 +70,6 @@ function ResultRow({ item, contentType }: { item: NumberedResult; contentType: C
         <div className="result-chips">
           {item.isReview && <span className="result-chip result-chip--review">복습</span>}
           <span className="result-chip">{modeChipLabel(contentType, item.mode)}</span>
-          {isSelfJudgedWrong(item) && <span className="result-chip">‘몰랐음’ 선택</span>}
         </div>
       </div>
       <span className="result-num" aria-label={`${item.num}번 문제`}>{item.num}</span>

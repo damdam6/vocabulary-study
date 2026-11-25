@@ -3,7 +3,6 @@ import type { WordEntry } from "./api";
 import type { QuestionResult } from "./studySession";
 import {
   formatResultTime,
-  isSelfJudgedWrong,
   resultImageFileName,
   summarizeResults,
   visibleAnswer,
@@ -29,18 +28,12 @@ describe("summarizeResults", () => {
   });
 });
 
-describe("visibleAnswer / isSelfJudgedWrong", () => {
+describe("visibleAnswer", () => {
   it("모드2 오답의 입력만 앞뒤 공백을 걷어 보여 준다", () => {
     expect(visibleAnswer(result("犹豫", false, { mode: "m2", answer: "  尤豫 " }))).toBe("尤豫");
     expect(visibleAnswer(result("犹豫", false, { mode: "m2", answer: "   " }))).toBeNull();
     expect(visibleAnswer(result("犹豫", true, { mode: "m2", answer: "犹豫" }))).toBeNull();
     expect(visibleAnswer(result("犹豫", false))).toBeNull();
-  });
-
-  it("모드1 오답만 '몰랐음' 선택이다", () => {
-    expect(isSelfJudgedWrong(result("一", false))).toBe(true);
-    expect(isSelfJudgedWrong(result("一", false, { mode: "m2" }))).toBe(false);
-    expect(isSelfJudgedWrong(result("一", true))).toBe(false);
   });
 });
 

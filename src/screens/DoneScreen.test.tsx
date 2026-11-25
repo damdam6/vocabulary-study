@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 //
-// 세션 결과 화면(design-prd §5): 요약 수치, 틀린 문제 → 맞힌 문제 순서, 내 답·'몰랐음' 표시,
+// 세션 결과 화면(design-prd §5): 요약 수치, 틀린 문제 → 맞힌 문제 순서, 내 답 표시,
 // 조작은 [이미지 저장] [홈] 두 버튼뿐. canvas가 없는 jsdom이라 이미지 생성·저장은 모킹한다.
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import DoneScreen from "./DoneScreen.tsx";
@@ -69,14 +69,14 @@ describe("DoneScreen 세션 결과", () => {
     expect(rows).toEqual([["2", "犹豫", "오답"], ["3", "尴尬", "오답"], ["1", "经济", "정답"]]);
   });
 
-  it("모드2 오답은 내 답을 취소선으로, 모드1 오답은 '몰랐음' 선택을 표시한다", () => {
+  it("모드2 오답은 내 답을 취소선으로 보여 주고, 모드1 오답은 정오 외 표시를 덧붙이지 않는다", () => {
     const { container } = setup();
     const [m2Wrong, m1Wrong] = container.querySelectorAll(".result-row--wrong");
     expect(m2Wrong.querySelector(".result-answer s")?.textContent).toBe("尤豫");
     expect(m2Wrong.textContent).toContain("복습");
     expect(m2Wrong.textContent).toContain("뜻 → 중국어");
     expect(m1Wrong.querySelector(".result-answer")).toBeNull();
-    expect(m1Wrong.textContent).toContain("‘몰랐음’ 선택");
+    expect([...m1Wrong.querySelectorAll(".result-chip")].map((chip) => chip.textContent)).toEqual(["중국어 → 뜻"]);
     expect(m1Wrong.querySelector(".result-hanzi")?.getAttribute("lang")).toBe("zh-Hans");
   });
 

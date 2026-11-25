@@ -10,7 +10,6 @@ import { headwordLang, modeChipLabel } from "./contentLabels.ts";
 import type { ContentType } from "./api.ts";
 import {
   formatResultTime,
-  isSelfJudgedWrong,
   visibleAnswer,
   wrapText,
   type NumberedResult,
@@ -187,7 +186,6 @@ function layoutRow(
   const chips: Array<{ label: string; review: boolean }> = [];
   if (item.isReview) chips.push({ label: "복습", review: true });
   chips.push({ label: modeChipLabel(contentType, item.mode), review: false });
-  if (isSelfJudgedWrong(item)) chips.push({ label: "‘몰랐음’ 선택", review: false });
   y += 6;
   let chipX = bodyX;
   const chipFont = font(500, 11, KR);
@@ -328,7 +326,7 @@ async function loadFonts(input: ResultImageInput): Promise<void> {
   if (!fonts) return;
   const items = [...input.summary.wrongItems, ...input.summary.correctItems];
   const headwords = items.map((item) => `${item.word.hanzi}${item.answer ?? ""}`).join("");
-  const korean = `세션결과정답률오답맞힌틀린문제내답복습몰랐음선택단어암기${input.profileName}${items.map((item) => item.word.meaning).join("")}`;
+  const korean = `세션결과정답률오답맞힌틀린문제내답복습단어암기${input.profileName}${items.map((item) => item.word.meaning).join("")}`;
   try {
     await Promise.all([
       fonts.load(font(700, 22, "'Noto Sans KR'"), korean),
