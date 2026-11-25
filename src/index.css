@@ -1064,14 +1064,6 @@ button {
   font-weight: 500;
 }
 
-.result-num {
-  flex: none;
-  margin-top: 4px;
-  font-size: 12px;
-  color: var(--text-muted);
-  font-variant-numeric: tabular-nums;
-}
-
 .result-actions {
   position: sticky;
   bottom: 0;

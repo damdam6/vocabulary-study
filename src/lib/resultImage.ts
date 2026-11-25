@@ -133,10 +133,7 @@ function layoutRow(
   const paints: Paint[] = [];
   const headFamily = headwordLang(contentType) ? SC : KR;
   const bodyX = CARD_X + 14 + 30 + 12;
-  const numText = String(item.num);
-  const numFont = font(400, 12, KR);
-  const numWidth = measureWith(ctx, numFont)(numText);
-  const bodyW = CARD_X + CARD_W - 14 - numWidth - 10 - bodyX;
+  const bodyW = CARD_X + CARD_W - 14 - bodyX;
 
   let y = top + 14;
   const headFont = font(500, 20, headFamily);
@@ -219,7 +216,6 @@ function layoutRow(
     paints: [
       card(CARD_X, top, CARD_W, height, 14),
       markIcon(CARD_X + 14 + 15, top + 14 + 16, item.correct),
-      text(numText, CARD_X + CARD_W - 14, top + 18, numFont, COLOR.muted, "right"),
       ...paints,
     ],
   };

@@ -6,7 +6,7 @@
 
 import type { QuestionResult } from "./studySession.ts";
 
-/** 출제 순서(1부터)를 붙인 결과 — 틀린 문제부터 다시 정렬해도 원래 번호를 보여 준다. */
+/** 출제 순서(1부터)를 붙인 결과 — 화면에는 표시하지 않고 목록 key로만 쓴다. */
 export interface NumberedResult extends QuestionResult {
   num: number;
 }

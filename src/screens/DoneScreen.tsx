@@ -72,7 +72,6 @@ function ResultRow({ item, contentType }: { item: NumberedResult; contentType: C
           <span className="result-chip">{modeChipLabel(contentType, item.mode)}</span>
         </div>
       </div>
-      <span className="result-num" aria-label={`${item.num}번 문제`}>{item.num}</span>
     </li>
   )
 }

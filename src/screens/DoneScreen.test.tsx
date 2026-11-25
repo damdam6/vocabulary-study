@@ -56,16 +56,16 @@ describe("DoneScreen 세션 결과", () => {
     expect(container.querySelector(".result-stat-num--wrong")?.textContent).toBe("2");
   });
 
-  it("틀린 문제를 먼저, 맞힌 문제를 나중에 출제 번호와 함께 나열한다", () => {
+  it("틀린 문제를 먼저, 맞힌 문제를 나중에 출제 순서대로 나열하고 번호는 표시하지 않는다", () => {
     const { container } = setup();
     const sections = [...container.querySelectorAll(".result-section")];
     expect(sections.map((s) => s.querySelector(".result-section-title")?.textContent)).toEqual(["틀린 문제2", "맞힌 문제1"]);
     const rows = [...container.querySelectorAll(".result-row")].map((row) => [
-      row.querySelector(".result-num")?.textContent,
       row.querySelector(".result-hanzi")?.textContent,
       row.querySelector(".result-mark")?.getAttribute("aria-label"),
     ]);
-    expect(rows).toEqual([["2", "犹豫", "오답"], ["3", "尴尬", "오답"], ["1", "经济", "정답"]]);
+    expect(rows).toEqual([["犹豫", "오답"], ["尴尬", "오답"], ["经济", "정답"]]);
+    expect(container.querySelector(".result-row")?.textContent).not.toMatch(/\d/);
   });
 
   it("모드2 오답은 내 답을 취소선으로 보여 주고, 모드1 오답은 정오 외 표시를 덧붙이지 않는다", () => {
