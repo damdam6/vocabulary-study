@@ -123,7 +123,6 @@ function DoneScreen({ result, profile, onGoHome }: DoneScreenProps) {
       <div className="result-scroll">
         <header className="result-header">
           <h2 className="result-title">세션 결과</h2>
-          <span className="result-note">기록은 이미 저장되었습니다</span>
         </header>
 
         <section className="result-summary" aria-label="세션 요약">

@@ -799,11 +799,6 @@ button {
   font-weight: 700;
 }
 
-.result-note {
-  font-size: 13px;
-  color: var(--text-muted);
-}
-
 .result-summary {
   background: var(--bg-card);
   border: 1px solid var(--border-card);
