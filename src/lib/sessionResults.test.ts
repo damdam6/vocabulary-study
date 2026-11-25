@@ -3,6 +3,8 @@ import type { WordEntry } from "./api";
 import type { QuestionResult } from "./studySession";
 import {
   formatResultTime,
+  ITEMS_PER_IMAGE,
+  paginateResults,
   resultImageFileName,
   summarizeResults,
   visibleAnswer,
@@ -45,6 +47,11 @@ describe("wrapText", () => {
     expect(wrapText("그는 어제 출근하지 않았다", 90, measure)).toEqual(["그는 어제", "출근하지 않았다"]);
   });
 
+  it("닫는 문장부호는 줄 첫머리에 홀로 남지 않고 앞 글자와 함께 넘어간다", () => {
+    expect(wrapText("他昨天没来上班。", 70, measure)).toEqual(["他昨天没来上", "班。"]);
+    expect(wrapText("没来上班。", 40, measure)).toEqual(["没来上", "班。"]);
+  });
+
   it("한 단어가 너무 길면 글자 단위로 끊고, 빈 문자열은 빈 배열이다", () => {
     expect(wrapText("abcdefghij", 40, measure)).toEqual(["abcd", "efgh", "ij"]);
     expect(wrapText("   ", 40, measure)).toEqual([]);
@@ -56,6 +63,39 @@ describe("이미지 파일 이름·시각", () => {
 
   it("Asia/Seoul 기준으로 만든다", () => {
     expect(resultImageFileName(date)).toBe("session-result-20261125-2142.png");
+    expect(resultImageFileName(date, 1, 1)).toBe("session-result-20261125-2142.png");
+    expect(resultImageFileName(date, 2, 3)).toBe("session-result-20261125-2142-2.png");
     expect(formatResultTime(date)).toBe("오후 9:42");
+  });
+});
+
+describe("paginateResults", () => {
+  const many = (wrong: number, correct: number) =>
+    summarizeResults([
+      ...Array.from({ length: wrong }, (_, i) => result(`错${i}`, false)),
+      ...Array.from({ length: correct }, (_, i) => result(`对${i}`, true)),
+    ]);
+  const shape = (pages: ReturnType<typeof paginateResults>) =>
+    pages.map((page) => [page.page, page.pageCount, page.blocks.map((b) => [b.kind, b.continued, b.items.length])]);
+
+  it("한 장에 120개씩, 틀린 문제 → 맞힌 문제 순서로 나누고 이어지는 구간을 표시한다", () => {
+    expect(ITEMS_PER_IMAGE).toBe(120);
+    expect(shape(paginateResults(many(130, 170)))).toEqual([
+      [1, 3, [["wrong", false, 120]]],
+      [2, 3, [["wrong", true, 10], ["correct", false, 110]]],
+      [3, 3, [["correct", true, 60]]],
+    ]);
+  });
+
+  it("120개 이하는 한 장, 정확히 경계에서 끝나는 구간은 다음 장에서 이어지지 않는다", () => {
+    expect(shape(paginateResults(many(3, 117)))).toEqual([[1, 1, [["wrong", false, 3], ["correct", false, 117]]]]);
+    expect(shape(paginateResults(many(120, 1)))).toEqual([
+      [1, 2, [["wrong", false, 120]]],
+      [2, 2, [["correct", false, 1]]],
+    ]);
+  });
+
+  it("문제가 없어도 요약용 한 장을 만든다", () => {
+    expect(shape(paginateResults(many(0, 0)))).toEqual([[1, 1, []]]);
   });
 });

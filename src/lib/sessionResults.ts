@@ -38,6 +38,50 @@ export function summarizeResults(results: readonly QuestionResult[]): ResultSumm
   };
 }
 
+/** 저장 이미지 한 장에 담는 문제 수 — 넘으면 여러 장으로 나눈다(canvas 크기 한계). */
+export const ITEMS_PER_IMAGE = 120;
+
+/** 이미지 한 장 안의 한 구간. continued면 앞 장에서 이어지는 구간이다. */
+export interface ResultPageBlock {
+  kind: "wrong" | "correct";
+  continued: boolean;
+  items: NumberedResult[];
+}
+
+export interface ResultPage {
+  /** 1부터. */
+  page: number;
+  pageCount: number;
+  blocks: ResultPageBlock[];
+}
+
+/**
+ * 틀린 문제 → 맞힌 문제를 이어 붙인 순서 그대로 perPage개씩 자른다. 문제가 없어도 요약을
+ * 담을 한 장은 만든다.
+ */
+export function paginateResults(summary: ResultSummary, perPage: number = ITEMS_PER_IMAGE): ResultPage[] {
+  const ordered = [
+    ...summary.wrongItems.map((item) => ({ kind: "wrong" as const, item })),
+    ...summary.correctItems.map((item) => ({ kind: "correct" as const, item })),
+  ];
+  const pageCount = Math.max(1, Math.ceil(ordered.length / perPage));
+  const pages: ResultPage[] = [];
+  for (let index = 0; index < pageCount; index++) {
+    const blocks: ResultPageBlock[] = [];
+    ordered.slice(index * perPage, (index + 1) * perPage).forEach(({ kind, item }, offset) => {
+      const last = blocks[blocks.length - 1];
+      if (last?.kind === kind) {
+        last.items.push(item);
+        return;
+      }
+      const previous = ordered[index * perPage + offset - 1];
+      blocks.push({ kind, continued: offset === 0 && previous?.kind === kind, items: [item] });
+    });
+    pages.push({ page: index + 1, pageCount, blocks });
+  }
+  return pages;
+}
+
 /**
  * "내 답"으로 보여 줄 값. 모드2 오답에서 실제로 입력한 경우만 — 학습 화면(Mode2Card)과
  * 같은 규칙으로 공백만 입력한 답은 보이지 않는다. 표시는 앞뒤 공백만 걷어낸 원입력.
@@ -48,7 +92,9 @@ export function visibleAnswer(result: QuestionResult): string | null {
   return trimmed === "" ? null : trimmed;
 }
 
-const CJK = /[⺀-鿿豈-﫿＀-￯　-〿]/u;
+const CJK = /[\u2E80-\u9FFF\uF900-\uFAFF\uFF00-\uFFEF\u3000-\u303F]/u;
+/** 줄 첫머리에 오면 안 되는 닫는 문장부호 — 앞 글자에 붙여 함께 넘긴다. */
+const NO_LINE_START = new Set(Array.from("。，、．！？；：）」』】》〉”’…,.!?;:)]}"));
 
 /**
  * 줄바꿈 단위로 쪼갠다. 공백 뒤와 한·중·일 문자 앞뒤에서 끊을 수 있다 — 띄어쓰기가 없는
@@ -58,7 +104,9 @@ function breakTokens(text: string): string[] {
   const tokens: string[] = [];
   let current = "";
   for (const char of Array.from(text)) {
-    if (CJK.test(char)) {
+    if (NO_LINE_START.has(char) && current === "" && tokens.length > 0 && !tokens[tokens.length - 1].endsWith(" ")) {
+      tokens[tokens.length - 1] += char;
+    } else if (CJK.test(char)) {
       if (current !== "") tokens.push(current);
       tokens.push(char);
       current = "";
@@ -114,10 +162,14 @@ const fileStampFormatter = new Intl.DateTimeFormat("en-US", {
   hourCycle: "h23",
 });
 
-/** 저장 파일 이름 — Asia/Seoul 기준 `session-result-YYYYMMDD-HHmm.png`. */
-export function resultImageFileName(date: Date): string {
+/**
+ * 저장 파일 이름 — Asia/Seoul 기준 `session-result-YYYYMMDD-HHmm.png`. 여러 장이면
+ * `-1`, `-2`처럼 장 번호를 붙인다.
+ */
+export function resultImageFileName(date: Date, page = 1, pageCount = 1): string {
   const parts = Object.fromEntries(fileStampFormatter.formatToParts(date).map((p) => [p.type, p.value]));
-  return `session-result-${parts.year}${parts.month}${parts.day}-${parts.hour}${parts.minute}.png`;
+  const suffix = pageCount > 1 ? `-${page}` : "";
+  return `session-result-${parts.year}${parts.month}${parts.day}-${parts.hour}${parts.minute}${suffix}.png`;
 }
 
 const timeFormatter = new Intl.DateTimeFormat("ko-KR", {

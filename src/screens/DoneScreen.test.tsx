@@ -10,7 +10,7 @@ import type { QuestionResult } from "../lib/studySession.ts";
 import type { SessionResult } from "./StudyScreen.tsx";
 
 const mocks = vi.hoisted(() => ({ render: vi.fn(), save: vi.fn() }));
-vi.mock("../lib/resultImage.ts", () => ({ renderResultImage: mocks.render, saveResultImage: mocks.save }));
+vi.mock("../lib/resultImage.ts", () => ({ renderResultImages: mocks.render, saveResultImages: mocks.save }));
 
 const zh: PublicProfile = { id: "zh", name: "HSK 6급", modes: ["m1", "m2"], contentType: "zh" };
 
@@ -39,7 +39,7 @@ function setup(result: SessionResult = mixed, profile: PublicProfile = zh) {
 
 beforeEach(() => {
   mocks.render.mockReset();
-  mocks.render.mockResolvedValue(new Blob(["png"], { type: "image/png" }));
+  mocks.render.mockResolvedValue([{ blob: new Blob(["png"], { type: "image/png" }), fileName: "a.png" }]);
   mocks.save.mockReset();
 });
 
@@ -88,8 +88,11 @@ describe("DoneScreen 세션 결과", () => {
   });
 
   it("진입 시 이미지를 미리 그리고, 저장 버튼은 그 이미지를 저장한다", async () => {
-    const blob = new Blob(["png"], { type: "image/png" });
-    mocks.render.mockResolvedValue(blob);
+    const files = [
+      { blob: new Blob(["1"], { type: "image/png" }), fileName: "session-result-20261125-2142-1.png" },
+      { blob: new Blob(["2"], { type: "image/png" }), fileName: "session-result-20261125-2142-2.png" },
+    ];
+    mocks.render.mockResolvedValue(files);
     const { container } = setup();
     expect(mocks.render).toHaveBeenCalledTimes(1);
     expect(mocks.render.mock.calls[0][0]).toMatchObject({ contentType: "zh", profileName: "HSK 6급", summary: { total: 3, wrong: 2 } });
@@ -97,7 +100,7 @@ describe("DoneScreen 세션 결과", () => {
     fire(() => container.querySelector<HTMLButtonElement>(".result-save")!.click());
     await flush();
     expect(mocks.render).toHaveBeenCalledTimes(1);
-    expect(mocks.save).toHaveBeenCalledWith(blob, expect.stringMatching(/^session-result-\d{8}-\d{4}\.png$/));
+    expect(mocks.save).toHaveBeenCalledWith(files);
     expect(container.querySelector(".result-save-error")).toBeNull();
   });
 

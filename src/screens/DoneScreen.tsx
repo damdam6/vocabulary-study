@@ -3,14 +3,13 @@
 // [이미지 저장] [홈] 두 버튼만 누를 수 있다. 수치는 이번 세션의 모드1·2 합산 — X 자가판정도
 // 오답으로 집계된다.
 //
-// 이미지는 화면 진입 시 미리 그려 둔다(renderResultImage) — 저장 버튼은 곧바로 PNG 파일을
-// 내려받는다.
+// 이미지는 화면 진입 시 미리 그려 둔다(renderResultImages) — 저장 버튼은 곧바로 PNG 파일을
+// 내려받는다. 문제가 많으면 120개씩 여러 장으로 나뉜다.
 import { useEffect, useMemo, useRef, useState } from 'react'
 import HomeIcon from '../components/HomeIcon.tsx'
 import { headwordLang, modeChipLabel } from '../lib/contentLabels.ts'
-import { renderResultImage, saveResultImage, type ResultImageInput } from '../lib/resultImage.ts'
+import { renderResultImages, saveResultImages, type ResultImageFile, type ResultImageInput } from '../lib/resultImage.ts'
 import {
-  resultImageFileName,
   summarizeResults,
   visibleAnswer,
   type NumberedResult,
@@ -83,12 +82,12 @@ function DoneScreen({ result, profile, onGoHome }: DoneScreenProps) {
     () => ({ summary, contentType: profile.contentType, profileName: profile.name, completedAt }),
     [summary, profile.contentType, profile.name, completedAt],
   )
-  const imageRef = useRef<Promise<Blob> | null>(null)
+  const imageRef = useRef<Promise<ResultImageFile[]> | null>(null)
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState(false)
 
   useEffect(() => {
-    const pending = renderResultImage(imageInput)
+    const pending = renderResultImages(imageInput)
     pending.catch(() => {})
     imageRef.current = pending
   }, [imageInput])
@@ -98,16 +97,16 @@ function DoneScreen({ result, profile, onGoHome }: DoneScreenProps) {
     setSaving(true)
     setSaveError(false)
     try {
-      let blob: Blob
+      let files: ResultImageFile[]
       try {
-        blob = await (imageRef.current ?? renderResultImage(imageInput))
+        files = await (imageRef.current ?? renderResultImages(imageInput))
       } catch {
         // 미리 그리기 실패(폰트·메모리 등) — 한 번 더 그려 본다.
-        const retry = renderResultImage(imageInput)
+        const retry = renderResultImages(imageInput)
         imageRef.current = retry
-        blob = await retry
+        files = await retry
       }
-      saveResultImage(blob, resultImageFileName(completedAt))
+      await saveResultImages(files)
     } catch {
       setSaveError(true)
     } finally {
