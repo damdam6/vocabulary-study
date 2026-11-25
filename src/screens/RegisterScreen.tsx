@@ -267,6 +267,20 @@ function RegisterScreen({ contentType, onGoHome, onNavigateTabs }: RegisterScree
       })
   }
 
+  // 결과 화면의 "단어 등록으로" — 같은 탭의 빈 등록 폼으로 돌아간다. 방금 추가한 단어가
+  // 다음 배치의 시트 중복 대조에 잡히도록 단어 목록을 다시 불러온다.
+  const handleRegisterMore = () => {
+    setText('')
+    setConfirmedText(null)
+    setAcknowledgedDuplicateKey(null)
+    setEditOverlay({})
+    setEditMode(null)
+    setSubmitError(null)
+    setResult(null)
+    setSubmitPhase('idle')
+    setWordsRetryKey((key) => key + 1)
+  }
+
   const limitValidationError = validateSessionLimit(limitInput)
   const canSaveLimit = limitSaveStatus !== 'saving' && limitValidationError === null
   // 클라 선검증 오류가 서버 저장 실패 문구보다 우선한다 — 값을 고치는 순간 서버
@@ -335,8 +349,8 @@ function RegisterScreen({ contentType, onGoHome, onNavigateTabs }: RegisterScree
             )}
           </p>
         </div>
-        <button type="button" className="primary-button" aria-label="홈으로" title="홈으로" onClick={onGoHome}>
-          <HomeIcon />
+        <button type="button" className="primary-button register-more-button" onClick={handleRegisterMore}>
+          단어 등록으로
         </button>
       </div>
     )

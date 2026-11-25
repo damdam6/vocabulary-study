@@ -276,6 +276,39 @@ describe("RegisterScreen 탭 선택 단계", () => {
       words: [{ hanzi: "经济", pinyin: "jīngjì", meaning: "경제" }],
     });
   });
+
+  it("등록 완료 후 '단어 등록으로'는 같은 탭의 빈 등록 폼으로 돌아가고 단어 목록을 다시 불러온다", async () => {
+    fetchTabsMock.mockResolvedValue(["HSK6", "HSK7"]);
+    const added = { hanzi: "经济", pinyin: "jīngjì", meaning: "경제" };
+    registerWordsMock.mockResolvedValue({ tab: "HSK7", created: false, added: [added], skipped: [] });
+    const { container, onGoHome, textarea, confirmButton, submitButton, currentTab } = setup();
+    await flush();
+    pickTab("HSK7");
+
+    fire(() => setNativeValue(textarea(), VALID_BATCH));
+    fire(() => confirmButton().click());
+    fire(() => submitButton()!.click());
+    await flush();
+
+    const back = container.querySelector<HTMLButtonElement>(".register-more-button")!;
+    expect(back.textContent).toBe("단어 등록으로");
+    expect(container.querySelector('[aria-label="홈으로"].primary-button')).toBeNull();
+
+    fetchWordsMock.mockResolvedValue({ ...wordsResponse, words: [{ ...added, tab: "HSK7" }] });
+    fire(() => back.click());
+    await flush();
+
+    expect(onGoHome).not.toHaveBeenCalled();
+    expect(fetchWordsMock).toHaveBeenCalledTimes(2);
+    expect(currentTab()?.textContent).toBe("HSK7");
+    expect(textarea().value).toBe("");
+    expect(container.querySelector("tbody tr")).toBeNull();
+
+    // 다시 불러온 목록 기준으로 방금 등록한 단어는 중복으로 잡힌다.
+    fire(() => setNativeValue(textarea(), VALID_BATCH));
+    fire(() => confirmButton().click());
+    expect(container.querySelector(".register-confirm-banner")).not.toBeNull();
+  });
 });
 describe("RegisterScreen 오류 행 직접 수정 (#127)", () => {
   // 병음에 성조가 없어 blocked가 되는 행 + 정상 행 하나.
