@@ -2,6 +2,8 @@
 // 프로필별로 저장돼 다음 홈 진입에도 시트 설정(sessionLimit)을 대신하고, 시트에는 쓰지 않는다 —
 // "기본값으로"를 누르면 시트 값으로 돌아간다. 모달 외형은 등록 검토 모달(register-modal-*)을 재사용한다.
 // "순서대로" 스위치도 여기서 켜고 끈다 — 켜면 시트 순서대로 전부 출제하므로 문제 수는 최대로 고정된다.
+// 그 아래 "시험모드" 스위치 — 켜면 범위 안 단어를 졸업 단어까지 전부 내므로 문제 수는 범위의 단어 수로
+// 고정되고, 기록을 남기지 않으며 끝나면 문제별 결과 화면을 보여 준다. 순서대로와 함께 켤 수 있다.
 import { useEffect, useState, type FormEvent } from 'react'
 
 interface SessionLimitModalProps {
@@ -13,15 +15,20 @@ interface SessionLimitModalProps {
   max: number
   /** 지금 "순서대로"가 켜져 있는지 — 스위치 초기값. */
   sequential: boolean
+  /** 지금 "시험모드"가 켜져 있는지 — 스위치 초기값. */
+  testMode: boolean
+  /** 시험모드의 문제 수 — 범위 안 전체 단어 수(졸업 포함). */
+  testMax: number
   onCancel: () => void
-  /** sequential이 true면 limit은 max다 — 호출부는 그때 문제 수 설정을 덮어쓰지 않는다. */
-  onSave: (limit: number, sequential: boolean) => void
+  /** sequential·testMode 중 하나라도 켜져 있으면 호출부는 문제 수 설정을 덮어쓰지 않는다. */
+  onSave: (limit: number, sequential: boolean, testMode: boolean) => void
   onReset: () => void
 }
 
-function SessionLimitModal({ current, sheetLimit, max, sequential, onCancel, onSave, onReset }: SessionLimitModalProps) {
+function SessionLimitModal({ current, sheetLimit, max, sequential, testMode, testMax, onCancel, onSave, onReset }: SessionLimitModalProps) {
   const [draft, setDraft] = useState(() => String(Math.min(current, max)))
   const [sequentialDraft, setSequentialDraft] = useState(sequential)
+  const [testModeDraft, setTestModeDraft] = useState(testMode)
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -31,13 +38,14 @@ function SessionLimitModal({ current, sheetLimit, max, sequential, onCancel, onS
     return () => document.removeEventListener('keydown', onKeyDown)
   }, [onCancel])
 
-  // 순서대로가 켜져 있으면 입력값과 무관하게 최대 문제 수다 — 입력한 값은 끄면 그대로 돌아온다.
-  const value = sequentialDraft ? max : Number(draft)
-  const valid = sequentialDraft || (/^\d+$/.test(draft.trim()) && value >= 1 && value <= max)
+  // 시험모드면 범위의 전체 단어 수, 순서대로면 최대 문제 수로 고정된다 — 입력한 값은 끄면 그대로 돌아온다.
+  const fixed = testModeDraft || sequentialDraft
+  const value = testModeDraft ? testMax : sequentialDraft ? max : Number(draft)
+  const valid = fixed || (/^\d+$/.test(draft.trim()) && value >= 1 && value <= max)
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault()
-    if (valid) onSave(value, sequentialDraft)
+    if (valid) onSave(value, sequentialDraft, testModeDraft)
   }
 
   return (
@@ -65,10 +73,10 @@ function SessionLimitModal({ current, sheetLimit, max, sequential, onCancel, onS
             min={1}
             max={max}
             step={1}
-            value={sequentialDraft ? String(max) : draft}
+            value={fixed ? String(value) : draft}
             onChange={(event) => setDraft(event.target.value)}
             aria-invalid={!valid}
-            disabled={sequentialDraft}
+            disabled={fixed}
             autoFocus
           />
         </label>
@@ -86,6 +94,23 @@ function SessionLimitModal({ current, sheetLimit, max, sequential, onCancel, onS
             aria-labelledby="session-limit-sequential-label"
             className={`toggle-switch${sequentialDraft ? ' toggle-switch--on' : ''}`}
             onClick={() => setSequentialDraft((on) => !on)}
+          >
+            <span className="toggle-switch-knob" />
+          </button>
+        </div>
+
+        <div className="session-limit-modal-option">
+          <div className="session-limit-modal-option-text">
+            <span className="session-limit-modal-option-label" id="session-limit-test-label">시험모드</span>
+            <span className="session-limit-modal-option-hint">졸업 포함 모든 단어 · 기록 안 남김 · 끝나면 결과 보기</span>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={testModeDraft}
+            aria-labelledby="session-limit-test-label"
+            className={`toggle-switch${testModeDraft ? ' toggle-switch--on' : ''}`}
+            onClick={() => setTestModeDraft((on) => !on)}
           >
             <span className="toggle-switch-knob" />
           </button>

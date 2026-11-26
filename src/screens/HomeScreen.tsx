@@ -13,8 +13,9 @@ import { getStoredProfile, saveProfile, type PublicProfile, type WordEntry } fro
 import { formatHomeDate } from "../lib/date.ts";
 import { computeHomeStats, type HomeStats } from "../lib/homeStats.ts";
 import { RETRY_QUEUE_CHANGED_EVENT, RETRY_QUEUE_STORAGE_KEY, getRetryQueueLength } from "../lib/retryQueue.ts";
-import { buildSequentialQueue, buildSessionQueue, SESSION_CAP, type SessionQuestion } from "../lib/sessionQueue.ts";
+import { buildSequentialQueue, buildSessionQueue, buildTestQueue, SESSION_CAP, type SessionQuestion } from "../lib/sessionQueue.ts";
 import { readSequentialOrder, saveSequentialOrder } from "../lib/sequentialOrderPreference.ts";
+import { readTestMode, saveTestMode } from "../lib/testModePreference.ts";
 import {
   deriveTabs,
   filterWordsByScope,
@@ -33,6 +34,8 @@ export interface StudySessionContext {
   profile: PublicProfile
   tts: TtsCapability
   audioAutoplay: boolean
+  /** 시험모드 — 기록을 남기지 않고, 끝나면 문제별 결과 화면을 보여 준다. */
+  testMode: boolean
 }
 
 interface HomeScreenProps {
@@ -80,6 +83,8 @@ function HomeScreen({ onStart, onStartAutoPlay, onNavigateRegister, onSwitchProf
   // "순서대로"(시트 순서 출제) — 켜면 문제 수는 풀 수 있는 최대로 고정된다. 전체 단어 수는 어느 범위의
   // 복습 대기 + 학습 중보다도 크거나 같아서, 이 값을 상한으로 주면 집계·칩 카운트가 모두 최대가 된다.
   const [sequential, setSequential] = useState(false);
+  // "시험모드" — 켜면 범위 안 단어를 졸업까지 전부 한 번씩 내고(문제 수 = 범위의 단어 수), 기록은 남기지 않는다.
+  const [testMode, setTestMode] = useState(false);
   const configuredSessionLimit = sessionLimitOverride ?? sheetSessionLimit;
   const sessionLimit = sequential ? Math.max(1, words.length) : configuredSessionLimit;
   const [audioAutoplay, setAudioAutoplay] = useState(true);
@@ -103,6 +108,7 @@ function HomeScreen({ onStart, onStartAutoPlay, onNavigateRegister, onSwitchProf
         setSheetSessionLimit(settings.sessionLimit);
         setSessionLimitOverride(readSessionLimitOverride(fetchedProfile.id));
         setSequential(readSequentialOrder(fetchedProfile.id));
+        setTestMode(readTestMode(fetchedProfile.id));
         setTts(fetchedTts);
         setToday(getSeoulToday());
         // 홈 진입마다 새 응답으로 저장된 범위를 다시 검증한다 — 사라진 탭 정리·저장값 갱신은
@@ -153,21 +159,22 @@ function HomeScreen({ onStart, onStartAutoPlay, onNavigateRegister, onSwitchProf
     [scopedWords, today, profile, sessionLimit],
   );
   // 칩 라벨의 n — 그 탭만 골랐을 때의 세션 수. 같은 필터·같은 산식이라 그 탭 하나만 켰을 때의 세션 수 줄과 같다.
+  // 시험모드면 그 탭의 단어 수(졸업 포함)다.
   const tabCounts = useMemo(() => {
     if (!scopePickerVisible || profile === null) return [];
-    return tabs.map((tab) => ({
-      tab,
-      count: computeHomeStats(
-        filterWordsByScope(words, { kind: "tabs", tabs: [tab] }),
-        today,
-        profile.modes,
-        sessionLimit,
-      ).sessionCount,
-    }));
-  }, [scopePickerVisible, tabs, words, today, profile, sessionLimit]);
+    return tabs.map((tab) => {
+      const tabWords = filterWordsByScope(words, { kind: "tabs", tabs: [tab] });
+      return {
+        tab,
+        count: testMode ? tabWords.length : computeHomeStats(tabWords, today, profile.modes, sessionLimit).sessionCount,
+      };
+    });
+  }, [scopePickerVisible, tabs, words, today, profile, sessionLimit, testMode]);
 
   const noTabSelected = activeScope.kind === "tabs" && activeScope.tabs.length === 0;
-  const canStart = status === "ready" && !noTabSelected && (stats?.sessionCount ?? 0) > 0;
+  // 이번 세션 문제 수 — 시험모드면 범위 안 전체 단어 수, 아니면 현황 집계의 세션 수.
+  const sessionCount = testMode ? scopedWords.length : (stats?.sessionCount ?? 0);
+  const canStart = status === "ready" && !noTabSelected && sessionCount > 0;
   const scopeLabel = describeScope(activeScope, tabs);
   // 범위 안에서 풀 수 있는 최대 문제 수 — 상한이 없을 때의 세션 수(복습 대기 + 학습 중)와 같다.
   const sessionMax = stats === null ? 0 : stats.reviewDue + stats.learning;
@@ -193,16 +200,19 @@ function HomeScreen({ onStart, onStartAutoPlay, onNavigateRegister, onSwitchProf
     updateScope({ kind: "tabs", tabs: selected });
   };
 
-  // 학습 시작·자동 재생이 같은 큐를 쓴다. "순서대로"면 시트 순서로 전부, 아니면 기존 선별·셔플 큐.
+  // 학습 시작·자동 재생이 같은 큐를 쓴다. 시험모드면 범위 안 단어 전부(순서대로면 시트 순서, 아니면 섞어서),
+  // "순서대로"면 시트 순서로 풀 수 있는 문제 전부, 아니면 기존 선별·셔플 큐.
   const buildQueue = (modes: PublicProfile["modes"]) =>
-    sequential
-      ? buildSequentialQueue(scopedWords, getSeoulToday(), modes)
-      : buildSessionQueue(scopedWords, getSeoulToday(), modes, undefined, sessionLimit);
+    testMode
+      ? buildTestQueue(scopedWords, modes, sequential)
+      : sequential
+        ? buildSequentialQueue(scopedWords, getSeoulToday(), modes)
+        : buildSessionQueue(scopedWords, getSeoulToday(), modes, undefined, sessionLimit);
 
   const handleStart = () => {
     // canStart(sessionCount>0)와 같은 단어 집합(scopedWords)·같은 산식(같은 sessionLimit)이므로 빈 큐가 나올 수 없다
     if (profile === null) return;
-    onStart(buildQueue(profile.modes), { profile, tts, audioAutoplay });
+    onStart(buildQueue(profile.modes), { profile, tts, audioAutoplay, testMode });
   };
 
   const handleStartAutoPlay = () => {
@@ -217,11 +227,11 @@ function HomeScreen({ onStart, onStartAutoPlay, onNavigateRegister, onSwitchProf
       seen.add(key);
       unique.push(word);
     }
-    onStartAutoPlay(unique, { profile, tts, audioAutoplay });
+    onStartAutoPlay(unique, { profile, tts, audioAutoplay, testMode });
   };
 
   const startLabel =
-    status === "loading" ? "불러오는 중…" : noTabSelected ? "탭을 선택하세요" : canStart ? "학습 시작" : "오늘 할 것 없음";
+    status === "loading" ? "불러오는 중…" : noTabSelected ? "탭을 선택하세요" : canStart ? (testMode ? "시험 시작" : "학습 시작") : "오늘 할 것 없음";
 
   return (
     <div className="home-screen">
@@ -314,19 +324,21 @@ function HomeScreen({ onStart, onStartAutoPlay, onNavigateRegister, onSwitchProf
           {scopeLabel && <span className="session-count-scope-name">{scopeLabel.name}</span>}
           <span className="session-count-rest">
             {scopeLabel && `${scopeLabel.rest} · `}
-            {sessionMax > 0 ? (
+            {/* 풀 문제가 0개여도 범위에 단어가 있으면 링크를 연다 — 졸업만 남았을 때 시험모드를 켤 수 있게. */}
+            {sessionMax > 0 || scopedWords.length > 0 ? (
               <button
                 type="button"
                 className="session-limit-link"
-                aria-label={`이번 세션 문제 수 ${stats.sessionCount}문제${sequential ? ", 순서대로" : ""}, 수정`}
+                aria-label={`이번 세션 문제 수 ${sessionCount}문제${sequential ? ", 순서대로" : ""}${testMode ? ", 시험모드" : ""}, 수정`}
                 onClick={() => setSessionLimitModalOpen(true)}
               >
-                {stats.sessionCount}문제
+                {sessionCount}문제
               </button>
             ) : (
-              <>{stats.sessionCount}문제</>
+              <>{sessionCount}문제</>
             )}
-            {sequential && sessionMax > 0 && " · 순서대로"}
+            {sequential && (sessionMax > 0 || testMode) && " · 순서대로"}
+            {testMode && " · 시험모드"}
           </span>
         </p>
       )}
@@ -352,23 +364,31 @@ function HomeScreen({ onStart, onStartAutoPlay, onNavigateRegister, onSwitchProf
           sheetLimit={sheetSessionLimit}
           max={sessionMax}
           sequential={sequential}
+          testMode={testMode}
+          testMax={scopedWords.length}
           onCancel={() => setSessionLimitModalOpen(false)}
-          onSave={(limit, nextSequential) => {
-            // 순서대로를 켠 저장은 문제 수 설정을 건드리지 않는다 — 끄면 이전 값으로 돌아간다.
-            if (!nextSequential) {
+          onSave={(limit, nextSequential, nextTestMode) => {
+            // 순서대로·시험모드를 켠 저장은 문제 수 설정을 건드리지 않는다 — 끄면 이전 값으로 돌아간다.
+            if (!nextSequential && !nextTestMode) {
               setSessionLimitOverride(limit);
               if (profile) saveSessionLimitOverride(profile.id, limit);
             }
             setSequential(nextSequential);
-            if (profile) saveSequentialOrder(profile.id, nextSequential);
+            setTestMode(nextTestMode);
+            if (profile) {
+              saveSequentialOrder(profile.id, nextSequential);
+              saveTestMode(profile.id, nextTestMode);
+            }
             setSessionLimitModalOpen(false);
           }}
           onReset={() => {
             setSessionLimitOverride(null);
             setSequential(false);
+            setTestMode(false);
             if (profile) {
               saveSessionLimitOverride(profile.id, null);
               saveSequentialOrder(profile.id, false);
+              saveTestMode(profile.id, false);
             }
             setSessionLimitModalOpen(false);
           }}

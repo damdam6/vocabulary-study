@@ -215,3 +215,27 @@ describe("StudyScreen 세션 결과 전달", () => {
     });
   });
 });
+
+describe("StudyScreen 시험모드(recordAnswers=false)", () => {
+  it("정답·오답 모두 기록 API를 부르지 않고 결과만 넘긴다", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(Response.json(word));
+    vi.stubGlobal("fetch", fetchMock);
+    const onComplete = vi.fn();
+    const reviewQuestion = { word, mode: "m2" as const, isReview: true };
+    const { container, unmount } = renderComponent(
+      <StudyScreen queue={[question("m2"), reviewQuestion]} profile={profile} tts={tts} recordAnswers={false} onExit={vi.fn()} onComplete={onComplete} />,
+    );
+    unmountCurrent = unmount;
+    const answer = (value: string) => {
+      fire(() => setInput(container.querySelector<HTMLTextAreaElement>(".mode-input")!, value));
+      fire(() => container.querySelector<HTMLButtonElement>("button[type=submit]")!.click());
+      fire(() => [...container.querySelectorAll<HTMLButtonElement>("button")].find((button) => button.textContent === "다음")!.click());
+    };
+    answer("经济");
+    answer("틀림");
+    await flush();
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(onComplete).toHaveBeenCalledWith(expect.objectContaining({ correct: 1, wrong: 1 }));
+  });
+});

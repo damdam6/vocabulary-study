@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
 //
-// 세션 결과 화면(design-prd §5): 요약 수치, 틀린 문제 → 맞힌 문제 순서, 내 답 표시,
+// 시험 결과 화면(design-prd §5.1): 요약 수치, 틀린 문제 → 맞힌 문제 순서, 내 답 표시,
 // 조작은 [이미지 저장] [홈] 두 버튼뿐. canvas가 없는 jsdom이라 이미지 생성·저장은 모킹한다.
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import DoneScreen from "./DoneScreen.tsx";
+import TestResultScreen from "./TestResultScreen.tsx";
 import { fire, flush, renderComponent } from "../test-utils.tsx";
 import type { PublicProfile, WordEntry } from "../lib/api.ts";
 import type { QuestionResult } from "../lib/studySession.ts";
@@ -32,7 +32,7 @@ let unmountCurrent: (() => void) | null = null;
 
 function setup(result: SessionResult = mixed, profile: PublicProfile = zh) {
   const onGoHome = vi.fn();
-  const { container, unmount } = renderComponent(<DoneScreen result={result} profile={profile} onGoHome={onGoHome} />);
+  const { container, unmount } = renderComponent(<TestResultScreen result={result} profile={profile} onGoHome={onGoHome} />);
   unmountCurrent = unmount;
   return { container, onGoHome };
 }
@@ -48,7 +48,7 @@ afterEach(() => {
   unmountCurrent = null;
 });
 
-describe("DoneScreen 세션 결과", () => {
+describe("TestResultScreen 시험 결과", () => {
   it("정답률과 정답·오답 수를 보여 준다", () => {
     const { container } = setup();
     expect(container.querySelector(".result-rate-value")?.textContent).toBe("33%");

@@ -145,6 +145,7 @@ describe("세션 시작 — 시트 문제 수 설정이 큐에 반영된다 (#11
       audioAutoplay: true,
       profile,
       tts: { enabled: true, revision: "session-r1", maxTextLength: 200 },
+      testMode: false,
     });
   });
 });
@@ -723,5 +724,111 @@ describe("순서대로 출제", () => {
     home.setSequential(true);
     fire(() => home.container.querySelector<HTMLButtonElement>(".autoplay-start-button")!.click());
     expect((onStartAutoPlay.mock.calls[0][0] as WordEntry[]).map((entry) => entry.hanzi)).toEqual(["a1", "a3", "b1", "b2", "b3"]);
+  });
+});
+
+describe("시험모드", () => {
+  const word = (tab: string, hanzi: string, over: Partial<WordEntry> = {}): WordEntry => ({
+    tab, hanzi, pinyin: "", meaning: hanzi, m1: 1, m2: 0, nextReview: null, interval: null, ...over,
+  });
+  const graduated = { m1: 3, m2: 3, nextReview: "2999-01-01", interval: 30 };
+  // 시트 순서: A탭 학습 중 1 + 졸업(복습 예정) 1, B탭 복습 대기 1 + 졸업(복습 예정) 1.
+  const words = [
+    word("A", "a1"),
+    word("A", "a2", graduated),
+    word("B", "b1", { m1: 3, m2: 3, nextReview: "2000-01-01", interval: 1 }),
+    word("B", "b2", graduated),
+  ];
+
+  async function mount(list: WordEntry[] = words, sessionLimit = 1) {
+    fetchWordsMock.mockResolvedValue({ profile, words: list, settings: { sessionLimit }, tts: { enabled: false } } satisfies WordsResponse);
+    const onStart = vi.fn();
+    const { container, unmount } = renderComponent(
+      <HomeScreen onStart={onStart} onNavigateRegister={vi.fn()} onSwitchProfile={vi.fn()} />,
+    );
+    unmountCurrent = unmount;
+    await flush();
+    const dialog = () => container.querySelector<HTMLElement>('[role="dialog"]');
+    const switches = () => [...dialog()!.querySelectorAll<HTMLButtonElement>('[role="switch"]')];
+    const open = () => fire(() => container.querySelector<HTMLButtonElement>(".session-limit-link")!.click());
+    const save = () => fire(() => dialog()!.querySelector<HTMLButtonElement>('button[type="submit"]')!.click());
+    const setSwitch = (label: string, on: boolean) => {
+      const target = switches().find((s) => dialog()!.querySelector(`#${s.getAttribute("aria-labelledby")}`)?.textContent === label)!;
+      if ((target.getAttribute("aria-checked") === "true") !== on) fire(() => target.click());
+    };
+    return {
+      container,
+      onStart,
+      dialog,
+      switches,
+      open,
+      save,
+      setSwitch,
+      input: () => dialog()!.querySelector<HTMLInputElement>("input")!,
+      count: () => container.querySelector(".session-count")?.textContent ?? null,
+      startButton: () => container.querySelector<HTMLButtonElement>(".start-button")!,
+    };
+  }
+
+  it("모달에서 순서대로 아래에 시험모드 스위치가 있고 기본은 꺼져 있다", async () => {
+    const home = await mount();
+    home.open();
+    const labels = home.switches().map((s) => home.dialog()!.querySelector(`#${s.getAttribute("aria-labelledby")}`)?.textContent);
+    expect(labels).toEqual(["순서대로", "시험모드"]);
+    expect(home.switches()[1].getAttribute("aria-checked")).toBe("false");
+  });
+
+  it("켜면 졸업 단어까지 범위 안 단어를 전부 한 번씩 내고, 시작 컨텍스트에 시험모드를 싣는다", async () => {
+    const home = await mount();
+    expect(home.count()).toBe("전체 · 1문제");
+    home.open();
+    home.setSwitch("시험모드", true);
+    expect(home.input().value).toBe("4");
+    expect(home.input().disabled).toBe(true);
+    home.save();
+    expect(home.count()).toBe("전체 · 4문제 · 시험모드");
+    expect(home.startButton().textContent).toBe("시험 시작");
+
+    fire(() => home.startButton().click());
+    const [queue, context] = home.onStart.mock.calls[0] as [SessionQuestion<WordEntry>[], { testMode: boolean }];
+    expect(queue.map((q) => q.word.hanzi).sort()).toEqual(["a1", "a2", "b1", "b2"]);
+    expect(queue.every((q) => !q.isReview)).toBe(true);
+    expect(context.testMode).toBe(true);
+  });
+
+  it("순서대로와 함께 켜면 시트 순서 그대로 낸다", async () => {
+    const home = await mount();
+    home.open();
+    home.setSwitch("순서대로", true);
+    home.setSwitch("시험모드", true);
+    home.save();
+    expect(home.count()).toBe("전체 · 4문제 · 순서대로 · 시험모드");
+    fire(() => home.startButton().click());
+    expect((home.onStart.mock.calls[0][0] as SessionQuestion<WordEntry>[]).map((q) => q.word.hanzi)).toEqual(["a1", "a2", "b1", "b2"]);
+  });
+
+  it("졸업 단어만 남아 오늘 할 것이 없어도 링크로 시험모드를 켤 수 있다", async () => {
+    const home = await mount([word("A", "a2", graduated), word("A", "a3", graduated)]);
+    expect(home.startButton().disabled).toBe(true);
+    home.open();
+    home.setSwitch("시험모드", true);
+    home.save();
+    expect(home.count()).toBe("전체 · 2문제 · 시험모드");
+    expect(home.startButton().disabled).toBe(false);
+  });
+
+  it("설정은 저장되어 다음 홈 진입에도 유지되고, 기본값으로를 누르면 꺼진다", async () => {
+    const first = await mount();
+    first.open();
+    first.setSwitch("시험모드", true);
+    first.save();
+    unmountCurrent?.();
+    unmountCurrent = null;
+
+    const second = await mount();
+    expect(second.count()).toBe("전체 · 4문제 · 시험모드");
+    second.open();
+    fire(() => [...second.dialog()!.querySelectorAll<HTMLButtonElement>("button")].find((b) => b.textContent === "기본값으로")!.click());
+    expect(second.count()).toBe("전체 · 1문제");
   });
 });

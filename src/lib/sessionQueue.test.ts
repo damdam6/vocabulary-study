@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { computeHomeStats } from "./homeStats.ts";
-import { buildSequentialQueue, buildSessionQueue, RECALL_SHARE, SESSION_CAP, type SessionQuestion } from "./sessionQueue.ts";
+import { buildSequentialQueue, buildSessionQueue, buildTestQueue, RECALL_SHARE, SESSION_CAP, type SessionQuestion } from "./sessionQueue.ts";
 
 const today = "2026-07-20";
 const M = ["m1", "m2"] as const;
@@ -493,5 +493,33 @@ describe("buildSequentialQueue — 시트 순서 그대로 전부 출제", () =>
     expect(queue.map((q) => q.mode)).toEqual(["m2", "m1"]);
     const single = buildSequentialQueue([reviewWord("다", "2026-07-01"), learningWord("라", 0, 0)], today, ["m1"], mulberry32(9));
     expect(single.map((q) => q.mode)).toEqual(["m1", "m1"]);
+  });
+});
+
+describe("buildTestQueue — 시험모드", () => {
+  const words: TestWord[] = [
+    learningWord("学", 1, 0),
+    { tab: "HSK6", hanzi: "졸", m1: 3, m2: 3, nextReview: "2999-01-01" },
+    { tab: "HSK6", hanzi: "복", m1: 3, m2: 3, nextReview: "2000-01-01" },
+    { tab: "HSK6", hanzi: "무", m1: 0, m2: 0, nextReview: null },
+  ];
+
+  it("상태와 무관하게 모든 단어를 한 번씩, ordered면 입력 순서 그대로 낸다", () => {
+    const queue = buildTestQueue(words, M, true, () => 0);
+    expect(queue.map((q) => q.word.hanzi)).toEqual(["学", "졸", "복", "무"]);
+    expect(queue.every((q) => q.isReview === false && q.mode === "m1")).toBe(true);
+  });
+
+  it("ordered가 아니면 섞되 단어 집합은 같다", () => {
+    let seed = 7;
+    const rng = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+    const queue = buildTestQueue(words, M, false, rng);
+    expect(queue).toHaveLength(4);
+    expect(queue.map((q) => q.word.hanzi).sort()).toEqual(["学", "졸", "복", "무"].sort());
+  });
+
+  it("모드는 단어의 유효 모드 중에서 고른다", () => {
+    const m2Only = buildTestQueue(words, ["m2"], true, () => 0.99);
+    expect(m2Only.every((q) => q.mode === "m2")).toBe(true);
   });
 });
