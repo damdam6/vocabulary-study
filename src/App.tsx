@@ -31,6 +31,7 @@ interface ActiveStudySession {
   profile: StudySessionContext['profile']
   tts: TtsCapability
   audioAutoplay: boolean
+  testMode: boolean
 }
 
 interface ActiveAutoPlay {
@@ -104,6 +105,7 @@ function App() {
             profile={activeStudy.profile}
             tts={activeStudy.tts}
             audioAutoplay={activeStudy.audioAutoplay}
+            recordAnswers={!activeStudy.testMode}
             onExit={() => setScreen('home')}
             onComplete={completeSession}
           />

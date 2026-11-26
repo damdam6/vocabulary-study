@@ -41,6 +41,8 @@ interface StudyScreenProps {
   /** Home의 words 응답에서 고정한 capability — 세션 도중 재조회하지 않는다. */
   tts: TtsCapability
   audioAutoplay?: boolean
+  /** false면 시트 기록 API를 부르지 않는다 — 시험모드. 판정·결과 집계는 그대로 한다. */
+  recordAnswers?: boolean
   onExit: () => void
   onComplete: (result: SessionResult) => void
 }
@@ -58,7 +60,7 @@ function createStudySessionId(): string {
   return generated ?? `study-${++sessionSequence}`
 }
 
-function StudyScreen({ queue, profile, tts, audioAutoplay = true, onExit, onComplete }: StudyScreenProps) {
+function StudyScreen({ queue, profile, tts, audioAutoplay = true, recordAnswers = true, onExit, onComplete }: StudyScreenProps) {
   const [session, setSession] = useState<StudySessionState>(() => startSession(queue))
   const [feedback, setFeedback] = useState<Feedback | null>(null)
   const [sessionId] = useState(createStudySessionId)
@@ -122,7 +124,7 @@ function StudyScreen({ queue, profile, tts, audioAutoplay = true, onExit, onComp
     // 다음 문제로 곧바로 진행하는 분기는 기록·state 갱신보다 먼저 이전 질문을 멈춘다.
     if (question.mode !== 'm2') stop('advance')
     const { state: recorded, effect } = recordAnswer(session, correct, answer)
-    fireEffect(effect)
+    if (recordAnswers) fireEffect(effect)
     if (question.mode === 'm2') {
       // 모드2: 정답·오답 모두 카드 컴포넌트가 채점 결과 화면을 띄운 채 머문다 — 오버레이 없음(§4.4),
       // 진행은 "다음" 버튼의 handleProceed에서.

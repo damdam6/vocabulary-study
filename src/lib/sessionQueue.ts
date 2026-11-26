@@ -177,6 +177,22 @@ export function buildSequentialQueue<T extends WordProgress>(
   return queue;
 }
 
+/**
+ * "시험모드" 큐 — 학습 상태(학습 중·복습 대기·복습 예정·졸업)와 무관하게 입력 words를 전부
+ * 한 번씩 낸다. 모드는 그 단어의 유효 모드 중 무작위. ordered면 입력 순서(= 시트 순서) 그대로,
+ * 아니면 섞는다. 시험은 시트 기록을 남기지 않으므로 isReview는 의미가 없어 항상 false다.
+ */
+export function buildTestQueue<T extends WordProgress>(
+  words: readonly T[],
+  modes: readonly Mode[],
+  ordered: boolean,
+  rng: () => number = Math.random,
+): SessionQuestion<T>[] {
+  const queue = words.map((word) => ({ word, mode: randomMode(effectiveModes(word, modes), rng), isReview: false }));
+  if (!ordered) shuffle(queue, rng);
+  return queue;
+}
+
 /** 재출제 대상: 총 정답 수 ≥ 1이고 마지막 정답이 cutoff 이전(포함). 정답 기록 없음(수동 편집 등)도 대상. */
 function isRecallCandidate(word: WordProgress, cutoff: string): boolean {
   return word.m1 + word.m2 >= 1 && (word.lastCorrect == null || word.lastCorrect <= cutoff);
