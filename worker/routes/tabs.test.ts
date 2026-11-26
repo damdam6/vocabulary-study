@@ -45,6 +45,7 @@ interface BatchRequest {
     properties: {
       title: string;
       sheetId?: number;
+      index?: number;
       gridProperties?: { frozenRowCount?: number };
     };
   };
@@ -229,6 +230,8 @@ describe("POST /api/tabs", () => {
 
     const props = addSheetReq.addSheet?.properties;
     expect(props?.title).toBe("HSK7");
+    // 새 탭은 탭 목록 맨 앞에 생긴다.
+    expect(props?.index).toBe(0);
     expect(props?.gridProperties).toEqual({ frozenRowCount: 1 });
     // 후속 repeatCell이 같은 배치에서 새 탭을 참조하도록 숫자 sheetId를 직접 지정한다.
     const gid = props?.sheetId;

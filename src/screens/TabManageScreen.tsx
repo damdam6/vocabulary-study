@@ -142,8 +142,9 @@ export default function TabManageScreen({ onGoHome }: { onGoHome: () => void }) 
     const { tabs: fetched } = await tabManageRequest();
     const known = new Set(tabs.map((tab) => tab.id));
     const added = fetched.filter((tab) => !known.has(tab.id));
-    setTabs((previous) => [...previous, ...added]);
-    setBaseline((previous) => [...previous, ...added]);
+    // 시트에서 새 탭은 맨 앞에 생기므로 목록에서도 최상단에 둔다.
+    setTabs((previous) => [...added, ...previous]);
+    setBaseline((previous) => [...added, ...previous]);
     setNewTabName('');
     setNotice(created ? `‘${name}’ 탭을 만들었습니다.` : `‘${name}’ 탭은 이미 있습니다.`);
   });

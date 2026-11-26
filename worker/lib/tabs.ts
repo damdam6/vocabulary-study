@@ -43,7 +43,7 @@ function headerBackground(gid: number, column: number, color: Rgb): RepeatCellRe
   };
 }
 
-/** 새 단어 탭을 만들고 1행 헤더를 채운다. 호출 전에 tab이 wordTabs에 없음을 확인해야 한다. */
+/** 새 단어 탭을 탭 목록 맨 앞에 만들고 1행 헤더를 채운다. 호출 전에 tab이 wordTabs에 없음을 확인해야 한다. */
 export async function createWordTab(
   env: Env,
   sheetId: string,
@@ -61,8 +61,9 @@ export async function createWordTab(
   // 실패해 호출자에게 그대로 노출되고, 호출자가 다시 시도하면(예: 버튼 재클릭) 새
   // 무작위 gid로 재요청된다.
   const gid = crypto.getRandomValues(new Uint32Array(1))[0] & 0x7fffffff;
+  // index 0 — 새 탭은 시트의 맨 앞(탭 목록 최상단)에 놓는다.
   await batchUpdateSpreadsheet(env, sheetId, [
-    { addSheet: { properties: { sheetId: gid, title: tab, gridProperties: { frozenRowCount: 1 } } } },
+    { addSheet: { properties: { sheetId: gid, title: tab, index: 0, gridProperties: { frozenRowCount: 1 } } } },
     headerBackground(gid, 0, HEADER_YELLOW),
     headerBackground(gid, 1, HEADER_GREEN),
     headerBackground(gid, 2, HEADER_YELLOW),

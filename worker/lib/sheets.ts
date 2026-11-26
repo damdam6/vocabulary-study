@@ -102,6 +102,8 @@ export interface AddSheetRequest {
     properties: {
       title: string;
       sheetId?: number;
+      /** 생략하면 맨 뒤에 추가된다. */
+      index?: number;
       gridProperties?: { frozenRowCount?: number };
     };
   };

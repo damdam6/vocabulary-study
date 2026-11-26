@@ -24,7 +24,7 @@ beforeEach(() => {
     if (failNext) { const error = failNext; failNext = null; return Response.json({ error }, { status: 500 }); }
     if (path === '/api/tabs') {
       const existing = server.some((tab) => tab.name === body.name);
-      if (!existing) server = [...server, { id: 40, name: body.name, modes: ['m1', 'm2'], explicit: false, disabled: false, wordCount: 0 }];
+      if (!existing) server = [{ id: 40, name: body.name, modes: ['m1', 'm2'], explicit: false, disabled: false, wordCount: 0 }, ...server];
       return Response.json({ name: body.name, created: !existing });
     }
     if (body.action === 'save') {
@@ -174,7 +174,7 @@ describe('TabManageScreen', () => {
     fire(() => setNativeValue(input, ' HSK7 '));
     fire(() => ui.button('생성').click()); await flush();
     expect(posts[0]).toEqual({ path: '/api/tabs', body: { name: 'HSK7' } });
-    expect(ui.names()).toEqual(['단어', '문장', 'HSK7', '회화']);
+    expect(ui.names()).toEqual(['HSK7', '단어', '문장', '회화']);
     expect(ui.checks('단어').map((item) => item.checked)).toEqual([true, false, true]);
     expect(input.value).toBe('');
     expect(ui.status()).toContain('HSK7');
