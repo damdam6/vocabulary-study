@@ -3,7 +3,7 @@
 // "기본값으로"를 누르면 시트 값으로 돌아간다. 모달 외형은 등록 검토 모달(register-modal-*)을 재사용한다.
 // "순서대로" 스위치도 여기서 켜고 끈다 — 켜면 시트 순서대로 전부 출제하므로 문제 수는 최대로 고정된다.
 // 그 아래 "시험모드" 스위치 — 켜면 범위 안 단어를 졸업 단어까지 전부 내므로 문제 수는 범위의 단어 수로
-// 고정되고, 기록을 남기지 않으며 끝나면 문제별 결과 화면을 보여 준다. 순서대로와 함께 켤 수 있다.
+// 고정되고, 시트 기록을 남기지 않는다. 순서대로와 함께 켤 수 있다.
 import { useEffect, useState, type FormEvent } from 'react'
 
 interface SessionLimitModalProps {
@@ -102,7 +102,7 @@ function SessionLimitModal({ current, sheetLimit, max, sequential, testMode, tes
         <div className="session-limit-modal-option">
           <div className="session-limit-modal-option-text">
             <span className="session-limit-modal-option-label" id="session-limit-test-label">시험모드</span>
-            <span className="session-limit-modal-option-hint">졸업 포함 모든 단어 · 기록 안 남김 · 끝나면 결과 보기</span>
+            <span className="session-limit-modal-option-hint">졸업 포함 모든 단어 · 시트 기록 안 남김</span>
           </div>
           <button
             type="button"

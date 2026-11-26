@@ -1,5 +1,5 @@
 /**
- * 시험 결과 화면(design-prd §5.1)의 순수 계산 — 화면(TestResultScreen)과 이미지 저장
+ * 세션 결과 화면(design-prd §5)의 순수 계산 — 화면(DoneScreen)과 이미지 저장
  * (resultImage.ts)이 같은 순서·같은 수치를 쓰도록 한곳에 둔다. DOM·canvas 없이
  * vitest(node)로 고정한다.
  */

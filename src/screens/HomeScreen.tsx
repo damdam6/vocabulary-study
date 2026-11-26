@@ -34,7 +34,7 @@ export interface StudySessionContext {
   profile: PublicProfile
   tts: TtsCapability
   audioAutoplay: boolean
-  /** 시험모드 — 기록을 남기지 않고, 끝나면 문제별 결과 화면을 보여 준다. */
+  /** 시험모드 — 시트 학습 기록을 남기지 않는다(StudyScreen recordAnswers=false). */
   testMode: boolean
 }
 

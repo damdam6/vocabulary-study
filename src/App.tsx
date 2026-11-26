@@ -3,7 +3,6 @@ import LoginScreen from './screens/LoginScreen.tsx'
 import HomeScreen, { type StudySessionContext } from './screens/HomeScreen.tsx'
 import StudyScreen, { type SessionResult } from './screens/StudyScreen.tsx'
 import DoneScreen from './screens/DoneScreen.tsx'
-import TestResultScreen from './screens/TestResultScreen.tsx'
 import AutoPlayScreen from './screens/AutoPlayScreen.tsx'
 import { readAutoPlaySpeakMeaning } from './lib/autoPlayPreferences.ts'
 import { primeMeaningSpeech } from './lib/meaningSpeech.ts'
@@ -119,20 +118,13 @@ function App() {
             onExit={() => setScreen('home')}
           />
         )}
-        {/* 시험모드만 문제별 결과 화면, 일반 학습은 정답·오답 수만 보는 완료 화면 */}
-        {screen === 'done' && activeStudy !== null && (activeStudy.testMode ? (
-          <TestResultScreen
+        {screen === 'done' && activeStudy !== null && (
+          <DoneScreen
             result={sessionResult}
             profile={activeStudy.profile}
             onGoHome={() => setScreen('home')}
           />
-        ) : (
-          <DoneScreen
-            correct={sessionResult.correct}
-            wrong={sessionResult.wrong}
-            onGoHome={() => setScreen('home')}
-          />
-        ))}
+        )}
         {screen === 'tts-models' && <Suspense fallback={<p>설정을 불러오는 중…</p>}><TtsModelsScreen onGoHome={() => setScreen('home')} /></Suspense>}
         {screen === 'tabs' && (
           <Suspense fallback={<p>설정을 불러오는 중…</p>}>
