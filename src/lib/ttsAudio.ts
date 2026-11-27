@@ -1,5 +1,4 @@
 import type { TtsAudioOutput, TtsAudioOutputEvent, TtsPlayResult } from "./ttsTypes.ts";
-import { createBoostedAudio } from "./ttsVolume.ts";
 
 /** 테스트 더블과 브라우저 Audio가 공유하는, 이 모듈이 실제로 쓰는 최소 표면이다. */
 export interface TtsAudioElement {
@@ -14,8 +13,6 @@ export interface TtsAudioElement {
   setAttribute(name: string, value: string): void;
   addEventListener(type: "ended" | "error", listener: () => void): void;
   removeEventListener(type: "ended" | "error", listener: () => void): void;
-  /** 출력기를 버릴 때 요소에 묶인 외부 자원(음량 증폭 그래프 연결)을 푼다. */
-  release?(): void;
 }
 
 export interface TtsAudioOutputDependencies {
@@ -47,7 +44,7 @@ function isNotAllowedError(error: unknown): boolean {
  * 정리하거나 통지할 수 없다. 브라우저 전역은 인스턴스 생성만으로 평가하지 않는다.
  */
 export function createTtsAudioOutput(dependencies: TtsAudioOutputDependencies = {}): TtsAudioOutput {
-  const createAudio = dependencies.createAudio ?? createBoostedAudio;
+  const createAudio = dependencies.createAudio ?? (() => new Audio());
   const createObjectURL = dependencies.createObjectURL ?? ((blob: Blob) => URL.createObjectURL(blob));
   const revokeObjectURL = dependencies.revokeObjectURL ?? ((url: string) => URL.revokeObjectURL(url));
 
@@ -187,7 +184,6 @@ export function createTtsAudioOutput(dependencies: TtsAudioOutputDependencies = 
       if (disposed) return;
       disposed = true;
       if (current) cancel(current);
-      try { audio?.release?.(); } catch {}
       listeners.clear();
     },
 

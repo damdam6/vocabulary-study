@@ -85,8 +85,6 @@ export function speakMeaning(meaning: string, onDone: (result: MeaningSpeechResu
   try {
     utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = "ko-KR";
-    // 음성 합성 음량 상한(1)으로 읽는다.
-    utterance.volume = 1;
     if (voice) utterance.voice = voice;
     let started = false;
     utterance.onstart = () => { started = true; };
